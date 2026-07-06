@@ -597,9 +597,70 @@ const COLORS = [
   { key: 'purple',   name: 'パープル',         h: 275, s: .45, l: .50 },
   { key: 'brown',    name: 'ブラウン',         h:  25, s: .40, l: .38 },
   { key: 'beige',    name: 'ベージュ',         h:  38, s: .30, l: .78 },
+  { key: 'gold',     name: 'ゴールド',         h:  46, s: .60, l: .54, metallic: true },
+  { key: 'silver',   name: 'シルバー',         h: 210, s: .07, l: .72, metallic: true },
   { key: 'mono',     name: 'モノトーン',       h: 220, s: .00, l: .50, mono: true },
   { key: 'colorful', name: 'カラフル',         h:   0, s: .70, l: .55, colorful: true },
 ];
+
+/* ===== 金属色（metallic）の色味バリエーション ============================
+   band = 金属らしく見える S/L の帯（lDark は暗背景用）。後段の変換で帯から
+   外れた分は clampMetalBand で丸める。partners = 実務の定番の相性ペア
+   （サブ・アクセントはスキーム導出でなくこの表から作る）。 */
+const METALLICS = {
+  gold: {
+    label: 'ゴールドの色味',
+    variants: [
+      { key: 'yellow', name: '黄み',   h: 46, s: .60, l: .54,
+        band: { hTol: 10, s: [.40, .75], l: [.44, .62], lDark: [.55, .72] },
+        partners: [
+          { name: 'ネイビー',       accent: [222, .48, .24], sub: [222, .18, .88] },
+          { name: 'ダークブラウン', accent: [ 25, .45, .22], sub: [ 30, .25, .86] },
+          { name: 'チャコール×白',  accent: [220, .10, .16], sub: [ 45, .15, .90] },
+        ] },
+      { key: 'pink',   name: '赤み',   h: 28, s: .45, l: .62,
+        band: { hTol: 10, s: [.32, .60], l: [.52, .70], lDark: [.60, .76] },
+        partners: [
+          { name: 'チョコブラウン', accent: [ 20, .40, .24], sub: [ 20, .20, .88] },
+          { name: 'ブルーグレー',   accent: [230, .12, .20], sub: [340, .12, .90] },
+          { name: 'ボルドー',       accent: [350, .45, .28], sub: [ 30, .20, .88] },
+        ] },
+      { key: 'green',  name: '緑み',   h: 60, s: .42, l: .48,
+        band: { hTol: 10, s: [.30, .60], l: [.40, .56], lDark: [.52, .68] },
+        partners: [
+          { name: 'ダークブラウン',   accent: [ 28, .42, .20], sub: [ 50, .18, .86] },
+          { name: 'ディープグリーン', accent: [150, .35, .20], sub: [ 70, .15, .88] },
+          { name: 'ネイビー',         accent: [225, .40, .22], sub: [ 55, .14, .90] },
+        ] },
+    ],
+  },
+  silver: {
+    label: 'シルバーの色味',
+    variants: [
+      { key: 'cool', name: '青み',     h: 210, s: .07, l: .72,
+        band: { hTol: 18, s: [.02, .14], l: [.60, .82], lDark: [.66, .86] },
+        partners: [
+          { name: 'ブルー',   accent: [215, .55, .38], sub: [210, .10, .90] },
+          { name: 'ネイビー', accent: [225, .50, .22], sub: [215, .08, .88] },
+          { name: 'ブラック', accent: [220, .08, .12], sub: [210, .06, .92] },
+        ] },
+      { key: 'warm', name: '暖かみ',   h: 40, s: .09, l: .70,
+        band: { hTol: 18, s: [.03, .16], l: [.58, .80], lDark: [.64, .84] },
+        partners: [
+          { name: 'ブラウン',         accent: [ 28, .35, .30], sub: [ 40, .12, .90] },
+          { name: 'ウォームグレー',   accent: [ 40, .08, .22], sub: [ 45, .10, .88] },
+          { name: 'ディープグリーン', accent: [155, .25, .24], sub: [ 40, .10, .90] },
+        ] },
+      { key: 'gunmetal', name: 'ガンメタ', h: 220, s: .06, l: .30,
+        band: { hTol: 18, s: [.02, .12], l: [.22, .40], lDark: [.55, .72] },
+        partners: [
+          { name: 'ブラック',       accent: [220, .06, .10], sub: [220, .05, .78] },
+          { name: 'ビビッドブルー', accent: [215, .70, .45], sub: [220, .06, .80] },
+          { name: 'ライトシルバー', accent: [210, .08, .85], sub: [220, .05, .72] },
+        ] },
+    ],
+  },
+};
 
 /* ===== トーン（PCCS風の色調プリセット） ==================================
    デザイン実務で使う「トーン」を、既存スライダー3本（明るさ light /
@@ -633,6 +694,25 @@ function mulberry32(a) {
 }
 // -amt 〜 +amt の微ゆらぎ（色相・彩度・明度に「案ごとの揺れ」を与える）
 const jit = (rng, amt) => (rng() * 2 - 1) * amt;
+
+// 金属帯クランプ: H は variant.h ± hTol の最短差で丸め、S/L は帯へ収める。
+// makePatterns の戻り値直前（applyContrast より後）に main のみへ適用する最終段ガード。
+function clampMetalBand(col, variant, isDarkBg) {
+  const b = variant.band;
+  const d = ((col[0] - variant.h + 540) % 360) - 180;      // 最短方向の色相差
+  const H = wrap(variant.h + clamp(d, -b.hTol, b.hTol));
+  const lb = isDarkBg ? b.lDark : b.l;
+  return [H, clamp(col[1], b.s[0], b.s[1]), clamp(col[2], lb[0], lb[1])];
+}
+
+// 金属光沢の参考表現: 単色HSLから4ストップの斜めグラデを合成する。
+// 表示（チップ見本・スウォッチ・モック）専用。データ・出力HEXは単色のまま。
+function metalGrad(h, s, l) {
+  const hi  = hslToHex(h, s, clamp(l + .18, 0, .95));      // ハイライト
+  const mid = hslToHex(h, s, l);                           // 地の色（=出力HEXと同一）
+  const lo  = hslToHex(h, s * .9, clamp(l - .14, .05, 1)); // 陰
+  return `linear-gradient(135deg, ${hi} 0%, ${mid} 38%, ${lo} 62%, ${hslToHex(h, s, clamp(l + .10, 0, .95))} 100%)`;
+}
 
 /* ===== 配色スキームのプール ==============================================
    ボタンを押すたびに、この中から3つを選び直して「別案」を作る。
@@ -830,10 +910,21 @@ function computeBase() {
   // カラー（メインの色系統）の選択。基準カラーの次に優先する色相アンカー。
   const famKey = document.querySelector('input[name=colorfam]:checked')?.value || '';
   const fam = COLORS.find(c => c.key === famKey);
+  // metallic: 基準カラー(baseHsl)指定時は従来どおり基準カラーが最優先（metallic扱いしない）
+  const mvKey = fam?.metallic
+    ? (document.querySelector(`input[name=mv-${fam.key}]:checked`)?.value || METALLICS[fam.key].variants[0].key)
+    : null;
+  const metallic = (!baseHsl && fam?.metallic)
+    ? { famKey: fam.key, variant: METALLICS[fam.key].variants.find(v => v.key === mvKey) || METALLICS[fam.key].variants[0] }
+    : null;
 
   if (baseHsl) {
     // 基準カラーを種に。色相はここで固定寄りにする（下のpullで弱めに扱う）
     seedHue = baseHsl.h; seedS = baseHsl.s; seedL = baseHsl.l;
+  } else if (metallic) {
+    // metallic: S/L の正は色味バリエーション（帯）。言葉による S/L 上書きはスキップし、
+    // 言葉は3軸（kwWarm/kwGender/kwFormal）とスライダー経由でのみ寄与させる
+    seedHue = metallic.variant.h; seedS = metallic.variant.s; seedL = metallic.variant.l;
   } else if (fam) {
     // カラー選択が最優先の色相アンカー。カラフルは生成のたび色相が変わる
     seedHue = fam.colorful ? (seed % 360) : fam.h;
@@ -898,7 +989,7 @@ function computeBase() {
     document.getElementById('cvdCheck').checked || disp !== 'auto' ||
     warmS || genderS || formalS || lightS || vividS || mutedS ||
     contrastS || ageS || seasonS;
-  return { H, S, L, hasInput, bgOverride, accentOverride, contrast, disp };
+  return { H, S, L, hasInput, bgOverride, accentOverride, contrast, disp, metallic };
 }
 
 /* ===== 同系色モード ======================================================
@@ -950,14 +1041,37 @@ function makePatterns(b, seed) {
     if (mode === 'tint')    return [H, clamp(S * 0.28, 0, 0.32), 0.95];
     return [H, clamp(S * 0.20, 0, 0.25), 0.93];                      // soft
   };
-  // スキームをシャッフルして3つ選ぶ（クリックのたびに別の組み合わせ）
-  const pool = SCHEMES.slice();
-  for (let i = pool.length - 1; i > 0; i--) {
-    const k = Math.floor(rng() * (i + 1));
-    [pool[i], pool[k]] = [pool[k], pool[i]];
+  // 3案の元となるスキームを選ぶ。
+  // metallic: 相性パートナー表（§定番ペア）をシャッフルして3案（既存SCHEMESは使わない）
+  // 通常: SCHEMES をシャッフルして3つ選ぶ（クリックのたびに別の組み合わせ）
+  let picks;
+  if (b.metallic) {
+    const v = b.metallic.variant;
+    const famName = COLORS.find(c => c.key === b.metallic.famKey).name;
+    const partners = v.partners.slice();
+    for (let i = partners.length - 1; i > 0; i--) {
+      const k = Math.floor(rng() * (i + 1));
+      [partners[i], partners[k]] = [partners[k], partners[i]];
+    }
+    picks = partners.slice(0, 3).map(pt => ({
+      name: `${famName}×${pt.name}`, note: '金属色×相性色の定番ペア',
+      make: (H, S, L, rng) => ({
+        // main はスライダー反映済みの S/L（色相は variant 近傍）。sub/accent はパートナー由来
+        main:   [wrap(v.h + jit(rng, 4)), S, L],
+        sub:    [wrap(pt.sub[0] + jit(rng, 6)), pt.sub[1], clamp(pt.sub[2] + jit(rng, 0.03), 0, 0.95)],
+        accent: [wrap(pt.accent[0] + jit(rng, 6)), pt.accent[1], clamp(pt.accent[2] + jit(rng, 0.03), 0.05, 0.95)],
+      }),
+    }));
+  } else {
+    const pool = SCHEMES.slice();
+    for (let i = pool.length - 1; i > 0; i--) {
+      const k = Math.floor(rng() * (i + 1));
+      [pool[i], pool[k]] = [pool[k], pool[i]];
+    }
+    picks = pool.slice(0, 3);
   }
   const modes = ['neutral', 'tint', 'soft'];
-  return pool.slice(0, 3).map((sc, i) => {
+  return picks.map((sc, i) => {
     let c = sc.make(H, S, L, rng);
     let note = sc.note;
     if (sameHue) {
