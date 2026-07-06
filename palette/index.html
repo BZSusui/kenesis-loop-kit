@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ムードカラー ジェネレーター v1.0</title>
+<title>ムードカラー ジェネレーター v1.1</title>
 <style>
   :root {
     --bg: #f6f7f9;
@@ -26,6 +26,7 @@
     text-align: center;
   }
   header h1 { margin: 0 0 6px; font-size: 22px; }
+  header h1 small { font-size: 12px; font-weight: 600; color: var(--muted); vertical-align: 2px; }
   header p { margin: 0; color: var(--muted); font-size: 13px; }
   .wrap {
     max-width: 1180px;
@@ -128,6 +129,18 @@
     background: #fff;
     background-image: linear-gradient(135deg, transparent 44%, #e35050 44%, #e35050 56%, transparent 56%);
   }
+  /* ゴールド・シルバーの色味サブ選択 */
+  .mv {
+    flex-basis: 100%;
+    margin-top: 6px; padding-top: 10px;
+    border-top: 1px dashed var(--line);
+  }
+  .mv[hidden], .mv-group[hidden] { display: none; }
+  .mv-group > span {
+    display: block;
+    font-size: 12px; color: var(--muted);
+    margin-bottom: 6px;
+  }
   .slider { margin: 16px 0; }
   .slider label {
     display: flex;
@@ -138,6 +151,7 @@
   }
   .slider input[type=range] { width: 100%; }
   .btn-row { display: flex; gap: 10px; margin-top: 18px; }
+  .btn-row + .btn-row { margin-top: 10px; }
   button {
     flex: 1;
     padding: 11px;
@@ -148,7 +162,8 @@
     cursor: pointer;
   }
   #gen { background: var(--accent); color: #fff; }
-  #reset { background: #eef0f3; color: var(--ink); flex: 0 0 auto; padding: 11px 16px; }
+  #share { background: #eef0f3; color: var(--ink); padding: 11px 14px; font-size: 13px; }
+  #reset { background: #eef0f3; color: var(--ink); padding: 11px 16px; }
 
   .basecolor { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .basecolor .toggle { flex-basis: 100%; font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; }
@@ -254,8 +269,17 @@
     padding: 12px 16px;
     border-bottom: 1px solid var(--line);
   }
-  .pattern-head b { font-size: 14px; }
-  .pattern-head small { color: var(--muted); font-size: 12px; }
+  .pattern-head b { font-size: 14px; flex: 0 0 auto; }
+  .pattern-head small { color: var(--muted); font-size: 12px; flex: 1; min-width: 0; text-align: right; margin: 0 10px; }
+  .pattern-head .css-copy {
+    flex: 0 0 auto;
+    padding: 5px 12px;
+    font-size: 11px; font-weight: 600;
+    border: 1px solid var(--line); border-radius: 999px;
+    background: #fff; color: var(--muted);
+    cursor: pointer;
+  }
+  .pattern-head .css-copy:hover { color: var(--ink); border-color: var(--muted); }
   .swatches { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .sw {
     aspect-ratio: 3 / 2;
@@ -354,7 +378,7 @@
 </head>
 <body>
 <header>
-  <h1>ムードカラー ジェネレーター</h1>
+  <h1>ムードカラー ジェネレーター <small>v1.1</small></h1>
   <p>言葉と割合から、メイン / サブ / アクセント / 背景の配色を3案つくります</p>
 </header>
 
@@ -488,6 +512,9 @@
 
     <div class="btn-row">
       <button id="gen">配色を生成</button>
+    </div>
+    <div class="btn-row">
+      <button id="share" type="button">URLをコピー</button>
       <button id="reset">リセット</button>
     </div>
   </div>
@@ -597,9 +624,70 @@ const COLORS = [
   { key: 'purple',   name: 'パープル',         h: 275, s: .45, l: .50 },
   { key: 'brown',    name: 'ブラウン',         h:  25, s: .40, l: .38 },
   { key: 'beige',    name: 'ベージュ',         h:  38, s: .30, l: .78 },
+  { key: 'gold',     name: 'ゴールド',         h:  46, s: .60, l: .54, metallic: true },
+  { key: 'silver',   name: 'シルバー',         h: 210, s: .07, l: .72, metallic: true },
   { key: 'mono',     name: 'モノトーン',       h: 220, s: .00, l: .50, mono: true },
   { key: 'colorful', name: 'カラフル',         h:   0, s: .70, l: .55, colorful: true },
 ];
+
+/* ===== 金属色（metallic）の色味バリエーション ============================
+   band = 金属らしく見える S/L の帯（lDark は暗背景用）。後段の変換で帯から
+   外れた分は clampMetalBand で丸める。partners = 実務の定番の相性ペア
+   （サブ・アクセントはスキーム導出でなくこの表から作る）。 */
+const METALLICS = {
+  gold: {
+    label: 'ゴールドの色味',
+    variants: [
+      { key: 'yellow', name: '黄み',   h: 46, s: .60, l: .54,
+        band: { hTol: 10, s: [.40, .75], l: [.44, .62], lDark: [.55, .72] },
+        partners: [
+          { name: 'ネイビー',       accent: [222, .48, .24], sub: [222, .18, .88] },
+          { name: 'ダークブラウン', accent: [ 25, .45, .22], sub: [ 30, .25, .86] },
+          { name: 'チャコール×白',  accent: [220, .10, .16], sub: [ 45, .15, .90] },
+        ] },
+      { key: 'pink',   name: '赤み',   h: 28, s: .45, l: .62,
+        band: { hTol: 10, s: [.32, .60], l: [.52, .70], lDark: [.60, .76] },
+        partners: [
+          { name: 'チョコブラウン', accent: [ 20, .40, .24], sub: [ 20, .20, .88] },
+          { name: 'ブルーグレー',   accent: [230, .12, .20], sub: [340, .12, .90] },
+          { name: 'ボルドー',       accent: [350, .45, .28], sub: [ 30, .20, .88] },
+        ] },
+      { key: 'green',  name: '緑み',   h: 60, s: .42, l: .48,
+        band: { hTol: 10, s: [.30, .60], l: [.40, .56], lDark: [.52, .68] },
+        partners: [
+          { name: 'ダークブラウン',   accent: [ 28, .42, .20], sub: [ 50, .18, .86] },
+          { name: 'ディープグリーン', accent: [150, .35, .20], sub: [ 70, .15, .88] },
+          { name: 'ネイビー',         accent: [225, .40, .22], sub: [ 55, .14, .90] },
+        ] },
+    ],
+  },
+  silver: {
+    label: 'シルバーの色味',
+    variants: [
+      { key: 'cool', name: '青み',     h: 210, s: .07, l: .72,
+        band: { hTol: 18, s: [.02, .14], l: [.60, .82], lDark: [.66, .86] },
+        partners: [
+          { name: 'ブルー',   accent: [215, .55, .38], sub: [210, .10, .90] },
+          { name: 'ネイビー', accent: [225, .50, .22], sub: [215, .08, .88] },
+          { name: 'ブラック', accent: [220, .08, .12], sub: [210, .06, .92] },
+        ] },
+      { key: 'warm', name: '暖かみ',   h: 40, s: .09, l: .70,
+        band: { hTol: 18, s: [.03, .16], l: [.58, .80], lDark: [.64, .84] },
+        partners: [
+          { name: 'ブラウン',         accent: [ 28, .35, .30], sub: [ 40, .12, .90] },
+          { name: 'ウォームグレー',   accent: [ 40, .08, .22], sub: [ 45, .10, .88] },
+          { name: 'ディープグリーン', accent: [155, .25, .24], sub: [ 40, .10, .90] },
+        ] },
+      { key: 'gunmetal', name: 'ガンメタ', h: 220, s: .06, l: .30,
+        band: { hTol: 18, s: [.02, .12], l: [.22, .40], lDark: [.55, .72] },
+        partners: [
+          { name: 'ブラック',       accent: [220, .06, .10], sub: [220, .05, .78] },
+          { name: 'ビビッドブルー', accent: [215, .70, .45], sub: [220, .06, .80] },
+          { name: 'ライトシルバー', accent: [210, .08, .85], sub: [220, .05, .72] },
+        ] },
+    ],
+  },
+};
 
 /* ===== トーン（PCCS風の色調プリセット） ==================================
    デザイン実務で使う「トーン」を、既存スライダー3本（明るさ light /
@@ -633,6 +721,25 @@ function mulberry32(a) {
 }
 // -amt 〜 +amt の微ゆらぎ（色相・彩度・明度に「案ごとの揺れ」を与える）
 const jit = (rng, amt) => (rng() * 2 - 1) * amt;
+
+// 金属帯クランプ: H は variant.h ± hTol の最短差で丸め、S/L は帯へ収める。
+// makePatterns の戻り値直前（applyContrast より後）に main のみへ適用する最終段ガード。
+function clampMetalBand(col, variant, isDarkBg) {
+  const b = variant.band;
+  const d = ((col[0] - variant.h + 540) % 360) - 180;      // 最短方向の色相差
+  const H = wrap(variant.h + clamp(d, -b.hTol, b.hTol));
+  const lb = isDarkBg ? b.lDark : b.l;
+  return [H, clamp(col[1], b.s[0], b.s[1]), clamp(col[2], lb[0], lb[1])];
+}
+
+// 金属光沢の参考表現: 単色HSLから4ストップの斜めグラデを合成する。
+// 表示（チップ見本・スウォッチ・モック）専用。データ・出力HEXは単色のまま。
+function metalGrad(h, s, l) {
+  const hi  = hslToHex(h, s, clamp(l + .18, 0, .95));      // ハイライト
+  const mid = hslToHex(h, s, l);                           // 地の色（=出力HEXと同一）
+  const lo  = hslToHex(h, s * .9, clamp(l - .14, .05, 1)); // 陰
+  return `linear-gradient(135deg, ${hi} 0%, ${mid} 38%, ${lo} 62%, ${hslToHex(h, s, clamp(l + .10, 0, .95))} 100%)`;
+}
 
 /* ===== 配色スキームのプール ==============================================
    ボタンを押すたびに、この中から3つを選び直して「別案」を作る。
@@ -790,8 +897,10 @@ function computeBase() {
   // チェックされた言葉を集める
   const checked = [];
   document.querySelectorAll('#keywords input:checked').forEach(el => {
+    if (!el.value) return;                          // ジャンル「指定なし」radio を除外
     const [cat, key] = el.value.split('/');
-    checked.push(KEYWORDS[cat][key]);
+    const def = KEYWORDS[cat] && KEYWORDS[cat][key];
+    if (def) checked.push(def);                     // 未知値も黙って無視（URL復元の不正値対策を兼ねる）
   });
 
   // スライダー -1..1
@@ -828,10 +937,21 @@ function computeBase() {
   // カラー（メインの色系統）の選択。基準カラーの次に優先する色相アンカー。
   const famKey = document.querySelector('input[name=colorfam]:checked')?.value || '';
   const fam = COLORS.find(c => c.key === famKey);
+  // metallic: 基準カラー(baseHsl)指定時は従来どおり基準カラーが最優先（metallic扱いしない）
+  const mvKey = fam?.metallic
+    ? (document.querySelector(`input[name=mv-${fam.key}]:checked`)?.value || METALLICS[fam.key].variants[0].key)
+    : null;
+  const metallic = (!baseHsl && fam?.metallic)
+    ? { famKey: fam.key, variant: METALLICS[fam.key].variants.find(v => v.key === mvKey) || METALLICS[fam.key].variants[0] }
+    : null;
 
   if (baseHsl) {
     // 基準カラーを種に。色相はここで固定寄りにする（下のpullで弱めに扱う）
     seedHue = baseHsl.h; seedS = baseHsl.s; seedL = baseHsl.l;
+  } else if (metallic) {
+    // metallic: S/L の正は色味バリエーション（帯）。言葉による S/L 上書きはスキップし、
+    // 言葉は3軸（kwWarm/kwGender/kwFormal）とスライダー経由でのみ寄与させる
+    seedHue = metallic.variant.h; seedS = metallic.variant.s; seedL = metallic.variant.l;
   } else if (fam) {
     // カラー選択が最優先の色相アンカー。カラフルは生成のたび色相が変わる
     seedHue = fam.colorful ? (seed % 360) : fam.h;
@@ -896,7 +1016,7 @@ function computeBase() {
     document.getElementById('cvdCheck').checked || disp !== 'auto' ||
     warmS || genderS || formalS || lightS || vividS || mutedS ||
     contrastS || ageS || seasonS;
-  return { H, S, L, hasInput, bgOverride, accentOverride, contrast, disp };
+  return { H, S, L, hasInput, bgOverride, accentOverride, contrast, disp, metallic };
 }
 
 /* ===== 同系色モード ======================================================
@@ -948,14 +1068,37 @@ function makePatterns(b, seed) {
     if (mode === 'tint')    return [H, clamp(S * 0.28, 0, 0.32), 0.95];
     return [H, clamp(S * 0.20, 0, 0.25), 0.93];                      // soft
   };
-  // スキームをシャッフルして3つ選ぶ（クリックのたびに別の組み合わせ）
-  const pool = SCHEMES.slice();
-  for (let i = pool.length - 1; i > 0; i--) {
-    const k = Math.floor(rng() * (i + 1));
-    [pool[i], pool[k]] = [pool[k], pool[i]];
+  // 3案の元となるスキームを選ぶ。
+  // metallic: 相性パートナー表（§定番ペア）をシャッフルして3案（既存SCHEMESは使わない）
+  // 通常: SCHEMES をシャッフルして3つ選ぶ（クリックのたびに別の組み合わせ）
+  let picks;
+  if (b.metallic) {
+    const v = b.metallic.variant;
+    const famName = COLORS.find(c => c.key === b.metallic.famKey).name;
+    const partners = v.partners.slice();
+    for (let i = partners.length - 1; i > 0; i--) {
+      const k = Math.floor(rng() * (i + 1));
+      [partners[i], partners[k]] = [partners[k], partners[i]];
+    }
+    picks = partners.slice(0, 3).map(pt => ({
+      name: `${famName}×${pt.name}`, note: '金属色×相性色の定番ペア',
+      make: (H, S, L, rng) => ({
+        // main はスライダー反映済みの S/L（色相は variant 近傍）。sub/accent はパートナー由来
+        main:   [wrap(v.h + jit(rng, 4)), S, L],
+        sub:    [wrap(pt.sub[0] + jit(rng, 6)), pt.sub[1], clamp(pt.sub[2] + jit(rng, 0.03), 0, 0.95)],
+        accent: [wrap(pt.accent[0] + jit(rng, 6)), pt.accent[1], clamp(pt.accent[2] + jit(rng, 0.03), 0.05, 0.95)],
+      }),
+    }));
+  } else {
+    const pool = SCHEMES.slice();
+    for (let i = pool.length - 1; i > 0; i--) {
+      const k = Math.floor(rng() * (i + 1));
+      [pool[i], pool[k]] = [pool[k], pool[i]];
+    }
+    picks = pool.slice(0, 3);
   }
   const modes = ['neutral', 'tint', 'soft'];
-  return pool.slice(0, 3).map((sc, i) => {
+  return picks.map((sc, i) => {
     let c = sc.make(H, S, L, rng);
     let note = sc.note;
     if (sameHue) {
@@ -979,6 +1122,11 @@ function makePatterns(b, seed) {
         accent: fixedAccent ? c.accent : applyContrast(c.accent, bgc[2], b.contrast, 1),
       };
     }
+    // metallic: 後段のどの変換が S/L を動かしても main は必ず金属帯内で確定する（最終段クランプ）
+    if (b.metallic) {
+      c.main = clampMetalBand(c.main, b.metallic.variant, bgc[2] < 0.45);
+      return { name: sc.name, note, main: c.main, sub: c.sub, accent: c.accent, bg: bgc, metal: true };
+    }
     return { name: sc.name, note, main: c.main, sub: c.sub, accent: c.accent, bg: bgc };
   });
 }
@@ -989,11 +1137,17 @@ function updateSummaries() {
   const set = (id, txt) => { document.getElementById(id).textContent = txt; };
   const famKey = document.querySelector('input[name=colorfam]:checked')?.value || '';
   const fam = COLORS.find(c => c.key === famKey);
-  set('sumColor', fam ? fam.name : '');
+  let sumColor = fam ? fam.name : '';
+  if (fam?.metallic) { // metallic は「ゴールド（黄み）」形式で色味も要約する
+    const mvKey = document.querySelector(`input[name=mv-${fam.key}]:checked`)?.value;
+    const mv = METALLICS[fam.key].variants.find(v => v.key === mvKey) || METALLICS[fam.key].variants[0];
+    sumColor = `${fam.name}（${mv.name}）`;
+  }
+  set('sumColor', sumColor);
   const toneKey = document.querySelector('input[name=tone]:checked')?.value || '';
   const tone = TONES.find(t => t.key === toneKey);
   set('sumTone', tone ? tone.name : '');
-  const kw = document.querySelectorAll('#keywords input:checked').length;
+  const kw = [...document.querySelectorAll('#keywords input:checked')].filter(el => el.value).length;
   set('sumKw', kw ? `${kw}個選択` : '');
   const baseParts = [];
   if (document.getElementById('useBase').checked) baseParts.push(document.getElementById('baseHex').value);
@@ -1016,6 +1170,94 @@ let currentPatterns = [];
 let pristinePatterns = []; // 「元に戻す」用の生成直後スナップショット
 const ROLE_NAMES = ['メイン', 'サブ', 'アクセント', '背景'];
 const ROLE_KEYS  = ['main', 'sub', 'accent', 'bg'];
+// 案の4色を CSS カスタムプロパティ形式で書き出す（常に単色HEX。微調整後の値も反映される）
+function cssVarsOf(p) {
+  const [main, sub, accent, bgc] = ROLE_KEYS.map(k => hslToHex(p[k][0], p[k][1], p[k][2]));
+  return `:root {\n  --color-main: ${main};\n  --color-sub: ${sub};\n  --color-accent: ${accent};\n  --color-bg: ${bgc};\n}`;
+}
+/* ===== URL共有 ===========================================================
+   入力状態＋seed を URLSearchParams に載せ、render のたびに history.replaceState で
+   同期する（アドレスバーのURLが常に現在の状態を指す）。乱数はシード付きのため
+   「入力状態＋seed」だけで生成結果を完全再現できる（微調整の手編集のみ対象外）。 */
+const URL_SLIDERS = ['warm','gender','formal','light','vivid','muted','contrast','age','season'];
+function syncURL(hasInput) {
+  if (!hasInput) { history.replaceState(null, '', location.pathname); return; } // 初期状態はパラメータ無し
+  const p = new URLSearchParams();
+  p.set('v', '1'); // スキーマ版（将来の互換判定用）
+  const famKey = document.querySelector('input[name=colorfam]:checked')?.value || '';
+  if (famKey) {
+    p.set('c', famKey);
+    if (COLORS.find(c => c.key === famKey)?.metallic) {
+      const mv = document.querySelector(`input[name=mv-${famKey}]:checked`)?.value;
+      if (mv) p.set('mv', mv);
+    }
+  }
+  const toneKey = document.querySelector('input[name=tone]:checked')?.value || '';
+  if (toneKey) p.set('t', toneKey);
+  const kws = [...document.querySelectorAll('#keywords input:checked')].map(el => el.value).filter(Boolean);
+  if (kws.length) p.set('k', kws.join(','));
+  URL_SLIDERS.forEach(id => {
+    const v = +document.getElementById(id).value;
+    if (v) p.set(id, String(v));
+  });
+  if (document.getElementById('useBase').checked) p.set('base', document.getElementById('basePick').value.slice(1).toLowerCase());
+  if (document.getElementById('useAccent').checked) p.set('accent', document.getElementById('accentPick').value.slice(1).toLowerCase());
+  if (document.getElementById('useBg').checked) p.set('bg', document.getElementById('bgPick').value.slice(1).toLowerCase());
+  if (document.getElementById('sameHue').checked) p.set('sh', '1');
+  const disp = document.querySelector('input[name=dispmode]:checked')?.value || 'auto';
+  if (disp !== 'auto') p.set('dm', disp);
+  if (document.getElementById('cvdCheck').checked) p.set('cvd', '1');
+  p.set('seed', String(seed));
+  history.replaceState(null, '', location.pathname + '?' + p.toString());
+}
+
+// ページ読み込み時の復元。不正値・未知キーはすべて黙って無視する（fail-safe）
+function restoreFromURL() {
+  const params = new URLSearchParams(location.search);
+  const KNOWN = ['v', 'c', 'mv', 't', 'k', 'base', 'accent', 'bg', 'sh', 'dm', 'cvd', 'seed', ...URL_SLIDERS];
+  if (![...params.keys()].some(k => KNOWN.includes(k))) return false; // 既知キー無し → 従来どおり空の初期表示
+  const checkRadio = (sel) => { const el = document.querySelector(sel); if (el) el.checked = true; };
+  const famKey = params.get('c') || '';
+  if (famKey) checkRadio(`input[name=colorfam][value="${CSS.escape(famKey)}"]`);
+  const mv = params.get('mv');
+  if (mv && METALLICS[famKey]) checkRadio(`input[name=mv-${famKey}][value="${CSS.escape(mv)}"]`);
+  const t = params.get('t');
+  if (t) checkRadio(`input[name=tone][value="${CSS.escape(t)}"]`);
+  const k = params.get('k');
+  if (k) {
+    const inputs = [...document.querySelectorAll('#keywords input')];
+    k.split(',').forEach(val => {
+      const el = inputs.find(i => i.value === val); // 未知keyは黙って無視
+      if (el) el.checked = true;
+    });
+  }
+  URL_SLIDERS.forEach(id => {
+    if (!params.has(id)) return;
+    const v = parseInt(params.get(id), 10);
+    if (!Number.isNaN(v)) document.getElementById(id).value = clamp(v, -100, 100);
+  });
+  const hex6 = /^[0-9a-f]{6}$/i;
+  const setColor = (key, pickId, hexId, useId) => {
+    const v = params.get(key);
+    if (!v || !hex6.test(v)) return;
+    document.getElementById(pickId).value = '#' + v.toLowerCase();
+    document.getElementById(hexId).value = '#' + v.toLowerCase();
+    document.getElementById(useId).checked = true;
+  };
+  setColor('base', 'basePick', 'baseHex', 'useBase');
+  setColor('accent', 'accentPick', 'accentHex', 'useAccent');
+  setColor('bg', 'bgPick', 'bgHex', 'useBg');
+  if (params.get('sh') === '1') document.getElementById('sameHue').checked = true;
+  const dm = params.get('dm');
+  if (dm === 'light' || dm === 'dark') checkRadio(`input[name=dispmode][value="${dm}"]`);
+  if (params.get('cvd') === '1') document.getElementById('cvdCheck').checked = true;
+  const sd = parseInt(params.get('seed'), 10);
+  if (Number.isInteger(sd) && sd > 0) seed = sd; // 不正な seed は既定値のまま
+  syncBaseUI(); syncAccentUI(); syncBgUI(); syncMetallicUI();
+  render(); // render 末尾の syncURL で URL は正規形に整う
+  return true;
+}
+
 function render() {
   updateSummaries();
   closeEditor();
@@ -1024,19 +1266,26 @@ function render() {
     currentPatterns = [];
     document.getElementById('output').innerHTML =
       '<div class="empty">言葉を選ぶか、スライダーを動かして「配色を生成」を押してください。</div>';
+    syncURL(false);
     return;
   }
   currentPatterns = makePatterns(b, seed);
   pristinePatterns = JSON.parse(JSON.stringify(currentPatterns));
   paintOutput();
+  syncURL(true);
 }
 function paintOutput() {
   const out = document.getElementById('output');
   out.innerHTML = currentPatterns.map((p, pi) => {
     const cols = ROLE_KEYS.map(k => hslToHex(p[k][0], p[k][1], p[k][2]));
     const [main, sub, accent, bgc] = cols;
+    // metallic 案の参考表示: メインのグラデ（データ・HEX表記・コピー値は単色のまま）
+    const mainGrad = p.metal ? metalGrad(p.main[0], p.main[1], p.main[2]) : null;
+    // metallic 案のボタンは main のグラデ＋textOn(main)（金属CTAの定番見え）。通常案は accent
+    const btnBg = p.metal ? mainGrad : accent;
+    const btnFg = p.metal ? textOn(main) : textOn(accent);
     const swatches = cols.map((hex, i) => `
-      <div class="sw" style="background:${hex};color:${textOn(hex)}" data-p="${pi}" data-r="${i}" title="クリックで色を微調整">
+      <div class="sw" style="background:${i === 0 && mainGrad ? mainGrad : hex};color:${textOn(hex)}" data-p="${pi}" data-r="${i}" title="クリックで色を微調整">
         <span class="role">${ROLE_NAMES[i]}</span>
         <span class="hex">${hex.toUpperCase()}</span>
       </div>`).join('');
@@ -1052,17 +1301,17 @@ function paintOutput() {
       <div class="mock-head">モック例（実際の面積比での見え方）</div>
       <div class="mock" style="background:${bgc}">
         <div class="mock-nav" style="border-bottom:1px solid ${sub}">
-          <b style="color:${main}"><i class="mock-logo-mark" style="background:${main}"></i>LOGO</b>
+          <b style="color:${main}"><i class="mock-logo-mark" style="background:${mainGrad || main}"></i>LOGO</b>
           <span class="mock-gnav">
             ${['MENU1', 'MENU2', 'MENU3', 'MENU4'].map(m =>
               `<span style="color:${textOn(bgc)}">${m}</span>`).join('')}
-            <span class="mock-navbtn" style="background:${accent};color:${textOn(accent)}">お問い合わせ</span>
+            <span class="mock-navbtn" style="background:${btnBg};color:${btnFg}">お問い合わせ</span>
           </span>
         </div>
         <div class="mock-hero">
           <b style="color:${main}">サイトの見出しテキスト</b>
           <small style="color:${textOn(bgc)}">本文のサンプルです。実際の面積比で配色の印象を確認できます。</small>
-          <span class="mock-btn" style="background:${accent};color:${textOn(accent)}">詳しく見る</span>
+          <span class="mock-btn" style="background:${btnBg};color:${btnFg}">詳しく見る</span>
         </div>
         <div class="mock-cards">
           ${['サービス', '実績', 'お知らせ'].map(t =>
@@ -1077,12 +1326,13 @@ function paintOutput() {
         <small>可読性:</small>
         ${contrastBadge('本文×背景', textOn(bgc), bgc)}
         ${contrastBadge('見出し×背景', main, bgc)}
-        ${contrastBadge('ボタン文字×ボタン', textOn(accent), accent)}
+        ${p.metal ? contrastBadge('ボタン文字×ボタン', textOn(main), main)
+                  : contrastBadge('ボタン文字×ボタン', textOn(accent), accent)}
         ${cvdOn ? cvdBadge({ 'メイン': main, 'サブ': sub, 'アクセント': accent }) : ''}
       </div>`;
     return `
       <div class="pattern">
-        <div class="pattern-head"><b>${p.name}</b><small>${p.note}</small></div>
+        <div class="pattern-head"><b>${p.name}</b><small>${p.note}</small><button type="button" class="css-copy" data-p="${pi}">CSS変数をコピー</button></div>
         <div class="swatches">${swatches}</div>
         ${ratioBar}
         ${mock}
@@ -1093,6 +1343,14 @@ function paintOutput() {
   // チップをクリックで微調整モーダルを開く
   out.querySelectorAll('.sw').forEach(sw => {
     sw.addEventListener('click', () => openEditor(+sw.dataset.p, +sw.dataset.r));
+  });
+  // 「CSS変数をコピー」: currentPatterns から都度 HEX を再計算するため微調整後の値が反映される
+  out.querySelectorAll('.css-copy').forEach(btn => {
+    btn.addEventListener('click', () => {
+      navigator.clipboard?.writeText(cssVarsOf(currentPatterns[+btn.dataset.p]));
+      btn.textContent = '✓ コピーしました';
+      setTimeout(() => { btn.textContent = 'CSS変数をコピー'; }, 900);
+    });
   });
 }
 
@@ -1106,11 +1364,33 @@ function buildColors() {
     let dot;
     if (c.colorful) dot = 'background:conic-gradient(from 0deg,#ff5252,#ffb142,#fdd835,#66bb6a,#26c6da,#42a5f5,#7e57c2,#ff5252)';
     else if (c.mono) dot = 'background:#9aa0a6';
+    else if (c.metallic) dot = 'background:' + metalGrad(c.h, c.s, c.l); // 金属風の見本ドット
     else dot = 'background:' + hslToHex(c.h, c.s, c.l);
     return `<label class="chip color">
         <input type="radio" name="colorfam" value="${c.key}"><span><i style="${dot}"></i>${c.name}</span>
       </label>`;
-  }).join('');
+  }).join('') + `
+    <div id="metallicVariant" class="mv" hidden>
+      ${Object.entries(METALLICS).map(([mk, def]) => `
+      <div class="mv-group" data-for="${mk}">
+        <span>${def.label}</span>
+        <div class="chips">
+          ${def.variants.map((v, i) => `
+          <label class="chip color">
+            <input type="radio" name="mv-${mk}" value="${v.key}"${i === 0 ? ' checked' : ''}><span><i style="background:${metalGrad(v.h, v.s, v.l)}"></i>${v.name}</span>
+          </label>`).join('')}
+        </div>
+      </div>`).join('')}
+    </div>`;
+}
+
+// gold/silver 選択時のみ、対応する色味サブ選択（#metallicVariant）を表示する
+function syncMetallicUI() {
+  const famKey = document.querySelector('input[name=colorfam]:checked')?.value || '';
+  const isMetal = !!COLORS.find(c => c.key === famKey)?.metallic;
+  const box = document.getElementById('metallicVariant');
+  box.hidden = !isMetal;
+  box.querySelectorAll('.mv-group').forEach(g => { g.hidden = g.dataset.for !== famKey; });
 }
 
 function buildTones() {
@@ -1124,18 +1404,31 @@ function buildTones() {
     </label>`).join('');
 }
 
+// ジャンル（業種）だけは色相の平均で濁らないよう単一選択（radio）にする
+const GENRE_CAT = 'ジャンル（業種）';
 function buildKeywords() {
   const box = document.getElementById('keywords');
-  box.innerHTML = Object.entries(KEYWORDS).map(([cat, items]) => `
+  box.innerHTML = Object.entries(KEYWORDS).map(([cat, items]) => {
+    const isGenre = cat === GENRE_CAT;
+    // ジャンルは radio ＋ 先頭「指定なし」(value="" = colorfam/tone の既存「指定なし」と同型)
+    const none = isGenre ? `
+          <label class="chip">
+            <input type="radio" name="kwgenre" value="" checked><span>指定なし</span>
+          </label>` : '';
+    return `
     <div class="kw-group">
       <span>${cat}</span>
-      <div class="chips">
-        ${Object.keys(items).map(k => `
+      <div class="chips">${none}
+        ${Object.keys(items).map(k => isGenre ? `
+          <label class="chip">
+            <input type="radio" name="kwgenre" value="${cat}/${k}"><span>${k}</span>
+          </label>` : `
           <label class="chip">
             <input type="checkbox" value="${cat}/${k}"><span>${k}</span>
           </label>`).join('')}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // --- 基準カラーの操作（カラーピッカーとテキストを同期・ON/OFF切替）---
@@ -1285,6 +1578,13 @@ buildKeywords();
 syncBaseUI();
 syncAccentUI();
 syncBgUI();
+syncMetallicUI();
+
+// カラー選択が変わったら色味サブ選択の表示を同期する（委譲リスナー）
+document.getElementById('colorfam').addEventListener('change', syncMetallicUI);
+
+// URLパラメータがあれば状態を復元して再生成する（共有リンクを開いたとき）
+restoreFromURL();
 
 // --- トーンチップ: 選ぶとスライダー3本をプリセット位置へ動かす ---
 document.getElementById('tones').addEventListener('change', (e) => {
@@ -1318,9 +1618,19 @@ document.getElementById('gen').addEventListener('click', () => {
   seed = Math.floor(Math.random() * 1e9) || 1;
   render();
 });
+// 「URLをコピー」: render 末尾の syncURL により location.href は常に現在状態を指す
+document.getElementById('share').addEventListener('click', (e) => {
+  navigator.clipboard?.writeText(location.href);
+  e.target.textContent = '✓ コピーしました';
+  setTimeout(() => { e.target.textContent = 'URLをコピー'; }, 900);
+});
 document.getElementById('reset').addEventListener('click', () => {
   document.querySelectorAll('#keywords input').forEach(el => el.checked = false);
+  document.querySelector('input[name=kwgenre][value=""]').checked = true; // ジャンルは「指定なし」へ
   document.querySelector('input[name=colorfam][value=""]').checked = true;
+  document.querySelector('input[name=mv-gold][value="yellow"]').checked = true;  // 色味は先頭値へ
+  document.querySelector('input[name=mv-silver][value="cool"]').checked = true;
+  syncMetallicUI();
   ['warm','gender','formal','light','vivid','muted','contrast','age','season']
     .forEach(id => document.getElementById(id).value = 0);
   useBase.checked = false; syncBaseUI();
