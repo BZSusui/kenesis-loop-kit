@@ -266,8 +266,17 @@
     padding: 12px 16px;
     border-bottom: 1px solid var(--line);
   }
-  .pattern-head b { font-size: 14px; }
-  .pattern-head small { color: var(--muted); font-size: 12px; }
+  .pattern-head b { font-size: 14px; flex: 0 0 auto; }
+  .pattern-head small { color: var(--muted); font-size: 12px; flex: 1; min-width: 0; text-align: right; margin: 0 10px; }
+  .pattern-head .css-copy {
+    flex: 0 0 auto;
+    padding: 5px 12px;
+    font-size: 11px; font-weight: 600;
+    border: 1px solid var(--line); border-radius: 999px;
+    background: #fff; color: var(--muted);
+    cursor: pointer;
+  }
+  .pattern-head .css-copy:hover { color: var(--ink); border-color: var(--muted); }
   .swatches { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .sw {
     aspect-ratio: 3 / 2;
@@ -1155,6 +1164,11 @@ let currentPatterns = [];
 let pristinePatterns = []; // 「元に戻す」用の生成直後スナップショット
 const ROLE_NAMES = ['メイン', 'サブ', 'アクセント', '背景'];
 const ROLE_KEYS  = ['main', 'sub', 'accent', 'bg'];
+// 案の4色を CSS カスタムプロパティ形式で書き出す（常に単色HEX。微調整後の値も反映される）
+function cssVarsOf(p) {
+  const [main, sub, accent, bgc] = ROLE_KEYS.map(k => hslToHex(p[k][0], p[k][1], p[k][2]));
+  return `:root {\n  --color-main: ${main};\n  --color-sub: ${sub};\n  --color-accent: ${accent};\n  --color-bg: ${bgc};\n}`;
+}
 function render() {
   updateSummaries();
   closeEditor();
@@ -1227,7 +1241,7 @@ function paintOutput() {
       </div>`;
     return `
       <div class="pattern">
-        <div class="pattern-head"><b>${p.name}</b><small>${p.note}</small></div>
+        <div class="pattern-head"><b>${p.name}</b><small>${p.note}</small><button type="button" class="css-copy" data-p="${pi}">CSS変数をコピー</button></div>
         <div class="swatches">${swatches}</div>
         ${ratioBar}
         ${mock}
@@ -1238,6 +1252,14 @@ function paintOutput() {
   // チップをクリックで微調整モーダルを開く
   out.querySelectorAll('.sw').forEach(sw => {
     sw.addEventListener('click', () => openEditor(+sw.dataset.p, +sw.dataset.r));
+  });
+  // 「CSS変数をコピー」: currentPatterns から都度 HEX を再計算するため微調整後の値が反映される
+  out.querySelectorAll('.css-copy').forEach(btn => {
+    btn.addEventListener('click', () => {
+      navigator.clipboard?.writeText(cssVarsOf(currentPatterns[+btn.dataset.p]));
+      btn.textContent = '✓ コピーしました';
+      setTimeout(() => { btn.textContent = 'CSS変数をコピー'; }, 900);
+    });
   });
 }
 
