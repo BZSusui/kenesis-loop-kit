@@ -790,8 +790,10 @@ function computeBase() {
   // チェックされた言葉を集める
   const checked = [];
   document.querySelectorAll('#keywords input:checked').forEach(el => {
+    if (!el.value) return;                          // ジャンル「指定なし」radio を除外
     const [cat, key] = el.value.split('/');
-    checked.push(KEYWORDS[cat][key]);
+    const def = KEYWORDS[cat] && KEYWORDS[cat][key];
+    if (def) checked.push(def);                     // 未知値も黙って無視（URL復元の不正値対策を兼ねる）
   });
 
   // スライダー -1..1
@@ -993,7 +995,7 @@ function updateSummaries() {
   const toneKey = document.querySelector('input[name=tone]:checked')?.value || '';
   const tone = TONES.find(t => t.key === toneKey);
   set('sumTone', tone ? tone.name : '');
-  const kw = document.querySelectorAll('#keywords input:checked').length;
+  const kw = [...document.querySelectorAll('#keywords input:checked')].filter(el => el.value).length;
   set('sumKw', kw ? `${kw}個選択` : '');
   const baseParts = [];
   if (document.getElementById('useBase').checked) baseParts.push(document.getElementById('baseHex').value);
@@ -1124,18 +1126,31 @@ function buildTones() {
     </label>`).join('');
 }
 
+// ジャンル（業種）だけは色相の平均で濁らないよう単一選択（radio）にする
+const GENRE_CAT = 'ジャンル（業種）';
 function buildKeywords() {
   const box = document.getElementById('keywords');
-  box.innerHTML = Object.entries(KEYWORDS).map(([cat, items]) => `
+  box.innerHTML = Object.entries(KEYWORDS).map(([cat, items]) => {
+    const isGenre = cat === GENRE_CAT;
+    // ジャンルは radio ＋ 先頭「指定なし」(value="" = colorfam/tone の既存「指定なし」と同型)
+    const none = isGenre ? `
+          <label class="chip">
+            <input type="radio" name="kwgenre" value="" checked><span>指定なし</span>
+          </label>` : '';
+    return `
     <div class="kw-group">
       <span>${cat}</span>
-      <div class="chips">
-        ${Object.keys(items).map(k => `
+      <div class="chips">${none}
+        ${Object.keys(items).map(k => isGenre ? `
+          <label class="chip">
+            <input type="radio" name="kwgenre" value="${cat}/${k}"><span>${k}</span>
+          </label>` : `
           <label class="chip">
             <input type="checkbox" value="${cat}/${k}"><span>${k}</span>
           </label>`).join('')}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // --- 基準カラーの操作（カラーピッカーとテキストを同期・ON/OFF切替）---
@@ -1320,6 +1335,7 @@ document.getElementById('gen').addEventListener('click', () => {
 });
 document.getElementById('reset').addEventListener('click', () => {
   document.querySelectorAll('#keywords input').forEach(el => el.checked = false);
+  document.querySelector('input[name=kwgenre][value=""]').checked = true; // ジャンルは「指定なし」へ
   document.querySelector('input[name=colorfam][value=""]').checked = true;
   ['warm','gender','formal','light','vivid','muted','contrast','age','season']
     .forEach(id => document.getElementById(id).value = 0);
