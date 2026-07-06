@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ムードカラー ジェネレーター v1.0</title>
+<title>ムードカラー ジェネレーター v1.1</title>
 <style>
   :root {
     --bg: #f6f7f9;
@@ -26,6 +26,7 @@
     text-align: center;
   }
   header h1 { margin: 0 0 6px; font-size: 22px; }
+  header h1 small { font-size: 12px; font-weight: 600; color: var(--muted); vertical-align: 2px; }
   header p { margin: 0; color: var(--muted); font-size: 13px; }
   .wrap {
     max-width: 1180px;
@@ -160,6 +161,7 @@
     cursor: pointer;
   }
   #gen { background: var(--accent); color: #fff; }
+  #share { background: #eef0f3; color: var(--ink); flex: 0 0 auto; padding: 11px 14px; font-size: 13px; }
   #reset { background: #eef0f3; color: var(--ink); flex: 0 0 auto; padding: 11px 16px; }
 
   .basecolor { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -375,7 +377,7 @@
 </head>
 <body>
 <header>
-  <h1>ムードカラー ジェネレーター</h1>
+  <h1>ムードカラー ジェネレーター <small>v1.1</small></h1>
   <p>言葉と割合から、メイン / サブ / アクセント / 背景の配色を3案つくります</p>
 </header>
 
@@ -509,6 +511,7 @@
 
     <div class="btn-row">
       <button id="gen">配色を生成</button>
+      <button id="share" type="button">URLをコピー</button>
       <button id="reset">リセット</button>
     </div>
   </div>
@@ -1169,6 +1172,89 @@ function cssVarsOf(p) {
   const [main, sub, accent, bgc] = ROLE_KEYS.map(k => hslToHex(p[k][0], p[k][1], p[k][2]));
   return `:root {\n  --color-main: ${main};\n  --color-sub: ${sub};\n  --color-accent: ${accent};\n  --color-bg: ${bgc};\n}`;
 }
+/* ===== URL共有 ===========================================================
+   入力状態＋seed を URLSearchParams に載せ、render のたびに history.replaceState で
+   同期する（アドレスバーのURLが常に現在の状態を指す）。乱数はシード付きのため
+   「入力状態＋seed」だけで生成結果を完全再現できる（微調整の手編集のみ対象外）。 */
+const URL_SLIDERS = ['warm','gender','formal','light','vivid','muted','contrast','age','season'];
+function syncURL(hasInput) {
+  if (!hasInput) { history.replaceState(null, '', location.pathname); return; } // 初期状態はパラメータ無し
+  const p = new URLSearchParams();
+  p.set('v', '1'); // スキーマ版（将来の互換判定用）
+  const famKey = document.querySelector('input[name=colorfam]:checked')?.value || '';
+  if (famKey) {
+    p.set('c', famKey);
+    if (COLORS.find(c => c.key === famKey)?.metallic) {
+      const mv = document.querySelector(`input[name=mv-${famKey}]:checked`)?.value;
+      if (mv) p.set('mv', mv);
+    }
+  }
+  const toneKey = document.querySelector('input[name=tone]:checked')?.value || '';
+  if (toneKey) p.set('t', toneKey);
+  const kws = [...document.querySelectorAll('#keywords input:checked')].map(el => el.value).filter(Boolean);
+  if (kws.length) p.set('k', kws.join(','));
+  URL_SLIDERS.forEach(id => {
+    const v = +document.getElementById(id).value;
+    if (v) p.set(id, String(v));
+  });
+  if (document.getElementById('useBase').checked) p.set('base', document.getElementById('basePick').value.slice(1).toLowerCase());
+  if (document.getElementById('useAccent').checked) p.set('accent', document.getElementById('accentPick').value.slice(1).toLowerCase());
+  if (document.getElementById('useBg').checked) p.set('bg', document.getElementById('bgPick').value.slice(1).toLowerCase());
+  if (document.getElementById('sameHue').checked) p.set('sh', '1');
+  const disp = document.querySelector('input[name=dispmode]:checked')?.value || 'auto';
+  if (disp !== 'auto') p.set('dm', disp);
+  if (document.getElementById('cvdCheck').checked) p.set('cvd', '1');
+  p.set('seed', String(seed));
+  history.replaceState(null, '', location.pathname + '?' + p.toString());
+}
+
+// ページ読み込み時の復元。不正値・未知キーはすべて黙って無視する（fail-safe）
+function restoreFromURL() {
+  const params = new URLSearchParams(location.search);
+  const KNOWN = ['v', 'c', 'mv', 't', 'k', 'base', 'accent', 'bg', 'sh', 'dm', 'cvd', 'seed', ...URL_SLIDERS];
+  if (![...params.keys()].some(k => KNOWN.includes(k))) return false; // 既知キー無し → 従来どおり空の初期表示
+  const checkRadio = (sel) => { const el = document.querySelector(sel); if (el) el.checked = true; };
+  const famKey = params.get('c') || '';
+  if (famKey) checkRadio(`input[name=colorfam][value="${CSS.escape(famKey)}"]`);
+  const mv = params.get('mv');
+  if (mv && METALLICS[famKey]) checkRadio(`input[name=mv-${famKey}][value="${CSS.escape(mv)}"]`);
+  const t = params.get('t');
+  if (t) checkRadio(`input[name=tone][value="${CSS.escape(t)}"]`);
+  const k = params.get('k');
+  if (k) {
+    const inputs = [...document.querySelectorAll('#keywords input')];
+    k.split(',').forEach(val => {
+      const el = inputs.find(i => i.value === val); // 未知keyは黙って無視
+      if (el) el.checked = true;
+    });
+  }
+  URL_SLIDERS.forEach(id => {
+    if (!params.has(id)) return;
+    const v = parseInt(params.get(id), 10);
+    if (!Number.isNaN(v)) document.getElementById(id).value = clamp(v, -100, 100);
+  });
+  const hex6 = /^[0-9a-f]{6}$/i;
+  const setColor = (key, pickId, hexId, useId) => {
+    const v = params.get(key);
+    if (!v || !hex6.test(v)) return;
+    document.getElementById(pickId).value = '#' + v.toLowerCase();
+    document.getElementById(hexId).value = '#' + v.toLowerCase();
+    document.getElementById(useId).checked = true;
+  };
+  setColor('base', 'basePick', 'baseHex', 'useBase');
+  setColor('accent', 'accentPick', 'accentHex', 'useAccent');
+  setColor('bg', 'bgPick', 'bgHex', 'useBg');
+  if (params.get('sh') === '1') document.getElementById('sameHue').checked = true;
+  const dm = params.get('dm');
+  if (dm === 'light' || dm === 'dark') checkRadio(`input[name=dispmode][value="${dm}"]`);
+  if (params.get('cvd') === '1') document.getElementById('cvdCheck').checked = true;
+  const sd = parseInt(params.get('seed'), 10);
+  if (Number.isInteger(sd) && sd > 0) seed = sd; // 不正な seed は既定値のまま
+  syncBaseUI(); syncAccentUI(); syncBgUI(); syncMetallicUI();
+  render(); // render 末尾の syncURL で URL は正規形に整う
+  return true;
+}
+
 function render() {
   updateSummaries();
   closeEditor();
@@ -1177,11 +1263,13 @@ function render() {
     currentPatterns = [];
     document.getElementById('output').innerHTML =
       '<div class="empty">言葉を選ぶか、スライダーを動かして「配色を生成」を押してください。</div>';
+    syncURL(false);
     return;
   }
   currentPatterns = makePatterns(b, seed);
   pristinePatterns = JSON.parse(JSON.stringify(currentPatterns));
   paintOutput();
+  syncURL(true);
 }
 function paintOutput() {
   const out = document.getElementById('output');
@@ -1492,6 +1580,9 @@ syncMetallicUI();
 // カラー選択が変わったら色味サブ選択の表示を同期する（委譲リスナー）
 document.getElementById('colorfam').addEventListener('change', syncMetallicUI);
 
+// URLパラメータがあれば状態を復元して再生成する（共有リンクを開いたとき）
+restoreFromURL();
+
 // --- トーンチップ: 選ぶとスライダー3本をプリセット位置へ動かす ---
 document.getElementById('tones').addEventListener('change', (e) => {
   const t = TONES.find(x => x.key === e.target.value);
@@ -1523,6 +1614,12 @@ document.getElementById('sliderReset').addEventListener('click', () => {
 document.getElementById('gen').addEventListener('click', () => {
   seed = Math.floor(Math.random() * 1e9) || 1;
   render();
+});
+// 「URLをコピー」: render 末尾の syncURL により location.href は常に現在状態を指す
+document.getElementById('share').addEventListener('click', (e) => {
+  navigator.clipboard?.writeText(location.href);
+  e.target.textContent = '✓ コピーしました';
+  setTimeout(() => { e.target.textContent = 'URLをコピー'; }, 900);
 });
 document.getElementById('reset').addEventListener('click', () => {
   document.querySelectorAll('#keywords input').forEach(el => el.checked = false);
