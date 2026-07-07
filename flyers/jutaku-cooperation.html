@@ -144,9 +144,8 @@
     content:"";position:absolute;right:-6mm;top:-18mm;
     width:60mm;height:60mm;border-radius:50%;background:rgba(255,255,255,.13);
   }
-  .incentive .pct-wrap{ flex:0 0 auto;display:flex;align-items:baseline;gap:2mm;line-height:1; }
-  .incentive .pct{ font-size:54pt;font-weight:900;letter-spacing:-.02em;text-shadow:0 1px 0 rgba(0,0,0,.08); }
-  .incentive .pct .u{ font-size:24pt;font-weight:900; }
+  .incentive .pct-wrap{ flex:0 0 auto;display:flex;align-items:center;justify-content:center; }
+  .incentive .pct-wrap svg{ width:30mm;height:30mm;stroke:#fff;fill:none;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 0 rgba(0,0,0,.08)); }
   .incentive .txt{ flex:1; }
   .incentive .txt .ttl{ font-size:16pt;font-weight:900;letter-spacing:.02em; }
   .incentive .txt .ttl small{
@@ -160,7 +159,8 @@
     display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
   }
   .incentive .seal .a{ font-size:7pt;font-weight:800;letter-spacing:.06em; }
-  .incentive .seal .b{ font-size:13pt;font-weight:900;line-height:1; }
+  .incentive .seal .b{ margin-top:1.2mm;display:flex;align-items:center;justify-content:center; }
+  .incentive .seal .b svg{ width:9mm;height:9mm;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round; }
 
   /* ===== お問い合わせ帯 ===== */
   .contact{
@@ -286,12 +286,12 @@
 
   <!-- ===== 受託インセンティブ（下部・横いっぱい） ===== -->
   <section class="incentive">
-    <div class="pct-wrap"><span class="pct">5<span class="u">%</span></span></div>
+    <div class="pct-wrap"><svg viewBox="0 0 24 24"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div>
     <div class="txt">
       <div class="ttl">受託インセンティブ<small>計画中</small></div>
-      <div class="desc">案件化にご協力いただいた方へ、受託金額の<b>5%</b>を還元する制度を準備中です。あなたの一声が、評価とリターンにつながります。</div>
+      <div class="desc">案件化にご協力いただいた方へ、売上の<b>一部</b>を還元する制度を準備中です。あなたの一声が、評価とリターンにつながります。</div>
     </div>
-    <div class="seal"><span class="a">REWARD</span><span class="b">5%</span></div>
+    <div class="seal"><span class="a">REWARD</span><span class="b"><svg viewBox="0 0 24 24"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></span></div>
   </section>
 
   <!-- ===== お問い合わせ ===== -->
