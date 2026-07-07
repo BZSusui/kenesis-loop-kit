@@ -9,12 +9,14 @@ Kenesis Loop Kitのすべての変更はこのファイルに記録されます�
 ## [Unreleased]
 
 ### Added
+- 配色ジェネレーター `palette/index.html` v1.2（KLK-005）: CSS変数コピーに「HEXコード一覧」形式を追加し切替可能に（`hexListOf`／`copyTextOf`・グローバル `copyFormat` 保持・微調整後の値を反映）／KLK-005 検証 `tests/site/check_klk005.py`（静的S1-S13）・`tests/site/smoke_klk005.node.js`（動的D1-D7）・`tests/test_palette_klk005.py`（unittestラッパー）
 - 配色ジェネレーター `palette/index.html` v1.1（KLK-004）: メインカラーの傾向に「ゴールド」「シルバー」を追加（色味サブ選択6変種・相性パートナーによる3案生成・最終段クランプ `clampMetalBand`・金属風グラデーションの参考表示）／CSS変数コピー（`--color-main` 等4変数）／URL共有（選択状態＋シードをURLパラメータ化・`replaceState` 同期）／生成ボタンを上段横長に分離
 - KLK-004 検証: `tests/site/check_klk004.py`（静的S1-S12）・`tests/site/smoke_klk004.node.js`（動的D1-D6）・`tests/test_palette_klk004.py`（unittestラッパー、node無し環境はskip）
 - 配色ジェネレーター `palette/index.html` v1.0（KLK-003）: 言葉・スライダーから配色3案を生成するツール。同系色モード・トーンチップ（PCCS風9種）・WCAGコントラスト比バッジ・色覚多様性チェック・70:25:5比率バー＋サイト風モック・H/S/L微調整モーダル等
 - トップページFV刷新の静的サンプル `site/`（KLK-002）と設計書・検証テスト
 
 ### Changed
+- 配色ジェネレーターの可読性バッジをWCAG等級から日常語＋信号色へ変更（KLK-005・読みやすい◎/小さい文字は注意△/読みにくい✕、注意・NG時に直し方を提示、生数値と正式等級はツールチップへ集約。判定ロジックは不変）
 - 配色ジェネレーターの「ジャンル（業種）」を単一選択（ラジオ＋指定なし）に変更（KLK-004・複数業種の色相平均による濁りを解消）
 
 ## [1.2.0] - 2026-07-05
