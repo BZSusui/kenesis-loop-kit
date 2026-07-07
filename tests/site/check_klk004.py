@@ -175,7 +175,9 @@ check(
 copy_btn = 'class="css-copy" data-p="${pi}"' in PAINT_BLK and "pattern-head" in PAINT_BLK
 copy_bind = "querySelectorAll('.css-copy')" in PAINT_BLK
 copy_clip = "navigator.clipboard" in PAINT_BLK
-copy_current = "cssVarsOf(currentPatterns[+btn.dataset.p])" in PAINT_BLK  # 微調整後の値を都度再計算
+# 微調整後の値を都度再計算（KLK-005 で cssVarsOf → copyTextOf に差し替え。都度 currentPatterns 参照は維持）
+copy_current = ("cssVarsOf(currentPatterns[+btn.dataset.p])" in PAINT_BLK
+                or "copyTextOf(currentPatterns[+btn.dataset.p])" in PAINT_BLK)
 root_tpl = all(v in CSSVARS_BLK for v in
                [":root {", "--color-main:", "--color-sub:", "--color-accent:", "--color-bg:"])
 check(
@@ -251,12 +253,13 @@ check(
 # ===========================================================================
 # S11 版数
 # ===========================================================================
-title_ok = bool(re.search(r"<title>[^<]*v1\.1[^<]*</title>", HTML))
+# KLK-005 で v1.2 へ更新。v1.1 以上（>=v1.1）を許容し、v1.0 の残存のみ禁止する
+title_ok = bool(re.search(r"<title>[^<]*v1\.[1-9][^<]*</title>", HTML))
 no_old = "v1.0" not in HTML
 check(
-    "S11 版数 (<title>にv1.1, ファイル内にv1.0が残存しない)",
+    "S11 版数 (<title>にv1.1以上, ファイル内にv1.0が残存しない)",
     title_ok and no_old,
-    f"title v1.1={title_ok}, v1.0残存なし={no_old}",
+    f"title v1.1以上={title_ok}, v1.0残存なし={no_old}",
 )
 
 # ===========================================================================

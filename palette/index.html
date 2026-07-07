@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ムードカラー ジェネレーター v1.1</title>
+<title>ムードカラー ジェネレーター v1.2</title>
 <style>
   :root {
     --bg: #f6f7f9;
@@ -253,6 +253,15 @@
   .cbadge.lg  { background: #fdf0dd; color: #b26a00; }
   .cbadge.ng  { background: #fde3e3; color: #c22525; }
 
+  /* コピー形式の切替（出力パネルの外・再描画対象外のグローバルUI） */
+  #outputTools {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+    margin-bottom: 12px;
+  }
+  #outputTools[hidden] { display: none; }
+  #outputTools > span { font-size: 12px; color: var(--muted); }
+  #outputTools .chip span { padding: 5px 12px; font-size: 12px; }
+
   .patterns { display: grid; gap: 16px; }
   .pattern {
     background: var(--card);
@@ -378,7 +387,7 @@
 </head>
 <body>
 <header>
-  <h1>ムードカラー ジェネレーター <small>v1.1</small></h1>
+  <h1>ムードカラー ジェネレーター <small>v1.2</small></h1>
   <p>言葉と割合から、メイン / サブ / アクセント / 背景の配色を3案つくります</p>
 </header>
 
@@ -520,8 +529,16 @@
   </div>
 
   <!-- 出力パネル -->
-  <div id="output" class="patterns">
-    <div class="empty">言葉を選ぶか、スライダーを動かして「配色を生成」を押してください。</div>
+  <div class="output-col">
+    <!-- コピー形式の切替（#output の外＝paintOutput の再描画対象外に置き、選択状態を保持する） -->
+    <div id="outputTools" hidden>
+      <span>コピー形式:</span>
+      <label class="chip"><input type="radio" name="copyfmt" value="cssvars" checked><span>CSS変数</span></label>
+      <label class="chip"><input type="radio" name="copyfmt" value="hexlist"><span>HEX一覧</span></label>
+    </div>
+    <div id="output" class="patterns">
+      <div class="empty">言葉を選ぶか、スライダーを動かして「配色を生成」を押してください。</div>
+    </div>
   </div>
 </div>
 
@@ -850,13 +867,17 @@ function contrastRatio(hex1, hex2) {
   return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 }
 function contrastBadge(label, fg, bg) {
-  const r = contrastRatio(fg, bg);
-  let cls, judge;
-  if (r >= 7)        { cls = 'aaa'; judge = 'AAA'; }
-  else if (r >= 4.5) { cls = 'aa';  judge = 'AA'; }
-  else if (r >= 3)   { cls = 'lg';  judge = '大文字のみ'; }
-  else               { cls = 'ng';  judge = '✕'; }
-  return `<span class="cbadge ${cls}" title="コントラスト比 ${r.toFixed(2)}:1（AAA≧7 / AA≧4.5 / 大文字≧3）">${label} ${r.toFixed(1)} ${judge}</span>`;
+  const r = contrastRatio(fg, bg);          // 判定ロジックは不変
+  // 日常語＋信号色（緑=aaa / 黄=lg / 赤=ng）へ翻訳。生数値・WCAG正式等級は title へ集約。
+  let grade, cls, daily, hint;
+  if (r >= 7)        { grade = 'AAA';        cls = 'aaa'; daily = '読みやすい ◎';       hint = ''; }
+  else if (r >= 4.5) { grade = 'AA';         cls = 'aaa'; daily = '読みやすい ◎';       hint = ''; }
+  else if (r >= 3)   { grade = '大文字のみ'; cls = 'lg';  daily = '小さい文字は注意 △'; hint = '文字を濃く'; }
+  else               { grade = '✕';          cls = 'ng';  daily = '読みにくい ✕';       hint = '文字を濃く/背景を明るく'; }
+  const body = hint ? `${label} ${daily} ・ ${hint}` : `${label} ${daily}`;
+  const tip = `コントラスト比 ${r.toFixed(2)}:1 ・ WCAG ${grade}（AAA≧7 / AA≧4.5 / 大文字≧3）`
+            + (hint ? '。文字色を濃くするか背景を明るくすると読みやすくなります' : '');
+  return `<span class="cbadge ${cls}" title="${tip}">${body}</span>`;
 }
 
 /* ===== 色覚多様性チェック ================================================
@@ -1168,12 +1189,23 @@ let seed = Math.floor(mulberry32(1234)() * 1e9) || 1;
 // 生成結果を保持し、チップクリックの微調整モーダルから編集できるようにする
 let currentPatterns = [];
 let pristinePatterns = []; // 「元に戻す」用の生成直後スナップショット
+// コピー形式の選択（'cssvars'=エンジニア向け / 'hexlist'=デザイナー向け）。
+// 生成結果ではなく引き渡しの好みなので URL共有・リセットの対象には含めない。
+let copyFormat = 'cssvars';   // 'cssvars' | 'hexlist'
 const ROLE_NAMES = ['メイン', 'サブ', 'アクセント', '背景'];
 const ROLE_KEYS  = ['main', 'sub', 'accent', 'bg'];
 // 案の4色を CSS カスタムプロパティ形式で書き出す（常に単色HEX。微調整後の値も反映される）
 function cssVarsOf(p) {
   const [main, sub, accent, bgc] = ROLE_KEYS.map(k => hslToHex(p[k][0], p[k][1], p[k][2]));
   return `:root {\n  --color-main: ${main};\n  --color-sub: ${sub};\n  --color-accent: ${accent};\n  --color-bg: ${bgc};\n}`;
+}
+// デザイナー向け: 4色を「名前 HEX」の一覧で書き出す（常に単色HEX・改行区切り）
+function hexListOf(p) {
+  return ROLE_KEYS.map((k, i) => `${ROLE_NAMES[i]} ${hslToHex(p[k][0], p[k][1], p[k][2])}`).join('\n');
+}
+// コピー本文の呼び分け（純粋関数）。copyFormat をクリック時に参照するため最新形式でコピーされる。
+function copyTextOf(p) {
+  return copyFormat === 'hexlist' ? hexListOf(p) : cssVarsOf(p);
 }
 /* ===== URL共有 ===========================================================
    入力状態＋seed を URLSearchParams に載せ、render のたびに history.replaceState で
@@ -1266,16 +1298,20 @@ function render() {
     currentPatterns = [];
     document.getElementById('output').innerHTML =
       '<div class="empty">言葉を選ぶか、スライダーを動かして「配色を生成」を押してください。</div>';
+    document.getElementById('outputTools').hidden = true;   // 空表示のときはコピー形式トグルを隠す
     syncURL(false);
     return;
   }
   currentPatterns = makePatterns(b, seed);
   pristinePatterns = JSON.parse(JSON.stringify(currentPatterns));
+  document.getElementById('outputTools').hidden = false;    // 出力があるときトグルを見せる
   paintOutput();
   syncURL(true);
 }
 function paintOutput() {
   const out = document.getElementById('output');
+  // コピーボタンの表記を現在の形式に合わせる（切替時は paintOutput のみ再実行して更新）
+  const copyLabel = copyFormat === 'hexlist' ? 'HEXコード一覧をコピー' : 'CSS変数をコピー';
   out.innerHTML = currentPatterns.map((p, pi) => {
     const cols = ROLE_KEYS.map(k => hslToHex(p[k][0], p[k][1], p[k][2]));
     const [main, sub, accent, bgc] = cols;
@@ -1332,7 +1368,7 @@ function paintOutput() {
       </div>`;
     return `
       <div class="pattern">
-        <div class="pattern-head"><b>${p.name}</b><small>${p.note}</small><button type="button" class="css-copy" data-p="${pi}">CSS変数をコピー</button></div>
+        <div class="pattern-head"><b>${p.name}</b><small>${p.note}</small><button type="button" class="css-copy" data-p="${pi}">${copyLabel}</button></div>
         <div class="swatches">${swatches}</div>
         ${ratioBar}
         ${mock}
@@ -1344,12 +1380,13 @@ function paintOutput() {
   out.querySelectorAll('.sw').forEach(sw => {
     sw.addEventListener('click', () => openEditor(+sw.dataset.p, +sw.dataset.r));
   });
-  // 「CSS変数をコピー」: currentPatterns から都度 HEX を再計算するため微調整後の値が反映される
+  // コピー: currentPatterns から都度 HEX を再計算し、copyFormat も都度参照するため
+  // 微調整後の値と選択中の形式（CSS変数/HEX一覧）の両方が反映される
   out.querySelectorAll('.css-copy').forEach(btn => {
     btn.addEventListener('click', () => {
-      navigator.clipboard?.writeText(cssVarsOf(currentPatterns[+btn.dataset.p]));
+      navigator.clipboard?.writeText(copyTextOf(currentPatterns[+btn.dataset.p]));
       btn.textContent = '✓ コピーしました';
-      setTimeout(() => { btn.textContent = 'CSS変数をコピー'; }, 900);
+      setTimeout(() => { btn.textContent = copyLabel; }, 900);
     });
   });
 }
@@ -1650,6 +1687,14 @@ document.querySelectorAll('#colorfam input, #keywords input, .panel .slider inpu
   el.addEventListener('input', render));
 document.querySelectorAll('#dispmode input').forEach(el => el.addEventListener('change', render));
 document.getElementById('cvdCheck').addEventListener('change', render);
+// コピー形式トグル: UIは #output の外で再描画されないため静的に1回だけ登録する。
+// 変更時は paintOutput のみ再実行し（render は呼ばない）、微調整済みの currentPatterns を保持したまま
+// ボタン表記だけを新形式へ更新する。
+document.querySelectorAll('input[name=copyfmt]').forEach(el =>
+  el.addEventListener('change', () => {
+    copyFormat = document.querySelector('input[name=copyfmt]:checked').value;
+    if (currentPatterns.length) paintOutput();
+  }));
 </script>
 </body>
 </html>
