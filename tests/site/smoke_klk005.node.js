@@ -267,6 +267,35 @@ check('D6 例外安全: 極端色でも contrastBadge/hexListOf/copyTextOf が�
   ps.forEach(p => { hexListOf(p); copyFormat = 'hexlist'; copyTextOf(p); copyFormat = 'cssvars'; copyTextOf(p); });
 });
 
+// ===== D7: 閾値 4.5 / 3 の境界で日常語＋信号クラスが正しく切り替わる =====
+// D1 は帯内の代表色、D2 は WCAG 等級（title）を見る。D7 は body の日常語ラベルと
+// 信号クラスが 4.5 と 3 の**境界を跨いだ瞬間に**◎↔△↔✕ / aaa↔lg↔ng へ切り替わる
+// ことを、境界の直上・直下の作為色で固定する（判定閾値が不変であることの担保）。
+check('D7 境界切替: 4.5/3 の直上直下で 日常語(◎/△/✕) と 信号クラス(aaa/lg/ng) が切り替わる', () => {
+  const partsAt = (targetRatio) => {
+    const hex = grayFor(targetRatio);
+    return { r: contrastRatio(hex, '#ffffff'), p: badgeParts(contrastBadge('x', hex, '#ffffff')) };
+  };
+  // 4.5 境界: 直上は ◎/aaa、直下は △/lg
+  const above45 = partsAt(4.7);
+  assert(above45.r >= 4.5, '4.5直上の作為色が帯外: r=' + above45.r);
+  assert(above45.p.cls === 'aaa' && above45.p.body.includes('読みやすい ◎'),
+    '4.5直上が ◎/aaa でない: ' + above45.p.cls + '/' + above45.p.body);
+  const below45 = partsAt(4.3);
+  assert(below45.r >= 3 && below45.r < 4.5, '4.5直下の作為色が帯外: r=' + below45.r);
+  assert(below45.p.cls === 'lg' && below45.p.body.includes('小さい文字は注意 △'),
+    '4.5直下が △/lg でない: ' + below45.p.cls + '/' + below45.p.body);
+  // 3 境界: 直上は △/lg、直下は ✕/ng
+  const above3 = partsAt(3.2);
+  assert(above3.r >= 3 && above3.r < 4.5, '3直上の作為色が帯外: r=' + above3.r);
+  assert(above3.p.cls === 'lg' && above3.p.body.includes('小さい文字は注意 △'),
+    '3直上が △/lg でない: ' + above3.p.cls + '/' + above3.p.body);
+  const below3 = partsAt(2.8);
+  assert(below3.r < 3, '3直下の作為色が帯外: r=' + below3.r);
+  assert(below3.p.cls === 'ng' && below3.p.body.includes('読みにくい ✕'),
+    '3直下が ✕/ng でない: ' + below3.p.cls + '/' + below3.p.body);
+});
+
 return results;
 `;
 

@@ -265,6 +265,25 @@ check(
 )
 
 # ===========================================================================
+# S13 cvdバッジ信号色の値不変（退行防止の主眼）
+# ---------------------------------------------------------------------------
+# cvdBadge は .cbadge.aaa（緑）/ .cbadge.ng（赤）を色として再利用する。S5 は
+# ルールの「残存」だけを見るため、色値そのものの書き換え（例: 緑→別色）を検知
+# できない。KLK-005 の主旨は可読性バッジの信号色化で cvd の緑/赤を巻き込まない
+# ことなので、.cbadge.aaa の緑テキスト色と .cbadge.ng の赤テキスト色の HEX 値が
+# KLK-004 と同一で残っていることを明示的に固定する。
+# ===========================================================================
+aaa_green = re.search(r"\.cbadge\.aaa\s*\{[^}]*color:\s*#157f3d", HTML) is not None
+aaa_bg    = re.search(r"\.cbadge\.aaa\s*\{[^}]*background:\s*#e2f5e9", HTML) is not None
+ng_red    = re.search(r"\.cbadge\.ng\s*\{[^}]*color:\s*#c22525", HTML) is not None
+ng_bg     = re.search(r"\.cbadge\.ng\s*\{[^}]*background:\s*#fde3e3", HTML) is not None
+check(
+    "S13 cvd信号色の値不変 (.cbadge.aaa 緑 #157f3d / .cbadge.ng 赤 #c22525 の色値が不変)",
+    aaa_green and aaa_bg and ng_red and ng_bg,
+    f"aaa緑#157f3d={aaa_green}, aaa背景#e2f5e9={aaa_bg}, ng赤#c22525={ng_red}, ng背景#fde3e3={ng_bg}",
+)
+
+# ===========================================================================
 # Report
 # ===========================================================================
 print("=" * 78)
