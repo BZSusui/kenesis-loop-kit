@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>モック生成 — 設定 | デザインラフ・ジェネレーター</title>
+<style>
+  :root {
+    --color-base: #FFFFFF;
+    --color-main: #64B9E6;
+    --color-main-deep: #2E8BC9;
+    --color-link: #1C6FA6;
+    --color-accent: #FF4568;
+    --color-accent-2: #F9BA5D;
+    --color-text: #374151;
+    --color-border: #D6E9F5;
+    --color-bg-subtle: #F0F7FC;
+    --color-text-sub: #6B7280;
+    --color-ok: #157f3d;
+    --color-ok-bg: #e2f5e9;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    color: var(--color-text);
+    background: var(--color-bg-subtle);
+    line-height: 1.6;
+  }
+
+  .info-bar {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 32px; padding: 0 14px;
+    background: #333; color: #fff;
+    font-size: 12px; letter-spacing: .02em;
+  }
+
+  .page { max-width: 940px; margin: 0 auto; padding: 24px 20px 130px; }
+
+  header.hd h1 { font-size: 22px; margin: 8px 0 4px; }
+  header.hd p { margin: 0 0 4px; color: var(--color-text-sub); font-size: 14px; }
+
+  /* 生成前バリデーション通知（不足時のみ表示） */
+  .valid-note {
+    display: none; gap: 10px; align-items: flex-start;
+    margin: 16px 0 8px; padding: 12px 14px;
+    background: #FFF0F3; border: 1px solid var(--color-accent);
+    border-radius: 8px; font-size: 13px;
+  }
+  .valid-note .mk { color: var(--color-accent); font-weight: 700; }
+  .valid-note b { color: var(--color-accent); }
+
+  .card {
+    background: var(--color-base);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-top: 16px;
+  }
+  .card > .lbl { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .card > .lbl .step {
+    flex: none; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--color-main-deep); color: #fff;
+    font-size: 13px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .card > .lbl h2 { font-size: 16px; margin: 0; }
+  .req { color: var(--color-accent); font-size: 12px; font-weight: 700; margin-left: 2px; }
+  .opt { color: var(--color-text-sub); font-size: 11px; border: 1px solid var(--color-border);
+         border-radius: 4px; padding: 1px 6px; margin-left: 4px; }
+  .hint { color: var(--color-text-sub); font-size: 12px; margin: 2px 0 10px; }
+  .reqid { color: var(--color-text-sub); font-size: 11px; margin-left: auto; }
+
+  label { font-size: 13px; }
+  input[type=text], select {
+    width: 100%; padding: 9px 11px; font-size: 14px;
+    border: 1px solid var(--color-border); border-radius: 7px;
+    background: #fff; color: var(--color-text);
+  }
+  input[type=text]::placeholder { color: var(--color-text-sub); }
+  .field-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .field-row > .col { flex: 1 1 260px; }
+  .field-row > .col label { display: block; margin-bottom: 4px; color: var(--color-text-sub); }
+  .note-oq { font-size: 11px; color: var(--color-text-sub); margin-top: 8px; }
+  .note-oq code { background: var(--color-bg-subtle); padding: 1px 5px; border-radius: 4px; }
+
+  /* カラム構成 */
+  .colgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .colcard { position: relative; }
+  .colcard input { position: absolute; opacity: 0; }
+  .colcard label {
+    display: block; cursor: pointer; text-align: center;
+    border: 2px solid var(--color-border); border-radius: 10px;
+    padding: 12px 8px 10px; background: #fff;
+  }
+  .colcard input:checked + label {
+    border-color: var(--color-main-deep);
+    background: var(--color-bg-subtle);
+    box-shadow: 0 0 0 3px rgba(46,139,201,.15);
+  }
+  .colcard .diagram { display: flex; gap: 3px; height: 46px; justify-content: center; margin-bottom: 8px; }
+  .colcard .diagram span { border-radius: 3px; }
+  .colcard .diagram .main { background: var(--color-main); }
+  .colcard .diagram .sub  { background: var(--color-accent-2); }
+  .colcard .cname { font-size: 12px; font-weight: 600; }
+  .colcard input:checked + label .cname { color: var(--color-main-deep); }
+
+  /* テイストチップ */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { position: relative; }
+  .chip input { position: absolute; opacity: 0; }
+  .chip label {
+    display: inline-block; cursor: pointer;
+    border: 1px solid var(--color-border); border-radius: 999px;
+    padding: 6px 14px; font-size: 13px; background: #fff;
+  }
+  .chip input:checked + label {
+    background: var(--color-main-deep); color: #fff; border-color: var(--color-main-deep);
+  }
+
+  /* 配色 */
+  .palette-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .pcell { text-align: center; }
+  .pcell .cbox {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 54px; padding: 0; margin-bottom: 6px;
+    border: 1px solid rgba(0,0,0,.08); border-radius: 8px; cursor: pointer; background: none;
+  }
+  .pcell .cbox::-webkit-color-swatch-wrapper { padding: 0; }
+  .pcell .cbox::-webkit-color-swatch { border: none; border-radius: 7px; }
+  .pcell .cbox::-moz-color-swatch { border: none; border-radius: 7px; }
+  .pcell label { display: block; font-size: 12px; color: var(--color-text-sub); margin-bottom: 4px; }
+  .pcell .hexin {
+    width: 100%; text-align: center; font-family: ui-monospace, monospace; font-size: 13px;
+    padding: 7px 6px; border: 1px solid var(--color-border); border-radius: 6px; color: var(--color-text);
+    background: #fff;
+  }
+  .pcell.main-cell .cbox { box-shadow: 0 0 0 3px rgba(46,139,201,.18); }
+  .pcell.main-cell label b { color: var(--color-main-deep); }
+
+  .palette-ways {
+    display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px;
+    padding-top: 14px; border-top: 1px dashed var(--color-border);
+  }
+  .way {
+    flex: 1 1 240px; background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border); border-radius: 9px; padding: 12px 14px;
+  }
+  .way .way-t { font-size: 12px; font-weight: 700; color: var(--color-text); margin-bottom: 8px; }
+  .way .way-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .cpick {
+    -webkit-appearance: none; appearance: none; width: 44px; height: 32px;
+    padding: 0; border: 1px solid var(--color-border); border-radius: 6px; cursor: pointer; background: none; flex: none;
+  }
+  .cpick::-webkit-color-swatch-wrapper { padding: 2px; }
+  .cpick::-webkit-color-swatch { border: none; border-radius: 4px; }
+  .cpick::-moz-color-swatch { border: none; border-radius: 4px; }
+  .sub-inline { display: inline-flex; align-items: center; gap: 6px; color: var(--color-text-sub); font-size: 13px; }
+  .sub-inline input[type=text] { width: 80px; }
+
+  .paste-area { margin-top: 12px; display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap; }
+  .paste-box {
+    flex: 1 1 320px; min-height: 66px; padding: 8px 11px; resize: vertical;
+    border: 1px dashed var(--color-main); border-radius: 7px;
+    background: var(--color-bg-subtle); color: var(--color-text);
+    font-family: ui-monospace, monospace; font-size: 12px;
+  }
+  .paste-err {
+    display: none; margin-top: 8px; padding: 8px 12px; font-size: 13px;
+    background: #FFF0F3; border: 1px solid var(--color-accent); border-radius: 7px; color: #a1263f;
+  }
+
+  /* ボタン */
+  .btn-primary {
+    background: var(--color-main-deep); color: #fff; border: none;
+    padding: 13px 30px; border-radius: 9px; font-size: 15px; font-weight: 700;
+    cursor: pointer; text-decoration: none; display: inline-block;
+  }
+  .btn-primary:disabled { background: #b5cede; cursor: not-allowed; }
+  .btn-ghost {
+    background: #fff; color: var(--color-link); border: 1px solid var(--color-border);
+    padding: 10px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; text-decoration: none;
+  }
+  .launch-link {
+    background: var(--color-main-deep); color: #fff; text-decoration: none;
+    padding: 9px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; display: inline-block;
+  }
+
+  /* 参考サムネイル（プレースホルダのみ・実画像なし） */
+  .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap: 10px; }
+  .thumb {
+    position: relative; aspect-ratio: 4/3; border-radius: 8px; overflow: hidden;
+    border: 2px solid var(--color-border); cursor: pointer;
+    display: flex; align-items: flex-end;
+  }
+  .thumb.selected { border-color: var(--color-main-deep); box-shadow: 0 0 0 3px rgba(46,139,201,.18); }
+  .thumb .ph {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,.95); font-size: 12px; text-align: center; padding: 6px;
+    background: linear-gradient(135deg, var(--color-main) 0%, var(--color-accent-2) 100%);
+  }
+  .thumb .cap {
+    position: relative; z-index: 1; width: 100%; padding: 4px 6px;
+    background: rgba(0,0,0,.45); color: #fff; font-size: 11px;
+  }
+  .thumb .check {
+    position: absolute; top: 6px; left: 6px; z-index: 2;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--color-main-deep); color: #fff;
+    align-items: center; justify-content: center; font-size: 13px; display: none;
+  }
+  .thumb.selected .check { display: flex; }
+  .thumb .zoom {
+    position: absolute; top: 6px; right: 6px; z-index: 3;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(0,0,0,.5); color: #fff; border: none; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 13px;
+  }
+  .thumbs-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; }
+  .catalog-link { color: var(--color-text-sub); }
+  .industry-chip {
+    font-size: 12px; color: var(--color-main-deep); background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border); border-radius: 999px; padding: 4px 12px;
+  }
+
+  /* モーダル（JS制御・実画像は用いない） */
+  .modal-back {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(20,30,40,.72); align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-back.open { display: flex; }
+  .modal {
+    background: #fff; border-radius: 12px; max-width: 1000px; width: 100%;
+    max-height: 90vh; overflow: auto; position: relative;
+  }
+  .modal .m-img {
+    aspect-ratio: 16/9; width: 100%;
+    background: linear-gradient(135deg, var(--color-main) 0%, var(--color-accent-2) 100%);
+    display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px;
+    border-radius: 12px 12px 0 0;
+  }
+  .modal .m-body { padding: 14px 18px 18px; }
+  .modal .m-body h3 { margin: 0 0 4px; font-size: 15px; }
+  .modal .m-body p { margin: 0; font-size: 13px; color: var(--color-text-sub); }
+  .modal .m-close {
+    position: absolute; top: 10px; right: 12px;
+    width: 34px; height: 34px; border-radius: 50%; background: rgba(0,0,0,.5); color: #fff; border: none;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer;
+  }
+
+  .radio-inline { display: flex; gap: 18px; flex-wrap: wrap; }
+  .radio-inline label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+  .toggle-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  /* 生成結果 */
+  #resultCard { display: none; }
+  #resultJson {
+    width: 100%; min-height: 260px; font-family: ui-monospace, monospace; font-size: 12px;
+    padding: 12px; border: 1px solid var(--color-border); border-radius: 8px;
+    background: #0f172a; color: #e2e8f0; resize: vertical;
+  }
+  .result-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .copied-flag { color: var(--color-ok); font-size: 13px; }
+
+  /* 固定フッター */
+  .actionbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+    background: rgba(255,255,255,.96); border-top: 1px solid var(--color-border);
+    padding: 12px 20px; display: flex; justify-content: center; gap: 14px; align-items: center;
+    backdrop-filter: blur(4px);
+  }
+  .actionbar .summary { font-size: 12px; color: var(--color-text-sub); margin-right: auto; }
+
+  @media (max-width: 640px) {
+    .page { padding: 16px 14px 160px; }
+    .colgrid { grid-template-columns: repeat(2, 1fr); }
+    .palette-grid { grid-template-columns: repeat(2, 1fr); }
+    .field-row > .col { flex-basis: 100%; }
+    .actionbar { flex-direction: column; align-items: stretch; gap: 10px; }
+    .actionbar .summary { margin-right: 0; text-align: center; }
+    .btn-primary { width: 100%; text-align: center; padding: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="info-bar">
+  <span>SCR-001 設定画面 | デザインラフ・ジェネレーター</span>
+  <span>ローカル完結・外部送信なし</span>
+</div>
+
+<div class="page">
+  <header class="hd">
+    <h1>モック生成 — 設定</h1>
+    <p>業種・カラム・配色・参考素材を指定して、デザインラフ（ワイヤーフレームとモックの中間の案）の生成指示書を作ります。上から順に埋めてください。</p>
+  </header>
+
+  <!-- 生成前バリデーション（不足時のみ表示） -->
+  <div class="valid-note" id="validNote">
+    <span class="mk">!</span>
+    <div>生成を始めるには <b><span id="missingList"></span></b> が必要です。不足している項目を入力してください。
+    <br><span style="color:var(--color-text-sub)">※必須3項目（業種・カラム構成・配色）が揃うまで「この内容で生成」は押せません。</span></div>
+  </div>
+
+  <!-- ① 案件名 -->
+  <section class="card">
+    <div class="lbl"><span class="step">1</span><h2>案件名</h2><span class="req">必須</span>
+      <span class="reqid">保存フォルダ名に使用 / REQ-010</span></div>
+    <input type="text" id="projectName" placeholder="例：サンプル美容室サイト">
+    <p class="note-oq">生成物は <code>mockups/2026-07-07_（案件名）/</code> に保存される想定です（保存は後続の生成エンジンが担当）。</p>
+  </section>
+
+  <!-- ② 業種 -->
+  <section class="card">
+    <div class="lbl"><span class="step">2</span><h2>業種</h2><span class="req">必須</span>
+      <span class="reqid">REQ-001</span></div>
+    <p class="hint">一覧から選ぶか、当てはまるものがなければ自由に入力できます。</p>
+    <div class="field-row">
+      <div class="col">
+        <label>一覧から選ぶ</label>
+        <select id="industrySelect">
+          <option value="">選択してください</option>
+          <option value="美容・サロン(美容室 / ネイル / エステ)">美容・サロン(美容室 / ネイル / エステ)</option>
+          <option value="士業(税理士 / 弁護士 / 社労士)">士業(税理士 / 弁護士 / 社労士)</option>
+          <option value="住宅・不動産・建築">住宅・不動産・建築</option>
+          <option value="飲食店・カフェ">飲食店・カフェ</option>
+          <option value="医療・クリニック・福祉">医療・クリニック・福祉</option>
+          <option value="コーポレート(IT・製造・サービス)">コーポレート(IT・製造・サービス)</option>
+          <option value="採用・求人">採用・求人</option>
+          <option value="EC・物販・通販">EC・物販・通販</option>
+          <option value="ファッション・アパレル">ファッション・アパレル</option>
+          <option value="教育・スクール(学校 / 塾 / 習い事)">教育・スクール(学校 / 塾 / 習い事)</option>
+          <option value="旅行・観光・宿泊(ホテル / 旅館)">旅行・観光・宿泊(ホテル / 旅館)</option>
+          <option value="ブライダル・イベント">ブライダル・イベント</option>
+          <option value="アート・クリエイティブ(作品 / ポートフォリオ)">アート・クリエイティブ(作品 / ポートフォリオ)</option>
+        </select>
+      </div>
+      <div class="col">
+        <label>または自由入力</label>
+        <input type="text" id="industryCustom" placeholder="例：オーガニックカフェ">
+      </div>
+    </div>
+    <p class="note-oq">※自由入力があれば一覧選択がなくても生成できます（自由入力が優先されます）。仮リストは後日確定予定（OQ-003）。</p>
+  </section>
+
+  <!-- ③ カラム構成 -->
+  <section class="card">
+    <div class="lbl"><span class="step">3</span><h2>カラム構成</h2><span class="req">必須</span>
+      <span class="reqid">1つ選択 / REQ-002</span></div>
+    <div class="colgrid">
+      <div class="colcard">
+        <input type="radio" name="col" id="col1" value="1col">
+        <label for="col1">
+          <span class="diagram"><span class="main" style="width:36px"></span></span>
+          <span class="cname">1カラム</span>
+        </label>
+      </div>
+      <div class="colcard">
+        <input type="radio" name="col" id="col2r" value="2col-sub-right">
+        <label for="col2r">
+          <span class="diagram"><span class="main" style="width:26px"></span><span class="sub" style="width:12px"></span></span>
+          <span class="cname">2カラム・サブ右</span>
+        </label>
+      </div>
+      <div class="colcard">
+        <input type="radio" name="col" id="col2l" value="2col-sub-left">
+        <label for="col2l">
+          <span class="diagram"><span class="sub" style="width:12px"></span><span class="main" style="width:26px"></span></span>
+          <span class="cname">2カラム・サブ左</span>
+        </label>
+      </div>
+      <div class="colcard">
+        <input type="radio" name="col" id="col3" value="3col">
+        <label for="col3">
+          <span class="diagram"><span class="sub" style="width:11px"></span><span class="main" style="width:22px"></span><span class="sub" style="width:11px"></span></span>
+          <span class="cname">3カラム</span>
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <!-- ④ テイスト -->
+  <section class="card">
+    <div class="lbl"><span class="step">4</span><h2>デザインテイスト</h2><span class="opt">できれば</span>
+      <span class="reqid">1つ選択 / REQ-101</span></div>
+    <p class="hint">仕上がりの方向性を1つだけ選びます（選ぶと生成結果がブレにくくなります）。</p>
+    <div class="chips" id="tasteChips">
+      <span class="chip"><input type="radio" name="taste" id="t1" data-label="シンプル・ミニマル"><label for="t1">シンプル・ミニマル</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t2" data-label="高級感・上質"><label for="t2">高級感・上質</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t3" data-label="ポップ・カジュアル"><label for="t3">ポップ・カジュアル</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t4" data-label="和風・和モダン"><label for="t4">和風・和モダン</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t5" data-label="ナチュラル・やさしい"><label for="t5">ナチュラル・やさしい</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t6" data-label="先進的・シャープ"><label for="t6">先進的・シャープ</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t7" data-label="かっこいい・スタイリッシュ"><label for="t7">かっこいい・スタイリッシュ</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t8" data-label="かわいい・ガーリー"><label for="t8">かわいい・ガーリー</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t9" data-label="レトロ・ヴィンテージ"><label for="t9">レトロ・ヴィンテージ</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t10" data-label="ダーク・重厚(黒基調)"><label for="t10">ダーク・重厚(黒基調)</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t11" data-label="アート・個性的"><label for="t11">アート・個性的</label></span>
+    </div>
+    <p class="note-oq">※現状はよく選ばれる11種を仮置き（OQ-002）。</p>
+  </section>
+
+  <!-- ⑤ 配色 -->
+  <section class="card">
+    <div class="lbl"><span class="step">5</span><h2>配色</h2><span class="req">必須</span>
+      <span class="reqid">REQ-003</span></div>
+    <p class="hint">3通りの決め方があります —— ①各色を直接入力／②メインだけ決めて残りを自動生成／③配色ジェネレーターの出力を貼り付け。いずれも下の4色に反映されます（メインが決まっていれば生成できます）。</p>
+
+    <!-- 方法①：4色を直接入力（swatch↔hex 同期） -->
+    <div class="palette-grid">
+      <div class="pcell main-cell">
+        <input type="color" class="cbox" id="pick-main" value="#cccccc">
+        <label><b>メイン</b></label>
+        <input type="text" class="hexin" id="hex-main" placeholder="#未指定" autocomplete="off">
+      </div>
+      <div class="pcell">
+        <input type="color" class="cbox" id="pick-sub" value="#cccccc">
+        <label>サブ</label>
+        <input type="text" class="hexin" id="hex-sub" placeholder="自動" autocomplete="off">
+      </div>
+      <div class="pcell">
+        <input type="color" class="cbox" id="pick-accent" value="#cccccc">
+        <label>アクセント</label>
+        <input type="text" class="hexin" id="hex-accent" placeholder="自動" autocomplete="off">
+      </div>
+      <div class="pcell">
+        <input type="color" class="cbox" id="pick-bg" value="#cccccc">
+        <label>背景</label>
+        <input type="text" class="hexin" id="hex-bg" placeholder="自動" autocomplete="off">
+      </div>
+    </div>
+
+    <!-- 方法②③ -->
+    <div class="palette-ways">
+      <div class="way">
+        <div class="way-t">② メインカラーだけ先に決める</div>
+        <div class="way-row">
+          <input type="color" class="cpick" id="mainOnlyPick" value="#2e7d6b">
+          <span class="sub-inline">色を選ぶ → サブ・アクセント・背景は生成時に自動で調和</span>
+        </div>
+      </div>
+      <div class="way">
+        <div class="way-t">③ 配色ジェネレーターで作る</div>
+        <div class="way-row">
+          <a href="../palette/index.html" target="_blank" rel="noopener" class="launch-link">🎨 配色ジェネレーターを起動</a>
+          <span class="sub-inline">別タブで開きます</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="paste-area">
+      <textarea class="paste-box" id="pasteBox" placeholder="③で作った配色の出力をここに貼り付け（CSS変数形式・HEX一覧形式どちらでも可）&#10;例) --color-main:#2e7d6b; --color-sub:#8fb9ae; --color-accent:#e8a33d; --color-bg:#f7f5f0;"></textarea>
+      <button type="button" class="btn-ghost" id="pasteImport">取り込み</button>
+    </div>
+    <div class="paste-err" id="pasteError"></div>
+    <p class="note-oq">貼り付け内容が読み取れない場合は、理由を表示して手動での色指定を促します。取り込みは読み取れた色だけを反映します。</p>
+  </section>
+
+  <!-- ⑥ 参考素材 -->
+  <section class="card">
+    <div class="lbl"><span class="step">6</span><h2>参考にする素材</h2><span class="opt">推奨</span>
+      <span class="reqid">実績2〜3枚 / REQ-004・102</span></div>
+    <p class="hint">選んだ業種に近い実績をまず表示します。「この雰囲気で」という参考を最大3枚選べます。🔍で拡大表示。</p>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <span class="industry-chip" id="industryChip">業種「（未選択）」に近い実績を表示中</span>
+      <span class="sub-inline" style="font-size:12px">絞り込み:
+        <select id="thumbFilter" style="width:auto;padding:5px 8px;font-size:12px">
+          <option>近い業種のみ</option><option>すべての実績</option><option>同じテイストのみ</option>
+        </select>
+      </span>
+    </div>
+    <div class="thumbs" id="thumbs">
+      <div class="thumb" data-id="m1" data-label="サロン内観" data-tags="美容 / ナチュラル">
+        <span class="ph">サロン内観</span><span class="check">✓</span>
+        <button type="button" class="zoom" aria-label="拡大">🔍</button><span class="cap">美容 / ナチュラル</span></div>
+      <div class="thumb" data-id="m2" data-label="ヘアサロンLP" data-tags="美容 / 上質">
+        <span class="ph">ヘアサロンLP</span><span class="check">✓</span>
+        <button type="button" class="zoom" aria-label="拡大">🔍</button><span class="cap">美容 / 上質</span></div>
+      <div class="thumb" data-id="m3" data-label="ネイルサロン" data-tags="美容 / ポップ">
+        <span class="ph">ネイルサロン</span><span class="check">✓</span>
+        <button type="button" class="zoom" aria-label="拡大">🔍</button><span class="cap">美容 / ポップ</span></div>
+      <div class="thumb" data-id="m4" data-label="エステサロン" data-tags="美容 / 高級感">
+        <span class="ph">エステサロン</span><span class="check">✓</span>
+        <button type="button" class="zoom" aria-label="拡大">🔍</button><span class="cap">美容 / 高級感</span></div>
+      <div class="thumb" data-id="m5" data-label="クリニック" data-tags="医療 / 清潔感">
+        <span class="ph">クリニック</span><span class="check">✓</span>
+        <button type="button" class="zoom" aria-label="拡大">🔍</button><span class="cap">医療 / 清潔感</span></div>
+      <div class="thumb" data-id="m6" data-label="リラクゼーション" data-tags="美容 / やさしい">
+        <span class="ph">リラクゼーション</span><span class="check">✓</span>
+        <button type="button" class="zoom" aria-label="拡大">🔍</button><span class="cap">美容 / やさしい</span></div>
+    </div>
+    <div class="thumbs-foot">
+      <span>選択中: <b id="thumbCount">0 / 3枚</b></span>
+      <span class="catalog-link">もっと探す → 実績カタログを開く（未作成: SCR-004）</span>
+    </div>
+    <div class="field-row" style="margin-top:14px">
+      <div class="col" style="flex-basis:100%">
+        <label>見本サイトのURL（任意・最大2件）</label>
+        <input type="text" class="sample-url" placeholder="https://example.com/ （配色・構成の傾向を参考にします）">
+        <input type="text" class="sample-url" style="margin-top:8px" placeholder="https://example.org/ （2件目・任意）">
+      </div>
+    </div>
+    <p class="note-oq">読み取れないURLは、その旨を伝えてURLなしで生成を続行します（REQ-102）。</p>
+  </section>
+
+  <!-- ⑦ アタリ画像 -->
+  <section class="card">
+    <div class="lbl"><span class="step">7</span><h2>アタリ画像の入れ方</h2>
+      <span class="reqid">REQ-006・104</span></div>
+    <div class="radio-inline">
+      <label><input type="radio" name="atari" value="standard" checked> <span><b>標準</b>：色面＋内容説明＋ストック検索キーワード<span class="sub-inline">（権利的に安全）</span></span></label>
+      <label><input type="radio" name="atari" value="free-photo"> <span>フリー実写真を使う<span class="sub-inline">（リアリティ優先・通信あり）</span></span></label>
+    </div>
+  </section>
+
+  <!-- ⑧ 案数・スマホ -->
+  <section class="card">
+    <div class="lbl"><span class="step">8</span><h2>生成する案の数・オプション</h2>
+      <span class="reqid">REQ-008・201</span></div>
+    <div class="radio-inline" style="margin-bottom:12px">
+      <label><input type="radio" name="variants" value="1"> 1案</label>
+      <label><input type="radio" name="variants" value="3" checked> 3案（比較しやすい）</label>
+    </div>
+    <div class="toggle-line">
+      <label><input type="checkbox" id="mobileOn"> スマホ表示版も同時に生成する</label>
+      <span class="sub-inline">画面幅 <input type="text" id="mobileW" value="375"> px で生成</span>
+      <span class="opt">余裕があれば / REQ-201</span>
+    </div>
+  </section>
+
+  <!-- 生成結果（生成指示書JSON） -->
+  <section class="card" id="resultCard">
+    <div class="lbl"><span class="step">✓</span><h2>生成指示書（この内容をコピーして生成エンジンへ渡します）</h2></div>
+    <div class="result-head">
+      <button type="button" class="btn-ghost" id="copyResult">クリップボードにコピー</button>
+      <span class="copied-flag" id="copiedFlag" style="display:none">✓ コピーしました</span>
+    </div>
+    <textarea id="resultJson" readonly></textarea>
+    <p class="note-oq">この JSON は画面内にのみ保持されます（ファイルには保存しません）。案件名を含むため取り扱いに注意してください。</p>
+  </section>
+
+</div>
+
+<!-- 参考サムネイル拡大モーダル（JS制御・実画像は用いずプレースホルダを拡大表示） -->
+<div class="modal-back" id="modalBack">
+  <div class="modal">
+    <button type="button" class="m-close" id="modalClose">×</button>
+    <div class="m-img" id="modalImg">拡大プレビュー</div>
+    <div class="m-body">
+      <h3 id="modalTitle">実績</h3>
+      <p id="modalTags"></p>
+      <p class="note-oq">実績画像は Git 管理外フォルダにのみ置く方針のため、ここではプレースホルダで表示します（REQ-011）。</p>
+    </div>
+  </div>
+</div>
+
+<!-- 固定フッター -->
+<div class="actionbar">
+  <span class="summary" id="summary">上から順に入力してください</span>
+  <button type="button" class="btn-primary" id="genBtn" disabled>この内容で生成 →</button>
+</div>
+
+<script>
+'use strict';
+// ============================================================================
+// 純粋ロジック（DOMに触れない。render() より前に定義。動的スモークが
+// 先頭マーカー定数から render() 直前までをスライスして検証する。§4.6/S14）
+// ============================================================================
+const COLUMN_KEYS = ['1col', '2col-sub-right', '2col-sub-left', '3col'];
+const ROLE_KEYS = ['main', 'sub', 'accent', 'bg'];
+const ROLE_NAMES = ['メイン', 'サブ', 'アクセント', '背景'];
+
+// #rgb / #rrggbb（大小可）→ #rrggbb（小文字）。それ以外は null。
+function normalizeHex(s) {
+  if (typeof s !== 'string') return null;
+  const t = s.trim();
+  let m = /^#([0-9a-fA-F]{6})$/.exec(t);
+  if (m) return '#' + m[1].toLowerCase();
+  m = /^#([0-9a-fA-F]{3})$/.exec(t);
+  if (m) {
+    const c = m[1].toLowerCase();
+    return '#' + c[0] + c[0] + c[1] + c[1] + c[2] + c[2];
+  }
+  return null;
+}
+
+// 配色の貼り付け解析。CSS変数形式・HEX一覧形式の両方を大小非依存で受理。
+// 返却: { colors:{main,sub,accent,bg}, matched:[...role], error:null|理由文字列 }
+function parsePalette(text) {
+  const out = {
+    colors: { main: null, sub: null, accent: null, bg: null },
+    matched: [],
+    error: null,
+  };
+  if (typeof text !== 'string' || !text.trim()) {
+    out.error = '配色を読み取れませんでした。配色ジェネレーターの出力（--color-main:#…; 等）を貼り付けるか、手動で色を指定してください';
+    return out;
+  }
+  // CSS変数形式: --color-(main|sub|accent|bg): #hex
+  const cssRe = /--color-(main|sub|accent|bg)\s*:\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})/gi;
+  let m;
+  while ((m = cssRe.exec(text)) !== null) {
+    const role = m[1].toLowerCase();
+    const hex = normalizeHex(m[2]);
+    if (hex && !out.colors[role]) out.colors[role] = hex;
+  }
+  // HEX一覧形式: 「メイン #hex」等（行ごと・ラベル→role）
+  const labelMap = { 'メイン': 'main', 'サブ': 'sub', 'アクセント': 'accent', '背景': 'bg' };
+  text.split(/\r?\n/).forEach(function (line) {
+    const lm = /(メイン|サブ|アクセント|背景)\s*[:：]?\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})/.exec(line);
+    if (lm) {
+      const role = labelMap[lm[1]];
+      const hex = normalizeHex(lm[2]);
+      if (hex && !out.colors[role]) out.colors[role] = hex;
+    }
+  });
+  out.matched = ROLE_KEYS.filter(function (k) { return out.colors[k] !== null; });
+  if (out.matched.length === 0) {
+    out.error = '配色を読み取れませんでした。配色ジェネレーターの出力（--color-main:#…; 等）を貼り付けるか、手動で色を指定してください';
+  }
+  return out;
+}
+
+// 必須3項目（業種・カラム構成・配色）の充足検査。配色は「メインが有効HEX」で充足。
+function validateRequired(input) {
+  const missing = [];
+  const industryOk = !!((input.industryCustom && input.industryCustom.trim()) || input.industryPreset);
+  const columnOk = !!input.column;
+  const colorOk = normalizeHex(input.colors && input.colors.main) !== null;
+  if (!industryOk) missing.push('業種');
+  if (!columnOk) missing.push('カラム構成');
+  if (!colorOk) missing.push('配色');
+  return { ok: missing.length === 0, missing: missing };
+}
+
+// 全入力を生成指示書JSON（後続 REQ-005 の入力契約）へ整形。入力は破壊的変更しない。
+function buildInstruction(input) {
+  input = input || {};
+  const colorsIn = input.colors || {};
+  const main = normalizeHex(colorsIn.main);
+  const sub = normalizeHex(colorsIn.sub);
+  const accent = normalizeHex(colorsIn.accent);
+  const bg = normalizeHex(colorsIn.bg);
+  const autofill = [];
+  if (!sub) autofill.push('sub');
+  if (!accent) autofill.push('accent');
+  if (!bg) autofill.push('bg');
+
+  const preset = String(input.industryPreset || '');
+  const custom = String(input.industryCustom || '').trim();
+  const resolved = custom || preset;
+
+  const columns = COLUMN_KEYS.indexOf(input.column) >= 0 ? input.column : (input.column || null);
+
+  const nVar = parseInt(input.variants, 10);
+  const variants = nVar === 1 ? 1 : 3;
+
+  const mobileIn = input.mobile || {};
+  const wpx = parseInt(mobileIn.widthPx, 10);
+
+  const thumbs = (Array.isArray(input.refThumbs) ? input.refThumbs : []).slice(0, 3).map(function (t) {
+    return { id: t.id, label: t.label, tags: t.tags };
+  });
+  const sampleUrls = (Array.isArray(input.sampleUrls) ? input.sampleUrls : [])
+    .map(function (u) { return String(u || '').trim(); })
+    .filter(function (u) { return u.length > 0; })
+    .slice(0, 2);
+
+  return {
+    schema: 'design-draft-instruction',
+    version: 1,
+    meta: {
+      project: String(input.projectName || ''),
+      createdAt: new Date().toISOString(),
+      source: 'SCR-001',
+    },
+    industry: { preset: preset, custom: custom, resolved: resolved },
+    layout: { columns: columns },
+    taste: (input.taste != null ? input.taste : null),
+    colors: {
+      mode: colorsIn.mode || 'explicit',
+      main: main,
+      sub: sub,
+      accent: accent,
+      bg: bg,
+      autofill: autofill,
+    },
+    references: { thumbnails: thumbs, sampleUrls: sampleUrls },
+    atari: input.atari || 'standard',
+    output: {
+      variants: variants,
+      mobile: {
+        enabled: !!mobileIn.enabled,
+        widthPx: Number.isFinite(wpx) ? wpx : 375,
+      },
+    },
+  };
+}
+
+// ============================================================================
+// ここから下は DOM 依存（一方向フロー: render()→collectInput→validate→build→出力）
+// ============================================================================
+function render() {
+  const input = collectInput();
+  const v = validateRequired(input);
+  const note = document.getElementById('validNote');
+  const btn = document.getElementById('genBtn');
+  if (v.ok) {
+    note.style.display = 'none';
+    btn.disabled = false;
+  } else {
+    note.style.display = 'flex';
+    document.getElementById('missingList').textContent = v.missing.join(' ・ ');
+    btn.disabled = true;
+  }
+  // フッターの要約
+  const industry = (input.industryCustom && input.industryCustom.trim()) || input.industryPreset || '業種未選択';
+  const colLabel = colLabelOf(input.column);
+  const parts = [industry, colLabel, input.taste || 'テイスト未指定', input.variants + '案'];
+  document.getElementById('summary').textContent = parts.join(' / ') + ' — この内容で生成します';
+  // 参考素材の業種連動ラベル
+  document.getElementById('industryChip').textContent = '業種「' + industry + '」に近い実績を表示中';
+}
+
+let colorMode = 'explicit';
+
+function colLabelOf(col) {
+  switch (col) {
+    case '1col': return '1カラム';
+    case '2col-sub-right': return '2カラム・サブ右';
+    case '2col-sub-left': return '2カラム・サブ左';
+    case '3col': return '3カラム';
+    default: return 'カラム未選択';
+  }
+}
+
+function selectedThumbs() {
+  return Array.prototype.map.call(document.querySelectorAll('.thumb.selected'), function (el) {
+    return { id: el.dataset.id, label: el.dataset.label, tags: el.dataset.tags };
+  });
+}
+
+function collectInput() {
+  const colEl = document.querySelector('input[name=col]:checked');
+  const tasteEl = document.querySelector('input[name=taste]:checked');
+  const atariEl = document.querySelector('input[name=atari]:checked');
+  const varEl = document.querySelector('input[name=variants]:checked');
+  const sampleUrls = Array.prototype.map.call(document.querySelectorAll('.sample-url'), function (i) {
+    return i.value.trim();
+  }).filter(function (s) { return s.length > 0; }).slice(0, 2);
+  return {
+    projectName: document.getElementById('projectName').value.trim(),
+    industryPreset: document.getElementById('industrySelect').value,
+    industryCustom: document.getElementById('industryCustom').value,
+    column: colEl ? colEl.value : null,
+    taste: tasteEl ? tasteEl.dataset.label : null,
+    colors: {
+      main: document.getElementById('hex-main').value,
+      sub: document.getElementById('hex-sub').value,
+      accent: document.getElementById('hex-accent').value,
+      bg: document.getElementById('hex-bg').value,
+      mode: colorMode,
+    },
+    refThumbs: selectedThumbs(),
+    sampleUrls: sampleUrls,
+    atari: atariEl ? atariEl.value : 'standard',
+    variants: varEl ? parseInt(varEl.value, 10) : 3,
+    mobile: {
+      enabled: document.getElementById('mobileOn').checked,
+      widthPx: parseInt(document.getElementById('mobileW').value, 10) || 375,
+    },
+  };
+}
+
+// swatch と hex テキストの相互同期
+function setColorRole(role, hex) {
+  const norm = normalizeHex(hex);
+  document.getElementById('hex-' + role).value = norm || hex || '';
+  if (norm) document.getElementById('pick-' + role).value = norm;
+}
+
+function flashCopied(el, original) {
+  const flag = document.getElementById('copiedFlag');
+  if (flag) { flag.style.display = 'inline'; setTimeout(function () { flag.style.display = 'none'; }, 1400); }
+  if (el && original != null) {
+    el.textContent = '✓ コピーしました';
+    setTimeout(function () { el.textContent = original; }, 1400);
+  }
+}
+
+function generate() {
+  const input = collectInput();
+  const v = validateRequired(input);
+  if (!v.ok) { render(); return; }
+  const instruction = buildInstruction(input);
+  const json = JSON.stringify(instruction, null, 2);
+  document.getElementById('resultJson').value = json;
+  document.getElementById('resultCard').style.display = 'block';
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(json);
+  flashCopied(null, null);
+  document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function openModal(el) {
+  document.getElementById('modalImg').textContent = (el.dataset.label || '実績') + '（拡大プレビュー）';
+  document.getElementById('modalTitle').textContent = el.dataset.label || '実績';
+  document.getElementById('modalTags').textContent = el.dataset.tags || '';
+  document.getElementById('modalBack').classList.add('open');
+}
+function closeModal() { document.getElementById('modalBack').classList.remove('open'); }
+
+function updateThumbCount() {
+  const n = document.querySelectorAll('.thumb.selected').length;
+  document.getElementById('thumbCount').textContent = n + ' / 3枚';
+}
+
+// ---- イベント登録 ----------------------------------------------------------
+function init() {
+  // 汎用: 入力のたびに再評価
+  ['projectName', 'industrySelect', 'industryCustom', 'mobileW'].forEach(function (id) {
+    document.getElementById(id).addEventListener('input', render);
+    document.getElementById(id).addEventListener('change', render);
+  });
+  document.querySelectorAll('input[name=col], input[name=taste], input[name=atari], input[name=variants], #mobileOn')
+    .forEach(function (el) { el.addEventListener('change', render); });
+  document.querySelectorAll('.sample-url').forEach(function (el) { el.addEventListener('input', render); });
+
+  // 方法①: 4色の swatch↔hex 同期
+  ROLE_KEYS.forEach(function (role) {
+    const pick = document.getElementById('pick-' + role);
+    const hex = document.getElementById('hex-' + role);
+    pick.addEventListener('input', function () {
+      hex.value = pick.value.toLowerCase();
+      colorMode = 'explicit';
+      render();
+    });
+    hex.addEventListener('input', function () {
+      const norm = normalizeHex(hex.value);
+      if (norm) pick.value = norm;
+      colorMode = 'explicit';
+      render();
+    });
+  });
+
+  // 方法②: メインのみ
+  document.getElementById('mainOnlyPick').addEventListener('input', function (e) {
+    setColorRole('main', e.target.value);
+    colorMode = 'main-only';
+    render();
+  });
+
+  // 方法③: 貼り付け取り込み
+  document.getElementById('pasteImport').addEventListener('click', function () {
+    const res = parsePalette(document.getElementById('pasteBox').value);
+    const err = document.getElementById('pasteError');
+    if (res.error) {
+      err.textContent = res.error;
+      err.style.display = 'block';
+      return;
+    }
+    err.style.display = 'none';
+    res.matched.forEach(function (role) { setColorRole(role, res.colors[role]); });
+    colorMode = 'pasted';
+    render();
+  });
+
+  // 参考サムネイル: 選択トグル（最大3）＋拡大
+  document.querySelectorAll('.thumb').forEach(function (t) {
+    t.addEventListener('click', function (e) {
+      if (e.target.closest('.zoom')) { openModal(t); return; }
+      if (!t.classList.contains('selected') && document.querySelectorAll('.thumb.selected').length >= 3) return;
+      t.classList.toggle('selected');
+      updateThumbCount();
+      render();
+    });
+  });
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.getElementById('modalBack').addEventListener('click', function (e) {
+    if (e.target === document.getElementById('modalBack')) closeModal();
+  });
+
+  // 生成
+  document.getElementById('genBtn').addEventListener('click', generate);
+  document.getElementById('copyResult').addEventListener('click', function () {
+    const json = document.getElementById('resultJson').value;
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(json);
+    flashCopied(this, 'クリップボードにコピー');
+  });
+
+  render();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
