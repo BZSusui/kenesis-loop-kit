@@ -1,0 +1,36 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": {
+    "project": "サンプル美容室サイト",
+    "createdAt": "2026-07-07T09:00:00.000Z",
+    "source": "SCR-001"
+  },
+  "industry": {
+    "preset": "美容・サロン(美容室 / ネイル / エステ)",
+    "custom": "",
+    "resolved": "美容・サロン(美容室 / ネイル / エステ)"
+  },
+  "layout": { "columns": "1col" },
+  "taste": "シンプル・ミニマル",
+  "colors": {
+    "mode": "explicit",
+    "main": "#2e7d6b",
+    "sub": "#24463e",
+    "accent": "#e8a33d",
+    "bg": "#f7f5f0",
+    "autofill": []
+  },
+  "references": {
+    "thumbnails": [
+      { "id": "m1", "label": "サロン内観", "tags": "美容 / ナチュラル" },
+      { "id": "m2", "label": "ヘアサロンLP", "tags": "美容 / 上質" }
+    ],
+    "sampleUrls": []
+  },
+  "atari": "standard",
+  "output": {
+    "variants": 3,
+    "mobile": { "enabled": false, "widthPx": 375 }
+  }
+}
