@@ -25,3 +25,6 @@ Thumbs.db
 # 環境変数
 .env
 .env.local
+
+# 生成物・案件名（社外秘）。Git公開対象外（REQ-011 / NFR-004）
+mockups/
