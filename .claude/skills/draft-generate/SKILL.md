@@ -34,6 +34,10 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
 - **起動語**: `/draft-generate`。実装ディレクトリ `draft-gen/`（SCR-001 の設定画面）とは別物。
 - **入力**: 引数 `$ARGUMENTS`、またはユーザーが会話に貼り付けた**生成指示書JSON**。SCR-001（`draft-gen/index.html`）の
   「この内容で生成」でクリップボードにコピーされたJSONを想定する。
+- **入力が既存の `.json` ファイルのパス**（例: ローカルブリッジ `draft-gen/bridge.py` が渡す
+  `mockups/.pending/{id}.json`）のときは、**そのファイルを読み込んでから**次の受付チェックにかける。従来の
+  `$ARGUMENTS`／会話貼付の生成指示書JSONも**引き続き受理**する（後方互換・KLK-010）。いずれの経路でも入力契約
+  （`schema:"design-draft-instruction"` / `version:1`）と受付チェックは同一で、生成規約（DRAFT_RULES）・保存規約は変わらない。
 
 ## 手順
 
