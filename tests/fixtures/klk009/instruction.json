@@ -1,0 +1,35 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": {
+    "project": "サンプルカフェサイト",
+    "createdAt": "2026-07-08T09:00:00.000Z",
+    "source": "SCR-001"
+  },
+  "industry": {
+    "preset": "飲食・カフェ(カフェ / レストラン / バー)",
+    "custom": "",
+    "resolved": "飲食・カフェ(カフェ / レストラン / バー)"
+  },
+  "layout": { "columns": "1col" },
+  "taste": "ナチュラル・シンプル",
+  "colors": {
+    "mode": "explicit",
+    "main": "#2e7d6b",
+    "sub": "#24463e",
+    "accent": "#e8a33d",
+    "bg": "#f7f5f0",
+    "autofill": []
+  },
+  "references": {
+    "thumbnails": [
+      { "id": "m1", "label": "カフェ内観", "tags": "飲食 / ナチュラル" }
+    ],
+    "sampleUrls": []
+  },
+  "atari": "standard",
+  "output": {
+    "variants": 3,
+    "mobile": { "enabled": false, "widthPx": 375 }
+  }
+}
