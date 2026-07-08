@@ -1,11 +1,13 @@
 # DRAFT_RULES.md — デザインラフHTML生成規約
 
 > このファイルは `/draft-generate` スキル（`.claude/skills/draft-generate/SKILL.md`）が従うマスター規約です。
-> 生成される**デザインラフHTML（1案）**はこの規約に完全準拠すること。見た目・構造の正は
-> `docs/wireframes/SCR-002-compare.html` の `.mock` 部（プレビュー本体）。生成前に必ず本ファイルを全読する。
+> 生成される**デザインラフHTML（各案）**はこの規約に完全準拠すること。見た目・構造の正は
+> `docs/wireframes/SCR-002-compare.html` の `.mock` 部（プレビュー本体）と、比較ハブ chrome（案切替バー・サムネイル・
+> partial-note・@media print）。生成前に必ず本ファイルを全読する。
 >
 > 入力契約 = 生成指示書JSON（`schema:"design-draft-instruction"` / `version:1`・`docs/designs/KLK-006.md` §4.4）。
-> 対応要件 = REQ-005 / 006 / 007 / 009 / 010（保存部分）/ 011・NFR-002 / 003 / 004 / 005 / 006。
+> 対応要件 = REQ-005 / 006 / 007 / 008（複数案・比較画面）/ 009 / 010（保存・フォルダオープン部分）/ 011・
+> NFR-002 / 003 / 004 / 005 / 006。
 
 ---
 
@@ -13,9 +15,14 @@
 
 - デザインラフ＝**ワイヤーフレームとデザインモックの中間物**。完成イメージ（配色・レイアウト・アタリ画像配置・
   仮文言・スクロール出現アニメ）を非エンジニアが確認・印刷できる単一HTML。
-- 本スキルは**1回の生成で1案のみ**を出す（REQ-008 の複数案・SCR-002 比較UI・部分再生成 REQ-103・フリー実写真
-  b方式 REQ-104・見本URL反映 REQ-102 は別チケット）。生成指示書の `output.variants` が `3` でも**1案のみ**生成し、
-  「複数案は別チケット」と報告する。
+- 本スキルは生成指示書の **`output.variants`（1〜3）に応じて最大3案**を一括生成する（REQ-008）。各案は独立した
+  単一HTML（`variants:1` は `index.html`、`variants≥2` は `index-a.html`/`index-b.html`/`index-c.html`）で、
+  **配色テーマを主軸に方向性を振る**（振れ幅規約は §12・カラム骨格や番地は全案共通）。複数案のときは案を切り替えて
+  見比べる**比較ハブ `compare.html`**（SCR-002・構造規約は §13）を併せて生成する（`variants:1` は比較ハブなし）。
+- 一部の案が失敗しても**成功案のみ**を保存・表示し、`compare.html` の `.partial-note` に失敗を焼き込んで通知する
+  （REQ-008 失敗時挙動・§12・SKILL 手順4/5）。入力の写し `instruction.json` は常に保存する。
+- **別チケット（本スキルでは実装しない）**: 部分再生成 REQ-103（🔄 セクション単位の作り直し）・フリー実写真
+  b方式 REQ-104・見本URL反映 REQ-102。
 
 ---
 
@@ -211,15 +218,21 @@ SCR-002 mock テーマ変数へ写す。**生成ルート要素（`.mock` 等）
 
   version:1 で作られた既存 `instruction.json`（`mockups/*`）はそのまま再現できる。`data-columns` には**正規化後の
   canonical 値**を出力する（旧値をそのまま書かない）。
-- **レスポンシブ**: `@media (max-width: 640px)` を必ず定義し、モバイル時に次の変形を明示する（SCR-002:213-223 準拠）:
-  - 多カラム → 縦積み（`.m-layout` を `grid-template-columns: 1fr`）。全体2カラムのサイドバーも縦積み時は本文の後ろ（または前）へ回す。
+- **レスポンシブ（モバイルファースト原則）**: `@media (max-width: 640px)` を必ず定義し、モバイル時に次の変形を明示する
+  （SCR-002:213-223 準拠）:
+  - **メインカラム優先で畳む**: 多カラム → 縦積み（`.m-layout` を `grid-template-columns: 1fr`）。**メインカラム
+    （`.m-main-col`）をスマホ版の中核・先頭**に置き、**サイドバー（`.m-aside`）は二次情報として本文（`.m-main-col`）の
+    後ろに畳む**。「本文の前へ回す」ことはしない（＝「または前」は採らない）。この原則は**全体2カラム（`2col-full-*`）・
+    本文のみ2カラム（`2col-body-*`）・3カラム（`3col`）の全系統**に等しく適用する。メインが先頭に来ることを
+    **DOM 順**（PC でもメインカラムを先に書く）**または CSS `order`**（`.m-main-col{order:0}` / `.m-aside{order:1}`）で保証する。
   - グローバルナビ → ハンバーガー相当（`.m-nav ul` を隠し `☰` を表示）。
   - ギャラリーの列を減らす（例 4列 → 2列）。
   - HERO の見出しを縮小。本文は 14px 以上を維持。
+- ※ 実在ギャラリーサイトのスクレイピング等は SPEC スコープ外。本規約は上記のモバイルファースト**設計原則のみ**を定める。
 
 ---
 
-## 9. 保存規約（REQ-010 / U4）
+## 9. 保存規約（REQ-010 / U4・複数案対応 U-A/U-F/U-H）
 
 生成後、**Claude Code が Write で** 次のとおり保存する（ブラウザ保存ではない）。`mockups/` はGit除外（§11・NFR-004）。
 
@@ -227,10 +240,25 @@ SCR-002 mock テーマ変数へ写す。**生成ルート要素（`.mock` 等）
 - **フォルダ**: `mockups/{YYYY-MM-DD}_{案件名}/`
   - 案件名＝生成指示書 `meta.project` を**パス安全化**する: 前後空白除去 → 内部空白を `_` に置換 →
     `/ \ : * ? " < > |` と制御文字を除去。結果が空なら `untitled` とする。
-- **ファイル**:
-  - `index.html`＝デザインラフ本体（1案）。
-  - `instruction.json`＝入力の生成指示書の写し（再実行・監査用・SPEC §7）。
-- 複数案（REQ-008）へ拡張する際は同フォルダ内で案別ファイルへ拡張予定（本チケットは1案＝`index.html` のみ）。
+- **ファイル（`output.variants` による分岐）**:
+
+  | `output.variants` | 生成ファイル |
+  |---|---|
+  | `1`（後方互換） | `index.html`（デザインラフ本体・1案）＋ `instruction.json`。**`compare.html` は作らない** |
+  | `2` | `index-a.html`・`index-b.html` ＋ `compare.html` ＋ `instruction.json` |
+  | `3` | `index-a.html`・`index-b.html`・`index-c.html` ＋ `compare.html` ＋ `instruction.json` |
+
+  - `index.html`／`index-{letter}.html`＝デザインラフ本体。各案は本規約に完全準拠した**単一ファイル・外部依存ゼロ**。
+  - **案別ファイルの letter は成功順に a→b→c**（最大3）。`compare.html` の iframe・原寸リンクは各案の `index-{letter}.html` を
+    **同ディレクトリ相対パス**で参照する（§13）。
+  - `instruction.json`＝入力の生成指示書の写し（**常に1つ・再実行・監査用**・SPEC §7）。一部失敗時も必ず保存する。
+- **一部失敗（U-G）**: 生成に成功した案のみ `index-{letter}.html` を書き出し、`compare.html` に載せる。失敗案のファイルは
+  作らず、比較ハブからも参照しない。失敗があれば `compare.html` に `.partial-note` を焼き込む（§13・§12）。
+- **フォルダ自動オープン（REQ-010残り・U-D）**: 保存完了後、Claude Code（スキル）が保存先フォルダを OS 別コマンドで開く。
+  - mac: `open '{絶対パス}'` / win: `explorer '{パス}'`（または `start "" '{パス}'`）/ linux: `xdg-open '{パス}'`。OS を判定して選ぶ。
+  - **フォールバック**: 開けない・非対応・失敗時は**保存先パスを報告に表示**する（SPEC §7「フォルダが開けない場合は保存先パスを表示」）。
+  - **ブラウザ単独では不可**（サンドボックスで Finder/フォルダを開けない）。比較画面（`compare.html`）にフォルダを開くダミー
+    ボタンは置かない。フォルダオープンは Claude Code（スキル）の責務。
 
 ---
 
@@ -254,4 +282,70 @@ SCR-002 mock テーマ変数へ写す。**生成ルート要素（`.mock` 等）
 
 `mockups/` は**アクティブ `.gitignore`・`.gitignore.public`・`.gitignore.private` の3ファイルすべて**に登録済み
 （本チケット Phase 1）。案件名・生成物・生成指示書がGit管理に入らないことを `git check-ignore mockups/…` で検証できる。
-可視性を切り替えても除外が外れないよう、3ファイルの同期を崩さないこと。
+可視性を切り替えても除外が外れないよう、3ファイルの同期を崩さないこと。案別ファイル（`index-a/b/c.html`）・比較ハブ
+（`compare.html`）も `mockups/` 配下なので同じく除外される。
+
+---
+
+## 12. 複数案バリエーション規約（REQ-008・U-C/U-G）
+
+同一の生成指示書から `output.variants`（1〜3）ぶんの案を出す際の**振れ幅**を規約化し、非決定的生成でも品質を安定させる。
+**配色テーマを主軸**にし、骨格（構造）は全案で固定する。
+
+**全案で固定（案間で変えない）:**
+- `layout.columns`（カラム骨格・§8 の6系統のいずれか。**全案同一の `data-columns`**）・番地ラベル6種（§2）・
+  セクション構成（NAV / HERO / ABOUT / MENU / GALLERY / FOOTER）・業種（`industry.resolved`）とテイストの骨子・
+  アタリ a方式（§3）・仮文言の骨子・外部依存ゼロ・印刷CSS（§6）・アニメ ON/OFF（§7）。
+
+**案ごとに振る（配色主軸＋テイスト副次差）:**
+
+| 案 | letter | 配色方針 | 副次の振れ |
+|---|---|---|---|
+| 案A（ベース） | `a` | **生成指示書の配色に忠実**（`colors.main/sub/accent/bg` ＋ §5 autofill 補完のまま） | 標準テイスト |
+| 案B | `b` | `colors.main` を起点に**濃色・高級方向**へ調和させた別テーマ（例 紺＋金） | フォント／見出しトーンを上質寄り（serif 等） |
+| 案C | `c` | `colors.main` を起点に**明色・ポップ方向**へ調和させた別テーマ（例 桃＋シアン） | sans-serif・角丸・軽い配色 |
+
+- 各案は §5 の**5変数（`--m-main`/`--m-nav`/`--m-accent`/`--m-bg`/`--m-text`）を案別の値で定義**する。案間で
+  少なくとも `--m-main` が異なること（配色方向の差が機械検証で確認できる）。
+- `colors.mode:"main-only"`（sub/accent/bg が autofill）: 案B/C は sub/accent/bg を**大きく振ってよい**。
+- `colors.mode:"explicit"`（4色指定）: 案B/C は main を**大きく裏切らず**、差し色（accent）・フォント・トーンで差をつける。
+- 参考の振れ幅（ワイヤー SCR-002）: 案A 緑（`--m-main:#2E7D6B`）／案B 紺金（`#22303A`＋`--m-accent:#C6A15B`）／
+  案C 桃（`#E86FA0`＋`--m-accent:#57C4C4`・sans-serif）。
+- **一部失敗（U-G）**: 生成ループで各案の成否を把握する。**成功案のみ** `index-{letter}.html` を保存し `compare.html` に
+  載せる。失敗があれば `compare.html` に `.partial-note` を焼き込み（失敗案の明示＋「設定を変えて再生成できます」＝SCR-001
+  再実行に寄せた文言）、報告でも通知する。失敗案のファイルは作らず比較ハブから参照しない。`instruction.json` は常に保存する。
+
+---
+
+## 13. 比較画面 compare.html の構造規約（REQ-008 / REQ-009・U-B/U-H）
+
+`output.variants≥2` のとき、案を切り替えて見比べる**比較ハブ `compare.html`**（＝**単一ファイル・外部依存ゼロ**）を
+`mockups/{…}/` に生成する。見た目の正は `docs/wireframes/SCR-002-compare.html` の chrome。技術制約に沿って作り直す
+（ワイヤーを本番へコピーしない）。
+
+**骨格（上から）:**
+1. `<head><style>`: ツール chrome CSS ＋ 案切替 CSS ＋ `@media print`（chrome 非表示）。**外部CDN／Webフォント／
+   `<link rel="stylesheet">`／`<script src>` 禁止**（JS は原則不要。使う場合も `</body>` 直前のインラインのみ）。
+2. **隠しラジオ**: `<input type="radio" name="variant">` を成功案数ぶん（`id="ra"`/`rb`/`rc`・既定は先頭案に `checked`）。
+   切替は **CSS のみ**（兄弟結合子）で行う: `#ra:checked ~ .canvas #paneA{display:block}`。セグメント／サムネイルの
+   ハイライトも同方式（`#ra:checked ~ .toolchrome label[for=ra]` / `.vthumb.va`）。**JS 非依存＝graceful**。
+3. **toolchrome**: `.proj-head`（案件名＝`meta.project` プレースホルダ／生成日／「N案」）＋ `.settings-chips`
+   （業種・カラム・テイスト・配色・アタリ方式）。
+4. **partial-note（一部失敗時のみ・U-G）**: `.partial-note` に「案Xの生成が一部失敗したため成功案のみ表示」＋
+   「設定を変えて再生成できます」を**スキルが焼き込む**。全案成功時は出力しない。
+5. **variant-bar**: `.seg`（`label for=ra/rb/rc` の案A/B/C セグメント）＋ `.thumbstrip`（`.vthumb va/vb/vc`＝案別テーマ色の
+   ミニ CSS サムネイル。実スクショではなく色面）。各サムネイル cap に「案X」＋
+   `<a href="index-{letter}.html" target="_blank" class="full">原寸 ↗</a>`（原寸を別タブで表示）。
+6. **toolbar**: 「🖨 印刷 / PDFで保存」＝**選択中の案の standalone を別タブで開く導線**（`index-{letter}.html`）。
+   「← 設定を変えて再生成」（任意・SCR-001 への案内）。**「📁 保存フォルダを開く」ダミーボタンは置かない**（U-D・§9）。
+7. **canvas**: `.pane#paneA … #paneC` の中に相対 `<iframe src="index-{letter}.html" title="案X プレビュー">`。CSS-only で
+   選択案のみ `display:block`。
+
+**依存・安全:**
+- iframe `src`・原寸リンク `href` とも**同ディレクトリの相対 `.html` のみ**（`index-a.html` 等）。`http(s)://` 参照 0 件
+  （`www.w3.org` / `example.*` を除く）・秘密パターン 0 件・実在案件名なし（NFR-005 / NFR-004 / REQ-011）。
+
+**印刷（REQ-009）:**
+- 比較画面の印刷は iframe 経由で不安定なため、**高品質PDFは原寸別タブの standalone `index-{letter}.html`**
+  （KLK-007/008 の §6 `@media print` 準拠）で行う導線を正とする。`compare.html` 自身の `@media print` は chrome
+  （toolchrome / toolbar / variant-bar / info-bar）を隠す保険とする。
