@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<!--
+  ⚠ このファイルはワイヤーフレーム(画面イメージの確認用)です。実装コードではありません。
+  実装は docs/SPEC.md セクション9(技術的制約)に定められた技術スタックで別途行うこと。
+  このHTML/CSSを本番コードへコピーしてはならない。
+  対応画面: SCR-001 設定画面 / 準拠SPEC: v1.2 / 生成日: 2026-07-07
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SCR-001 設定画面 | ワイヤーフレーム</title>
+<style>
+  :root {
+    --color-base: #FFFFFF;
+    --color-main: #64B9E6;
+    --color-main-deep: #2E8BC9;
+    --color-link: #1C6FA6;
+    --color-accent: #FF4568;
+    --color-accent-2: #F9BA5D;
+    --color-text: #374151;
+    --color-border: #D6E9F5;
+    --color-bg-subtle: #F0F7FC;
+    --color-text-sub: #6B7280;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    color: var(--color-text);
+    background: var(--color-bg-subtle);
+    line-height: 1.6;
+  }
+
+  /* 画面情報バー */
+  .info-bar {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 32px; padding: 0 14px;
+    background: #333; color: #fff;
+    font-size: 12px; letter-spacing: .02em;
+  }
+  .info-bar a { color: #cfe6f7; text-decoration: none; }
+  .info-bar a:hover { text-decoration: underline; }
+
+  .page { max-width: 940px; margin: 0 auto; padding: 24px 20px 120px; }
+
+  header.hd h1 { font-size: 22px; margin: 8px 0 4px; }
+  header.hd p { margin: 0 0 4px; color: var(--color-text-sub); font-size: 14px; }
+
+  /* バリデーション例(セクション7 生成前バリデーション) */
+  .valid-note {
+    display: flex; gap: 10px; align-items: flex-start;
+    margin: 16px 0 8px; padding: 12px 14px;
+    background: #FFF0F3; border: 1px solid var(--color-accent);
+    border-radius: 8px; font-size: 13px;
+  }
+  .valid-note .mk { color: var(--color-accent); font-weight: 700; }
+  .valid-note b { color: var(--color-accent); }
+
+  /* カード(設定セクション) */
+  .card {
+    background: var(--color-base);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-top: 16px;
+  }
+  .card > .lbl { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; }
+  .card > .lbl .step {
+    flex: none; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--color-main-deep); color: #fff;
+    font-size: 13px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .card > .lbl h2 { font-size: 16px; margin: 0; }
+  .req { color: var(--color-accent); font-size: 12px; font-weight: 700; margin-left: 2px; }
+  .opt { color: var(--color-text-sub); font-size: 11px; border: 1px solid var(--color-border);
+         border-radius: 4px; padding: 1px 6px; margin-left: 4px; }
+  .hint { color: var(--color-text-sub); font-size: 12px; margin: 2px 0 10px; }
+  .reqid { color: var(--color-text-sub); font-size: 11px; margin-left: auto; }
+
+  /* 入力部品 */
+  label { font-size: 13px; }
+  input[type=text], select {
+    width: 100%; padding: 9px 11px; font-size: 14px;
+    border: 1px solid var(--color-border); border-radius: 7px;
+    background: #fff; color: var(--color-text);
+  }
+  input[type=text]::placeholder { color: var(--color-text-sub); }
+  .field-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .field-row > .col { flex: 1 1 260px; }
+  .field-row > .col label { display: block; margin-bottom: 4px; color: var(--color-text-sub); }
+
+  /* カラム構成:ミニ図解ラジオ */
+  .colgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .colcard { position: relative; }
+  .colcard input { position: absolute; opacity: 0; }
+  .colcard label {
+    display: block; cursor: pointer; text-align: center;
+    border: 2px solid var(--color-border); border-radius: 10px;
+    padding: 12px 8px 10px; background: #fff; transition: none;
+  }
+  .colcard input:checked + label {
+    border-color: var(--color-main-deep);
+    background: var(--color-bg-subtle);
+    box-shadow: 0 0 0 3px rgba(46,139,201,.15);
+  }
+  .colcard .diagram { display: flex; gap: 3px; height: 46px; justify-content: center; margin-bottom: 8px; }
+  .colcard .diagram span { background: var(--color-main); border-radius: 3px; }
+  .colcard .diagram .main { background: var(--color-main); }
+  .colcard .diagram .sub  { background: var(--color-accent-2); }
+  /* 全体2カラム（サイドバー全高）／本文のみ2カラム（上に全幅FV帯）の系統差を示すミニ図解 */
+  .colcard .diagram .fig  { display: flex; flex-direction: column; gap: 3px; width: 40px; height: 100%; background: none; }
+  .colcard .diagram .figh { display: flex; flex-direction: row; gap: 3px; width: 40px; height: 100%; background: none; }
+  .colcard .diagram .colv { display: flex; flex-direction: column; gap: 3px; flex: 1; background: none; }
+  .colcard .diagram .frow { display: flex; gap: 3px; flex: 1; background: none; }
+  .colcard .diagram .navband { height: 8px; background: var(--color-main-deep); border-radius: 3px; }
+  .colcard .diagram .fvband  { height: 8px; width: 100%; background: var(--color-main-deep); border-radius: 3px; }
+  .colcard .cname { font-size: 12px; font-weight: 600; }
+  .colcard input:checked + label .cname { color: var(--color-main-deep); }
+
+  /* テイストチップ(単一選択) */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { position: relative; }
+  .chip input { position: absolute; opacity: 0; }
+  .chip label {
+    display: inline-block; cursor: pointer;
+    border: 1px solid var(--color-border); border-radius: 999px;
+    padding: 6px 14px; font-size: 13px; background: #fff;
+  }
+  .chip input:checked + label {
+    background: var(--color-main-deep); color: #fff; border-color: var(--color-main-deep);
+  }
+
+  /* 配色 */
+  .palette-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .pcell { text-align: center; }
+  .pcell .cbox {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 54px; padding: 0; margin-bottom: 6px;
+    border: 1px solid rgba(0,0,0,.08); border-radius: 8px; cursor: pointer; background: none;
+  }
+  .pcell .cbox::-webkit-color-swatch-wrapper { padding: 0; }
+  .pcell .cbox::-webkit-color-swatch { border: none; border-radius: 7px; }
+  .pcell .cbox::-moz-color-swatch { border: none; border-radius: 7px; }
+  .pcell label { display: block; font-size: 12px; color: var(--color-text-sub); margin-bottom: 4px; }
+  .pcell .hexin {
+    width: 100%; text-align: center; font-family: ui-monospace, monospace; font-size: 13px;
+    padding: 7px 6px; border: 1px solid var(--color-border); border-radius: 6px; color: var(--color-text);
+  }
+  .pcell.main-cell .cbox { box-shadow: 0 0 0 3px rgba(46,139,201,.18); }
+  .pcell.main-cell label b { color: var(--color-main-deep); }
+  .cpick {
+    -webkit-appearance: none; appearance: none; width: 44px; height: 32px;
+    padding: 0; border: 1px solid var(--color-border); border-radius: 6px; cursor: pointer; background: none; flex: none;
+  }
+  .cpick::-webkit-color-swatch-wrapper { padding: 2px; }
+  .cpick::-webkit-color-swatch { border: none; border-radius: 4px; }
+  .cpick::-moz-color-swatch { border: none; border-radius: 4px; }
+
+  .palette-ways {
+    display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px;
+    padding-top: 14px; border-top: 1px dashed var(--color-border);
+  }
+  .way {
+    flex: 1 1 240px; background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border); border-radius: 9px; padding: 12px 14px;
+  }
+  .way .way-t { font-size: 12px; font-weight: 700; color: var(--color-text); margin-bottom: 8px; }
+  .way .way-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .mini-swatch { width: 26px; height: 26px; border-radius: 6px; border: 1px solid rgba(0,0,0,.1); flex: none; }
+
+  .paste-area {
+    margin-top: 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  }
+  .paste-box {
+    flex: 1 1 300px; min-height: 40px; padding: 8px 11px;
+    border: 1px dashed var(--color-main); border-radius: 7px;
+    background: var(--color-bg-subtle); color: var(--color-text-sub);
+    font-family: ui-monospace, monospace; font-size: 12px;
+  }
+  .btn-ghost.sm { padding: 8px 14px; font-size: 13px; }
+
+  /* 参考サムネイルの拡大モーダル(チェックボックス方式:URLを変えないのでスクロール位置を維持) */
+  .modal-toggle { display: none; }
+  .modal-back {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(20,30,40,.72); align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-toggle:checked + .modal-back { display: flex; }
+  .m-backdrop { position: absolute; inset: 0; cursor: zoom-out; }
+  .modal {
+    background: #fff; border-radius: 12px; max-width: 1000px; width: 100%;
+    max-height: 90vh; overflow: auto; position: relative; z-index: 1;
+  }
+  .modal .m-img {
+    aspect-ratio: 16/9; width: 100%;
+    background: linear-gradient(135deg, var(--color-main) 0%, var(--color-accent-2) 100%);
+    display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px;
+    border-radius: 12px 12px 0 0;
+  }
+  .modal .m-body { padding: 14px 18px 18px; }
+  .modal .m-body h3 { margin: 0 0 4px; font-size: 15px; }
+  .modal .m-body p { margin: 0; font-size: 13px; color: var(--color-text-sub); }
+  .modal .m-close {
+    position: absolute; top: 10px; right: 12px; z-index: 1;
+    width: 34px; height: 34px; border-radius: 50%; background: rgba(0,0,0,.5); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 18px;
+    cursor: pointer;
+  }
+  .modal .m-note { font-size: 11px; color: var(--color-text-sub); margin-top: 8px; }
+
+  /* 参考画像サムネイル */
+  .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap: 10px; }
+  .thumb {
+    position: relative; aspect-ratio: 4/3; border-radius: 8px; overflow: hidden;
+    border: 2px solid var(--color-border); cursor: pointer;
+    background: var(--color-accent-2);
+    display: flex; align-items: flex-end;
+  }
+  .thumb.selected { border-color: var(--color-main-deep); box-shadow: 0 0 0 3px rgba(46,139,201,.18); }
+  .thumb .ph {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,.9); font-size: 12px; text-align: center; padding: 6px;
+    background: linear-gradient(135deg, var(--color-main) 0%, var(--color-accent-2) 100%);
+  }
+  .thumb .cap {
+    position: relative; z-index: 1; width: 100%; padding: 4px 6px;
+    background: rgba(0,0,0,.45); color: #fff; font-size: 11px;
+  }
+  .thumb .check {
+    position: absolute; top: 6px; right: 6px; z-index: 2;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--color-main-deep); color: #fff;
+    display: none; align-items: center; justify-content: center; font-size: 13px;
+  }
+  .thumb.selected .check { display: flex; }
+  .thumbs-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; }
+  .catalog-link { color: var(--color-text-sub); }
+  .catalog-link .muted { color: #9aa3af; }
+
+  /* トグル/ラジオ小 */
+  .radio-inline { display: flex; gap: 18px; flex-wrap: wrap; }
+  .radio-inline label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+  .toggle-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .sub-inline { display: inline-flex; align-items: center; gap: 6px; color: var(--color-text-sub); font-size: 13px; }
+  .sub-inline input[type=text] { width: 80px; }
+
+  /* 生成ボタン(固定フッター) */
+  .actionbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+    background: rgba(255,255,255,.96); border-top: 1px solid var(--color-border);
+    padding: 12px 20px; display: flex; justify-content: center; gap: 14px; align-items: center;
+    backdrop-filter: blur(4px);
+  }
+  .actionbar .summary { font-size: 12px; color: var(--color-text-sub); margin-right: auto; }
+  .btn-primary {
+    background: var(--color-main-deep); color: #fff; border: none;
+    padding: 13px 30px; border-radius: 9px; font-size: 15px; font-weight: 700;
+    cursor: pointer; text-decoration: none; display: inline-block;
+  }
+  .btn-ghost {
+    background: #fff; color: var(--color-link); border: 1px solid var(--color-border);
+    padding: 12px 20px; border-radius: 9px; font-size: 14px; cursor: pointer; text-decoration: none;
+  }
+
+  .note-oq { font-size: 11px; color: var(--color-text-sub); margin-top: 8px; }
+  .note-oq code { background: var(--color-bg-subtle); padding: 1px 5px; border-radius: 4px; }
+
+  @media (max-width: 640px) {
+    .page { padding: 16px 14px 150px; }
+    .colgrid { grid-template-columns: repeat(2, 1fr); }
+    .field-row > .col { flex-basis: 100%; }
+    .actionbar { flex-direction: column; align-items: stretch; gap: 10px; }
+    .actionbar .summary { margin-right: 0; text-align: center; }
+    .btn-primary, .btn-ghost { width: 100%; text-align: center; padding: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="info-bar">
+  <span>SCR-001 設定画面 | ワイヤーフレーム | 準拠SPEC v1.2</span>
+  <a href="index.html">← 画面一覧へ</a>
+</div>
+
+<div class="page">
+  <header class="hd">
+    <h1>モック生成 — 設定</h1>
+    <p>業種・カラム・配色・参考素材を指定して、デザインラフ(ワイヤーフレームとモックの中間の案)を生成します。上から順に埋めてください。</p>
+  </header>
+
+  <!-- バリデーション例:必須項目が未入力のまま生成しようとしたとき(セクション7) -->
+  <div class="valid-note">
+    <span class="mk">!</span>
+    <div>【エラー表示の例】生成を始めるには <b>業種</b> ・ <b>カラム構成</b> ・ <b>配色</b> が必要です。不足している項目を入力してください。
+    <br><span style="color:var(--color-text-sub)">※必須3項目が揃うまで「この内容で生成」は押せません。</span></div>
+  </div>
+
+  <!-- ① 案件名 -->
+  <section class="card">
+    <div class="lbl"><span class="step">1</span><h2>案件名</h2><span class="req">必須</span>
+      <span class="reqid">保存フォルダ名に使用 / REQ-010</span></div>
+    <input type="text" placeholder="例:サンプル美容室サイト" value="サンプル美容室サイト">
+    <p class="note-oq">生成物は <code>mockups/2026-07-07_サンプル美容室サイト/</code> に保存され、完了後にフォルダが自動で開きます。</p>
+  </section>
+
+  <!-- ② 業種 -->
+  <section class="card">
+    <div class="lbl"><span class="step">2</span><h2>業種</h2><span class="req">必須</span>
+      <span class="reqid">REQ-001</span></div>
+    <p class="hint">一覧から選ぶか、当てはまるものがなければ自由に入力できます。</p>
+    <div class="field-row">
+      <div class="col">
+        <label>一覧から選ぶ</label>
+        <select>
+          <option>美容・サロン(美容室 / ネイル / エステ)</option>
+          <option>士業(税理士 / 弁護士 / 社労士)</option>
+          <option>住宅・不動産・建築</option>
+          <option>飲食店・カフェ</option>
+          <option>医療・クリニック・福祉</option>
+          <option>コーポレート(IT・製造・サービス)</option>
+          <option>採用・求人</option>
+          <option>EC・物販・通販</option>
+          <option>ファッション・アパレル</option>
+          <option>教育・スクール(学校 / 塾 / 習い事)</option>
+          <option>旅行・観光・宿泊(ホテル / 旅館)</option>
+          <option>ブライダル・イベント</option>
+          <option>アート・クリエイティブ(作品 / ポートフォリオ)</option>
+        </select>
+      </div>
+      <div class="col">
+        <label>または自由入力</label>
+        <input type="text" placeholder="例:オーガニックカフェ">
+      </div>
+    </div>
+    <p class="note-oq">※一覧の初期ラインナップは実績カタログのタグ付け結果から確定予定(<code>OQ-003</code>)。自由入力があるため未確定でも生成可。</p>
+  </section>
+
+  <!-- ③ カラム構成 -->
+  <section class="card">
+    <div class="lbl"><span class="step">3</span><h2>カラム構成</h2><span class="req">必須</span>
+      <span class="reqid">1つ選択 / REQ-002</span></div>
+    <p class="hint">「全体2カラム」はサイドバーがページ全高（メインビジュアルの横にも回る）。「本文のみ2カラム」はメインビジュアル全幅＋その下の本文だけ2分割。図解上部の帯の見え方で系統が分かる。</p>
+    <div class="colgrid">
+      <div class="colcard">
+        <input type="radio" name="col" id="col1" checked>
+        <label for="col1">
+          <span class="diagram"><span class="main" style="width:36px"></span></span>
+          <span class="cname">1カラム</span>
+        </label>
+      </div>
+      <div class="colcard">
+        <input type="radio" name="col" id="colFullL">
+        <label for="colFullL">
+          <span class="diagram"><span class="figh"><span class="sub" style="width:11px"></span><span class="colv"><span class="navband"></span><span class="main" style="flex:1"></span></span></span></span>
+          <span class="cname">全体2カラム・サブ左</span>
+        </label>
+      </div>
+      <div class="colcard">
+        <input type="radio" name="col" id="colFullR">
+        <label for="colFullR">
+          <span class="diagram"><span class="figh"><span class="colv"><span class="navband"></span><span class="main" style="flex:1"></span></span><span class="sub" style="width:11px"></span></span></span>
+          <span class="cname">全体2カラム・サブ右</span>
+        </label>
+      </div>
+      <div class="colcard">
+        <input type="radio" name="col" id="colBodyL">
+        <label for="colBodyL">
+          <span class="diagram"><span class="fig"><span class="fvband"></span><span class="frow"><span class="sub" style="width:11px"></span><span class="main" style="flex:1"></span></span></span></span>
+          <span class="cname">本文のみ2カラム・サブ左</span>
+        </label>
+      </div>
+      <div class="colcard">
+        <input type="radio" name="col" id="colBodyR">
+        <label for="colBodyR">
+          <span class="diagram"><span class="fig"><span class="fvband"></span><span class="frow"><span class="main" style="flex:1"></span><span class="sub" style="width:11px"></span></span></span></span>
+          <span class="cname">本文のみ2カラム・サブ右</span>
+        </label>
+      </div>
+      <div class="colcard">
+        <input type="radio" name="col" id="col3">
+        <label for="col3">
+          <span class="diagram"><span class="sub" style="width:11px"></span><span class="main" style="width:22px"></span><span class="sub" style="width:11px"></span></span>
+          <span class="cname">3カラム</span>
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <!-- ④ テイスト -->
+  <section class="card">
+    <div class="lbl"><span class="step">4</span><h2>デザインテイスト</h2><span class="opt">できれば</span>
+      <span class="reqid">1つ選択 / REQ-101</span></div>
+    <p class="hint">仕上がりの方向性を1つだけ選びます(選ぶと生成結果がブレにくくなります)。</p>
+    <div class="chips">
+      <span class="chip"><input type="radio" name="taste" id="t1" checked><label for="t1">シンプル・ミニマル</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t2"><label for="t2">高級感・上質</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t3"><label for="t3">ポップ・カジュアル</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t4"><label for="t4">和風・和モダン</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t5"><label for="t5">ナチュラル・やさしい</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t6"><label for="t6">先進的・シャープ</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t7"><label for="t7">かっこいい・スタイリッシュ</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t8"><label for="t8">かわいい・ガーリー</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t9"><label for="t9">レトロ・ヴィンテージ</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t10"><label for="t10">ダーク・重厚(黒基調)</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t11"><label for="t11">アート・個性的</label></span>
+    </div>
+    <p class="note-oq">※テイストの選択肢一覧は muuuuu.org の分類等を参考に確定予定(<code>OQ-002</code>)。現状はよく選ばれる11種を仮置き。</p>
+  </section>
+
+  <!-- ⑤ 配色 -->
+  <section class="card">
+    <div class="lbl"><span class="step">5</span><h2>配色</h2><span class="req">必須</span>
+      <span class="reqid">REQ-003</span></div>
+    <p class="hint">3通りの決め方があります —— ①各色を直接入力(コーポレートカラーが決まっている場合)/②メインだけ決めて残りを自動生成/③配色ジェネレーターで作る。いずれも下の4色に反映されます。</p>
+
+    <!-- 4色:カラーピッカー+直接入力(方法①)。ボックスをクリックすると色選択パネルが開きます -->
+    <div class="palette-grid">
+      <div class="pcell main-cell">
+        <input type="color" class="cbox" value="#2E7D6B">
+        <label><b>メイン</b></label>
+        <input type="text" class="hexin" value="#2E7D6B">
+      </div>
+      <div class="pcell">
+        <input type="color" class="cbox" value="#8FB9AE">
+        <label>サブ</label>
+        <input type="text" class="hexin" value="#8FB9AE">
+      </div>
+      <div class="pcell">
+        <input type="color" class="cbox" value="#E8A33D">
+        <label>アクセント</label>
+        <input type="text" class="hexin" value="#E8A33D">
+      </div>
+      <div class="pcell">
+        <input type="color" class="cbox" value="#F7F5F0">
+        <label>背景</label>
+        <input type="text" class="hexin" value="#F7F5F0">
+      </div>
+    </div>
+
+    <!-- 方法②③ -->
+    <div class="palette-ways">
+      <div class="way">
+        <div class="way-t">② メインカラーだけ先に決める</div>
+        <div class="way-row">
+          <input type="color" class="cpick" value="#2E7D6B">
+          <span class="sub-inline">色を選ぶ → サブ・アクセント・背景を自動で調和</span>
+        </div>
+      </div>
+      <div class="way">
+        <div class="way-t">③ 配色ジェネレーターで作る</div>
+        <div class="way-row">
+          <a href="../../palette/index.html" target="_blank" class="btn-primary" style="padding:9px 16px;font-size:13px">🎨 配色ジェネレーターを起動</a>
+          <span class="sub-inline">別タブで開きます</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="paste-area">
+      <div class="paste-box">③で作った配色の出力(CSS変数)をここに貼り付け &nbsp;例) --color-main:#2E7D6B; --color-sub:#8FB9AE; …</div>
+    </div>
+    <p class="note-oq">貼り付け内容が読み取れない場合は、理由を表示して手動での色指定を促します(セクション7)。②のメインカラーは配色ジェネレーターで使ったメイン傾向をそのまま流用できます。</p>
+  </section>
+
+  <!-- ⑥ 参考素材 -->
+  <section class="card">
+    <div class="lbl"><span class="step">6</span><h2>参考にする素材</h2><span class="opt">推奨</span>
+      <span class="reqid">実績2〜3枚 / REQ-004・102</span></div>
+    <p class="hint">選んだ業種に近い実績をまず表示します。「この雰囲気で」という参考を2〜3枚選べます。サムネイルをクリックすると拡大表示。</p>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <span style="font-size:12px;color:var(--color-main-deep);background:var(--color-bg-subtle);border:1px solid var(--color-border);border-radius:999px;padding:4px 12px">
+        業種「美容・サロン」に近い実績を表示中</span>
+      <span class="sub-inline" style="font-size:12px">絞り込み: <select style="width:auto;padding:5px 8px;font-size:12px"><option>近い業種のみ</option><option>すべての実績</option><option>同じテイストのみ</option></select></span>
+    </div>
+    <div class="thumbs">
+      <label for="m1" class="thumb selected"><span class="ph">サロン内観</span><span class="check">✓</span><span class="cap">美容 / ナチュラル 🔍</span></label>
+      <label for="m2" class="thumb selected"><span class="ph">ヘアサロンLP</span><span class="check">✓</span><span class="cap">美容 / 上質 🔍</span></label>
+      <label for="m3" class="thumb"><span class="ph">ネイルサロン</span><span class="check">✓</span><span class="cap">美容 / ポップ 🔍</span></label>
+      <label for="m4" class="thumb"><span class="ph">エステサロン</span><span class="check">✓</span><span class="cap">美容 / 高級感 🔍</span></label>
+      <label for="m5" class="thumb"><span class="ph">クリニック</span><span class="check">✓</span><span class="cap">医療 / 清潔感 🔍</span></label>
+      <label for="m6" class="thumb"><span class="ph">リラクゼーション</span><span class="check">✓</span><span class="cap">美容 / やさしい 🔍</span></label>
+    </div>
+    <div class="thumbs-foot">
+      <span>選択中: <b>2 / 3枚</b></span>
+      <span class="catalog-link">もっと探す → <span class="muted">実績カタログを開く(未作成: SCR-004)</span></span>
+    </div>
+    <div class="field-row" style="margin-top:14px">
+      <div class="col" style="flex-basis:100%">
+        <label>見本サイトのURL(任意・最大2件)</label>
+        <input type="text" placeholder="https://example.com/ (配色・構成の傾向を参考にします)">
+      </div>
+    </div>
+    <p class="note-oq">読み取れないURLは、その旨を伝えてURLなしで生成を続行します(REQ-102)。</p>
+  </section>
+
+  <!-- ⑦ アタリ画像の入れ方 -->
+  <section class="card">
+    <div class="lbl"><span class="step">7</span><h2>アタリ画像の入れ方</h2>
+      <span class="reqid">REQ-006・104</span></div>
+    <div class="radio-inline">
+      <label><input type="radio" name="atari" checked> <span><b>標準</b>:色面+内容説明+ストック検索キーワード<span class="sub-inline">(権利的に安全。後で素材を探しやすい)</span></span></label>
+      <label><input type="radio" name="atari"> <span>フリー実写真を使う<span class="sub-inline">(見た目のリアリティ優先・通信あり)</span></span></label>
+    </div>
+  </section>
+
+  <!-- ⑧ 生成案数・スマホ版 -->
+  <section class="card">
+    <div class="lbl"><span class="step">8</span><h2>生成する案の数・オプション</h2>
+      <span class="reqid">REQ-008・201</span></div>
+    <div class="radio-inline" style="margin-bottom:12px">
+      <label><input type="radio" name="variants"> 1案</label>
+      <label><input type="radio" name="variants" checked> 3案(比較しやすい)</label>
+    </div>
+    <div class="toggle-line">
+      <label><input type="checkbox"> スマホ表示版も同時に生成する</label>
+      <span class="sub-inline">画面幅 <input type="text" value="375"> px で生成</span>
+      <span class="opt">余裕があれば / REQ-201</span>
+    </div>
+    <div class="toggle-line" style="margin-top:12px">
+      <label><input type="checkbox" checked> 生成時アニメーション(読込フェードイン・スクロール出現)を付ける</label>
+      <span class="sub-inline">既定ON。OFFにすると生成物は最初から全表示になります</span>
+      <span class="opt">REQ-002拡張 / REQ-005</span>
+    </div>
+  </section>
+
+</div>
+
+<!-- 参考サムネイルの拡大モーダル(チェックボックス方式・原寸w1920px相当をw1000pxに縮小表示)
+     閉じても元のスクロール位置を維持します(URLを変えないため) -->
+<input type="checkbox" class="modal-toggle" id="m1">
+<div class="modal-back">
+  <label for="m1" class="m-backdrop"></label>
+  <div class="modal">
+    <label for="m1" class="m-close">×</label>
+    <div class="m-img">サロン内観の実績サイト(拡大プレビュー)</div>
+    <div class="m-body"><h3>美容室サイト実績 — サロン内観</h3>
+      <p>テイスト: ナチュラル / 主配色: グリーン系 / カラム: 1カラム</p>
+      <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。この参考をベースに雰囲気を寄せます。</p></div>
+  </div>
+</div>
+<input type="checkbox" class="modal-toggle" id="m2">
+<div class="modal-back">
+  <label for="m2" class="m-backdrop"></label>
+  <div class="modal">
+    <label for="m2" class="m-close">×</label>
+    <div class="m-img">ヘアサロンLPの実績サイト(拡大プレビュー)</div>
+    <div class="m-body"><h3>ヘアサロンLP実績</h3>
+      <p>テイスト: 上質 / 主配色: モノトーン+ゴールド / カラム: 1カラム</p>
+      <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。</p></div>
+  </div>
+</div>
+<input type="checkbox" class="modal-toggle" id="m3">
+<div class="modal-back">
+  <label for="m3" class="m-backdrop"></label>
+  <div class="modal">
+    <label for="m3" class="m-close">×</label>
+    <div class="m-img">ネイルサロンの実績サイト(拡大プレビュー)</div>
+    <div class="m-body"><h3>ネイルサロン実績</h3>
+      <p>テイスト: ポップ / 主配色: ピンク系 / カラム: 2カラム</p>
+      <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。</p></div>
+  </div>
+</div>
+<input type="checkbox" class="modal-toggle" id="m4">
+<div class="modal-back">
+  <label for="m4" class="m-backdrop"></label>
+  <div class="modal">
+    <label for="m4" class="m-close">×</label>
+    <div class="m-img">エステサロンの実績サイト(拡大プレビュー)</div>
+    <div class="m-body"><h3>エステサロン実績</h3>
+      <p>テイスト: 高級感 / 主配色: ベージュ+ブラウン / カラム: 1カラム</p>
+      <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。</p></div>
+  </div>
+</div>
+<input type="checkbox" class="modal-toggle" id="m5">
+<div class="modal-back">
+  <label for="m5" class="m-backdrop"></label>
+  <div class="modal">
+    <label for="m5" class="m-close">×</label>
+    <div class="m-img">クリニックの実績サイト(拡大プレビュー)</div>
+    <div class="m-body"><h3>クリニック実績</h3>
+      <p>テイスト: 清潔感 / 主配色: ブルー系 / カラム: 3カラム</p>
+      <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。</p></div>
+  </div>
+</div>
+<input type="checkbox" class="modal-toggle" id="m6">
+<div class="modal-back">
+  <label for="m6" class="m-backdrop"></label>
+  <div class="modal">
+    <label for="m6" class="m-close">×</label>
+    <div class="m-img">リラクゼーションの実績サイト(拡大プレビュー)</div>
+    <div class="m-body"><h3>リラクゼーションサロン実績</h3>
+      <p>テイスト: やさしい / 主配色: くすみグリーン / カラム: 1カラム</p>
+      <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。</p></div>
+  </div>
+</div>
+
+<!-- 生成実行(固定フッター) -->
+<div class="actionbar">
+  <span class="summary">美容・サロン / 1カラム / シンプル / 3案 — この内容で生成します</span>
+  <a href="SCR-004-catalog.html" class="btn-ghost" style="pointer-events:none;color:#9aa3af;border-color:#e5e7eb">実績カタログ(未作成)</a>
+  <a href="SCR-002-compare.html" class="btn-primary">この内容で生成 →</a>
+</div>
+
+</body>
+</html>
