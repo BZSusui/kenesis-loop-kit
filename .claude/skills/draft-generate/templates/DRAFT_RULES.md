@@ -139,8 +139,19 @@ SCR-002 mock テーマ変数へ写す。**生成ルート要素（`.mock` 等）
 
 ## 7. スクロール出現アニメ（REQ-005 / U6・外部依存ゼロ）
 
-外部ライブラリ・CDNを使わず、**インラインJSの `IntersectionObserver`** で実装する。対象セクションに `.reveal` を付け、
-可視化時に `.in` を付与してフェードイン。graceful degradation を必ず備える。
+**アニメON/OFF の分岐（`output.animation`・KLK-008 §4.3）**: 生成前に生成指示書 `output.animation` を判定する。
+**既定は true（未指定時も ON）**。
+
+- **`output.animation !== false`（ON・既定）**: 下記のとおり対象セクションに `.reveal` を付け、`<style>` に
+  `.reveal{opacity:0;…}` ＋ `.reveal.in{…}`、`</body>` 直前に `IntersectionObserver` の `<script>` を出力する。
+- **`output.animation === false`（OFF）**: `.reveal` クラス・`.reveal{opacity:0;transition:…}` のCSS・
+  `IntersectionObserver` の `<script>` を**いずれも出力しない**。全セクションは初期状態で完全表示（`opacity:1`）にする。
+  `@media print` のアニメ全表示行（`.reveal{opacity:1…}`）は `.reveal` 自体が無いので**不要（省略可）**。他の印刷CSS
+  （`.addr`/`.atari-tag`/`.anim-note` の `display:none`）は**アニメと無関係に常に出力**する。OFF 時の姿の実例＝ゴールデン
+  `tests/fixtures/klk008/sample-anim-off.html`。
+
+以下は **ON（既定）時**の実装。外部ライブラリ・CDNを使わず、**インラインJSの `IntersectionObserver`** で実装する。
+対象セクションに `.reveal` を付け、可視化時に `.in` を付与してフェードイン。graceful degradation を必ず備える。
 
 ```html
 <style>
@@ -171,13 +182,37 @@ SCR-002 mock テーマ変数へ写す。**生成ルート要素（`.mock` 等）
 
 ---
 
-## 8. カラム構成（REQ-002）とレスポンシブ（NFR-002）
+## 8. カラム構成（REQ-002・6系統）とレスポンシブ（NFR-002）
 
-- **カラム構成の反映**: 生成ルート要素（`.mock` 等）に `data-columns="{layout.columns の値}"` 属性を付ける。値は
-  `1col` / `2col-sub-left` / `2col-sub-right` / `3col` のいずれか。本文レイアウト（サイドバー位置・グリッド列数）を
-  この値に合わせる（機械検証のフック＝S8）。
+- **カラム構成の反映**: 生成ルート要素（`.mock` 等）に `data-columns="{layout.columns の canonical 値}"` 属性を付ける。
+  canonical は次の**6系統**（KLK-008 §4.1）。本文レイアウト（サイドバー位置・グリッド列数）をこの値に合わせる
+  （機械検証のフック＝S8）。
+
+| enum 値 | 系統 | サブ位置 | 骨格 |
+|---|---|---|---|
+| `1col` | 単一 | - | `.m-layout` を使わず NAV/HERO/本文/FOOTER を `.sec` で縦積み（全幅）。既存 `klk007` ゴールデン準拠 |
+| `2col-full-left` | 全体2カラム（サイドバー全高） | 左 | `.m-layout` を**ページ全体に掛け**、`.m-main-col` に NAV/HERO/本文/FOOTER を**すべて内包**、`.m-aside` を**左列**に置き全高に立てる |
+| `2col-full-right` | 全体2カラム（サイドバー全高） | 右 | 同上・`.m-aside` を**右列** |
+| `2col-body-left` | 本文のみ2カラム（FV全幅） | 左 | NAV `.sec`（全幅）→ HERO `.sec`（全幅）→ `.m-layout`（本文＋サイドバー）→ FOOTER `.sec`（全幅）。**HERO は grid の外**。`.m-aside` を**左列** |
+| `2col-body-right` | 本文のみ2カラム（FV全幅） | 右 | 同上・`.m-aside` を**右列**（既存 税理士事務所ラフの構造そのまま） |
+| `3col` | 3分割 | 両 | 本文領域を `grid-template-columns:200px 1fr 200px`（左サブ・中メイン・右サブ）で3分割。NAV/HERO/FOOTER は本文のみ系統と同様に全幅 `.sec` |
+
+- **全体2カラム（`2col-full-*`）と本文のみ2カラム（`2col-body-*`）の決定的な差**: 全体は `.m-layout` が **NAV/HERO を内側に含み**
+  サイドバー（`.m-aside`）が HERO の横にも回る（全高）。本文のみは HERO を grid の外に出し、本文だけを2分割する。
+  - 全体2カラムのグリッド例: `-right` は `.m-layout{grid-template-columns:1fr 300px}`、`-left` は `300px 1fr`。
+    `.m-aside` は `position: sticky; top:0` 等で全高に見せてよい（`align-items: stretch`）。
+  - 本文のみ2カラムのグリッド例: `-right` は `1fr 300px`、`-left` は `300px 1fr`（`.m-aside` を左列へ）。
+- **旧値エイリアス正規化（KLK-008 §4.2・U-2）**: 生成側は入力の旧カラム値を canonical へ正規化してから `data-columns` に書く。
+
+  ```
+  2col-sub-left  → 2col-body-left
+  2col-sub-right → 2col-body-right
+  ```
+
+  version:1 で作られた既存 `instruction.json`（`mockups/*`）はそのまま再現できる。`data-columns` には**正規化後の
+  canonical 値**を出力する（旧値をそのまま書かない）。
 - **レスポンシブ**: `@media (max-width: 640px)` を必ず定義し、モバイル時に次の変形を明示する（SCR-002:213-223 準拠）:
-  - 多カラム → 縦積み（`grid-template-columns: 1fr`）。
+  - 多カラム → 縦積み（`.m-layout` を `grid-template-columns: 1fr`）。全体2カラムのサイドバーも縦積み時は本文の後ろ（または前）へ回す。
   - グローバルナビ → ハンバーガー相当（`.m-nav ul` を隠し `☰` を表示）。
   - ギャラリーの列を減らす（例 4列 → 2列）。
   - HERO の見出しを縮小。本文は 14px 以上を維持。
@@ -202,9 +237,16 @@ SCR-002 mock テーマ変数へ写す。**生成ルート要素（`.mock` 等）
 ## 10. HTML 骨格（SCR-002 `.mock` 部を正とする参照構造）
 
 構造・クラス名の正は `docs/wireframes/SCR-002-compare.html`（`.mock` / `.m-nav` / `.m-hero` / `.m-sec` / `.m-about` /
-`.m-menu` / `.m-card` / `.m-gallery` / `.m-foot` / `.atari` / `.atari-tag` / `.addr .pin` / `.todo`）。代表出力の実例は
-`tests/fixtures/klk007/sample-draft.html`（ゴールデンサンプル）を参照する。生成時はこの骨格に業種・配色・仮文言・
-カラム構成を差し込む。
+`.m-menu` / `.m-card` / `.m-gallery` / `.m-foot` / `.atari` / `.atari-tag` / `.addr .pin` / `.todo`）。全体2カラムの
+`.m-layout` / `.m-main-col` / `.m-aside` は §8 の骨格表を正とする。代表出力の実例（ゴールデンサンプル）は次を参照する:
+
+| ゴールデン | カラム | アニメ | 用途 |
+|---|---|---|---|
+| `tests/fixtures/klk007/sample-draft.html` | `1col` | ON | 基本の縦積み1カラム |
+| `tests/fixtures/klk008/sample-full-2col.html` | `2col-full-right` | ON | 全体2カラム（`.m-layout` が NAV/HERO を内包・サイドバー全高） |
+| `tests/fixtures/klk008/sample-anim-off.html` | `2col-body-left` | OFF | 本文のみ2カラム＋アニメOFF（`.reveal`/observer 不在） |
+
+生成時はこの骨格に業種・配色・仮文言・カラム構成・アニメ有無を差し込む。
 
 ---
 

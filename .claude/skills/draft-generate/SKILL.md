@@ -37,9 +37,16 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
 入力JSONが次を満たすか確認する。満たさない場合は**生成せず**案内して終了する。
 
 - `schema` が `"design-draft-instruction"` であること。
-- `version` が `1` であること（`1` 以外なら「未対応の版です。SCR-001 を最新版で作り直してください」と伝えて停止。
-  前方互換の版分岐は将来対応）。
+- `version` が `1` であること（**不変**。旧チケットのJSONも新JSONも version:1。`1` 以外なら「未対応の版です。SCR-001 を
+  最新版で作り直してください」と伝えて停止。前方互換の版分岐は将来対応）。KLK-008 のカラム拡張・アニメ追加は additive・
+  後方互換のため version は上げない。
 - 必須フィールドが埋まっていること: `industry.resolved`（業種）・`layout.columns`（カラム構成）・`colors.main`（主色HEX）。
+- **`layout.columns` の正規化（旧値エイリアス・KLK-008 §4.2/4.4）**: 旧 `2col-sub-left` → `2col-body-left`、
+  `2col-sub-right` → `2col-body-right` に正規化してから生成する。正規化後の値が新6値
+  （`1col`/`2col-full-left`/`2col-full-right`/`2col-body-left`/`2col-body-right`/`3col`）のいずれでもなければ
+  「SCR-001（`draft-gen/index.html`）で生成指示書を作り直してください」と案内して停止する。
+- **`output.animation` の既定補完（KLK-008 §4.3）**: `output.animation` が未指定（キー無し）なら `true`（従来ON）とみなす。
+  明示 `false` のときのみアニメOFF（`.reveal`/`IntersectionObserver` を出さない・DRAFT_RULES §7）。
 - 欠けている場合: 「生成に必要な項目（業種／カラム構成／主色）が不足しています。SCR-001（`draft-gen/index.html`）で
   生成指示書を作り直してください」と案内して終了する。会話の文脈から項目を勝手に推測して補完しない。
 
@@ -54,7 +61,9 @@ DRAFT_RULES に完全準拠した**単一HTML**を書く:
 
 - **配色**: `colors.main/sub/accent/bg`（+ `autofill`）を DRAFT_RULES §5 の表どおり `--m-main/--m-nav/--m-accent/--m-bg/--m-text`
   へマッピング。生成ルート要素に5変数を定義し、本体は `var(--m-*)` で参照する。null 役割は補完ルールで埋める。
-- **カラム構成**: 生成ルート要素に `data-columns="{layout.columns}"` を付け、本文レイアウトを合わせる。
+- **カラム構成**: 生成ルート要素に `data-columns="{正規化後の canonical 値}"` を付け、DRAFT_RULES §8 の6系統骨格に
+  合わせる（全体2カラム `2col-full-*` は `.m-layout` が NAV/HERO を内包・サイドバー全高。本文のみ `2col-body-*` は
+  HERO を grid の外に出す。旧 `2col-sub-*` は `2col-body-*` へ正規化してから書く）。
 - **番地ラベル**: 各セクションに `.addr > .pin`（NAV-01 / HERO-01 / ABOUT-01 / MENU-01 / GALLERY-01 / FOOTER-01）。
 - **アタリ画像**: a方式（色面＋`.desc`＋`.kw`。HERO は `.atari-tag`。キーワード未定は `.desc` のみ）。`atari:"free-photo"` でも
   a方式で生成し「b方式は別チケット（REQ-104）」と注記。
