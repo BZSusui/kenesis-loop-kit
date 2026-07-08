@@ -52,6 +52,11 @@ COLUMN_ALIAS = {
 JOB_ID_RE = re.compile(r"^[0-9a-f]{32}$")
 _HEX_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
+# 部分再生成(KLK-012・REQ-103)—番地/letter/folder の安全パターン
+KNOWN_ADDR = {"NAV-01", "HERO-01", "ABOUT-01", "MENU-01", "GALLERY-01", "FOOTER-01"}  # 基本6種(DRAFT_RULES §2)
+ADDR_RE = re.compile(r"^[A-Z][A-Z0-9]*-\d{2}$")  # 安全文字集合(SECTION-NN 連番拡張も許容・注入不能)
+LETTER_RE = re.compile(r"^[a-c]$")               # 複数案の letter(a-c)。単一案は letter 無し
+
 
 # ============================================================================
 # 決定論コア(純関数・副作用なし・import 単体テスト対象=S群)
@@ -178,6 +183,128 @@ def is_allowed_origin(origin, host, port):
         return True
     allowed = ("http://{0}:{1}".format(host, port), "http://localhost:{0}".format(port))
     return origin in allowed
+
+
+# ---------------------------------------------------------------------------
+# 部分再生成(KLK-012・REQ-103)決定論コア — 純関数・副作用なし・import 単体テスト対象(S群)
+# ---------------------------------------------------------------------------
+def is_valid_addr(addr):
+    """番地ラベルが安全な文字集合パターンに一致するか(注入対策の門・U-3)。
+
+    ちょうど1回存在するかの本質判定は find_target_section で行う。
+    """
+    return isinstance(addr, str) and bool(ADDR_RE.match(addr))
+
+
+def is_valid_letter(letter):
+    """letter が a-c か。None/'' は単一案(index.html)を意味し許可(U-4)。"""
+    return letter in (None, "") or (isinstance(letter, str) and bool(LETTER_RE.match(letter)))
+
+
+def is_safe_mockups_folder(folder):
+    """folder が mockups/ 配下の相対パスで、パストラバーサルを含まないか(U-5・注入対策)。
+
+    'mockups/' 始まり・絶対パス/バックスラッシュ/'..' セグメント/先頭'/'/空セグメントを拒否。
+    """
+    if not isinstance(folder, str) or not folder.startswith("mockups/"):
+        return False
+    if "\\" in folder or folder.startswith("/"):
+        return False
+    return all(part not in ("..", "") for part in folder.split("/")[1:])
+
+
+def resolve_target_html(folder, letter):
+    """再生成対象HTMLの相対パスを決定論的に返す(U-4/U-5)。
+
+    letter が a-c → '{folder}/index-{letter}.html' / None・'' → '{folder}/index.html'。
+    """
+    leaf = "index-{0}.html".format(letter) if letter else "index.html"
+    return "{0}/{1}".format(folder, leaf)
+
+
+def find_target_section(html, addr):
+    """対象 .sec ブロックの範囲を特定し一意性を検証する(U-3・SPEC §7)。副作用なし。
+
+    返却:
+      (start, end)        … <span class="pin">{addr}</span> を含む唯一の .sec の [start, end) 文字範囲。
+      (None, "unknown")   … 該当 pin が 0 回(未知の番地)。
+      (None, "duplicate") … 該当 pin が 2 回以上(重複)。
+    アルゴリズム: pin span の出現回数を数え、1 回のときのみ、その pin より前の最も近い
+    <div class="sec ...> を開始点とし、<div>/</div> の入れ子を数えて対応する </div> を終端にする。
+    """
+    if not isinstance(html, str) or not isinstance(addr, str):
+        return (None, "unknown")
+    pin_re = re.compile(r'<span class="pin">\s*' + re.escape(addr) + r'\s*</span>')
+    pins = list(pin_re.finditer(html))
+    if len(pins) == 0:
+        return (None, "unknown")
+    if len(pins) >= 2:
+        return (None, "duplicate")
+
+    pin_pos = pins[0].start()
+    # pin より前の最も近い <div class="sec ...> を開始点にする
+    start = None
+    for m in re.finditer(r'<div\s+class="sec\b', html):
+        if m.start() < pin_pos:
+            start = m.start()
+        else:
+            break
+    if start is None:
+        return (None, "unknown")
+
+    # <div ...>/<div>/</div> の入れ子均衡で対応する終端 </div> を探す
+    depth = 0
+    end = None
+    for m in re.compile(r'<div\b|</div>').finditer(html, start):
+        if m.group(0) == "</div>":
+            depth -= 1
+            if depth == 0:
+                end = m.end()
+                break
+        else:
+            depth += 1
+    if end is None:
+        return (None, "unknown")
+    return (start, end)
+
+
+def read_root_palette(html):
+    """対象HTMLのルート(.mock)定義から配色5変数の実値を読む(U-2)。
+
+    返却: {'--m-main':..., '--m-nav':..., '--m-accent':..., '--m-bg':..., '--m-text':...}(見つかった分)。
+    インライン style="--m-main:...;" 形式・<style> 内 '.mock { --m-*:...; }' 形式の双方に対応する。
+    ★ instruction.json ではなく対象HTMLから読む(案B/C の派生配色を正しく維持する)。
+    """
+    out = {}
+    if not isinstance(html, str):
+        return out
+    for name in ("--m-main", "--m-nav", "--m-accent", "--m-bg", "--m-text"):
+        m = re.search(re.escape(name) + r"\s*:\s*([^;}\"'\n]+)", html)
+        if m:
+            out[name] = m.group(1).strip()
+    return out
+
+
+def build_regenerate_command(pending_path, allow_open=False):
+    """/draft-regenerate のヘッドレス実行コマンド(list・shell=False 用)を構築する(U-5/最小権限)。
+
+    ['claude','-p', f'/draft-regenerate {pending_path}',
+     '--permission-mode','acceptEdits','--output-format','json']
+    allow_open=True のとき ['--allowedTools','Bash(open *)'] を追加(版差の保険・依然最小権限)。
+    ★ 全権限スキップ/全許可モードのフラグは決して含めない(build_claude_command と同一方針)。
+    """
+    cmd = [
+        "claude",
+        "-p",
+        "/draft-regenerate {0}".format(pending_path),
+        "--permission-mode",
+        "acceptEdits",
+        "--output-format",
+        "json",
+    ]
+    if allow_open:
+        cmd += ["--allowedTools", "Bash(open *)"]
+    return cmd
 
 
 def repo_root():
