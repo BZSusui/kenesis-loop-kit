@@ -1,28 +1,33 @@
 ---
 name: draft-generate
-description: 生成指示書JSON（schema:"design-draft-instruction" / version:1）を入力に、デザインラフHTML（1案）を生成し mockups/{日付}_{案件名}/ に保存するスキル。ユーザーが「デザインラフを生成」「このJSONからラフを作って」「生成指示書からデザイン案を作りたい」と言ったとき、または SCR-001（draft-gen/index.html）で作った生成指示書を渡されたときに使う。外部依存ゼロの単一HTMLを生成する。
+description: 生成指示書JSON（schema:"design-draft-instruction" / version:1）を入力に、output.variants（1〜3）に応じ最大3案のデザインラフHTMLを一括生成し mockups/{日付}_{案件名}/ に保存するスキル（複数案は index-a/b/c.html ＋ 比較ハブ compare.html を併置）。ユーザーが「デザインラフを生成」「このJSONからラフを作って」「生成指示書からデザイン案を作りたい」「複数案を見比べたい」と言ったとき、または SCR-001（draft-gen/index.html）で作った生成指示書を渡されたときに使う。外部依存ゼロの単一HTMLを生成する。
 ---
 
-# デザインラフ生成 — 生成指示書JSONからデザインラフHTML（1案）を生成する
+# デザインラフ生成 — 生成指示書JSONから最大3案のデザインラフHTMLを一括生成する
 
 ## 目的と成果物
 
 KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instruction"` / `version:1`・`docs/designs/KLK-006.md` §4.4）を
-唯一の入力契約として、`docs/wireframes/SCR-002-compare.html` の `.mock` 部を見た目・構造の正とする**デザインラフHTML（1案）**を
-生成し保存する。「デザインラフ・ジェネレーター」（SPEC v1.2）の中核＝生成エンジン。SPEC §9 に従い生成エンジンは
-**Claude Code（本スキル）**とし、AI APIの個別契約・サーバー・DBは使わない。
+唯一の入力契約として、`docs/wireframes/SCR-002-compare.html` の `.mock` 部（生成本体）と chrome（比較ハブ）を見た目・構造の
+正とする**デザインラフHTML（`output.variants` 1〜3 に応じ最大3案）**を生成し保存する。「デザインラフ・ジェネレーター」
+（SPEC v1.2）の中核＝生成エンジン。SPEC §9 に従い生成エンジンは**Claude Code（本スキル）**とし、AI APIの個別契約・
+サーバー・DBは使わない。
 
-- **成果物**: `mockups/{YYYY-MM-DD}_{案件名}/index.html`（デザインラフ本体・1案）＋ `instruction.json`（入力の写し）
-- 生成HTMLは単一ファイル・外部依存ゼロ・配色CSS変数・番地ラベル・アタリ画像（a方式）・業種に合った仮文言・
-  スクロール出現アニメ・印刷時は補助表示を非表示（`@media print`）。
+- **成果物（`output.variants` による分岐・DRAFT_RULES §9）**:
+  - `variants:1`（後方互換）: `mockups/{YYYY-MM-DD}_{案件名}/index.html`（デザインラフ本体・1案）＋ `instruction.json`。
+  - `variants≥2`: `index-a.html`／`index-b.html`／`index-c.html`（成功案ぶん・成功順 a→b→c）＋ 比較ハブ `compare.html`
+    ＋ `instruction.json`（`compare.html` の構造規約は DRAFT_RULES §13）。
+- 各案の生成HTMLは単一ファイル・外部依存ゼロ・配色CSS変数・番地ラベル・アタリ画像（a方式）・業種に合った仮文言・
+  スクロール出現アニメ・印刷時は補助表示を非表示（`@media print`）。案間の差は**配色テーマ主軸**で振る（DRAFT_RULES §12）。
 
 ## 参照ファイル
 
 | ファイル | 読むタイミング |
 |---|---|
-| `templates/DRAFT_RULES.md` | **HTML生成前に必ず全体を読む**。生成規約（配色マッピング・アタリ方式・番地ラベル・印刷CSS・出現アニメ・カラム・保存規約）の正はこのファイル |
-| `docs/wireframes/SCR-002-compare.html` | 見た目・構造の正（`.mock` 部）。クラス名・骨格の参照元 |
-| `tests/fixtures/klk007/sample-draft.html` | DRAFT_RULES に準拠した代表出力（ゴールデンサンプル）。迷ったら実例として参照 |
+| `templates/DRAFT_RULES.md` | **HTML生成前に必ず全体を読む**。生成規約（配色マッピング・アタリ方式・番地ラベル・印刷CSS・出現アニメ・カラム・保存規約・§12 複数案バリエーション・§13 比較画面 compare.html 構造）の正はこのファイル |
+| `docs/wireframes/SCR-002-compare.html` | 見た目・構造の正（`.mock` 部＝生成本体／chrome＝比較ハブ）。クラス名・骨格の参照元 |
+| `tests/fixtures/klk007/sample-draft.html` | DRAFT_RULES に準拠した1案の代表出力（ゴールデンサンプル）。迷ったら実例として参照 |
+| `tests/fixtures/klk009/compare.html`・`index-a/b/c.html` | 複数案・比較ハブの代表出力（ゴールデン）。案別 standalone と `compare.html` 構造の実例 |
 
 ## 起動と入力
 
@@ -55,46 +60,71 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
 生成の前に必ず `templates/DRAFT_RULES.md` を全読する（`wireframe-gen` と同じ規律）。番地ラベル・アタリ方式・配色
 マッピング・印刷CSS・出現アニメ・カラム構成・保存規約をこの時点で頭に入れる。
 
-### 3. 生成（1案のみ）
+### 3. 生成（`output.variants` に応じ最大3案）
 
-DRAFT_RULES に完全準拠した**単一HTML**を書く:
+`output.variants`（1〜3）ぶんループし、各案について DRAFT_RULES に完全準拠した**単一HTML**を1枚ずつ書く。
+**カラム骨格・番地・セクション構成・業種/テイストの骨子・アタリ a方式は全案で固定**し、**案間の差は配色テーマを主軸に
+振る**（振れ幅規約は DRAFT_RULES §12）。各案（`index.html` または `index-{letter}.html`）は次を満たす:
 
-- **配色**: `colors.main/sub/accent/bg`（+ `autofill`）を DRAFT_RULES §5 の表どおり `--m-main/--m-nav/--m-accent/--m-bg/--m-text`
-  へマッピング。生成ルート要素に5変数を定義し、本体は `var(--m-*)` で参照する。null 役割は補完ルールで埋める。
-- **カラム構成**: 生成ルート要素に `data-columns="{正規化後の canonical 値}"` を付け、DRAFT_RULES §8 の6系統骨格に
+- **配色（案ごとに振る）**: `colors.main/sub/accent/bg`（+ `autofill`）を DRAFT_RULES §5 の表どおり
+  `--m-main/--m-nav/--m-accent/--m-bg/--m-text` へマッピングし、生成ルート要素に**案別の5変数**を定義（本体は `var(--m-*)`
+  で参照・null 役割は補完ルールで補う）。**案A＝指示書の配色に忠実**／**案B＝濃色・高級方向**／**案C＝明色・ポップ方向**
+  にテーマを振る（DRAFT_RULES §12）。案間で少なくとも `--m-main` が異なること。
+- **カラム構成（全案共通）**: 生成ルート要素に `data-columns="{正規化後の canonical 値}"` を付け、DRAFT_RULES §8 の6系統骨格に
   合わせる（全体2カラム `2col-full-*` は `.m-layout` が NAV/HERO を内包・サイドバー全高。本文のみ `2col-body-*` は
-  HERO を grid の外に出す。旧 `2col-sub-*` は `2col-body-*` へ正規化してから書く）。
-- **番地ラベル**: 各セクションに `.addr > .pin`（NAV-01 / HERO-01 / ABOUT-01 / MENU-01 / GALLERY-01 / FOOTER-01）。
+  HERO を grid の外に出す。旧 `2col-sub-*` は `2col-body-*` へ正規化してから書く）。**全案で同一の `data-columns`**。
+- **番地ラベル（全案共通）**: 各セクションに `.addr > .pin`（NAV-01 / HERO-01 / ABOUT-01 / MENU-01 / GALLERY-01 / FOOTER-01）。
 - **アタリ画像**: a方式（色面＋`.desc`＋`.kw`。HERO は `.atari-tag`。キーワード未定は `.desc` のみ）。`atari:"free-photo"` でも
   a方式で生成し「b方式は別チケット（REQ-104）」と注記。
 - **仮文言**: 業種（`industry.resolved`）・テイスト（`taste`）に合った実文言。ダミー禁止。未定は `(要検討: …)`。
 - **印刷CSS / 出現アニメ / レスポンシブ**: DRAFT_RULES §6〜§8 のとおり（`@media print` で補助非表示・`IntersectionObserver`・
-  `@media (max-width:640px)`）。
-- **1案のみ**: `output.variants` が `3` でも**本スキルは1案のみ**生成する。複数案（REQ-008）・比較UI（SCR-002）は別チケット。
+  `@media (max-width:640px)`・モバイルファーストで `.m-aside` を本文の後ろに畳む §8）。
+- **成否の把握（一部失敗・U-G）**: 各案の生成が成立したかを案ごとに把握する。成功した案のみ letter を成功順に a→b→c で
+  確定し、**失敗案は保存も参照もしない**。失敗があれば手順4で `compare.html` の `.partial-note` に焼き込み、手順5で報告する。
+- **比較ハブ `compare.html`（`variants≥2` のみ・DRAFT_RULES §13）**: 成功案が2件以上のとき、案切替（隠しラジオ
+  `type="radio" name="variant"` ＋ 兄弟結合子 `#ra:checked ~ .canvas #paneA{display:block}` の **CSS-only**）・各 `.pane` の
+  相対 `<iframe src="index-{letter}.html">`・サムネイル `.thumbstrip`/`.vthumb`・原寸別タブ
+  `<a href="index-{letter}.html" target="_blank">`・`@media print`（chrome 非表示）を備えた**単一ファイル・外部依存ゼロ**の
+  比較ハブを書く。iframe・原寸リンクとも**同ディレクトリ相対 `.html` のみ**（外部URL 0）。`variants:1` では作らない。
 
-### 4. 保存
+### 4. 保存とフォルダ自動オープン
 
-DRAFT_RULES §9 に従い **Claude Code が Write** で保存する:
+DRAFT_RULES §9 に従い **Claude Code が Write** で保存する（保存分岐は `output.variants`）:
 
 - フォルダ: `mockups/{YYYY-MM-DD}_{案件名}/`（案件名＝`meta.project` をパス安全化: 前後空白除去 → 空白を `_` →
   `/ \ : * ? " < > |` と制御文字を除去。空なら `untitled`）。
-- `mockups/{…}/index.html`＝デザインラフ本体。
-- `mockups/{…}/instruction.json`＝入力の生成指示書の写し（そのまま保存し、再実行・監査を可能にする）。
+- **保存ファイル（`output.variants` 分岐・成功案のみ）**:
+  - `variants:1`（後方互換）: `mockups/{…}/index.html`＝デザインラフ本体（1案）。`compare.html` は作らない。
+  - `variants≥2`: 成功案ぶんの `mockups/{…}/index-a.html`／`index-b.html`／`index-c.html`（成功順 a→b→c）＋ 比較ハブ
+    `mockups/{…}/compare.html`（DRAFT_RULES §13）。
+- `mockups/{…}/instruction.json`＝入力の生成指示書の写し（そのまま保存し、再実行・監査を可能にする）。**一部失敗時も
+  必ず保存する**（SPEC §7・入力を失わない）。
+- **一部失敗（U-G）**: 失敗案のファイルは作らず `compare.html` からも参照しない。失敗があれば `compare.html` の
+  `.partial-note` に「案Xの生成が一部失敗したため成功案のみ表示／設定を変えて再生成できます」を焼き込む。
 - `mockups/` はGit除外（`.gitignore` 3ファイルに登録済み）。案件名・生成物はコミットされない。
+- **フォルダ自動オープン（REQ-010残り・U-D）**: 保存完了後、Claude Code（本スキル）が保存先フォルダを OS 別コマンドで開く。
+  - mac: `open '{絶対パス}'` / win: `explorer '{パス}'`（または `start "" '{パス}'`）/ linux: `xdg-open '{パス}'`。OS を判定して選ぶ。
+  - **フォールバック**: 開けない・非対応・失敗時は**保存先パスを報告に表示**する（SPEC §7「フォルダが開けない場合は
+    保存先パスを表示」）。**ブラウザ単独では不可**（サンドボックス）。比較画面のダミーボタンでは実現しない。
 
 ### 5. 報告（非エンジニア向け）
 
-- 保存先パス（`mockups/{日付}_{案件名}/`）。
-- 生成したセクションの番地ラベル一覧（NAV-01〜FOOTER-01）。
+- 保存先パス（`mockups/{日付}_{案件名}/`）と、フォルダを自動で開いた旨（開けなかった場合はパスを案内）。
+- 生成した**案数と各案の配色方向**（案A＝指示書に忠実／案B＝濃色高級／案C＝明色ポップ）。
+- 生成したセクションの番地ラベル一覧（NAV-01〜FOOTER-01・全案共通）。
 - `(要検討: …)` で残した箇所の一覧（人間が後で埋める箇所）。
-- 除外した外部参照（`atari:"free-photo"` を a方式に切り替えた等）や、`output.variants:3` を**1案のみ**生成した旨と
-  「複数案は別チケット」の注記。
-- ブラウザで `index.html` を開いて確認する方法（ダブルクリックで開ける・印刷プレビューで補助表示が消える）。
+- 除外した外部参照（`atari:"free-photo"` を a方式に切り替えた等）。
+- **一部失敗があれば**その案と、`compare.html` に失敗を明示した旨・SCR-001 で設定を変えて再生成できる導線。
+- 開き方: **複数案は `compare.html`**（案A/B/C を切り替え・サムネイルの「原寸 ↗」で各案を別タブ表示）、**1案は `index.html`**
+  をブラウザで開く（ダブルクリック・印刷プレビューで補助表示が消え PDF 化できる）。高品質PDFは各案の原寸別タブから印刷する。
 
 ## してはならないこと
 
 - 受付チェックを飛ばして、不足項目を会話の文脈から推測で補って生成すること。
 - 外部リソース（CDN・外部CSS/JS・Webフォント・外部画像URL）に依存するHTMLを生成すること。
 - アタリ画像に `<img src>` や実写真URLを使うこと（a方式＝色面のみ）。
-- 複数案（最大3案）・比較UI・部分再生成・フリー実写真b方式・見本URL反映を本スキルで実装すること（すべて別チケット）。
+- 部分再生成（REQ-103・🔄）・フリー実写真b方式（REQ-104）・見本URL反映（REQ-102）を本スキルで実装すること（別チケット）。
+- 案間でカラム骨格・番地・セクション構成を変えること（案間の差は**配色テーマ主軸**に限る・DRAFT_RULES §12）。
+- `compare.html` の iframe・原寸リンクに外部URLや案別ファイル以外を指定すること（同ディレクトリ相対 `.html` のみ）。
+- 失敗案のファイルを保存・比較ハブから参照すること（成功案のみ・`.partial-note` で失敗通知）。
 - 実在の顧客名・個人情報・シークレットを生成HTMLに含めること。
