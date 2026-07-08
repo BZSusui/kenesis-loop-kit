@@ -270,6 +270,24 @@
   .result-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
   .copied-flag { color: var(--color-ok); font-size: 13px; }
 
+  /* ローカルブリッジ稼働時の生成状況（KLK-010・非稼働時は非表示のまま） */
+  .bridge-status {
+    display: none; margin: 0 0 12px; padding: 11px 14px; font-size: 13px;
+    border-radius: 8px; border: 1px solid var(--color-border);
+    display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+  }
+  .bridge-status.bs-loading { background: var(--color-bg-subtle); border-color: var(--color-main); color: var(--color-main-deep); }
+  .bridge-status.bs-done { background: var(--color-ok-bg); border-color: var(--color-ok); color: var(--color-ok); }
+  .bridge-status.bs-error { background: #FFF0F3; border-color: var(--color-accent); color: #a1263f; }
+  .bridge-status.bs-guide { background: var(--color-bg-subtle); border-color: var(--color-border); color: var(--color-text-sub); }
+  .bs-spin {
+    flex: none; width: 15px; height: 15px; border-radius: 50%;
+    border: 2px solid rgba(46,139,201,.28); border-top-color: var(--color-main-deep);
+    animation: bs-rot .8s linear infinite;
+  }
+  @keyframes bs-rot { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .bs-spin { animation: none; } }
+
   /* 固定フッター */
   .actionbar {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
@@ -563,6 +581,8 @@
       <button type="button" class="btn-ghost" id="copyResult">クリップボードにコピー</button>
       <span class="copied-flag" id="copiedFlag" style="display:none">✓ コピーしました</span>
     </div>
+    <!-- ローカルブリッジ稼働時のみ表示される生成状況（KLK-010・非稼働時は空・非表示） -->
+    <div class="bridge-status" id="bridgeStatus"></div>
     <textarea id="resultJson" readonly></textarea>
     <p class="note-oq">この JSON は画面内にのみ保持されます（ファイルには保存しません）。案件名を含むため取り扱いに注意してください。</p>
   </section>
@@ -820,17 +840,118 @@ function flashCopied(el, original) {
   }
 }
 
+// ローカルブリッジ（KLK-010・任意起動 draft-gen/bridge.py）の既定オリジン。
+// ホストは localhost 限定（外部依存ではない）。稼働時はワンクリック生成、非稼働／通信不可時は
+// 下の clipboard 経路へフォールバックする（壊れない）。scheme はホスト定数と分けて持つ。
+const BRIDGE_HOST = '127.0.0.1:8765';
+const BRIDGE_ORIGIN = 'http://' + BRIDGE_HOST;
+
 function generate() {
   const input = collectInput();
   const v = validateRequired(input);
   if (!v.ok) { render(); return; }
   const instruction = buildInstruction(input);
   const json = JSON.stringify(instruction, null, 2);
+  // ---- 従来どおり（フォールバック基盤・常時実行・R-2 温存）--------------------
   document.getElementById('resultJson').value = json;
   document.getElementById('resultCard').style.display = 'block';
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(json);
   flashCopied(null, null);
   document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // ---- ローカルブリッジ稼働時のみワンクリック生成へ（追加・非稼働なら無害）----
+  tryBridge(instruction, json);
+}
+
+// ブリッジ生成状況の1要素を更新（動的値は textContent＝注入対策・spinner のみ構造）。
+function setBridgeStatus(kind, text, spinner) {
+  const el = document.getElementById('bridgeStatus');
+  if (!el) return;
+  el.className = 'bridge-status bs-' + kind;
+  el.textContent = '';
+  if (spinner) el.appendChild(Object.assign(document.createElement('span'), { className: 'bs-spin' }));
+  el.appendChild(document.createTextNode(text));
+  el.style.display = 'flex';
+}
+function showManualGuidance() {
+  // ブリッジ非稼働／通信不可: 従来のクリップボード＋手順案内（NFR-005・SPEC §9）。
+  setBridgeStatus('guide',
+    '生成指示書をクリップボードにコピーしました。Claude Code で /draft-generate に貼り付けると生成できます（ローカルブリッジ未起動）。',
+    false);
+}
+function showLoading(sec) {
+  setBridgeStatus('loading', '生成中…（最大10分）　経過 ' + (sec || 0) + ' 秒', true);
+}
+function showBridgeDone(data) {
+  setBridgeStatus('done',
+    '✓ 生成が完了し、比較画面を開きました。保存先: ' + ((data && data.folder) || ''),
+    false);
+}
+function showBridgeError(msg) {
+  setBridgeStatus('error',
+    'エラー：' + msg + ' ／ 生成指示書はクリップボードにコピー済みです。Claude Code の /draft-generate に貼り付けても生成できます。',
+    false);
+}
+
+// GET /health を約800msタイムアウトでプローブ。例外/失敗は false（→フォールバック）。
+async function probeHealth() {
+  if (typeof fetch !== 'function') return false;
+  const ctrl = (typeof AbortController === 'function') ? new AbortController() : null;
+  const timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 800) : null;
+  try {
+    const res = await fetch(BRIDGE_ORIGIN + '/health', ctrl ? { signal: ctrl.signal } : {});
+    if (timer) clearTimeout(timer);
+    if (!res.ok) return false;
+    const data = await res.json();
+    return !!(data && data.ok);
+  } catch (e) {
+    if (timer) clearTimeout(timer);
+    return false;
+  }
+}
+
+// ブリッジ稼働なら POST /generate → /status ポーリング。非稼働／例外は手順案内へ退避。
+async function tryBridge(instruction, json) {
+  const ok = await probeHealth();
+  if (!ok) { showManualGuidance(); return; }
+  showLoading(0);
+  let jobId;
+  try {
+    const res = await fetch(BRIDGE_ORIGIN + '/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: json,
+    });
+    const data = await res.json().catch(function () { return {}; });
+    if (!res.ok || !data.jobId) { showBridgeError((data && data.error) || '生成を開始できませんでした'); return; }
+    jobId = data.jobId;
+  } catch (e) {
+    showManualGuidance();
+    return;
+  }
+  pollStatus(jobId);
+}
+
+// GET /status/{jobId} を約2秒間隔でポーリング。running=経過秒 / done=完了 / error=退避。
+function pollStatus(jobId) {
+  const tick = async function () {
+    let data;
+    try {
+      const res = await fetch(BRIDGE_ORIGIN + '/status/' + jobId);
+      data = await res.json();
+    } catch (e) {
+      showBridgeError('ブリッジとの通信が途切れました');
+      return;
+    }
+    if (data && data.state === 'running') {
+      showLoading(data.elapsedSec || 0);
+      setTimeout(tick, 2000);
+    } else if (data && data.state === 'done') {
+      showBridgeDone(data);
+    } else {
+      showBridgeError((data && (data.message || data.error)) || '生成に失敗しました');
+    }
+  };
+  setTimeout(tick, 2000);
 }
 
 function openModal(el) {
