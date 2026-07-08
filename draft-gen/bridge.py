@@ -397,6 +397,74 @@ def _run_server(port):
             )
         _cleanup(pending_path)
 
+    def _run_regen_job(job_id, pending_path, folder, target, started_at):
+        """ワーカースレッド: /draft-regenerate をヘッドレス実行し、完了後に対象/compare を再オープン(§4.4)。
+
+        既存 _run_job と同型。build_regenerate_command(最小権限・危険フラグ非含有)を shell=False で実行。
+        成功時 {folder}/compare.html があれば compare を、無ければ target を build_open_command で開く(U-7)。
+        """
+        cmd = build_regenerate_command(pending_path)
+        try:
+            proc = subprocess.run(
+                cmd,
+                cwd=root,
+                capture_output=True,
+                text=True,
+                timeout=BRIDGE_TIMEOUT_SEC,
+            )
+        except subprocess.TimeoutExpired:
+            with jobs_lock:
+                jobs[job_id]["state"] = "error"
+                jobs[job_id]["message"] = (
+                    "再生成がタイムアウトしました({0}秒)。もう一度お試しください".format(
+                        BRIDGE_TIMEOUT_SEC
+                    )
+                )
+            _cleanup(pending_path)
+            return
+        except Exception as exc:  # 起動失敗(claude 不在など)
+            with jobs_lock:
+                jobs[job_id]["state"] = "error"
+                jobs[job_id]["message"] = "再生成の起動に失敗しました: {0}".format(exc)
+            _cleanup(pending_path)
+            return
+
+        if proc.returncode != 0:
+            tail = (proc.stderr or proc.stdout or "").strip()[-400:]
+            with jobs_lock:
+                jobs[job_id]["state"] = "error"
+                jobs[job_id]["message"] = "再生成に失敗しました。{0}".format(tail)
+            _cleanup(pending_path)
+            return
+
+        # 上書き(U-4)なので compare.html/index の src は不変 → 対象を再オープンでリロード反映(U-7)
+        compare_rel = "{0}/compare.html".format(folder)
+        open_target = compare_rel if os.path.exists(os.path.join(root, compare_rel)) else target
+        abs_target = os.path.join(root, open_target)
+        opened = False
+        try:
+            subprocess.run(
+                build_open_command(abs_target, sys.platform),
+                cwd=root,
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
+            opened = True
+        except Exception:
+            opened = False  # 開けなくてもパス表示で無害(グレースフル)
+
+        with jobs_lock:
+            jobs[job_id]["state"] = "done"
+            jobs[job_id]["folder"] = folder
+            jobs[job_id]["openTarget"] = open_target
+            jobs[job_id]["message"] = (
+                "再生成が完了しました。{0} を開きました".format(open_target)
+                if opened
+                else "再生成が完了しました。{0} を開いてください".format(open_target)
+            )
+        _cleanup(pending_path)
+
     def _cleanup(pending_path):
         try:
             if os.path.exists(pending_path):
@@ -448,6 +516,9 @@ def _run_server(port):
             path = self.path.split("?", 1)[0]
             if path == "/generate":
                 self._generate()
+                return
+            if path == "/regenerate":
+                self._regenerate()
                 return
             self._json(404, {"error": "not found"})
 
@@ -517,6 +588,112 @@ def _run_server(port):
             worker = threading.Thread(
                 target=_run_job,
                 args=(job_id, pending_path, project, variants, started_at),
+                daemon=True,
+            )
+            worker.start()
+            self._json(202, {"jobId": job_id})
+
+        def _regenerate(self):
+            """POST /regenerate — 部分再生成(KLK-012・§4.4)。body={folder, letter, addr}。
+
+            防御順: ①Origin(403) ②サイズ上限(413/400) ③JSON(400) ④folder/letter/addr 検証(400)
+            ⑤target 実ファイル不在(404) ⑥find_target_section 一意性(unknown→404/duplicate→400・
+            claude 起動前・ファイル無変更) ⑦jobId 発行→.regen.json 書出し→worker 起動→202。
+            既存 _generate と同じ防御(is_allowed_origin/MAX_BODY_BYTES)を再利用する。
+            """
+            # ① Origin 検証(M-SEC-1): body 読取前に弾く(_generate と同一)
+            if not is_allowed_origin(self.headers.get("Origin"), BRIDGE_HOST, port):
+                self._json(403, {"error": "許可されていないオリジンです"})
+                return
+            # ② サイズ上限(L-1): body 読取前に検証(多層防御)
+            try:
+                length = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length < 0:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length > MAX_BODY_BYTES:
+                self._json(413, {"error": "リクエストが大きすぎます"})
+                return
+            raw = self.rfile.read(length) if length else b""
+            # ③ JSON パース
+            try:
+                obj = json.loads(raw.decode("utf-8"))
+            except (ValueError, UnicodeDecodeError):
+                self._json(400, {"error": "リクエストJSONを解析できません"})
+                return
+            if not isinstance(obj, dict):
+                self._json(400, {"error": "リクエストがオブジェクトではありません"})
+                return
+
+            # ④ folder/letter/addr の検証(注入対策・U-5)
+            folder = obj.get("folder")
+            letter = obj.get("letter")
+            addr = obj.get("addr")
+            if not is_safe_mockups_folder(folder):
+                self._json(400, {"error": "folder が不正です(mockups/ 配下の相対パスのみ)"})
+                return
+            if not is_valid_letter(letter):
+                self._json(400, {"error": "letter が不正です(a-c または未指定)"})
+                return
+            if not is_valid_addr(addr):
+                self._json(400, {"error": "番地ラベルが不正です"})
+                return
+
+            # ⑤ 対象HTMLの実在確認(上書き対象・U-4)
+            target = resolve_target_html(folder, letter)
+            abs_target = os.path.join(root, target)
+            if not os.path.isfile(abs_target):
+                self._json(404, {"error": "対象ファイルが見つかりません: {0}".format(target)})
+                return
+
+            # ⑥ 対象セクションの一意性(claude 起動前・ファイル無変更・SPEC §7)
+            try:
+                with open(abs_target, encoding="utf-8") as fh:
+                    html = fh.read()
+            except OSError:
+                self._json(500, {"error": "対象ファイルを読み込めません"})
+                return
+            span, info = find_target_section(html, addr)
+            if span is None and info == "unknown":
+                self._json(404, {"error": "番地 {0} が見つかりません".format(addr)})
+                return
+            if span is None and info == "duplicate":
+                self._json(400, {"error": "番地 {0} が重複しています".format(addr)})
+                return
+
+            # ⑦ jobId 発行 → 検証済みジョブ仕様を pending へ書き worker 起動(プロンプトは pending パスのみ)
+            job_id = uuid.uuid4().hex
+            os.makedirs(pending_dir, exist_ok=True)
+            pending_path = os.path.join(pending_dir, job_id + ".regen.json")
+            with open(pending_path, "w", encoding="utf-8") as fh:
+                json.dump(
+                    {
+                        "schema": "design-regenerate-job",
+                        "version": 1,
+                        "target": target,
+                        "addr": addr,
+                    },
+                    fh,
+                    ensure_ascii=False,
+                    indent=2,
+                )
+
+            started_at = _now()
+            with jobs_lock:
+                jobs[job_id] = {
+                    "state": "running",
+                    "started_at": started_at,
+                    "folder": folder,
+                    "openTarget": None,
+                    "message": "再生成中…",
+                }
+
+            worker = threading.Thread(
+                target=_run_regen_job,
+                args=(job_id, pending_path, folder, target, started_at),
                 daemon=True,
             )
             worker.start()
