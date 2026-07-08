@@ -90,6 +90,11 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
   相対 `<iframe src="index-{letter}.html">`・サムネイル `.thumbstrip`/`.vthumb`・原寸別タブ
   `<a href="index-{letter}.html" target="_blank">`・`@media print`（chrome 非表示）を備えた**単一ファイル・外部依存ゼロ**の
   比較ハブを書く。iframe・原寸リンクとも**同ディレクトリ相対 `.html` のみ**（外部URL 0）。`variants:1` では作らない。
+  - **🔄 セクション再生成コントロール（REQ-103・KLK-012・additive）**: `compare.html` の toolbar 近傍に、番地 `<select>`＋
+    「🔄 このセクションを再生成」ボタンと、ルート要素の `data-folder="mockups/{日付}_{案件名}"`、`</body>` 直前の health-gated
+    インライン fetch（`GET /health` 約800ms → 成功で checked ラジオの letter＋番地を `POST http://127.0.0.1:8765/regenerate` へ・
+    非稼働時は無効化して手動 `/draft-regenerate` を案内・localhost fetch のみで外部URL 0）を焼き込む（DRAFT_RULES §13/§14）。
+    既存の隠しラジオ／iframe／サムネイル／`@media print` 構造は変えない（additive）。
 
 ### 4. 保存とフォルダ自動オープン
 
@@ -127,7 +132,9 @@ DRAFT_RULES §9 に従い **Claude Code が Write** で保存する（保存分�
 - 受付チェックを飛ばして、不足項目を会話の文脈から推測で補って生成すること。
 - 外部リソース（CDN・外部CSS/JS・Webフォント・外部画像URL）に依存するHTMLを生成すること。
 - アタリ画像に `<img src>` や実写真URLを使うこと（a方式＝色面のみ）。
-- 部分再生成（REQ-103・🔄）・フリー実写真b方式（REQ-104）・見本URL反映（REQ-102）を本スキルで実装すること（別チケット）。
+- 部分再生成の**エンジン**（REQ-103・番地指定でセクションを作り直す処理そのもの）を本スキルで実装すること（それは新スキル
+  `/draft-regenerate`・KLK-012 の責務）。本スキルは `compare.html` に🔄トリガー導線を焼き込むのみ（DRAFT_RULES §13/§14）。
+  フリー実写真b方式（REQ-104）・見本URL反映（REQ-102）も本スキルで実装しない（別チケット）。
 - 案間でカラム骨格・番地・セクション構成を変えること（案間の差は**配色テーマ主軸**に限る・DRAFT_RULES §12）。
 - `compare.html` の iframe・原寸リンクに外部URLや案別ファイル以外を指定すること（同ディレクトリ相対 `.html` のみ）。
 - 失敗案のファイルを保存・比較ハブから参照すること（成功案のみ・`.partial-note` で失敗通知）。

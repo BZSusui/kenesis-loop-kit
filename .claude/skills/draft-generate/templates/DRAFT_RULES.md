@@ -350,6 +350,27 @@ SCR-002 mock テーマ変数へ写す。**生成ルート要素（`.mock` 等）
   （KLK-007/008 の §6 `@media print` 準拠）で行う導線を正とする。`compare.html` 自身の `@media print` は chrome
   （toolchrome / toolbar / variant-bar / info-bar）を隠す保険とする。
 
+**🔄 セクション再生成コントロール（REQ-103・KLK-012・health-gated・additive）:**
+
+`compare.html` の toolbar 近傍に、控えめな**1つ**の再生成コントロールを additive に置く（既存の隠しラジオ／iframe／サムネイル／
+`@media print` 構造は不変）。standalone `index-{letter}.html` には🔄を注入しない（印刷成果物にJSを増やさない・注入面を広げない）。
+
+- **ルート要素に `data-folder="mockups/{YYYY-MM-DD}_{案件名}"` を焼き込む**（保存先フォルダの相対パス。`compare.html` は既に
+  `meta.project` を表示しており、フォルダパスは新たな機密ではない・`mockups/` はGit除外）。JS はこれを読んで `folder` を得る。
+- **コントロール本体**: 「🔄 セクション再生成」＝番地 `<select>`（`NAV-01`/`HERO-01`/`ABOUT-01`/`MENU-01`/`GALLERY-01`/`FOOTER-01` を
+  **列挙**した固定 `<option>`。ユーザー自由入力は作らない＝注入面を作らない）＋「このセクションを再生成」`<button>`。既定は無効化しておく。
+- **`</body>` 直前のインライン JS（外部依存ゼロ・localhost fetch のみ）**:
+  1. 起動時に `GET http://127.0.0.1:8765/health` を **AbortController 約800ms** で試行。**失敗ならコントロールを無効化**し
+     「ローカルブリッジ未起動。`python3 draft-gen/bridge.py` を起動するか、Claude Code で `/draft-regenerate {folder} {letter} {番地}`
+     でも再生成できます」と案内する（**graceful**・KLK-010 U-7 同型）。
+  2. 成功時、ボタン押下で **checked ラジオの letter**（`document.querySelector('input[name=variant]:checked')` の id `ra/rb/rc` → `a/b/c`）と
+     選択中の番地を取り、`fetch('http://127.0.0.1:8765/regenerate', {method:'POST', headers:{'Content-Type':'application/json'},
+     body: JSON.stringify({folder, letter, addr})})` を投げ、返った `jobId` で `GET /status/{jobId}` をポーリングする
+     （`draft-gen/index.html` の probeHealth／pollStatus と同型）。完了でブリッジが対象/`compare.html` を再オープンする（U-7）。
+  3. 動的値は `textContent` で表示する（注入対策）。localhost fetch は §1 が禁じる外部CDN/フォント/画像ではない（外部URL 0 を保つ）。
+- ブリッジ側で `folder`/`letter`/`addr` を再検証（`is_safe_mockups_folder`/`is_valid_letter`/`is_valid_addr`＋対象ファイルでの番地一意性）
+  するため、compare.html 側は安全な番地列挙のみで足りる（多層防御・§4.4）。
+
 ---
 
 ## 14. 部分再生成規約（REQ-103・`/draft-regenerate`）
