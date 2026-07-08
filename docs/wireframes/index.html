@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<!--
+  ⚠ このファイルはワイヤーフレーム一覧(ハブページ)です。実装コードではありません。
+  準拠SPEC: v1.2 / 生成日: 2026-07-07
+
+  ■ カラーパレット(全画面共通・標準パレットを使用。SPEC.mdには記載しない=見た目の正はワイヤーフレーム側)
+    --color-base:      #FFFFFF  背景・カード面
+    --color-main:      #64B9E6  装飾線・見出し帯(非テキスト)
+    --color-main-deep: #2E8BC9  塗りボタン・選択状態(白文字)
+    --color-link:      #1C6FA6  白背景上のテキストリンク
+    --color-accent:    #FF4568  必須マーク・エラー
+    --color-accent-2:  #F9BA5D  画像プレースホルダ背景
+    --color-text:      #374151  本文
+    --color-border:    #D6E9F5 / --color-bg-subtle: #F0F7FC / --color-text-sub: #6B7280
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ワイヤーフレーム一覧 | デザインラフ・ジェネレーター</title>
+<style>
+  :root {
+    --color-base: #FFFFFF; --color-main: #64B9E6; --color-main-deep: #2E8BC9;
+    --color-link: #1C6FA6; --color-accent: #FF4568; --color-accent-2: #F9BA5D;
+    --color-text: #374151; --color-border: #D6E9F5; --color-bg-subtle: #F0F7FC; --color-text-sub: #6B7280;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Hiragino Sans","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+    color: var(--color-text); background: var(--color-bg-subtle); line-height: 1.65; }
+  .info-bar { display: flex; align-items: center; height: 32px; padding: 0 14px;
+    background: #333; color: #fff; font-size: 12px; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  header.hd h1 { font-size: 24px; margin: 6px 0 4px; }
+  header.hd .meta { color: var(--color-text-sub); font-size: 13px; }
+  header.hd .meta b { color: var(--color-text); }
+
+  h2.sec { font-size: 16px; margin: 32px 0 12px; padding-left: 10px; border-left: 4px solid var(--color-main-deep); }
+
+  /* 画面カード */
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 16px; }
+  .card { background: var(--color-base); border: 1px solid var(--color-border); border-radius: 12px;
+    padding: 16px 18px; display: flex; flex-direction: column; }
+  .card .top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .card .scr { font-family: ui-monospace, monospace; font-size: 12px; color: var(--color-main-deep); font-weight: 700; }
+  .card .st { margin-left: auto; font-size: 11px; padding: 2px 9px; border-radius: 999px; }
+  .st.done { background: #E5F4EA; color: #1E7A43; border: 1px solid #B8E0C6; }
+  .st.todo { background: #F2F3F5; color: #6B7280; border: 1px solid #E0E2E6; }
+  .st.should { background: #FFF6EC; color: #C9821F; border: 1px solid #F3D9B0; }
+  .card h3 { font-size: 16px; margin: 2px 0 6px; }
+  .card .purpose { font-size: 13px; color: var(--color-text); margin: 0 0 10px; flex: 1; }
+  .card .reqs { font-size: 11px; color: var(--color-text-sub); margin-bottom: 12px; font-family: ui-monospace, monospace; }
+  .card .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn { display: inline-block; text-decoration: none; font-size: 13px; padding: 8px 14px; border-radius: 8px; }
+  .btn.open { background: var(--color-main-deep); color: #fff; }
+  .btn.cmp { background: #fff; color: var(--color-link); border: 1px solid var(--color-border); }
+  .btn.disabled { background: #F2F3F5; color: #9aa3af; pointer-events: none; }
+
+  /* 遷移図(外部依存ゼロ・CSSレイアウト) */
+  .flow { background: #fff; border: 1px solid var(--color-border); border-radius: 12px; padding: 20px; overflow-x: auto; }
+  .flow-row { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; min-width: max-content; }
+  .node { border: 2px solid var(--color-main-deep); border-radius: 10px; padding: 10px 14px; text-align: center;
+    background: var(--color-bg-subtle); text-decoration: none; color: var(--color-text); min-width: 118px; }
+  .node .nid { display: block; font-family: ui-monospace, monospace; font-size: 11px; color: var(--color-main-deep); font-weight: 700; }
+  .node .nnm { display: block; font-size: 13px; margin-top: 2px; }
+  .node.sys { border-style: dashed; border-color: var(--color-text-sub); background: #fff; }
+  .node.sys .nid { color: var(--color-text-sub); }
+  .node.out { border-color: var(--color-accent-2); background: #FFF9F0; }
+  .node.out .nid { color: #C9821F; }
+  .arrow { display: flex; flex-direction: column; align-items: center; color: var(--color-text-sub); font-size: 10px; flex: none; }
+  .arrow .lbl { white-space: nowrap; margin-bottom: -2px; }
+  .arrow .ln { font-size: 18px; color: var(--color-main-deep); line-height: 1; }
+
+  .flow-notes { margin-top: 14px; font-size: 12.5px; color: var(--color-text); }
+  .flow-notes li { margin: 4px 0; }
+  .flow-notes code { background: var(--color-bg-subtle); padding: 1px 6px; border-radius: 4px; font-size: 11px; }
+
+  /* レビュー手順 */
+  .howto { background: #fff; border: 1px solid var(--color-border); border-radius: 12px; padding: 18px 20px; margin-top: 16px; }
+  .howto h3 { margin: 0 0 8px; font-size: 15px; }
+  .howto ol { margin: 0; padding-left: 20px; font-size: 13.5px; }
+  .howto li { margin: 5px 0; }
+
+  @media (max-width: 640px) {
+    .flow-row { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+<div class="info-bar">ワイヤーフレーム一覧 | デザインラフ・ジェネレーター | 準拠SPEC v1.2</div>
+
+<div class="wrap">
+  <header class="hd">
+    <h1>デザインラフ・ジェネレーター — 画面一覧</h1>
+    <p class="meta">準拠SPEC: <b>v1.2</b> ／ 最終更新: <b>2026-07-07</b> ／ ワイヤーフレームとデザインモックの中間「デザインラフ」を生成するシステム。全4画面のワイヤーフレームを作成しました。</p>
+  </header>
+
+  <h2 class="sec">画面一覧</h2>
+  <div class="cards">
+
+    <div class="card">
+      <div class="top"><span class="scr">SCR-001</span><span class="st done">作成済</span></div>
+      <h3>設定画面</h3>
+      <p class="purpose">業種・カラム構成・配色・参考素材などを指定して「生成指示書」を作る。</p>
+      <p class="reqs">対応: REQ-001〜004, 101, 102, 104, 201</p>
+      <div class="actions">
+        <a class="btn open" href="SCR-001-settings.html">画面を開く</a>
+        <a class="btn cmp" href="compare.html?screen=SCR-001-settings.html">PC/スマホ比較</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="top"><span class="scr">SCR-002</span><span class="st done">作成済</span></div>
+      <h3>比較・閲覧画面</h3>
+      <p class="purpose">生成された複数案を切り替え・比較し、印刷(PDF化)や部分再生成を行う。</p>
+      <p class="reqs">対応: REQ-005〜009, 103</p>
+      <div class="actions">
+        <a class="btn open" href="SCR-002-compare.html">画面を開く</a>
+        <a class="btn cmp" href="compare.html?screen=SCR-002-compare.html">PC/スマホ比較</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="top"><span class="scr">SCR-003</span><span class="st done">作成済 (Could)</span></div>
+      <h3>履歴一覧画面</h3>
+      <p class="purpose">過去の生成を日付・業種・設定の要約で見返し、再表示する。</p>
+      <p class="reqs">対応: REQ-202</p>
+      <div class="actions">
+        <a class="btn open" href="SCR-003-history.html">画面を開く</a>
+        <a class="btn cmp" href="compare.html?screen=SCR-003-history.html">PC/スマホ比較</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="top"><span class="scr">SCR-004</span><span class="st done">作成済 (Should)</span></div>
+      <h3>実績カタログ画面</h3>
+      <p class="purpose">参照素材(実績・見本サムネイル)をタグで絞り込んで閲覧し、新規画像を取り込む。</p>
+      <p class="reqs">対応: REQ-105, 106</p>
+      <div class="actions">
+        <a class="btn open" href="SCR-004-catalog.html">画面を開く</a>
+        <a class="btn cmp" href="compare.html?screen=SCR-004-catalog.html">PC/スマホ比較</a>
+      </div>
+    </div>
+
+  </div>
+
+  <h2 class="sec">画面遷移図</h2>
+  <div class="flow">
+    <div class="flow-row">
+      <a class="node" href="SCR-001-settings.html"><span class="nid">SCR-001</span><span class="nnm">設定画面</span></a>
+      <span class="arrow"><span class="lbl">生成実行</span><span class="ln">→</span></span>
+      <span class="node sys"><span class="nid">生成</span><span class="nnm">Claude Codeが生成</span></span>
+      <span class="arrow"><span class="lbl">完成</span><span class="ln">→</span></span>
+      <a class="node" href="SCR-002-compare.html"><span class="nid">SCR-002</span><span class="nnm">比較・閲覧画面</span></a>
+      <span class="arrow"><span class="lbl">サムネイルクリック</span><span class="ln">→</span></span>
+      <span class="node out"><span class="nid">原寸</span><span class="nnm">別タブ表示</span></span>
+      <span class="arrow"><span class="lbl">ブラウザ印刷</span><span class="ln">→</span></span>
+      <span class="node out"><span class="nid">PDF</span><span class="nnm">提出物</span></span>
+    </div>
+    <ul class="flow-notes">
+      <li>↩︎ <b>SCR-002 →(条件を変えて再生成)→ SCR-001</b>:気に入らなければ設定に戻ってやり直せる。</li>
+      <li>▷ <b><a href="SCR-004-catalog.html">SCR-004 実績カタログ</a> →(参考画像の下見)→ SCR-001</b></li>
+      <li>▷ <b><a href="SCR-003-history.html">SCR-003 履歴一覧</a> →(再表示)→ SCR-002</b></li>
+    </ul>
+  </div>
+
+  <div class="howto">
+    <h3>レビューのしかた</h3>
+    <ol>
+      <li>各カードの「画面を開く」をクリックすると、その画面のワイヤーフレームが開きます。</li>
+      <li>「PC/スマホ比較」を押すと、パソコンでの見え方とスマートフォン(幅375px)での見え方を並べて確認できます。</li>
+      <li>SCR-002 では、案A/B/Cのボタンで案を切り替えられます。ブラウザの印刷プレビュー(⌘/Ctrl+P)を開くと、番地ラベルなどの補助表示が消えて提出用のPDFイメージになります。</li>
+      <li>直したい点は「<b>SCR-001 の配色欄をもっと大きく</b>」のように、画面番号と場所を添えて教えてください。スマホ表示だけ直したい場合は「スマホ表示で」と添えてください。</li>
+    </ol>
+  </div>
+
+</div>
+</body>
+</html>

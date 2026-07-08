@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<!--
+  ⚠ このファイルはワイヤーフレームのレビュー補助ページ(PC/スマホ並列プレビュー)です。実装コードではありません。
+  ?screen=SCR-xxx-name.html で対象画面を受け取り、幅の異なる2つのiframeで並べて表示します。
+  準拠SPEC: v1.2 / 生成日: 2026-07-07
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PC / スマホ 比較プレビュー | ワイヤーフレーム</title>
+<style>
+  :root {
+    --color-main-deep: #2E8BC9; --color-link: #1C6FA6; --color-text: #374151;
+    --color-border: #D6E9F5; --color-bg-subtle: #F0F7FC; --color-text-sub: #6B7280;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Hiragino Sans","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+    color: var(--color-text); background: var(--color-bg-subtle); }
+  .info-bar { display: flex; align-items: center; justify-content: space-between;
+    height: 32px; padding: 0 14px; background: #333; color: #fff; font-size: 12px; }
+  .info-bar a { color: #cfe6f7; text-decoration: none; }
+  .head { max-width: 1200px; margin: 0 auto; padding: 16px 20px 0; }
+  .head h1 { font-size: 18px; margin: 6px 0 2px; }
+  .head p { margin: 0; font-size: 13px; color: var(--color-text-sub); }
+  .head .target { font-weight: 700; color: var(--color-main-deep); }
+
+  .stage { max-width: 1200px; margin: 16px auto 40px; padding: 0 20px;
+    display: grid; grid-template-columns: 1fr 400px; gap: 22px; align-items: start; }
+  .col h2 { font-size: 13px; margin: 0 0 8px; color: var(--color-text-sub); display: flex; align-items: center; gap: 8px; }
+  .col h2 .badge { background: var(--color-main-deep); color: #fff; border-radius: 4px; padding: 2px 8px; font-size: 11px; }
+  .frame-wrap { background: #fff; border: 1px solid var(--color-border); border-radius: 10px; padding: 10px; }
+  iframe { width: 100%; border: none; background: #fff; border-radius: 6px; }
+  .pc iframe { height: 760px; }
+  .phone {
+    width: 375px; margin: 0 auto; border: 10px solid #222; border-radius: 30px;
+    overflow: hidden; background: #222;
+  }
+  .phone .notch { height: 18px; background: #222; }
+  .phone iframe { height: 667px; border-radius: 0; }
+
+  .empty { max-width: 700px; margin: 40px auto; background: #fff; border: 1px solid var(--color-border);
+    border-radius: 10px; padding: 26px; text-align: center; }
+  .empty a { color: var(--color-link); }
+  .empty ul { text-align: left; display: inline-block; margin: 14px auto 0; }
+
+  @media (max-width: 900px) {
+    .stage { grid-template-columns: 1fr; }
+    .phone { margin-top: 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="info-bar">
+  <span>PC / スマホ 比較プレビュー | ワイヤーフレーム | 準拠SPEC v1.2</span>
+  <a href="index.html">← 画面一覧へ</a>
+</div>
+
+<div id="app"></div>
+
+<script>
+  // レビュー補助のみ:クエリを読んで2つのiframeに同じ画面を割り当てる(外部依存なし)
+  (function () {
+    var params = new URLSearchParams(location.search);
+    var screen = params.get('screen');
+    var app = document.getElementById('app');
+
+    // 安全のため、同ディレクトリのhtmlファイル名のみ許可
+    var safe = screen && /^[A-Za-z0-9_\-]+\.html$/.test(screen);
+
+    if (!safe) {
+      app.innerHTML =
+        '<div class="empty"><h1>比較する画面が指定されていません</h1>' +
+        '<p><a href="index.html">画面一覧(index.html)</a> の各カードにある「PC/スマホ比較」から開いてください。</p>' +
+        '<ul><li>PC表示は幅いっぱいのiframe</li><li>スマホ表示は幅375pxの端末風フレーム</li>' +
+        '<li>同じHTMLを2つの幅で並べ、レイアウトの変形を確認できます</li></ul></div>';
+      return;
+    }
+
+    app.innerHTML =
+      '<div class="head"><h1>PC / スマホ 比較プレビュー</h1>' +
+      '<p>対象画面: <span class="target">' + screen + '</span> — 同じHTMLを2つの幅で並べています。</p></div>' +
+      '<div class="stage">' +
+        '<div class="col pc"><h2><span class="badge">PC</span> 幅いっぱい表示</h2>' +
+          '<div class="frame-wrap"><iframe src="' + screen + '" title="PC preview"></iframe></div></div>' +
+        '<div class="col"><h2><span class="badge">スマホ</span> 幅375px(iPhone想定)</h2>' +
+          '<div class="phone"><div class="notch"></div><iframe src="' + screen + '" title="Mobile preview"></iframe></div></div>' +
+      '</div>';
+  })();
+</script>
+</body>
+</html>

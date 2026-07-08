@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<!--
+  ⚠ このファイルはワイヤーフレーム(画面イメージの確認用)です。実装コードではありません。
+  実装は docs/SPEC.md セクション9(技術的制約)に定められた技術スタックで別途行うこと。
+  このHTML/CSSを本番コードへコピーしてはならない。
+  対応画面: SCR-002 比較・閲覧画面 / 準拠SPEC: v1.2 / 生成日: 2026-07-07
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SCR-002 比較・閲覧画面 | ワイヤーフレーム</title>
+<style>
+  :root {
+    --color-base: #FFFFFF;
+    --color-main: #64B9E6;
+    --color-main-deep: #2E8BC9;
+    --color-link: #1C6FA6;
+    --color-accent: #FF4568;
+    --color-accent-2: #F9BA5D;
+    --color-text: #374151;
+    --color-border: #D6E9F5;
+    --color-bg-subtle: #F0F7FC;
+    --color-text-sub: #6B7280;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    color: var(--color-text); background: var(--color-bg-subtle); line-height: 1.6;
+  }
+
+  /* ===== ツールの枠(画面のみ・印刷時は非表示) ===== */
+  .info-bar {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 32px; padding: 0 14px; background: #333; color: #fff; font-size: 12px;
+  }
+  .info-bar a { color: #cfe6f7; text-decoration: none; }
+
+  .toolchrome { max-width: 1120px; margin: 0 auto; padding: 16px 20px 0; }
+  .proj-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .proj-head h1 { font-size: 20px; margin: 6px 0; }
+  .proj-head .sub { color: var(--color-text-sub); font-size: 13px; }
+  .settings-chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 0; }
+  .settings-chips span {
+    font-size: 12px; background: #fff; border: 1px solid var(--color-border);
+    border-radius: 999px; padding: 3px 11px; color: var(--color-text);
+  }
+
+  /* 一部の案が失敗した場合の表示例(REQ-008) */
+  .partial-note {
+    display: flex; gap: 8px; align-items: flex-start; margin: 12px 0 0;
+    padding: 10px 13px; background: #FFF6EC; border: 1px solid var(--color-accent-2);
+    border-radius: 8px; font-size: 12.5px;
+  }
+  .partial-note .mk { color: #C9821F; font-weight: 700; }
+
+  /* 案切替バー + サムネイル */
+  .variant-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 16px 0 0; }
+  .seg { display: inline-flex; border: 1px solid var(--color-border); border-radius: 9px; overflow: hidden; background: #fff; }
+  .seg label {
+    padding: 9px 20px; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--color-text-sub);
+    border-right: 1px solid var(--color-border);
+  }
+  .seg label:last-child { border-right: none; }
+  .thumbstrip { display: flex; gap: 10px; margin-left: auto; flex-wrap: wrap; }
+  .vthumb {
+    width: 108px; border: 2px solid var(--color-border); border-radius: 8px; overflow: hidden;
+    cursor: pointer; background: #fff; font-size: 11px;
+  }
+  .vthumb .mini { height: 62px; display: flex; flex-direction: column; }
+  .vthumb .mini .h { height: 26px; }
+  .vthumb .mini .b { flex: 1; background: #fff; display: flex; gap: 2px; padding: 3px; }
+  .vthumb .mini .b i { flex: 1; background: var(--color-bg-subtle); border-radius: 2px; }
+  .vthumb .cap { padding: 4px 6px; display: flex; justify-content: space-between; align-items: center; }
+  .vthumb .cap .full { color: var(--color-link); font-size: 10px; text-decoration: none; }
+
+  /* 案切替(CSS only) */
+  .tabctrl { position: absolute; opacity: 0; pointer-events: none; }
+  .toolbar {
+    max-width: 1120px; margin: 14px auto 0; padding: 0 20px;
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  }
+  .toolbar .spacer { margin-left: auto; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px; text-decoration: none; cursor: pointer;
+    border-radius: 8px; font-size: 13px; padding: 9px 16px; border: 1px solid var(--color-border);
+    background: #fff; color: var(--color-link);
+  }
+  .btn.primary { background: var(--color-main-deep); color: #fff; border: none; font-weight: 700; }
+  .btn.accent { border-color: var(--color-accent-2); color: #C9821F; }
+
+  /* ===== プレビュー領域(キャンバス) ===== */
+  .canvas { max-width: 1120px; margin: 14px auto 60px; padding: 0 20px; }
+  .stage {
+    background: #cfd6dd; border: 1px solid var(--color-border); border-radius: 12px;
+    padding: 18px; overflow: hidden;
+  }
+  .stage-label { font-size: 11px; color: #5b6875; margin-bottom: 10px; display: flex; gap: 8px; align-items: center; }
+  .stage-label .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-main-deep); }
+
+  .pane { display: none; }
+  #ra:checked ~ .canvas #paneA,
+  #rb:checked ~ .canvas #paneB,
+  #rc:checked ~ .canvas #paneC { display: block; }
+  /* セグメント選択中のハイライト */
+  #ra:checked ~ .toolchrome label[for=ra],
+  #rb:checked ~ .toolchrome label[for=rb],
+  #rc:checked ~ .toolchrome label[for=rc] { background: var(--color-main-deep); color: #fff; }
+  #ra:checked ~ .toolchrome .vthumb.va,
+  #rb:checked ~ .toolchrome .vthumb.vb,
+  #rc:checked ~ .toolchrome .vthumb.vc { border-color: var(--color-main-deep); box-shadow: 0 0 0 3px rgba(46,139,201,.18); }
+
+  /* ===== 生成モック本体(ツールとは別配色。各案でテーマを差し替え) ===== */
+  .mock {
+    --m-main: #2E7D6B; --m-accent: #E8A33D; --m-bg: #F7F5F0; --m-text: #333; --m-nav: #24463E;
+    background: var(--m-bg); color: var(--m-text); border-radius: 6px; overflow: hidden;
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+    box-shadow: 0 6px 24px rgba(0,0,0,.14); position: relative;
+  }
+  #paneB .mock { --m-main:#22303A; --m-accent:#C6A15B; --m-bg:#FFFFFF; --m-nav:#1A252C; }
+  #paneC .mock { --m-main:#E86FA0; --m-accent:#57C4C4; --m-bg:#FFF6FA; --m-nav:#D65A8E; font-family: "Hiragino Sans", sans-serif; }
+
+  /* 番地ラベル+再生成(画面のみ) */
+  .sec { position: relative; }
+  .addr {
+    position: absolute; top: 8px; left: 8px; z-index: 5; display: inline-flex; gap: 6px; align-items: center;
+  }
+  .addr .pin {
+    background: rgba(17,24,39,.82); color: #fff; font-size: 10px; letter-spacing: .04em;
+    padding: 2px 7px; border-radius: 4px; font-family: ui-monospace, monospace;
+  }
+  .addr .regen {
+    background: #fff; color: var(--color-link); border: 1px solid var(--color-border);
+    font-size: 10px; padding: 2px 7px; border-radius: 4px; cursor: pointer; text-decoration: none;
+  }
+
+  /* mock: nav */
+  .m-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 22px; background: var(--m-nav); color: #fff;
+  }
+  .m-nav .logo { font-size: 17px; font-weight: 700; letter-spacing: .06em; }
+  .m-nav ul { display: flex; gap: 18px; list-style: none; margin: 0; padding: 0; font-size: 12px; }
+  .m-nav .cta { background: var(--m-accent); color: #fff; padding: 6px 14px; border-radius: 4px; font-size: 12px; }
+
+  /* mock: hero */
+  .m-hero {
+    position: relative; min-height: 340px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center; color: #fff; padding: 40px 20px;
+    background: linear-gradient(rgba(20,30,25,.32), rgba(20,30,25,.32)),
+                repeating-linear-gradient(45deg, var(--m-main), var(--m-main) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 28px);
+  }
+  .m-hero .catch { font-size: 34px; font-weight: 700; letter-spacing: .08em; margin: 0 0 12px; text-shadow: 0 2px 8px rgba(0,0,0,.3); }
+  .m-hero .lead { font-size: 15px; max-width: 520px; margin: 0 0 22px; }
+  .m-hero .hero-cta { background: var(--m-accent); color: #fff; padding: 12px 30px; border-radius: 4px; font-size: 14px; letter-spacing:.05em; }
+  .atari-tag {
+    position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,.55); color: #fff;
+    font-size: 10px; padding: 3px 8px; border-radius: 4px; font-family: "Hiragino Sans", sans-serif;
+  }
+
+  /* mock: 汎用セクション */
+  .m-sec { padding: 40px 34px; }
+  .m-sec h2 { text-align: center; font-size: 22px; letter-spacing: .12em; margin: 0 0 4px; color: var(--m-main); }
+  .m-sec .en { text-align: center; font-size: 11px; letter-spacing: .3em; color: var(--m-accent); margin-bottom: 22px; font-family: ui-monospace, monospace; }
+  .m-sec p.body { max-width: 560px; margin: 0 auto; font-size: 14px; text-align: center; }
+  .todo { color: #B54; background: #FFF0F0; border: 1px dashed #E39; border-radius: 4px; padding: 1px 6px; font-size: 12.5px; font-family: "Hiragino Sans", sans-serif; }
+
+  /* アタリ画像プレースホルダ(色面+説明+検索キーワード) */
+  .atari {
+    background:
+      linear-gradient(135deg, color-mix(in srgb, var(--m-main) 22%, #fff), color-mix(in srgb, var(--m-accent) 26%, #fff));
+    border: 1px dashed color-mix(in srgb, var(--m-main) 45%, #999);
+    border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; color: color-mix(in srgb, var(--m-main) 55%, #333); padding: 14px; gap: 4px;
+    font-family: "Hiragino Sans", sans-serif;
+  }
+  .atari .ic { font-size: 22px; }
+  .atari .desc { font-size: 12.5px; font-weight: 600; }
+  .atari .kw { font-size: 11px; color: var(--color-text-sub); }
+  .atari .kw b { font-family: ui-monospace, monospace; color: var(--m-main); }
+
+  .m-about { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; align-items: center; max-width: 820px; margin: 0 auto; }
+  .m-about .atari { min-height: 180px; }
+  .m-about .txt h3 { font-size: 18px; color: var(--m-main); margin: 0 0 10px; }
+  .m-about .txt p { font-size: 13.5px; margin: 0; }
+
+  .m-menu { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; max-width: 860px; margin: 0 auto; }
+  .m-card { background: #fff; border-radius: 6px; overflow: hidden; box-shadow: 0 3px 12px rgba(0,0,0,.08); }
+  .m-card .atari { min-height: 120px; border-radius: 0; border: none; border-bottom: 1px dashed #bbb; }
+  .m-card .ct { padding: 14px; text-align: center; }
+  .m-card .ct h4 { margin: 0 0 6px; font-size: 15px; color: var(--m-main); }
+  .m-card .ct .price { font-size: 13px; color: var(--m-accent); font-weight: 700; }
+  .m-card .ct p { font-size: 12px; margin: 6px 0 0; color: var(--color-text-sub); }
+
+  .m-gallery { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 860px; margin: 0 auto; }
+  .m-gallery .atari { aspect-ratio: 1; min-height: 0; padding: 8px; }
+  .m-gallery .atari .ic { font-size: 16px; }
+  .m-gallery .atari .desc { font-size: 10.5px; }
+
+  .m-foot { background: var(--m-nav); color: #fff; text-align: center; padding: 30px 20px; }
+  .m-foot .fcta { display: inline-block; background: var(--m-accent); color: #fff; padding: 12px 34px; border-radius: 4px; font-size: 14px; margin-bottom: 16px; }
+  .m-foot .fnav { font-size: 11px; opacity: .85; }
+
+  /* スクロール出現アニメの注記(画面のみ) */
+  .anim-note {
+    text-align: center; font-size: 11px; color: #5b6875; margin: 10px 0 0;
+    font-family: "Hiragino Sans", sans-serif;
+  }
+
+  /* ===== レスポンシブ ===== */
+  @media (max-width: 640px) {
+    .variant-bar { flex-direction: column; align-items: stretch; }
+    .thumbstrip { margin-left: 0; justify-content: center; }
+    .m-nav ul { display: none; }
+    .m-nav::after { content: "☰"; color: #fff; font-size: 20px; }
+    .m-hero .catch { font-size: 24px; }
+    .m-about, .m-menu, .m-gallery { grid-template-columns: 1fr; }
+    .m-gallery { grid-template-columns: repeat(2, 1fr); }
+    .toolbar { gap: 8px; }
+    .btn { flex: 1 1 44%; justify-content: center; }
+  }
+
+  /* ===== 印刷(PDF化):ツール枠・番地ラベル・注記を隠す ===== */
+  @media print {
+    .info-bar, .toolchrome, .toolbar, .stage-label, .addr, .anim-note, .atari-tag { display: none !important; }
+    body, .canvas, .stage { background: #fff; margin: 0; padding: 0; }
+    .stage { border: none; border-radius: 0; box-shadow: none; }
+    .mock { box-shadow: none; border-radius: 0; }
+    /* 印刷時は選択中の案のみ出力(既定は案A) */
+  }
+</style>
+</head>
+<body>
+
+<div class="info-bar">
+  <span>SCR-002 比較・閲覧画面 | ワイヤーフレーム | 準拠SPEC v1.2</span>
+  <a href="index.html">← 画面一覧へ</a>
+</div>
+
+<!-- 案切替のラジオ(CSS only。既定は案A) -->
+<input type="radio" name="variant" id="ra" class="tabctrl" checked>
+<input type="radio" name="variant" id="rb" class="tabctrl">
+<input type="radio" name="variant" id="rc" class="tabctrl">
+
+<div class="toolchrome">
+  <div class="proj-head">
+    <h1>サンプル美容室サイト</h1>
+    <span class="sub">生成日 2026-07-07 / 3案</span>
+  </div>
+  <div class="settings-chips">
+    <span>業種: 美容・サロン</span>
+    <span>カラム: 1カラム</span>
+    <span>テイスト: シンプル</span>
+    <span>配色: グリーン系</span>
+    <span>アタリ画像: 標準(色面+検索KW)</span>
+  </div>
+
+  <div class="partial-note">
+    <span class="mk">i</span>
+    <span>【表示例】3案のうち<b>案Cの生成が一部失敗</b>したため、案A・案Bを表示しています。案Cは「この案だけ再生成」で作り直せます。</span>
+  </div>
+
+  <div class="variant-bar">
+    <div class="seg">
+      <label for="ra">案A</label>
+      <label for="rb">案B</label>
+      <label for="rc">案C</label>
+    </div>
+    <div class="thumbstrip">
+      <div class="vthumb va">
+        <div class="mini"><div class="h" style="background:#2E7D6B"></div><div class="b"><i></i><i></i><i></i></div></div>
+        <div class="cap"><span>案A</span><a href="SCR-002-compare.html" target="_blank" class="full">原寸 ↗</a></div>
+      </div>
+      <div class="vthumb vb">
+        <div class="mini"><div class="h" style="background:#22303A"></div><div class="b"><i></i><i></i><i></i></div></div>
+        <div class="cap"><span>案B</span><a href="SCR-002-compare.html" target="_blank" class="full">原寸 ↗</a></div>
+      </div>
+      <div class="vthumb vc">
+        <div class="mini"><div class="h" style="background:#E86FA0"></div><div class="b"><i></i><i></i><i></i></div></div>
+        <div class="cap"><span>案C</span><a href="SCR-002-compare.html" target="_blank" class="full">原寸 ↗</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <a href="#" class="btn primary">🖨 印刷 / PDFで保存</a>
+  <a href="SCR-001-settings.html" class="btn">← 設定を変えて再生成</a>
+  <a href="#" class="btn accent">📁 保存フォルダを開く</a>
+  <span class="spacer"></span>
+  <span style="font-size:12px;color:var(--color-text-sub)">サムネイルの「原寸 ↗」で別タブに実寸表示 / 各セクションの 🔄 でその部分だけ再生成できます</span>
+</div>
+
+<div class="canvas">
+  <!-- ============ 案A ============ -->
+  <div class="pane" id="paneA">
+    <div class="stage">
+      <div class="stage-label"><span class="dot"></span>案A プレビュー — ナチュラル / グリーン系(この枠内が生成されたモックです)</div>
+      <div class="mock">
+
+        <div class="sec">
+          <div class="addr"><span class="pin">NAV-01</span><a href="#" class="regen">🔄 再生成</a></div>
+          <div class="m-nav">
+            <span class="logo">Belle Hair</span>
+            <ul><li>ABOUT</li><li>MENU</li><li>STYLIST</li><li>GALLERY</li><li>ACCESS</li></ul>
+            <span class="cta">ご予約</span>
+          </div>
+        </div>
+
+        <div class="sec">
+          <div class="addr"><span class="pin">HERO-01</span><a href="#" class="regen">🔄 再生成</a></div>
+          <div class="m-hero">
+            <h1 class="catch">髪から、私を整える。</h1>
+            <p class="lead">駅徒歩3分。あなたのライフスタイルに寄り添う、大人のための隠れ家サロン。</p>
+            <span class="hero-cta">はじめての方へ ＞</span>
+            <span class="atari-tag">📷 アタリ: 明るいサロン内観・自然光 / 検索: salon interior natural light</span>
+          </div>
+        </div>
+
+        <div class="sec">
+          <div class="addr"><span class="pin">ABOUT-01</span><a href="#" class="regen">🔄 再生成</a></div>
+          <div class="m-sec" style="background:#fff">
+            <h2>CONCEPT</h2><div class="en">はじめての方へ</div>
+            <div class="m-about">
+              <div class="atari"><span class="ic">📷</span><span class="desc">スタイリストの施術風景</span><span class="kw">検索: <b>hair stylist working</b></span></div>
+              <div class="txt">
+                <h3>髪の悩みに、じっくり向き合う</h3>
+                <p>カウンセリングに時間をかけ、一人ひとりの髪質・骨格・ライフスタイルに合わせたスタイルをご提案します。<span class="todo">(要検討: 開業年数や在籍スタイリスト数を入れた信頼感の一文)</span></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sec">
+          <div class="addr"><span class="pin">MENU-01</span><a href="#" class="regen">🔄 再生成</a></div>
+          <div class="m-sec">
+            <h2>MENU</h2><div class="en">メニュー・料金</div>
+            <div class="m-menu">
+              <div class="m-card"><div class="atari"><span class="ic">📷</span><span class="desc">カット</span><span class="kw">検索: <b>haircut</b></span></div><div class="ct"><h4>カット</h4><div class="price">¥5,500〜</div><p>似合わせカット・スタイル提案込み</p></div></div>
+              <div class="m-card"><div class="atari"><span class="ic">📷</span><span class="desc">カラー</span><span class="kw">検索: <b>hair color</b></span></div><div class="ct"><h4>カラー</h4><div class="price">¥7,700〜</div><p>髪に優しい薬剤を使用</p></div></div>
+              <div class="m-card"><div class="atari"><span class="ic">📷</span><span class="desc">トリートメント</span><span class="kw">検索: <b>hair treatment</b></span></div><div class="ct"><h4>トリートメント</h4><div class="price">¥3,300〜</div><p>髪質改善・美髪ケア</p></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sec">
+          <div class="addr"><span class="pin">GALLERY-01</span><a href="#" class="regen">🔄 再生成</a></div>
+          <div class="m-sec" style="background:#fff">
+            <h2>GALLERY</h2><div class="en">スタイル集</div>
+            <div class="m-gallery">
+              <div class="atari"><span class="ic">📷</span><span class="desc">ボブ</span></div>
+              <div class="atari"><span class="ic">📷</span><span class="desc">ミディアム</span></div>
+              <div class="atari"><span class="ic">📷</span><span class="desc">ロング</span></div>
+              <div class="atari"><span class="ic">📷</span><span class="desc">メンズ</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sec">
+          <div class="addr"><span class="pin">FOOTER-01</span><a href="#" class="regen">🔄 再生成</a></div>
+          <div class="m-foot">
+            <div class="fcta">WEBでご予約する</div>
+            <div class="fnav">ABOUT ・ MENU ・ STYLIST ・ GALLERY ・ ACCESS ・ お問い合わせ<br>© Belle Hair</div>
+          </div>
+        </div>
+
+      </div>
+      <p class="anim-note">▼ 実際の生成モックでは、スクロールに合わせて各セクションがふわっとフェードイン(出現アニメーション)します。</p>
+    </div>
+  </div>
+
+  <!-- ============ 案B ============ -->
+  <div class="pane" id="paneB">
+    <div class="stage">
+      <div class="stage-label"><span class="dot"></span>案B プレビュー — 上質 / ネイビー+ゴールド</div>
+      <div class="mock">
+        <div class="sec"><div class="addr"><span class="pin">NAV-01</span><a href="#" class="regen">🔄 再生成</a></div>
+          <div class="m-nav"><span class="logo">Belle Hair</span><ul><li>ABOUT</li><li>MENU</li><li>STYLIST</li><li>GALLERY</li><li>ACCESS</li></ul><span class="cta">ご予約</span></div>
+        </div>
+        <div class="sec"><div class="addr"><span class="pin">HERO-01</span><a href="#" class="regen">🔄 再生成</a></div>
+          <div class="m-hero"><h1 class="catch">上質な時間を、髪に。</h1>
+            <p class="lead">確かな技術と、静けさのある空間。特別な日常のためのプライベートサロン。</p>
+            <span class="hero-cta">ご予約はこちら ＞</span>
+            <span class="atari-tag">📷 アタリ: 高級感のあるサロン内装・間接照明 / 検索: luxury salon interior</span></div>
+        </div>
+        <div class="sec"><div class="addr"><span class="pin">ABOUT-01</span><a href="#" class="regen">🔄 再生成</a></div>
+          <div class="m-sec" style="background:#fff"><h2>CONCEPT</h2><div class="en">サロンについて</div>
+            <div class="m-about"><div class="atari"><span class="ic">📷</span><span class="desc">落ち着いた施術空間</span><span class="kw">検索: <b>calm salon space</b></span></div>
+              <div class="txt"><h3>大人のための、上質なサロン</h3><p>ひとつひとつの所作にこだわり、非日常のひとときをお届けします。<span class="todo">(要検討: こだわりの設備・サービスを示す一文)</span></p></div></div>
+          </div>
+        </div>
+        <div class="sec"><div class="addr"><span class="pin">MENU-01</span><a href="#" class="regen">🔄 再生成</a></div>
+          <div class="m-sec"><h2>MENU</h2><div class="en">メニュー・料金</div>
+            <div class="m-menu">
+              <div class="m-card"><div class="atari"><span class="ic">📷</span><span class="desc">カット</span><span class="kw">検索: <b>haircut</b></span></div><div class="ct"><h4>カット</h4><div class="price">¥6,600〜</div><p>丁寧なカウンセリング付き</p></div></div>
+              <div class="m-card"><div class="atari"><span class="ic">📷</span><span class="desc">カラー</span><span class="kw">検索: <b>hair color</b></span></div><div class="ct"><h4>カラー</h4><div class="price">¥8,800〜</div><p>上品な色味をご提案</p></div></div>
+              <div class="m-card"><div class="atari"><span class="ic">📷</span><span class="desc">スパ</span><span class="kw">検索: <b>head spa</b></span></div><div class="ct"><h4>ヘッドスパ</h4><div class="price">¥4,400〜</div><p>極上のリラクゼーション</p></div></div>
+            </div></div>
+        </div>
+        <div class="sec"><div class="addr"><span class="pin">FOOTER-01</span><a href="#" class="regen">🔄 再生成</a></div>
+          <div class="m-foot"><div class="fcta">WEBでご予約する</div><div class="fnav">ABOUT ・ MENU ・ STYLIST ・ GALLERY ・ ACCESS<br>© Belle Hair</div></div>
+        </div>
+      </div>
+      <p class="anim-note">▼ スクロールに合わせて各セクションがフェードインします。</p>
+    </div>
+  </div>
+
+  <!-- ============ 案C ============ -->
+  <div class="pane" id="paneC">
+    <div class="stage">
+      <div class="stage-label"><span class="dot"></span>案C プレビュー — ポップ / ピンク系</div>
+      <div class="mock">
+        <div class="sec"><div class="addr"><span class="pin">NAV-01</span><a href="#" class="regen">🔄 再生成</a></div>
+          <div class="m-nav"><span class="logo">Belle Hair</span><ul><li>ABOUT</li><li>MENU</li><li>STYLIST</li><li>GALLERY</li><li>ACCESS</li></ul><span class="cta">ご予約</span></div>
+        </div>
+        <div class="sec"><div class="addr"><span class="pin">HERO-01</span><a href="#" class="regen">🔄 再生成</a></div>
+          <div class="m-hero"><h1 class="catch">なりたいが、見つかる。</h1>
+            <p class="lead">トレンドも、あなたらしさも。明るく楽しいサロンタイムをご一緒に。</p>
+            <span class="hero-cta">ネット予約 ＞</span>
+            <span class="atari-tag">📷 アタリ: 明るくポップなサロン・笑顔のスタッフ / 検索: bright cheerful salon</span></div>
+        </div>
+        <div class="sec"><div class="addr"><span class="pin">MENU-01</span><a href="#" class="regen">🔄 再生成</a></div>
+          <div class="m-sec" style="background:#fff"><h2>MENU</h2><div class="en">メニュー・料金</div>
+            <div class="m-menu">
+              <div class="m-card"><div class="atari"><span class="ic">📷</span><span class="desc">カット</span><span class="kw">検索: <b>haircut</b></span></div><div class="ct"><h4>カット</h4><div class="price">¥4,950〜</div><p>学割・U24割あり</p></div></div>
+              <div class="m-card"><div class="atari"><span class="ic">📷</span><span class="desc">カラー</span><span class="kw">検索: <b>hair color</b></span></div><div class="ct"><h4>カラー</h4><div class="price">¥6,600〜</div><p>豊富なカラーバリエ</p></div></div>
+              <div class="m-card"><div class="atari"><span class="ic">📷</span><span class="desc">パーマ</span><span class="kw">検索: <b>hair perm</b></span></div><div class="ct"><h4>パーマ</h4><div class="price">¥7,150〜</div><p>ゆるふわ・韓国風</p></div></div>
+            </div></div>
+        </div>
+        <div class="sec"><div class="addr"><span class="pin">FOOTER-01</span><a href="#" class="regen">🔄 再生成</a></div>
+          <div class="m-foot"><div class="fcta">いますぐネット予約</div><div class="fnav">ABOUT ・ MENU ・ STYLIST ・ GALLERY ・ ACCESS<br>© Belle Hair</div></div>
+        </div>
+      </div>
+      <p class="anim-note">▼ スクロールに合わせて各セクションがフェードインします。</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

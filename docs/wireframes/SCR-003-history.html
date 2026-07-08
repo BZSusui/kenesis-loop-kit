@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<!--
+  ⚠ このファイルはワイヤーフレーム(画面イメージの確認用)です。実装コードではありません。
+  実装は docs/SPEC.md セクション9(技術的制約)に定められた技術スタックで別途行うこと。
+  このHTML/CSSを本番コードへコピーしてはならない。
+  対応画面: SCR-003 履歴一覧画面 / 準拠SPEC: v1.2 / 生成日: 2026-07-07
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SCR-003 履歴一覧画面 | ワイヤーフレーム</title>
+<style>
+  :root {
+    --color-base: #FFFFFF; --color-main: #64B9E6; --color-main-deep: #2E8BC9;
+    --color-link: #1C6FA6; --color-accent: #FF4568; --color-accent-2: #F9BA5D;
+    --color-text: #374151; --color-border: #D6E9F5; --color-bg-subtle: #F0F7FC; --color-text-sub: #6B7280;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Hiragino Sans","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+    color: var(--color-text); background: var(--color-bg-subtle); line-height: 1.6; }
+  .info-bar { position: sticky; top: 0; z-index: 100; display: flex; align-items: center;
+    justify-content: space-between; height: 32px; padding: 0 14px; background: #333; color: #fff; font-size: 12px; }
+  .info-bar a { color: #cfe6f7; text-decoration: none; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 20px 20px 60px; }
+
+  header.hd { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  header.hd h1 { font-size: 21px; margin: 6px 0; }
+  header.hd .cnt { color: var(--color-text-sub); font-size: 13px; }
+
+  .toolbar { display: flex; gap: 10px; align-items: center; margin: 16px 0 0; flex-wrap: wrap; }
+  .search { flex: 1 1 240px; display: flex; align-items: center; gap: 6px; background: #fff;
+    border: 1px solid var(--color-border); border-radius: 8px; padding: 8px 12px; }
+  .search input { border: none; outline: none; width: 100%; font-size: 14px; background: none; color: var(--color-text); }
+  .filter-sel { font-size: 13px; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 8px; background: #fff; color: var(--color-text); }
+  .btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; cursor: pointer;
+    border-radius: 8px; font-size: 13px; padding: 9px 16px; border: 1px solid var(--color-border); background: #fff; color: var(--color-link); }
+  .btn.primary { background: var(--color-main-deep); color: #fff; border: none; font-weight: 700; }
+
+  /* 履歴リスト(行) */
+  .list { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .row { background: #fff; border: 1px solid var(--color-border); border-radius: 12px; padding: 14px 16px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .row .date { flex: none; text-align: center; width: 84px; }
+  .row .date .d { font-size: 18px; font-weight: 700; color: var(--color-main-deep); }
+  .row .date .ym { font-size: 11px; color: var(--color-text-sub); }
+  .row .thumbs { display: flex; gap: 6px; flex: none; }
+  .row .thumbs .t { width: 46px; height: 34px; border-radius: 4px; }
+  .row .body { flex: 1 1 220px; min-width: 180px; }
+  .row .body h3 { margin: 0 0 4px; font-size: 15px; }
+  .row .chips { display: flex; gap: 5px; flex-wrap: wrap; }
+  .row .chips span { font-size: 10.5px; background: var(--color-bg-subtle); border: 1px solid var(--color-border); border-radius: 999px; padding: 2px 8px; }
+  .row .actions { display: flex; gap: 8px; flex: none; margin-left: auto; }
+  .row .cases { font-size: 11px; color: var(--color-text-sub); }
+
+  .empty-hint { text-align: center; color: var(--color-text-sub); font-size: 12.5px; margin-top: 24px; }
+
+  @media (max-width: 640px) {
+    .row { gap: 10px; }
+    .row .date { width: auto; text-align: left; display: flex; gap: 6px; align-items: baseline; }
+    .row .actions { margin-left: 0; width: 100%; }
+    .row .actions .btn { flex: 1; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+<div class="info-bar">
+  <span>SCR-003 履歴一覧画面 | ワイヤーフレーム | 準拠SPEC v1.2</span>
+  <a href="index.html">← 画面一覧へ</a>
+</div>
+
+<div class="wrap">
+  <header class="hd">
+    <h1>生成履歴</h1>
+    <span class="cnt">これまでの生成 24 件</span>
+  </header>
+
+  <div class="toolbar">
+    <div class="search"><span>🔍</span><input type="text" placeholder="案件名・業種で探す"></div>
+    <select class="filter-sel"><option>業種:すべて</option><option>美容・サロン</option><option>飲食</option><option>士業</option></select>
+    <select class="filter-sel"><option>新しい順</option><option>古い順</option><option>案件名順</option></select>
+  </div>
+
+  <div class="list">
+
+    <div class="row">
+      <div class="date"><div class="d">07/07</div><div class="ym">2026</div></div>
+      <div class="thumbs">
+        <div class="t" style="background:#2E7D6B"></div><div class="t" style="background:#22303A"></div><div class="t" style="background:#E86FA0"></div>
+      </div>
+      <div class="body">
+        <h3>サンプル美容室サイト</h3>
+        <div class="chips"><span>美容・サロン</span><span>シンプル</span><span>1カラム</span><span>グリーン系</span></div>
+      </div>
+      <span class="cases">3案</span>
+      <div class="actions">
+        <a href="SCR-002-compare.html" class="btn primary">再表示</a>
+        <a href="SCR-001-settings.html" class="btn">設定を複製</a>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="date"><div class="d">07/05</div><div class="ym">2026</div></div>
+      <div class="thumbs">
+        <div class="t" style="background:#C6A15B"></div><div class="t" style="background:#3B2F2A"></div><div class="t" style="background:#8A6D3B"></div>
+      </div>
+      <div class="body">
+        <h3>和食料理店 提案A</h3>
+        <div class="chips"><span>飲食</span><span>和風・和モダン</span><span>1カラム</span><span>ゴールド系</span></div>
+      </div>
+      <span class="cases">3案</span>
+      <div class="actions">
+        <a href="SCR-002-compare.html" class="btn primary">再表示</a>
+        <a href="SCR-001-settings.html" class="btn">設定を複製</a>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="date"><div class="d">07/02</div><div class="ym">2026</div></div>
+      <div class="thumbs">
+        <div class="t" style="background:#2E5FA3"></div><div class="t" style="background:#1C3F6E"></div>
+      </div>
+      <div class="body">
+        <h3>税理士事務所リニューアル</h3>
+        <div class="chips"><span>士業</span><span>先進的・シャープ</span><span>2カラム・サブ右</span><span>ブルー系</span></div>
+      </div>
+      <span class="cases">2案</span>
+      <div class="actions">
+        <a href="SCR-002-compare.html" class="btn primary">再表示</a>
+        <a href="SCR-001-settings.html" class="btn">設定を複製</a>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="date"><div class="d">06/28</div><div class="ym">2026</div></div>
+      <div class="thumbs">
+        <div class="t" style="background:#B23A48"></div><div class="t" style="background:#E86FA0"></div><div class="t" style="background:#F2C14E"></div>
+      </div>
+      <div class="body">
+        <h3>ネイルサロン 新規開業</h3>
+        <div class="chips"><span>美容・サロン</span><span>ポップ・カジュアル</span><span>2カラム・サブ左</span><span>ピンク系</span></div>
+      </div>
+      <span class="cases">3案</span>
+      <div class="actions">
+        <a href="SCR-002-compare.html" class="btn primary">再表示</a>
+        <a href="SCR-001-settings.html" class="btn">設定を複製</a>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="empty-hint">※ 履歴・生成物はGit公開対象外のフォルダ(<code>mockups/</code>)に保存されます。</p>
+</div>
+</body>
+</html>

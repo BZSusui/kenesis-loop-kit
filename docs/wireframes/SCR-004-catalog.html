@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<!--
+  ⚠ このファイルはワイヤーフレーム(画面イメージの確認用)です。実装コードではありません。
+  実装は docs/SPEC.md セクション9(技術的制約)に定められた技術スタックで別途行うこと。
+  このHTML/CSSを本番コードへコピーしてはならない。
+  対応画面: SCR-004 実績カタログ画面 / 準拠SPEC: v1.2 / 生成日: 2026-07-07
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SCR-004 実績カタログ画面 | ワイヤーフレーム</title>
+<style>
+  :root {
+    --color-base: #FFFFFF; --color-main: #64B9E6; --color-main-deep: #2E8BC9;
+    --color-link: #1C6FA6; --color-accent: #FF4568; --color-accent-2: #F9BA5D;
+    --color-text: #374151; --color-border: #D6E9F5; --color-bg-subtle: #F0F7FC; --color-text-sub: #6B7280;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Hiragino Sans","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+    color: var(--color-text); background: var(--color-bg-subtle); line-height: 1.6; }
+  .info-bar { position: sticky; top: 0; z-index: 100; display: flex; align-items: center;
+    justify-content: space-between; height: 32px; padding: 0 14px; background: #333; color: #fff; font-size: 12px; }
+  .info-bar a { color: #cfe6f7; text-decoration: none; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 20px 20px 60px; }
+
+  header.hd { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  header.hd h1 { font-size: 21px; margin: 6px 0; }
+  header.hd .cnt { color: var(--color-text-sub); font-size: 13px; }
+
+  /* 社外秘の注記 */
+  .secure-note { display: flex; gap: 8px; align-items: center; margin: 10px 0 0; padding: 9px 13px;
+    background: #FFF0F3; border: 1px solid var(--color-accent); border-radius: 8px; font-size: 12.5px; }
+  .secure-note .mk { color: var(--color-accent); font-weight: 700; }
+
+  /* ツールバー:検索+追加 */
+  .toolbar { display: flex; gap: 10px; align-items: center; margin: 16px 0 0; flex-wrap: wrap; }
+  .search { flex: 1 1 240px; display: flex; align-items: center; gap: 6px; background: #fff;
+    border: 1px solid var(--color-border); border-radius: 8px; padding: 8px 12px; }
+  .search input { border: none; outline: none; width: 100%; font-size: 14px; color: var(--color-text); background: none; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; cursor: pointer;
+    border-radius: 8px; font-size: 13px; padding: 9px 16px; border: 1px solid var(--color-border); background: #fff; color: var(--color-link); }
+  .btn.primary { background: var(--color-main-deep); color: #fff; border: none; font-weight: 700; }
+
+  /* フィルタ */
+  .filters { background: #fff; border: 1px solid var(--color-border); border-radius: 10px; padding: 12px 14px; margin-top: 12px; }
+  .frow { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; flex-wrap: wrap; }
+  .frow .flabel { font-size: 12px; color: var(--color-text-sub); width: 64px; flex: none; padding-top: 4px; }
+  .fchips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .fchip { font-size: 12px; border: 1px solid var(--color-border); border-radius: 999px; padding: 4px 12px; background: #fff; cursor: pointer; }
+  .fchip.on { background: var(--color-main-deep); color: #fff; border-color: var(--color-main-deep); }
+  .fchip.color { display: inline-flex; align-items: center; gap: 6px; }
+  .fchip.color .sw { width: 12px; height: 12px; border-radius: 3px; }
+
+  .result-meta { display: flex; justify-content: space-between; align-items: center; margin: 16px 0 8px; font-size: 12.5px; color: var(--color-text-sub); }
+
+  /* カタロググリッド */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 14px; }
+  .item { background: #fff; border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; }
+  .item .shot { aspect-ratio: 4/3; position: relative; cursor: pointer; display: block;
+    background: linear-gradient(135deg, var(--color-main) 0%, var(--color-accent-2) 100%);
+    color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; text-align: center; padding: 8px; }
+  .item .src { position: absolute; top: 6px; left: 6px; font-size: 10px; padding: 2px 7px; border-radius: 4px; color: #fff; }
+  .item .src.own { background: rgba(30,122,67,.9); }
+  .item .src.ref { background: rgba(201,130,31,.92); }
+  .item .zoom { position: absolute; bottom: 6px; right: 6px; font-size: 12px; background: rgba(0,0,0,.4); padding: 2px 6px; border-radius: 4px; }
+  .item .meta { padding: 10px 12px; }
+  .item .tags { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+  .item .tags span { font-size: 10.5px; background: var(--color-bg-subtle); border: 1px solid var(--color-border); border-radius: 999px; padding: 2px 8px; }
+  .item .use { display: block; text-align: center; font-size: 12px; text-decoration: none; color: var(--color-link);
+    border: 1px solid var(--color-border); border-radius: 6px; padding: 6px; }
+  .item .use:hover { background: var(--color-bg-subtle); }
+
+  /* 画像追加(REQ-106) */
+  .uploader { background: #fff; border: 1px solid var(--color-border); border-radius: 12px; padding: 18px 20px; margin-top: 26px; }
+  .uploader h2 { font-size: 16px; margin: 0 0 4px; }
+  .uploader .sub { font-size: 12.5px; color: var(--color-text-sub); margin: 0 0 12px; }
+  .dropzone { border: 2px dashed var(--color-main); border-radius: 10px; background: var(--color-bg-subtle);
+    padding: 26px; text-align: center; color: var(--color-text-sub); }
+  .dropzone .big { font-size: 30px; }
+  .dropzone .t { font-size: 14px; color: var(--color-text); margin: 6px 0 2px; }
+  .autotag { margin-top: 14px; border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; }
+  .autotag .at-head { background: var(--color-bg-subtle); padding: 8px 12px; font-size: 12.5px; color: var(--color-text); border-bottom: 1px solid var(--color-border); }
+  .autotag .at-row { display: flex; align-items: center; gap: 12px; padding: 12px; flex-wrap: wrap; }
+  .autotag .at-thumb { width: 88px; aspect-ratio: 4/3; border-radius: 6px; background: linear-gradient(135deg, var(--color-accent-2), var(--color-main)); flex: none; }
+  .autotag .at-tags { flex: 1 1 200px; font-size: 12.5px; }
+  .autotag .at-tags b { color: var(--color-main-deep); }
+  .autotag .at-tags .edit { color: var(--color-link); font-size: 11px; text-decoration: none; margin-left: 8px; }
+
+  /* モーダル(SCR-001と同方式・スクロール位置維持) */
+  .modal-toggle { display: none; }
+  .modal-back { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(20,30,40,.72); align-items: center; justify-content: center; padding: 20px; }
+  .modal-toggle:checked + .modal-back { display: flex; }
+  .m-backdrop { position: absolute; inset: 0; cursor: zoom-out; }
+  .modal { background: #fff; border-radius: 12px; max-width: 1000px; width: 100%; max-height: 90vh; overflow: auto; position: relative; z-index: 1; }
+  .modal .m-img { aspect-ratio: 16/9; width: 100%; background: linear-gradient(135deg, var(--color-main), var(--color-accent-2)); display: flex; align-items: center; justify-content: center; color: #fff; border-radius: 12px 12px 0 0; }
+  .modal .m-body { padding: 14px 18px 18px; }
+  .modal .m-body h3 { margin: 0 0 6px; font-size: 15px; }
+  .modal .m-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .modal .m-tags span { font-size: 11.5px; background: var(--color-bg-subtle); border: 1px solid var(--color-border); border-radius: 999px; padding: 3px 10px; }
+  .modal .m-close { position: absolute; top: 10px; right: 12px; z-index: 1; width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(0,0,0,.5); color: #fff; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 18px; cursor: pointer; }
+  .modal .m-note { font-size: 11px; color: var(--color-text-sub); }
+
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .frow .flabel { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="info-bar">
+  <span>SCR-004 実績カタログ画面 | ワイヤーフレーム | 準拠SPEC v1.2</span>
+  <a href="index.html">← 画面一覧へ</a>
+</div>
+
+<div class="wrap">
+  <header class="hd">
+    <h1>実績カタログ</h1>
+    <span class="cnt">全 103 点(自社実績 98 / 収集見本 5)</span>
+  </header>
+
+  <div class="secure-note">
+    <span class="mk">🔒</span>
+    <span>この画面で扱う画像は<b>社外秘</b>(クライアント名等を含む)です。Git公開対象外のフォルダにのみ保存されます。収集見本は<b>社内の参考目的のみ</b>で使用します。</span>
+  </div>
+
+  <div class="toolbar">
+    <div class="search"><span>🔍</span><input type="text" placeholder="キーワードで探す(例:サロン ナチュラル 緑)"></div>
+    <a href="#add" class="btn primary">＋ 画像を追加</a>
+    <a href="SCR-001-settings.html" class="btn">設定画面へ戻る</a>
+  </div>
+
+  <div class="filters">
+    <div class="frow">
+      <span class="flabel">業種</span>
+      <div class="fchips">
+        <span class="fchip on">美容・サロン</span><span class="fchip">医療</span><span class="fchip">士業</span>
+        <span class="fchip">住宅・不動産</span><span class="fchip">飲食</span><span class="fchip">EC・物販</span>
+        <span class="fchip">教育</span><span class="fchip">旅行・宿泊</span><span class="fchip">その他…</span>
+      </div>
+    </div>
+    <div class="frow">
+      <span class="flabel">テイスト</span>
+      <div class="fchips">
+        <span class="fchip">シンプル</span><span class="fchip on">ナチュラル</span><span class="fchip">高級感</span>
+        <span class="fchip">ポップ</span><span class="fchip">和風</span><span class="fchip">かっこいい</span><span class="fchip">レトロ</span>
+      </div>
+    </div>
+    <div class="frow">
+      <span class="flabel">主配色</span>
+      <div class="fchips">
+        <span class="fchip color"><span class="sw" style="background:#2E7D6B"></span>グリーン</span>
+        <span class="fchip color"><span class="sw" style="background:#2E5FA3"></span>ブルー</span>
+        <span class="fchip color"><span class="sw" style="background:#B23A48"></span>レッド</span>
+        <span class="fchip color"><span class="sw" style="background:#C6A15B"></span>ゴールド</span>
+        <span class="fchip color"><span class="sw" style="background:#E86FA0"></span>ピンク</span>
+        <span class="fchip color"><span class="sw" style="background:#333"></span>モノトーン</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="result-meta">
+    <span>「美容・サロン × ナチュラル」で <b>12件</b> 表示中</span>
+    <span>並び替え: 新しい順 ▾</span>
+  </div>
+
+  <div class="grid">
+    <div class="item">
+      <label for="c1" class="shot">サロン内観サイト<span class="src own">自社実績</span><span class="zoom">🔍</span></label>
+      <div class="meta"><div class="tags"><span>美容</span><span>ナチュラル</span><span>グリーン</span><span>1カラム</span></div>
+        <a class="use" href="SCR-001-settings.html">この雰囲気で生成 →</a></div>
+    </div>
+    <div class="item">
+      <label for="c2" class="shot">オーガニックカフェ<span class="src own">自社実績</span><span class="zoom">🔍</span></label>
+      <div class="meta"><div class="tags"><span>飲食</span><span>ナチュラル</span><span>グリーン</span><span>2カラム</span></div>
+        <a class="use" href="SCR-001-settings.html">この雰囲気で生成 →</a></div>
+    </div>
+    <div class="item">
+      <label for="c3" class="shot">ヨガスタジオLP<span class="src own">自社実績</span><span class="zoom">🔍</span></label>
+      <div class="meta"><div class="tags"><span>美容</span><span>ナチュラル</span><span>ベージュ</span><span>1カラム</span></div>
+        <a class="use" href="SCR-001-settings.html">この雰囲気で生成 →</a></div>
+    </div>
+    <div class="item">
+      <label for="c4" class="shot">見本:海外サロン<span class="src ref">収集見本</span><span class="zoom">🔍</span></label>
+      <div class="meta"><div class="tags"><span>美容</span><span>ナチュラル</span><span>グリーン</span><span>参考のみ</span></div>
+        <a class="use" href="SCR-001-settings.html">この雰囲気で生成 →</a></div>
+    </div>
+    <div class="item">
+      <label for="c1" class="shot">エステサロン<span class="src own">自社実績</span><span class="zoom">🔍</span></label>
+      <div class="meta"><div class="tags"><span>美容</span><span>ナチュラル</span><span>ホワイト</span><span>1カラム</span></div>
+        <a class="use" href="SCR-001-settings.html">この雰囲気で生成 →</a></div>
+    </div>
+    <div class="item">
+      <label for="c2" class="shot">アロマ雑貨EC<span class="src own">自社実績</span><span class="zoom">🔍</span></label>
+      <div class="meta"><div class="tags"><span>EC・物販</span><span>ナチュラル</span><span>グリーン</span><span>3カラム</span></div>
+        <a class="use" href="SCR-001-settings.html">この雰囲気で生成 →</a></div>
+    </div>
+  </div>
+
+  <!-- 画像追加(REQ-106) -->
+  <div class="uploader" id="add">
+    <h2>実績・見本画像を追加する</h2>
+    <p class="sub">ここに画像を入れると、AIが業種・テイスト・主配色を自動でタグ付けしてカタログに登録します。保存先はGit公開対象外のフォルダに限定されます。</p>
+    <div class="dropzone">
+      <div class="big">⬆️</div>
+      <p class="t">画像をドラッグ&ドロップ、またはクリックして選択</p>
+      <p>JPG / PNG(複数可)</p>
+    </div>
+    <div class="autotag">
+      <div class="at-head">自動タグ付けの結果(登録前に確認・修正できます)</div>
+      <div class="at-row">
+        <div class="at-thumb"></div>
+        <div class="at-tags">
+          ファイル: <b>salon_top_2026.jpg</b><br>
+          推定タグ: <b>美容・サロン</b> / <b>ナチュラル</b> / <b>グリーン系</b> / <b>1カラム</b>
+          <a href="#" class="edit">タグを修正</a>
+        </div>
+        <a href="#" class="btn primary" style="font-size:12px;padding:7px 14px">この内容で登録</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 拡大モーダル(原寸w1920px相当をw1000pxに縮小表示・閉じてもスクロール位置維持) -->
+<input type="checkbox" class="modal-toggle" id="c1">
+<div class="modal-back">
+  <label for="c1" class="m-backdrop"></label>
+  <div class="modal"><label for="c1" class="m-close">×</label>
+    <div class="m-img">サロン内観サイト(拡大プレビュー)</div>
+    <div class="m-body"><h3>サロン内観サイト — 自社実績</h3>
+      <div class="m-tags"><span>美容・サロン</span><span>ナチュラル</span><span>グリーン</span><span>1カラム</span></div>
+      <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。</p></div>
+  </div>
+</div>
+<input type="checkbox" class="modal-toggle" id="c2">
+<div class="modal-back">
+  <label for="c2" class="m-backdrop"></label>
+  <div class="modal"><label for="c2" class="m-close">×</label>
+    <div class="m-img">オーガニックカフェ(拡大プレビュー)</div>
+    <div class="m-body"><h3>オーガニックカフェ — 自社実績</h3>
+      <div class="m-tags"><span>飲食</span><span>ナチュラル</span><span>グリーン</span><span>2カラム</span></div>
+      <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。</p></div>
+  </div>
+</div>
+<input type="checkbox" class="modal-toggle" id="c3">
+<div class="modal-back">
+  <label for="c3" class="m-backdrop"></label>
+  <div class="modal"><label for="c3" class="m-close">×</label>
+    <div class="m-img">ヨガスタジオLP(拡大プレビュー)</div>
+    <div class="m-body"><h3>ヨガスタジオLP — 自社実績</h3>
+      <div class="m-tags"><span>美容</span><span>ナチュラル</span><span>ベージュ</span><span>1カラム</span></div>
+      <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。</p></div>
+  </div>
+</div>
+<input type="checkbox" class="modal-toggle" id="c4">
+<div class="modal-back">
+  <label for="c4" class="m-backdrop"></label>
+  <div class="modal"><label for="c4" class="m-close">×</label>
+    <div class="m-img">海外サロン(収集見本・拡大プレビュー)</div>
+    <div class="m-body"><h3>海外サロン — 収集見本(第三者著作物)</h3>
+      <div class="m-tags"><span>美容</span><span>ナチュラル</span><span>グリーン</span><span>参考のみ</span></div>
+      <p class="m-note">社内の参考目的のみ。公開・再配布・そっくり再現の材料にはしません。</p></div>
+  </div>
+</div>
+
+</body>
+</html>
