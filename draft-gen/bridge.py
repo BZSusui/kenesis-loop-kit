@@ -32,6 +32,7 @@ import sys
 BRIDGE_HOST = "127.0.0.1"          # ★ 0.0.0.0 禁止(U-8/NFR-004)
 DEFAULT_PORT = 8765                # env KLK_BRIDGE_PORT で上書き可(U-4)
 BRIDGE_TIMEOUT_SEC = 900           # subprocess ハードタイムアウト(NFR-001 目安10分に余裕)
+MAX_BODY_BYTES = 1 << 20           # POST /generate ボディ上限(1 MiB・L-1 多層防御)
 
 # カラム構成 canonical(KLK-006 §4.4 / DRAFT_RULES §8)
 CANONICAL_COLUMNS = {
@@ -166,6 +167,19 @@ def build_open_command(target_path, platform):
     return ["xdg-open", target_path]
 
 
+def is_allowed_origin(origin, host, port):
+    """状態変更(POST /generate)の Origin 許可判定(M-SEC-1)。
+
+    None(不在)/"null"(file://) を許可、http://{host}:{port} と http://localhost:{port}
+    を許可、それ以外は False。副作用なし・import 単体テスト対象(S群)。
+    許可リスト文字列は format プレースホルダ/ローカルホストで組む(S10 外部URL検査に非抵触)。
+    """
+    if origin is None or origin == "null":
+        return True
+    allowed = ("http://{0}:{1}".format(host, port), "http://localhost:{0}".format(port))
+    return origin in allowed
+
+
 def repo_root():
     """このファイル(draft-gen/bridge.py)からリポジトリルート(draft-gen の親)を返す。"""
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -190,7 +204,7 @@ def _run_server(port):
     def _now():
         return datetime.datetime.now()
 
-    def _run_job(job_id, pending_path, project, variants):
+    def _run_job(job_id, pending_path, project, variants, started_at):
         """ワーカースレッド: claude -p を実行し、完了後ブリッジが表示物を開く(§4.3)。"""
         cmd = build_claude_command(pending_path)
         try:
@@ -227,7 +241,8 @@ def _run_server(port):
             return
 
         # 保存規約(DRAFT_RULES §9)から表示物パスを決定論的に構築し、ブリッジ自身が開く(U-5)
-        date_str = _now().strftime("%Y-%m-%d")
+        # 日付はジョブ開始時刻基準(L-2): 日跨ぎ長時間ジョブでも保存先フォルダがずれない
+        date_str = started_at.strftime("%Y-%m-%d")
         folder = build_folder(date_str, project)
         open_target = select_open_target(folder, variants)
         abs_target = os.path.join(root, open_target)
@@ -325,7 +340,22 @@ def _run_server(port):
             self.wfile.write(body)
 
         def _generate(self):
-            length = int(self.headers.get("Content-Length") or 0)
+            # ① Origin 検証(M-SEC-1): 状態変更は同一オリジン(+file://)のみ許可。body 読取前に弾く
+            if not is_allowed_origin(self.headers.get("Origin"), BRIDGE_HOST, port):
+                self._json(403, {"error": "許可されていないオリジンです"})
+                return
+            # ② サイズ上限(L-1): Content-Length を body 読取前に検証(多層防御)
+            try:
+                length = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length < 0:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length > MAX_BODY_BYTES:
+                self._json(413, {"error": "リクエストが大きすぎます"})
+                return
             raw = self.rfile.read(length) if length else b""
             try:
                 obj = json.loads(raw.decode("utf-8"))
@@ -347,10 +377,11 @@ def _run_server(port):
             project = obj.get("meta", {}).get("project", "") if isinstance(obj.get("meta"), dict) else ""
             variants = obj.get("output", {}).get("variants", 1) if isinstance(obj.get("output"), dict) else 1
 
+            started_at = _now()
             with jobs_lock:
                 jobs[job_id] = {
                     "state": "running",
-                    "started_at": _now(),
+                    "started_at": started_at,
                     "folder": None,
                     "openTarget": None,
                     "message": "生成中…",
@@ -358,7 +389,7 @@ def _run_server(port):
 
             worker = threading.Thread(
                 target=_run_job,
-                args=(job_id, pending_path, project, variants),
+                args=(job_id, pending_path, project, variants, started_at),
                 daemon=True,
             )
             worker.start()
