@@ -86,7 +86,7 @@
   .note-oq code { background: var(--color-bg-subtle); padding: 1px 5px; border-radius: 4px; }
 
   /* カラム構成 */
-  .colgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .colgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .colcard { position: relative; }
   .colcard input { position: absolute; opacity: 0; }
   .colcard label {
@@ -103,6 +103,13 @@
   .colcard .diagram span { border-radius: 3px; }
   .colcard .diagram .main { background: var(--color-main); }
   .colcard .diagram .sub  { background: var(--color-accent-2); }
+  /* 全体2カラム（サイドバー全高）／本文のみ2カラム（上に全幅FV帯）の系統差を示すミニ図解 */
+  .colcard .diagram .fig  { display: flex; flex-direction: column; gap: 3px; width: 40px; height: 100%; }
+  .colcard .diagram .figh { display: flex; flex-direction: row; gap: 3px; width: 40px; height: 100%; }
+  .colcard .diagram .colv { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+  .colcard .diagram .frow { display: flex; gap: 3px; flex: 1; }
+  .colcard .diagram .navband { height: 8px; background: var(--color-main-deep); border-radius: 3px; }
+  .colcard .diagram .fvband  { height: 8px; width: 100%; background: var(--color-main-deep); border-radius: 3px; }
   .colcard .cname { font-size: 12px; font-weight: 600; }
   .colcard input:checked + label .cname { color: var(--color-main-deep); }
 
@@ -348,6 +355,7 @@
   <section class="card">
     <div class="lbl"><span class="step">3</span><h2>カラム構成</h2><span class="req">必須</span>
       <span class="reqid">1つ選択 / REQ-002</span></div>
+    <p class="hint">「全体2カラム」はサイドバーがページ全高（メインビジュアルの横にも回る）。「本文のみ2カラム」は上のメインビジュアルは全幅で、その下の本文だけを2分割します。図解の<b>上の帯</b>の見え方で系統が分かります。</p>
     <div class="colgrid">
       <div class="colcard">
         <input type="radio" name="col" id="col1" value="1col">
@@ -357,17 +365,31 @@
         </label>
       </div>
       <div class="colcard">
-        <input type="radio" name="col" id="col2r" value="2col-sub-right">
-        <label for="col2r">
-          <span class="diagram"><span class="main" style="width:26px"></span><span class="sub" style="width:12px"></span></span>
-          <span class="cname">2カラム・サブ右</span>
+        <input type="radio" name="col" id="colFullL" value="2col-full-left">
+        <label for="colFullL">
+          <span class="diagram"><span class="figh"><span class="sub" style="width:11px"></span><span class="colv"><span class="navband"></span><span class="main" style="flex:1"></span></span></span></span>
+          <span class="cname">全体2カラム・サブ左</span>
         </label>
       </div>
       <div class="colcard">
-        <input type="radio" name="col" id="col2l" value="2col-sub-left">
-        <label for="col2l">
-          <span class="diagram"><span class="sub" style="width:12px"></span><span class="main" style="width:26px"></span></span>
-          <span class="cname">2カラム・サブ左</span>
+        <input type="radio" name="col" id="colFullR" value="2col-full-right">
+        <label for="colFullR">
+          <span class="diagram"><span class="figh"><span class="colv"><span class="navband"></span><span class="main" style="flex:1"></span></span><span class="sub" style="width:11px"></span></span></span>
+          <span class="cname">全体2カラム・サブ右</span>
+        </label>
+      </div>
+      <div class="colcard">
+        <input type="radio" name="col" id="colBodyL" value="2col-body-left">
+        <label for="colBodyL">
+          <span class="diagram"><span class="fig"><span class="fvband"></span><span class="frow"><span class="sub" style="width:11px"></span><span class="main" style="flex:1"></span></span></span></span>
+          <span class="cname">本文のみ2カラム・サブ左</span>
+        </label>
+      </div>
+      <div class="colcard">
+        <input type="radio" name="col" id="colBodyR" value="2col-body-right">
+        <label for="colBodyR">
+          <span class="diagram"><span class="fig"><span class="fvband"></span><span class="frow"><span class="main" style="flex:1"></span><span class="sub" style="width:11px"></span></span></span></span>
+          <span class="cname">本文のみ2カラム・サブ右</span>
         </label>
       </div>
       <div class="colcard">
@@ -527,6 +549,11 @@
       <span class="sub-inline">画面幅 <input type="text" id="mobileW" value="375"> px で生成</span>
       <span class="opt">余裕があれば / REQ-201</span>
     </div>
+    <div class="toggle-line" style="margin-top:12px">
+      <label><input type="checkbox" id="animOn" checked> 生成時アニメーション（読込フェードイン・スクロール出現）を付ける</label>
+      <span class="sub-inline">既定ON。OFFにすると生成物は最初から全表示になります</span>
+      <span class="opt">REQ-002拡張 / REQ-005</span>
+    </div>
   </section>
 
   <!-- 生成結果（生成指示書JSON） -->
@@ -567,7 +594,7 @@
 // 純粋ロジック（DOMに触れない。render() より前に定義。動的スモークが
 // 先頭マーカー定数から render() 直前までをスライスして検証する。§4.6/S14）
 // ============================================================================
-const COLUMN_KEYS = ['1col', '2col-sub-right', '2col-sub-left', '3col'];
+const COLUMN_KEYS = ['1col', '2col-full-left', '2col-full-right', '2col-body-left', '2col-body-right', '3col'];
 const ROLE_KEYS = ['main', 'sub', 'accent', 'bg'];
 const ROLE_NAMES = ['メイン', 'サブ', 'アクセント', '背景'];
 
@@ -694,6 +721,7 @@ function buildInstruction(input) {
         enabled: !!mobileIn.enabled,
         widthPx: Number.isFinite(wpx) ? wpx : 375,
       },
+      animation: input.animation !== false,
     },
   };
 }
@@ -728,8 +756,10 @@ let colorMode = 'explicit';
 function colLabelOf(col) {
   switch (col) {
     case '1col': return '1カラム';
-    case '2col-sub-right': return '2カラム・サブ右';
-    case '2col-sub-left': return '2カラム・サブ左';
+    case '2col-full-left': return '全体2カラム・サブ左';
+    case '2col-full-right': return '全体2カラム・サブ右';
+    case '2col-body-left': return '本文のみ2カラム・サブ左';
+    case '2col-body-right': return '本文のみ2カラム・サブ右';
     case '3col': return '3カラム';
     default: return 'カラム未選択';
   }
@@ -770,6 +800,7 @@ function collectInput() {
       enabled: document.getElementById('mobileOn').checked,
       widthPx: parseInt(document.getElementById('mobileW').value, 10) || 375,
     },
+    animation: document.getElementById('animOn').checked,
   };
 }
 
@@ -822,7 +853,7 @@ function init() {
     document.getElementById(id).addEventListener('input', render);
     document.getElementById(id).addEventListener('change', render);
   });
-  document.querySelectorAll('input[name=col], input[name=taste], input[name=atari], input[name=variants], #mobileOn')
+  document.querySelectorAll('input[name=col], input[name=taste], input[name=atari], input[name=variants], #mobileOn, #animOn')
     .forEach(function (el) { el.addEventListener('change', render); });
   document.querySelectorAll('.sample-url').forEach(function (el) { el.addEventListener('input', render); });
 
