@@ -1,0 +1,36 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": {
+    "project": "サンプル学習塾サイト",
+    "createdAt": "2026-07-08T09:30:00.000Z",
+    "source": "SCR-001"
+  },
+  "industry": {
+    "preset": "教育・スクール(学校 / 塾 / 習い事)",
+    "custom": "",
+    "resolved": "教育・スクール(学校 / 塾 / 習い事)"
+  },
+  "layout": { "columns": "2col-body-left" },
+  "taste": "ナチュラル・やさしい",
+  "colors": {
+    "mode": "explicit",
+    "main": "#c0492f",
+    "sub": "#7e2c1c",
+    "accent": "#f0a93b",
+    "bg": "#fbf6ef",
+    "autofill": []
+  },
+  "references": {
+    "thumbnails": [
+      { "id": "m1", "label": "教室風景", "tags": "教育 / やさしい" }
+    ],
+    "sampleUrls": []
+  },
+  "atari": "standard",
+  "output": {
+    "variants": 1,
+    "mobile": { "enabled": false, "widthPx": 375 },
+    "animation": false
+  }
+}

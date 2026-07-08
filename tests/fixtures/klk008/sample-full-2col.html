@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<!--
+  KLK-008 ゴールデンサンプル（全体2カラム・アニメON・DRAFT_RULES.md 準拠）
+  これはテスト検証用のプレースホルダ出力です。実在の顧客・案件ではありません。
+  案件名: サンプル不動産会社サイト / 業種: 住宅・不動産・建築 / カラム: 2col-full-right / アニメ: ON / 生成日: 2026-07-08
+  「全体2カラム」= サイドバー(.m-aside)がページ全高で、NAV/HERO を含む本文列(.m-main-col)の横に立つ。
+  実生成物は mockups/{日付}_{案件名}/index.html に保存されます（Git除外）。
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>サンプル不動産会社サイト | デザインラフ</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    line-height: 1.7;
+  }
+
+  /* ===== 生成ラフ本体（配色は5つのCSS変数で適用・DRAFT_RULES §5） ===== */
+  .mock {
+    /* colors.main -> --m-main / sub -> --m-nav / accent -> --m-accent / bg -> --m-bg / --m-text は明度で自動 */
+    --m-main: #2f5d8a;
+    --m-nav: #1e3c58;
+    --m-accent: #e08a2e;
+    --m-bg: #f4f7fa;
+    --m-text: #2a2f36;
+    background: var(--m-bg);
+    color: var(--m-text);
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* 番地ラベル（画面のみ・印刷では非表示） */
+  .sec { position: relative; }
+  .addr {
+    position: absolute; top: 8px; left: 8px; z-index: 5;
+    display: inline-flex; gap: 6px; align-items: center;
+  }
+  .addr .pin {
+    background: rgba(17, 24, 39, .82); color: #fff; font-size: 10px; letter-spacing: .04em;
+    padding: 2px 7px; border-radius: 4px; font-family: ui-monospace, monospace;
+  }
+
+  /* スクロール出現アニメ（DRAFT_RULES §7・アニメON） */
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+  /* ===== 全体2カラム（サブ右）: サイドバーがページ全高・NAV/HERO の横にも回る（DRAFT_RULES §8） ===== */
+  .m-layout {
+    display: grid; grid-template-columns: 1fr 320px; gap: 0;
+    align-items: stretch; max-width: 1200px; margin: 0 auto;
+    background: var(--m-bg);
+  }
+  .m-main-col { min-width: 0; }
+  .m-aside {
+    background: color-mix(in srgb, var(--m-nav) 8%, #fff);
+    border-left: 1px solid color-mix(in srgb, var(--m-nav) 18%, #fff);
+    padding: 0;
+  }
+  .m-aside .aside-inner {
+    position: sticky; top: 0;
+    display: flex; flex-direction: column; gap: 22px; padding: 26px 22px;
+  }
+  .aside-box { background: #fff; border-radius: 8px; padding: 16px 16px; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+  .aside-box .ah { font-size: 14px; font-weight: 700; color: var(--m-main); margin-bottom: 10px; border-left: 3px solid var(--m-accent); padding-left: 8px; }
+  .aside-box .ab { font-size: 12.5px; color: var(--m-text); }
+  .aside-box .news { margin-bottom: 10px; }
+  .aside-box .news .d { font-size: 11px; color: var(--m-accent); font-family: ui-monospace, monospace; }
+  .aside-cta { display: block; text-align: center; background: var(--m-accent); color: #fff; padding: 12px; border-radius: 6px; font-weight: 700; font-size: 14px; }
+
+  /* nav（本文列の内側・全体2カラムのため grid の内側にある） */
+  .m-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 26px; background: var(--m-nav); color: #fff;
+  }
+  .m-nav .logo { font-size: 17px; font-weight: 700; letter-spacing: .06em; }
+  .m-nav ul { display: flex; gap: 18px; list-style: none; margin: 0; padding: 0; font-size: 12px; }
+  .m-nav .cta { background: var(--m-accent); color: #fff; padding: 6px 14px; border-radius: 4px; font-size: 12px; }
+
+  /* hero（本文列の内側・サイドバーが横に回る） */
+  .m-hero {
+    position: relative; min-height: 320px; display: flex; flex-direction: column;
+    align-items: flex-start; justify-content: center; text-align: left; color: #fff; padding: 44px 40px;
+    background: linear-gradient(100deg, var(--m-main) 0%, var(--m-nav) 100%);
+  }
+  .m-hero .catch { font-size: 34px; font-weight: 800; letter-spacing: .06em; margin: 0 0 14px; line-height: 1.3; text-shadow: 0 2px 8px rgba(0,0,0,.3); }
+  .m-hero .lead { font-size: 15px; max-width: 540px; margin: 0 0 22px; }
+  .m-hero .hero-cta { background: var(--m-accent); color: #fff; padding: 13px 32px; border-radius: 4px; font-size: 14px; font-weight: 700; letter-spacing: .05em; }
+  .atari-tag {
+    position: absolute; bottom: 8px; right: 8px; background: rgba(0, 0, 0, .55); color: #fff;
+    font-size: 10px; padding: 3px 8px; border-radius: 4px;
+  }
+
+  /* 本文セクション（本文列内） */
+  .m-block { padding: 40px 40px; }
+  .m-block h2 { font-size: 22px; letter-spacing: .1em; margin: 0 0 4px; color: var(--m-main); border-left: 4px solid var(--m-accent); padding-left: 12px; }
+  .m-block .en { font-size: 11px; letter-spacing: .3em; color: var(--m-accent); margin: 0 0 18px 16px; font-family: ui-monospace, monospace; }
+  .todo { color: #B54; background: #FFF0F0; border: 1px dashed #E39; border-radius: 4px; padding: 1px 6px; font-size: 12.5px; }
+
+  /* アタリ画像（色面＋説明＋検索キーワード・DRAFT_RULES §3） */
+  .atari {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--m-main) 22%, #fff), color-mix(in srgb, var(--m-accent) 26%, #fff));
+    border: 1px dashed color-mix(in srgb, var(--m-main) 45%, #999);
+    border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; color: color-mix(in srgb, var(--m-main) 55%, #333); padding: 14px; gap: 4px;
+  }
+  .atari .ic { font-size: 22px; }
+  .atari .desc { font-size: 12.5px; font-weight: 600; }
+  .atari .kw { font-size: 11px; color: #6B7280; }
+  .atari .kw b { font-family: ui-monospace, monospace; color: var(--m-main); }
+
+  .m-about { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; align-items: center; }
+  .m-about .atari { min-height: 180px; }
+  .m-about .txt h3 { font-size: 18px; color: var(--m-main); margin: 0 0 10px; }
+  .m-about .txt p { font-size: 13.5px; margin: 0; }
+
+  .m-menu { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .m-card { background: #fff; border-radius: 6px; overflow: hidden; box-shadow: 0 3px 12px rgba(0, 0, 0, .08); }
+  .m-card .atari { min-height: 120px; border-radius: 0; border: none; border-bottom: 1px dashed #bbb; }
+  .m-card .ct { padding: 14px; text-align: center; }
+  .m-card .ct h4 { margin: 0 0 6px; font-size: 15px; color: var(--m-main); }
+  .m-card .ct .price { font-size: 13px; color: var(--m-accent); font-weight: 700; }
+  .m-card .ct p { font-size: 12px; margin: 6px 0 0; color: #6B7280; }
+
+  .m-gallery { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .m-gallery .atari { aspect-ratio: 1; min-height: 0; padding: 8px; }
+  .m-gallery .atari .ic { font-size: 16px; }
+  .m-gallery .atari .desc { font-size: 10.5px; }
+
+  .m-foot { background: var(--m-nav); color: #fff; text-align: center; padding: 30px 20px; }
+  .m-foot .fcta { display: inline-block; background: var(--m-accent); color: #fff; padding: 12px 34px; border-radius: 4px; font-size: 14px; margin-bottom: 16px; }
+  .m-foot .fnav { font-size: 11px; opacity: .85; }
+
+  /* ===== レスポンシブ（DRAFT_RULES §8・NFR-002） ===== */
+  @media (max-width: 640px) {
+    .m-layout { grid-template-columns: 1fr; }
+    .m-aside { border-left: none; border-top: 1px solid color-mix(in srgb, var(--m-nav) 18%, #fff); }
+    .m-aside .aside-inner { position: static; }
+    .m-nav ul { display: none; }
+    .m-nav::after { content: "\2630"; color: #fff; font-size: 20px; }
+    .m-hero .catch { font-size: 24px; }
+    .m-about, .m-menu, .m-gallery { grid-template-columns: 1fr; }
+    .m-gallery { grid-template-columns: repeat(2, 1fr); }
+    .m-block { padding: 28px 18px; }
+  }
+
+  /* ===== 印刷（PDF化）: 補助表示を隠す・DRAFT_RULES §6 ===== */
+  @media print {
+    .addr, .atari-tag, .anim-note { display: none !important; }
+    body { background: #fff; }
+    .mock { box-shadow: none; border-radius: 0; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mock" data-columns="2col-full-right">
+
+  <!-- 全体2カラム: .m-layout が NAV/HERO/本文/FOOTER を内包し、サイドバー(.m-aside)が全高で右に立つ -->
+  <div class="m-layout">
+
+    <!-- 本文列（NAV/HERO/本文/FOOTER すべてを内包） -->
+    <div class="m-main-col">
+
+      <div class="sec reveal">
+        <div class="addr"><span class="pin">NAV-01</span></div>
+        <div class="m-nav">
+          <span class="logo">みなと不動産</span>
+          <ul><li>会社案内</li><li>物件を探す</li><li>売却相談</li><li>実績</li><li>アクセス</li></ul>
+          <span class="cta">来店予約</span>
+        </div>
+      </div>
+
+      <div class="sec reveal">
+        <div class="addr"><span class="pin">HERO-01</span></div>
+        <div class="m-hero">
+          <h1 class="catch">住まい探しを、<br>いちばん近くで。</h1>
+          <p class="lead">地域に根ざして30年。売買・賃貸・土地活用まで、暮らしの選択を一貫してサポートします。</p>
+          <span class="hero-cta">物件を探す ＞</span>
+          <span class="atari-tag">📷 アタリ: 街並みと住宅・自然光 / 検索: residential neighborhood houses daylight</span>
+        </div>
+      </div>
+
+      <div class="sec reveal m-block" style="background:#fff">
+        <div class="addr"><span class="pin">ABOUT-01</span></div>
+        <h2>ABOUT</h2><div class="en">会社案内</div>
+        <div class="m-about">
+          <div class="atari">
+            <span class="ic">📷</span>
+            <span class="desc">店舗の外観・スタッフの接客風景</span>
+            <span class="kw">検索: <b>real estate office staff</b></span>
+          </div>
+          <div class="txt">
+            <h3>「この街のことなら」と、頼られる存在に。</h3>
+            <p>エリアの相場・学区・交通・将来性まで、地元に精通したスタッフがご案内します。初めての住まい探しも安心してお任せください。<span class="todo">(要検討: 創業年数・累計成約件数・宅建士の在籍数を入れた信頼感の一文)</span></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec reveal m-block">
+        <div class="addr"><span class="pin">MENU-01</span></div>
+        <h2>SERVICE</h2><div class="en">サービス・料金</div>
+        <div class="m-menu">
+          <div class="m-card">
+            <div class="atari"><span class="ic">🏠</span><span class="desc">住まいを買う</span><span class="kw">検索: <b>house for sale</b></span></div>
+            <div class="ct"><h4>売買仲介</h4><div class="price">仲介手数料 法定内</div><p>新築・中古・土地のご紹介</p></div>
+          </div>
+          <div class="m-card">
+            <div class="atari"><span class="ic">🔑</span><span class="desc">住まいを借りる</span><span class="kw">検索: <b>apartment rental keys</b></span></div>
+            <div class="ct"><h4>賃貸仲介</h4><div class="price">初期費用の相談可</div><p>単身・ファミリー向け物件</p></div>
+          </div>
+          <div class="m-card">
+            <div class="atari"><span class="ic">📈</span><span class="desc">土地を活かす</span><span class="kw">検索: <b>land investment planning</b></span></div>
+            <div class="ct"><h4>売却・土地活用</h4><div class="price">無料査定</div><p>相続・資産組み替えのご相談</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec reveal m-block" style="background:#fff">
+        <div class="addr"><span class="pin">GALLERY-01</span></div>
+        <h2>WORKS</h2><div class="en">取扱い物件タイプ</div>
+        <!-- キーワード未定のため .desc のみ（kw 無フォールバック・DRAFT_RULES §3） -->
+        <div class="m-gallery">
+          <div class="atari"><span class="ic">🏡</span><span class="desc">一戸建て</span></div>
+          <div class="atari"><span class="ic">🏢</span><span class="desc">マンション</span></div>
+          <div class="atari"><span class="ic">🌳</span><span class="desc">土地</span></div>
+          <div class="atari"><span class="ic">🏬</span><span class="desc">事業用</span></div>
+        </div>
+      </div>
+
+      <div class="sec reveal">
+        <div class="addr"><span class="pin">FOOTER-01</span></div>
+        <div class="m-foot">
+          <div class="fcta">無料査定を依頼する ＞</div>
+          <div class="fnav">会社案内 ・ 物件を探す ・ 売却相談 ・ 実績 ・ アクセス ・ お問い合わせ<br>© みなと不動産</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- サイドバー（全高・NAV/HERO の横にも回る） -->
+    <div class="m-aside">
+      <div class="aside-inner">
+        <a class="aside-cta" href="#">＼ 来店予約はこちら ／</a>
+        <div class="aside-box">
+          <div class="ah">お知らせ</div>
+          <div class="ab">
+            <div class="news"><span class="d">2026.07.01</span><br>夏の住み替え相談会を開催します。<span class="todo">(要検討: 実際の告知内容)</span></div>
+            <div class="news"><span class="d">2026.06.10</span><br>新着の中古マンション情報を更新しました。</div>
+          </div>
+        </div>
+        <div class="aside-box">
+          <div class="ah">アクセス</div>
+          <div class="atari">
+            <span class="ic">🗺️</span>
+            <span class="desc">店舗周辺の地図</span>
+            <span class="kw">検索: <b>office location map</b></span>
+          </div>
+          <div class="ab"><span class="todo">(要検討: 住所・最寄駅・電話番号・営業時間)</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) {
+      els.forEach(function (e) { e.classList.add('in'); });
+      return;
+    }
+    var io = new IntersectionObserver(function (ens) {
+      ens.forEach(function (x) {
+        if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); }
+      });
+    }, { threshold: .12 });
+    els.forEach(function (e) { io.observe(e); });
+  })();
+</script>
+
+</body>
+</html>

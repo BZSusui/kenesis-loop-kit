@@ -1,0 +1,36 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": {
+    "project": "サンプル不動産会社サイト",
+    "createdAt": "2026-07-08T09:00:00.000Z",
+    "source": "SCR-001"
+  },
+  "industry": {
+    "preset": "住宅・不動産・建築",
+    "custom": "",
+    "resolved": "住宅・不動産・建築"
+  },
+  "layout": { "columns": "2col-full-right" },
+  "taste": "先進的・シャープ",
+  "colors": {
+    "mode": "explicit",
+    "main": "#2f5d8a",
+    "sub": "#1e3c58",
+    "accent": "#e08a2e",
+    "bg": "#f4f7fa",
+    "autofill": []
+  },
+  "references": {
+    "thumbnails": [
+      { "id": "m1", "label": "住宅街", "tags": "不動産 / ナチュラル" }
+    ],
+    "sampleUrls": []
+  },
+  "atari": "standard",
+  "output": {
+    "variants": 3,
+    "mobile": { "enabled": false, "widthPx": 375 },
+    "animation": true
+  }
+}
