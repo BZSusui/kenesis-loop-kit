@@ -117,7 +117,7 @@ check('D5 validateRequired 欠落検出: 業種空/カラムnull/メイン無効
 // ===== D6: 配色充足=メインのみ（U5） =====
 check('D6 配色充足=メインのみ: main有効・sub/accent/bg null でも validateRequired().ok true', () => {
   const input = {
-    industryPreset: '美容', column: '2col-sub-right',
+    industryPreset: '美容', column: '2col-body-right',
     colors: { main: '#2e7d6b', sub: null, accent: null, bg: null },
   };
   const v = validateRequired(input);
@@ -132,7 +132,7 @@ check('D7 buildInstruction: schema/version/columns列挙/resolved/autofill/width
   const input = {
     projectName: 'サンプル案件',
     industryPreset: '美容・サロン', industryCustom: 'オーガニックカフェ',
-    column: '2col-sub-left', taste: 'ナチュラル・やさしい',
+    column: '2col-body-left', taste: 'ナチュラル・やさしい',
     colors: { main: '#2E7D6B', sub: null, accent: '#E8A33D', bg: null, mode: 'explicit' },
     refThumbs: [{ id: 'm1', label: 'サロン内観', tags: '美容 / ナチュラル' }],
     sampleUrls: ['https://example.com/', '', 'https://example.org/'],
@@ -154,6 +154,14 @@ check('D7 buildInstruction: schema/version/columns列挙/resolved/autofill/width
   assert(out.colors.autofill.indexOf('accent') < 0, 'autofill に accent(有効)が誤混入');
   assert(Number.isInteger(out.output.mobile.widthPx), 'widthPx が整数でない: ' + out.output.mobile.widthPx);
   assert(out.output.variants === 3, 'variants 不一致: ' + out.output.variants);
+  // R-A/KLK-008: output.animation は boolean。未指定入力（この input に animation キーは無い）で既定 true
+  assert(typeof out.output.animation === 'boolean', 'output.animation が boolean でない: ' + out.output.animation);
+  assert(out.output.animation === true, 'animation 未指定時の既定が true でない: ' + out.output.animation);
+  // 明示 false は透過（buildInstruction の !== false 挙動）
+  const animOff = buildInstruction({ column: '1col', colors: { main: '#123456' }, animation: false });
+  assert(animOff.output.animation === false, 'animation:false 入力が透過されない: ' + animOff.output.animation);
+  const animOn = buildInstruction({ column: '1col', colors: { main: '#123456' }, animation: true });
+  assert(animOn.output.animation === true, 'animation:true 入力が透過されない: ' + animOn.output.animation);
   // 空URL除外
   assert(out.references.sampleUrls.length === 2, 'sampleUrls 空除外不備: ' + JSON.stringify(out.references.sampleUrls));
   // 必須キーの存在

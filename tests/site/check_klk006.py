@@ -181,7 +181,7 @@ check(
 schema_keys = [
     "schema:", "version:", "project:", "resolved:", "columns:",
     "taste:", "main:", "autofill:", "thumbnails:", "sampleUrls:",
-    "atari:", "variants:", "mobile:",
+    "atari:", "variants:", "mobile:", "animation:",
 ]
 missing_keys = [k for k in schema_keys if k not in BUILD_BLK]
 schema_val = "'design-draft-instruction'" in BUILD_BLK
@@ -210,14 +210,17 @@ check(
 )
 
 # ===========================================================================
-# S11 カラム構成4種
+# S11 カラム構成6系統（R-A: KLK-008 で 4→6値へ拡張）
 # ===========================================================================
 col_values = set(re.findall(r'<input type="radio" name="col"[^>]*value="([^"]+)"', HTML))
-expected_cols = {"1col", "2col-sub-right", "2col-sub-left", "3col"}
+expected_cols = {
+    "1col", "2col-full-left", "2col-full-right",
+    "2col-body-left", "2col-body-right", "3col",
+}
 check(
-    "S11 カラム構成4種 (name=col ラジオが 1col/2col-sub-right/2col-sub-left/3col の4値)",
+    "S11 カラム構成6系統 (name=col ラジオが 1col/2col-full-left/2col-full-right/2col-body-left/2col-body-right/3col の6値)",
     col_values == expected_cols,
-    f"col値={sorted(col_values)}(=1col/2col-sub-right/2col-sub-left/3col)",
+    f"col値={sorted(col_values)}(=1col/2col-full-left/2col-full-right/2col-body-left/2col-body-right/3col)",
 )
 
 # ===========================================================================

@@ -206,9 +206,13 @@ check(
 # ===========================================================================
 dc_m = re.search(r'data-columns="([^"]+)"', HTML)
 dc_val = dc_m.group(1) if dc_m else ""
-dc_ok = dc_val in {"1col", "2col-sub-left", "2col-sub-right", "3col"}
+# R-A: KLK-008 で許容集合を新6値へ更新（KLK-007 ゴールデンは 1col で通過継続）
+dc_ok = dc_val in {
+    "1col", "2col-full-left", "2col-full-right",
+    "2col-body-left", "2col-body-right", "3col",
+}
 check(
-    "S8 カラム構成 (生成ルートに data-columns, 値が 1col/2col-sub-left/2col-sub-right/3col)",
+    "S8 カラム構成 (生成ルートに data-columns, 値が 1col/2col-full-*/2col-body-*/3col の新6値)",
     dc_m is not None and dc_ok,
     f"data-columns={dc_val or 'なし'}(サンプルは1col想定)",
 )
