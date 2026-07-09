@@ -532,7 +532,7 @@
     </div>
     <div class="thumbs-foot">
       <span>選択中: <b id="thumbCount">0 / 3枚</b></span>
-      <span class="catalog-link">もっと探す → 実績カタログを開く（未作成: SCR-004）</span>
+      <a class="catalog-link" id="catalogLink" href="catalog.html">もっと探す → 実績カタログを開く →</a>
     </div>
     <div class="field-row" style="margin-top:14px">
       <div class="col" style="flex-basis:100%">
@@ -1041,6 +1041,14 @@ function init() {
   });
 
   render();
+
+  // 実績カタログ(SCR-004・KLK-013)への導線。既定は相対 catalog.html（file:// で開ける）。
+  // ブリッジ稼働時のみ同一オリジン /catalog へ差し替える（最小連携・#thumbs 契約は不変）。
+  probeHealth().then(function (ok) {
+    if (!ok) return;
+    const cl = document.getElementById('catalogLink');
+    if (cl) cl.href = BRIDGE_ORIGIN + '/catalog';
+  }).catch(function () {});
 }
 
 document.addEventListener('DOMContentLoaded', init);
