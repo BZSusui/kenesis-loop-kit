@@ -122,7 +122,7 @@ check(
 # ===========================================================================
 # S3 番地ラベル（REQ-005 / REQ-103基盤）
 # ===========================================================================
-addr_pins = ["NAV-01", "HERO-01", "ABOUT-01", "MENU-01", "GALLERY-01", "FOOTER-01"]
+addr_pins = ["NAV-01", "MV-01", "ABOUT-01", "MENU-01", "GALLERY-01", "FOOTER-01"]
 pin_found = {p: (re.search(r'class="pin">\s*' + re.escape(p), HTML) is not None) for p in addr_pins}
 all_pins = all(pin_found.values())
 sec_count = len(re.findall(r'class="sec\b', HTML))

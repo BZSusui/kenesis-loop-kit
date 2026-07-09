@@ -139,10 +139,10 @@ class TestKLK012RegenerateDefense(unittest.TestCase):
         before_html = BEFORE_FIXTURE.read_text(encoding="utf-8")
         cls.clean_html = before_html
         (cls.clean_dir / "index-a.html").write_text(before_html, encoding="utf-8")
-        # 重複: HERO-01 セクションを丸ごと複製したもの（find_target_section→duplicate）。
+        # 重複: MV-01 セクションを丸ごと複製したもの（find_target_section→duplicate）。
         hero_block = (
             '  <div class="sec reveal">\n'
-            '    <div class="addr"><span class="pin">HERO-01</span></div>\n'
+            '    <div class="addr"><span class="pin">MV-01</span></div>\n'
             '    <div class="m-hero">DUP</div>\n'
             '  </div>\n')
         dup_html = before_html.replace("</body>", hero_block + "</body>")
@@ -215,7 +215,7 @@ class TestKLK012RegenerateDefense(unittest.TestCase):
     # -- tests -------------------------------------------------------------
     def test_bad_origin_403(self):
         st, _ = self._post({"folder": "mockups/.klk012_test_clean", "letter": "a",
-                            "addr": "HERO-01"}, origin="http://evil.example")
+                            "addr": "MV-01"}, origin="http://evil.example")
         self.assertEqual(st, 403, "別オリジンは403で拒否されるべき")
 
     def test_oversize_413(self):
@@ -238,12 +238,12 @@ class TestKLK012RegenerateDefense(unittest.TestCase):
         self.assertEqual(st, 400, "不正JSONは400で拒否されるべき")
 
     def test_traversal_folder_400(self):
-        st, _ = self._post({"folder": "mockups/../etc", "letter": "a", "addr": "HERO-01"})
+        st, _ = self._post({"folder": "mockups/../etc", "letter": "a", "addr": "MV-01"})
         self.assertEqual(st, 400, "パストラバーサル folder は400で拒否されるべき")
 
     def test_bad_letter_400(self):
         st, _ = self._post({"folder": "mockups/.klk012_test_clean", "letter": "z",
-                            "addr": "HERO-01"})
+                            "addr": "MV-01"})
         self.assertEqual(st, 400, "不正 letter は400で拒否されるべき")
 
     def test_bad_addr_400(self):
@@ -253,7 +253,7 @@ class TestKLK012RegenerateDefense(unittest.TestCase):
 
     def test_missing_file_404(self):
         st, _ = self._post({"folder": "mockups/.klk012_test_clean", "letter": "b",
-                            "addr": "HERO-01"})
+                            "addr": "MV-01"})
         self.assertEqual(st, 404, "対象ファイル不在は404で拒否されるべき")
 
     def test_unknown_addr_404(self):
@@ -263,7 +263,7 @@ class TestKLK012RegenerateDefense(unittest.TestCase):
 
     def test_duplicate_addr_400(self):
         st, _ = self._post({"folder": "mockups/.klk012_test_dup", "letter": "a",
-                            "addr": "HERO-01"})
+                            "addr": "MV-01"})
         self.assertEqual(st, 400, "重複番地は400で拒否されるべき（SPEC §7）")
 
     def test_errors_leave_file_unchanged_and_no_pending(self):
@@ -277,7 +277,7 @@ class TestKLK012RegenerateDefense(unittest.TestCase):
                     "addr": "ZZZZ-01"})
         # 重複番地（claude 起動前に400）
         self._post({"folder": "mockups/.klk012_test_dup", "letter": "a",
-                    "addr": "HERO-01"})
+                    "addr": "MV-01"})
         after_bytes = target.read_bytes()
         after_count = self._pending_regen_count()
         self.assertEqual(before_bytes, after_bytes, "エラー経路で対象ファイルが変更された")

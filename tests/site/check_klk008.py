@@ -144,18 +144,18 @@ check(
 f_dc_m = re.search(r'data-columns="([^"]+)"', FULL)
 f_dc = f_dc_m.group(1) if f_dc_m else ""
 f_dc_full = f_dc in {"2col-full-left", "2col-full-right"}
-# .m-layout ブロック（開始タグ以降・.mock 閉じまで）に NAV-01 と HERO-01 の pin が内包される
+# .m-layout ブロック（開始タグ以降・.mock 閉じまで）に NAV-01 と MV-01 の pin が内包される
 i_layout = FULL.find('class="m-layout"')
 i_mock_end = FULL.rfind("</div>")  # .mock の閉じ付近（body 末尾側）
 layout_scope = FULL[i_layout:i_mock_end] if i_layout >= 0 else ""
 nav_in_layout = re.search(r'class="pin">\s*NAV-01', layout_scope) is not None
-hero_in_layout = re.search(r'class="pin">\s*HERO-01', layout_scope) is not None
+hero_in_layout = re.search(r'class="pin">\s*MV-01', layout_scope) is not None
 has_aside = 'class="m-aside"' in FULL
 check(
-    "S4 全体2カラム骨格 (data-columns=2col-full-*, .m-layout が NAV-01/HERO-01 を内包, .m-aside 存在)",
+    "S4 全体2カラム骨格 (data-columns=2col-full-*, .m-layout が NAV-01/MV-01 を内包, .m-aside 存在)",
     f_dc_full and i_layout >= 0 and nav_in_layout and hero_in_layout and has_aside,
     f"data-columns={f_dc or 'なし'}(full={f_dc_full}), NAV内包={nav_in_layout}, "
-    f"HERO内包={hero_in_layout}, .m-aside={has_aside}",
+    f"MV内包={hero_in_layout}, .m-aside={has_aside}",
 )
 
 # ===========================================================================
@@ -164,7 +164,7 @@ check(
 theme_vars = ["--m-main", "--m-nav", "--m-accent", "--m-bg", "--m-text"]
 vars_defined = all(re.search(re.escape(v) + r"\s*:\s*[^;]+;", FULL) for v in theme_vars)
 vars_referenced = all(re.search(r"var\(\s*" + re.escape(v) + r"\s*\)", FULL) for v in theme_vars)
-addr_pins = ["NAV-01", "HERO-01", "ABOUT-01", "MENU-01", "GALLERY-01", "FOOTER-01"]
+addr_pins = ["NAV-01", "MV-01", "ABOUT-01", "MENU-01", "GALLERY-01", "FOOTER-01"]
 all_pins = all(re.search(r'class="pin">\s*' + re.escape(p), FULL) for p in addr_pins)
 atari_ok = ('class="atari"' in FULL and 'class="desc"' in FULL
             and 'class="kw"' in FULL and re.search(r'検索:\s*<b>', FULL) is not None)

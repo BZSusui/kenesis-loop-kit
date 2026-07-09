@@ -70,7 +70,7 @@ _LOCAL_HOSTS = ("127.0.0.1", "localhost", "0.0.0.0")
 # 配色5変数（対象HTMLのルート .mock から読む・U-2）。
 PALETTE_VARS = ("--m-main", "--m-nav", "--m-accent", "--m-bg", "--m-text")
 # 番地6種（各ファイル内で一意・DRAFT_RULES §2）。
-ADDR6 = ("NAV-01", "HERO-01", "ABOUT-01", "MENU-01", "GALLERY-01", "FOOTER-01")
+ADDR6 = ("NAV-01", "MV-01", "ABOUT-01", "MENU-01", "GALLERY-01", "FOOTER-01")
 
 
 def _host(url):
@@ -120,10 +120,10 @@ va = bridge.is_valid_addr
 vl = bridge.is_valid_letter
 vf = bridge.is_safe_mockups_folder
 # is_valid_addr
-a_ok = va("HERO-01") and va("NAV-01") and va("SECTION-12")  # 6種＋SECTION-NN 拡張
+a_ok = va("MV-01") and va("NAV-01") and va("SECTION-12")  # 6種＋SECTION-NN 拡張
 a_lower = va("hero-01") is False
 a_trav = va("../x") is False
-a_inject = (va("HERO-01; rm -rf /") is False and va("HERO 01") is False
+a_inject = (va("MV-01; rm -rf /") is False and va("HERO 01") is False
             and va("HERO-1") is False and va("$(x)-01") is False)
 a_nonstr = va(None) is False and va(123) is False
 s1_addr = a_ok and a_lower and a_trav and a_inject and a_nonstr
@@ -156,13 +156,13 @@ check(
 # S2 対象セクション特定・一意性（find_target_section・unknown/duplicate・SPEC §7）
 # ===========================================================================
 fts = bridge.find_target_section
-# HERO-01 → 唯一の .sec 範囲(start,end)。範囲は HERO のみを含み、他番地を含まない。
-h_start, h_end = fts(BEFORE, "HERO-01")
+# MV-01 → 唯一の .sec 範囲(start,end)。範囲は HERO のみを含み、他番地を含まない。
+h_start, h_end = fts(BEFORE, "MV-01")
 s2_hero_span = isinstance(h_start, int) and isinstance(h_end, int) and h_start < h_end
 if s2_hero_span:
     block = BEFORE[h_start:h_end]
     s2_hero_scope = (
-        "HERO-01" in block and "m-hero" in block
+        "MV-01" in block and "m-hero" in block
         and "NAV-01" not in block and "ABOUT-01" not in block
         and block.strip().startswith('<div class="sec')
         and block.rstrip().endswith("</div>"))
@@ -174,14 +174,14 @@ s2_unknown = u_span is None and u_info == "unknown"
 # 重複（人工的に2回 pin を持つ HTML）→ (None, "duplicate")
 dup_html = (
     '<div class="mock"><div class="sec reveal"><div class="addr">'
-    '<span class="pin">HERO-01</span></div><div class="m-hero">A</div></div>'
-    '<div class="sec reveal"><div class="addr"><span class="pin">HERO-01</span>'
+    '<span class="pin">MV-01</span></div><div class="m-hero">A</div></div>'
+    '<div class="sec reveal"><div class="addr"><span class="pin">MV-01</span>'
     '</div><div class="m-hero">B</div></div></div>')
-d_span, d_info = fts(dup_html, "HERO-01")
+d_span, d_info = fts(dup_html, "MV-01")
 s2_dup = d_span is None and d_info == "duplicate"
 s2 = s2_hero_span and s2_hero_scope and s2_unknown and s2_dup
 check(
-    "S2 対象セクション特定・一意性 (find_target_section: HERO-01→唯一の.sec範囲[HERO限定]・未知→(None,unknown)・重複→(None,duplicate))",
+    "S2 対象セクション特定・一意性 (find_target_section: MV-01→唯一の.sec範囲[HERO限定]・未知→(None,unknown)・重複→(None,duplicate))",
     s2,
     f"HERO範囲一意={s2_hero_span}, 範囲がHERO限定={s2_hero_scope}, "
     f"未知→unknown={s2_unknown}, 重複→duplicate={s2_dup}",
@@ -295,7 +295,7 @@ check(
 )
 
 # ===========================================================================
-# S8 before/after 不変保持（中核）— HERO-01 のみ差分・他は等価（U-2 / SPEC §7 / REQ-103）
+# S8 before/after 不変保持（中核）— MV-01 のみ差分・他は等価（U-2 / SPEC §7 / REQ-103）
 # ===========================================================================
 # (a) 配色5変数が同一
 pal_before = bridge.read_root_palette(BEFORE)
@@ -328,7 +328,7 @@ def _head(h):
 
 
 s8_head = _head(BEFORE) == _head(AFTER) and _head(BEFORE) is not None
-# (e) HERO-01 以外の5 .sec ブロックがバイト等価 /（f）HERO は差分だが pin 保持
+# (e) MV-01 以外の5 .sec ブロックがバイト等価 /（f）HERO は差分だが pin 保持
 sec_equal = {}
 hero_diff = None
 hero_pin_kept = None
@@ -340,20 +340,20 @@ for addr in ADDR6:
         continue
     block_b = BEFORE[sb:eb]
     block_a = AFTER[sa:ea]
-    if addr == "HERO-01":
+    if addr == "MV-01":
         hero_diff = (block_b != block_a)
-        hero_pin_kept = ('<span class="pin">HERO-01</span>' in block_a
+        hero_pin_kept = ('<span class="pin">MV-01</span>' in block_a
                          and 'class="sec' in block_a and 'class="addr"' in block_a)
     else:
         sec_equal[addr] = (block_b == block_a)
-s8_others = all(sec_equal.get(a, False) for a in ADDR6 if a != "HERO-01")
+s8_others = all(sec_equal.get(a, False) for a in ADDR6 if a != "MV-01")
 s8_hero = bool(hero_diff) and bool(hero_pin_kept)
 s8 = s8_pal and s8_dcol and s8_addr and s8_head and s8_others and s8_hero
 check(
     "S8 before/after 不変保持 (配色5変数=同一・data-columns=同一・6番地=同一集合・<head>=同一・HERO以外5.sec=バイト等価・HERO=差分だが pin/.sec/.addr 保持)",
     s8,
     f"配色={s8_pal}, data-columns={s8_dcol}({_dcol(BEFORE)}), 6番地={s8_addr}, head={s8_head}, "
-    f"他5.sec等価={s8_others}({ {a: sec_equal.get(a) for a in ADDR6 if a != 'HERO-01'} }), "
+    f"他5.sec等価={s8_others}({ {a: sec_equal.get(a) for a in ADDR6 if a != 'MV-01'} }), "
     f"HERO差分={hero_diff}, HERO_pin保持={hero_pin_kept}",
 )
 
@@ -507,7 +507,7 @@ print("  - /regenerate 実HTTP疎通（別オリジン403・巨大body413・trav
 print("    duplicate400＝claude 非起動・.regen.json 未作成・対象ファイル無変更）")
 print()
 print("M群（環境制約で静的検証外 = tester がブリッジ起動＋実 /draft-regenerate＋ブラウザで手動確認）:")
-print("  - M1 実部分再生成: HERO-01 のみ自然に差替・他5セクション/配色5変数/data-columns/番地/head/script 保持")
+print("  - M1 実部分再生成: MV-01 のみ自然に差替・他5セクション/配色5変数/data-columns/番地/head/script 保持")
 print("  - M2 番地エラー（未知/重複）でラフを壊さない（400/404 or スキル停止案内・ファイル無変更）")
 print("  - M3 compare.html の🔄導線（ブリッジ経由起動＋更新版再表示・非稼働時 graceful フォールバック）")
 print("  - M4 上書き後の再オープン再表示（compare.html or 対象 index-{letter}.html）")

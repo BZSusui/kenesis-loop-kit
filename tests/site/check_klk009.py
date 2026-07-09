@@ -89,7 +89,7 @@ def m_main(html):
 
 
 def pins_all(html):
-    pins = ["NAV-01", "HERO-01", "ABOUT-01", "MENU-01", "GALLERY-01", "FOOTER-01"]
+    pins = ["NAV-01", "MV-01", "ABOUT-01", "MENU-01", "GALLERY-01", "FOOTER-01"]
     return all(re.search(r'class="pin">\s*' + re.escape(p), html) for p in pins)
 
 
