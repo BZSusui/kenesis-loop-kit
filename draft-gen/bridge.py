@@ -57,6 +57,11 @@ KNOWN_ADDR = {"NAV-01", "HERO-01", "ABOUT-01", "MENU-01", "GALLERY-01", "FOOTER-
 ADDR_RE = re.compile(r"^[A-Z][A-Z0-9]*-\d{2}$")  # 安全文字集合(SECTION-NN 連番拡張も許容・注入不能)
 LETTER_RE = re.compile(r"^[a-c]$")               # 複数案の letter(a-c)。単一案は letter 無し
 
+# 実績カタログ(KLK-013・SCR-004・REQ-105/106)—主配色6カテゴリ/安全名/MIME
+CANONICAL_COLORS = {"グリーン", "ブルー", "レッド", "ゴールド", "ピンク", "モノトーン"}  # ワイヤー主配色チップ6値(§3.3)
+CATALOG_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")  # id/file の安全文字集合(先頭は英数)
+CATALOG_MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
+
 
 # ============================================================================
 # 決定論コア(純関数・副作用なし・import 単体テスト対象=S群)
@@ -297,6 +302,126 @@ def build_regenerate_command(pending_path, allow_open=False):
         "claude",
         "-p",
         "/draft-regenerate {0}".format(pending_path),
+        "--permission-mode",
+        "acceptEdits",
+        "--output-format",
+        "json",
+    ]
+    if allow_open:
+        cmd += ["--allowedTools", "Bash(open *)"]
+    return cmd
+
+
+# ---------------------------------------------------------------------------
+# 実績カタログ(KLK-013・SCR-004)決定論コア — 純関数・副作用なし・import 単体テスト対象(S群)
+# ---------------------------------------------------------------------------
+def is_safe_catalog_name(name):
+    """catalog/img/{name} の name が安全か(パストラバーサル/注入対策・R-5/§4.3)。
+
+    CATALOG_NAME_RE 一致(先頭英数)・'..' 無し・'/' や '\\' を含まず・先頭 '.' でないこと。
+    先頭 '.' は CATALOG_NAME_RE(先頭は [A-Za-z0-9])で自動的に拒否される。
+    """
+    return (
+        isinstance(name, str)
+        and bool(CATALOG_NAME_RE.match(name))
+        and ".." not in name
+        and "/" not in name
+        and "\\" not in name
+    )
+
+
+def catalog_content_type(name):
+    """拡張子から MIME を返す(未知は 'application/octet-stream')。GET /catalog/img/{name} 用。"""
+    if not isinstance(name, str):
+        return "application/octet-stream"
+    _, ext = os.path.splitext(name.lower())
+    return CATALOG_MIME.get(ext, "application/octet-stream")
+
+
+def validate_catalog(obj):
+    """カタログJSONを検証する(§4.1・多層防御)。
+
+    schema=='klk-catalog' / version==1 / entries=list / 各 entry の
+    id(安全名)・file(安全名)・source∈{own,ref}・colors⊆CANONICAL_COLORS を検証。
+    返却: (ok: bool, errors: list[str])。ok=False のとき errors に理由を列挙する。
+    """
+    errors = []
+    if not isinstance(obj, dict):
+        return False, ["カタログがオブジェクトではありません"]
+
+    if obj.get("schema") != "klk-catalog":
+        errors.append("schema が 'klk-catalog' ではありません")
+    if obj.get("version") != 1:
+        errors.append("version が 1 ではありません(未対応の版です)")
+
+    entries = obj.get("entries")
+    if not isinstance(entries, list):
+        errors.append("entries が配列ではありません")
+        return (len(errors) == 0), errors
+
+    for i, entry in enumerate(entries):
+        where = "entries[{0}]".format(i)
+        if not isinstance(entry, dict):
+            errors.append("{0} がオブジェクトではありません".format(where))
+            continue
+        if not is_safe_catalog_name(entry.get("id")):
+            errors.append("{0}.id が不正です(安全名のみ)".format(where))
+        if not is_safe_catalog_name(entry.get("file")):
+            errors.append("{0}.file が不正です(安全名のみ)".format(where))
+        if entry.get("source") not in ("own", "ref"):
+            errors.append("{0}.source が own|ref ではありません".format(where))
+        colors = entry.get("colors")
+        if not isinstance(colors, list):
+            errors.append("{0}.colors が配列ではありません".format(where))
+        else:
+            for c in colors:
+                if c not in CANONICAL_COLORS:
+                    errors.append("{0}.colors に未対応の主配色 '{1}' があります".format(where, c))
+
+    return (len(errors) == 0), errors
+
+
+def validate_import_request(obj):
+    """POST /catalog-import のボディを検証する(注入対策・§4.2)。
+
+    想定: {"files": ["a.jpg", ...]}(.pending 内の対象・各 is_safe_catalog_name)
+    または {"all": true}(.pending 全件)。安全でなければ (False, errors)。
+    返却: (ok: bool, errors: list[str])。
+    """
+    errors = []
+    if not isinstance(obj, dict):
+        return False, ["取り込み指示がオブジェクトではありません"]
+
+    all_flag = obj.get("all")
+    files = obj.get("files")
+
+    if all_flag is True:
+        # 全件取り込み。files は無視してよい
+        return True, []
+
+    if not isinstance(files, list) or len(files) == 0:
+        errors.append("files(取り込み対象)が指定されていません")
+        return False, errors
+
+    for f in files:
+        if not is_safe_catalog_name(f):
+            errors.append("files に不正なファイル名があります: {0!r}".format(f))
+
+    return (len(errors) == 0), errors
+
+
+def build_catalog_import_command(pending_spec_path, allow_open=False):
+    """/catalog-import のヘッドレス実行コマンド(list・shell=False 用)を構築する(最小権限・§4.2)。
+
+    ['claude','-p', f'/catalog-import {pending_spec_path}',
+     '--permission-mode','acceptEdits','--output-format','json']
+    allow_open=True のとき ['--allowedTools','Bash(open *)'] を追加(版差の保険・依然最小権限)。
+    ★ 全権限スキップ/全許可モードのフラグは決して含めない(build_claude_command と同一方針)。
+    """
+    cmd = [
+        "claude",
+        "-p",
+        "/catalog-import {0}".format(pending_spec_path),
         "--permission-mode",
         "acceptEdits",
         "--output-format",
