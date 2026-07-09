@@ -12,6 +12,7 @@
 | `/spec-interview` | 対話形式で要件定義書(docs/SPEC.md)を作成・改訂する | モード（最短/フル・省略可） |
 | `/wireframe-gen` | SPECの画面一覧からワイヤーフレーム(docs/wireframes/)を生成する | SCR-ID/モード（省略可） |
 | `/draft-generate` | 生成指示書JSONからデザインラフHTML（1案）を生成し mockups/ に保存する | 生成指示書JSON（省略時は会話の貼付を使用） |
+| `/catalog-import` | 実績カタログ(SCR-004)へ新規画像を取り込み、AI自動タグ付け・人間確認のうえ catalog/ へ登録する | 対象ファイル名/ジョブ仕様パス（省略時は catalog/.pending/ 全件） |
 | `/start-loop` | ループを開始・再開する | チケットID（省略可） |
 | `/new-ticket` | チケットを新規作成する | タイトル（必須） |
 | `/improvement-loop` | 改善ループを起動する | チケットID 差し戻し先（省略可） |
