@@ -54,7 +54,7 @@ JOB_ID_RE = re.compile(r"^[0-9a-f]{32}$")
 _HEX_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 # 部分再生成(KLK-012・REQ-103)—番地/letter/folder の安全パターン
-KNOWN_ADDR = {"NAV-01", "HERO-01", "ABOUT-01", "MENU-01", "GALLERY-01", "FOOTER-01"}  # 基本6種(DRAFT_RULES §2)
+KNOWN_ADDR = {"NAV-01", "MV-01", "ABOUT-01", "MENU-01", "GALLERY-01", "FOOTER-01"}  # 基本6種(DRAFT_RULES §2)
 ADDR_RE = re.compile(r"^[A-Z][A-Z0-9]*-\d{2}$")  # 安全文字集合(SECTION-NN 連番拡張も許容・注入不能)
 LETTER_RE = re.compile(r"^[a-c]$")               # 複数案の letter(a-c)。単一案は letter 無し
 
