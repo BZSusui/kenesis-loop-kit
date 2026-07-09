@@ -77,7 +77,7 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
 - **カラム構成（全案共通）**: 生成ルート要素に `data-columns="{正規化後の canonical 値}"` を付け、DRAFT_RULES §8 の6系統骨格に
   合わせる（全体2カラム `2col-full-*` は `.m-layout` が NAV/HERO を内包・サイドバー全高。本文のみ `2col-body-*` は
   HERO を grid の外に出す。旧 `2col-sub-*` は `2col-body-*` へ正規化してから書く）。**全案で同一の `data-columns`**。
-- **番地ラベル（全案共通）**: 各セクションに `.addr > .pin`（NAV-01 / HERO-01 / ABOUT-01 / MENU-01 / GALLERY-01 / FOOTER-01）。
+- **番地ラベル（全案共通）**: 各セクションに `.addr > .pin`（NAV-01 / MV-01 / ABOUT-01 / MENU-01 / GALLERY-01 / FOOTER-01）。
 - **アタリ画像**: a方式（色面＋`.desc`＋`.kw`。HERO は `.atari-tag`。キーワード未定は `.desc` のみ）。`atari:"free-photo"` でも
   a方式で生成し「b方式は別チケット（REQ-104）」と注記。
 - **仮文言**: 業種（`industry.resolved`）・テイスト（`taste`）に合った実文言。ダミー禁止。未定は `(要検討: …)`。

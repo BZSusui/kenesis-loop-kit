@@ -46,7 +46,7 @@
 | 番地 | セクション |
 |---|---|
 | `NAV-01` | グローバルナビ |
-| `HERO-01` | ヒーロー（メインビジュアル） |
+| `MV-01` | メインビジュアル |
 | `ABOUT-01` | コンセプト・紹介 |
 | `MENU-01` | メニュー・料金 |
 | `GALLERY-01` | ギャラリー・実績 |
@@ -54,7 +54,7 @@
 
 ```html
 <div class="sec">
-  <div class="addr"><span class="pin">HERO-01</span></div>
+  <div class="addr"><span class="pin">MV-01</span></div>
   ...
 </div>
 ```
@@ -357,7 +357,7 @@ SCR-002 mock テーマ変数へ写す。**生成ルート要素（`.mock` 等）
 
 - **ルート要素に `data-folder="mockups/{YYYY-MM-DD}_{案件名}"` を焼き込む**（保存先フォルダの相対パス。`compare.html` は既に
   `meta.project` を表示しており、フォルダパスは新たな機密ではない・`mockups/` はGit除外）。JS はこれを読んで `folder` を得る。
-- **コントロール本体**: 「🔄 セクション再生成」＝番地 `<select>`（`NAV-01`/`HERO-01`/`ABOUT-01`/`MENU-01`/`GALLERY-01`/`FOOTER-01` を
+- **コントロール本体**: 「🔄 セクション再生成」＝番地 `<select>`（`NAV-01`/`MV-01`/`ABOUT-01`/`MENU-01`/`GALLERY-01`/`FOOTER-01` を
   **列挙**した固定 `<option>`。ユーザー自由入力は作らない＝注入面を作らない）＋「このセクションを再生成」`<button>`。既定は無効化しておく。
 - **`</body>` 直前のインライン JS（外部依存ゼロ・localhost fetch のみ）**:
   1. 起動時に `GET http://127.0.0.1:8765/health` を **AbortController 約800ms** で試行。**失敗ならコントロールを無効化**し
