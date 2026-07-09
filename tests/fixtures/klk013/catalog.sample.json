@@ -1,0 +1,59 @@
+{
+  "schema": "klk-catalog",
+  "version": 1,
+  "generatedAt": "2026-07-09T09:00:00.000Z",
+  "entries": [
+    {
+      "id": "cat-0001",
+      "file": "cat-0001.jpg",
+      "title": "サンプル内観サイト",
+      "industry": "美容・サロン",
+      "taste": "ナチュラル",
+      "colors": ["グリーン"],
+      "source": "own",
+      "columns": "1col",
+      "tags": ["美容", "ナチュラル", "グリーン", "1カラム"],
+      "note": "架空のダミー実績。落ち着いた内観写真主体",
+      "addedAt": "2026-07-09T09:00:00.000Z"
+    },
+    {
+      "id": "cat-0002",
+      "file": "cat-0002.png",
+      "title": "デモ・オーガニックカフェ",
+      "industry": "飲食",
+      "taste": "ナチュラル",
+      "colors": ["グリーン", "ゴールド"],
+      "source": "own",
+      "columns": "2col-body-left",
+      "tags": ["飲食", "ナチュラル", "グリーン"],
+      "note": "架空のダミー実績。木目とグリーン基調",
+      "addedAt": "2026-07-08T10:30:00.000Z"
+    },
+    {
+      "id": "cat-0003",
+      "file": "cat-0003.jpg",
+      "title": "見本サンプル・海外サロン風",
+      "industry": "美容・サロン",
+      "taste": "高級感",
+      "colors": ["モノトーン"],
+      "source": "ref",
+      "columns": "1col",
+      "tags": ["美容", "高級感", "モノトーン", "参考のみ"],
+      "note": "架空の収集見本(第三者著作物想定)。社内の参考目的のみ・公開/再配布/そっくり再現しない",
+      "addedAt": "2026-07-07T14:00:00.000Z"
+    },
+    {
+      "id": "cat-0004",
+      "file": "cat-0004.jpg",
+      "title": "ダミー・雑貨ECサイト",
+      "industry": "EC・物販",
+      "taste": "ポップ",
+      "colors": ["ピンク"],
+      "source": "own",
+      "columns": "3col",
+      "tags": ["EC・物販", "ポップ", "ピンク", "3カラム"],
+      "note": "架空のダミー実績。カラフルな商品グリッド",
+      "addedAt": "2026-07-06T09:15:00.000Z"
+    }
+  ]
+}
