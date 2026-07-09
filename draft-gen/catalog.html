@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>実績カタログ | SCR-004</title>
+<!--
+  KLK-013 SCR-004 実績カタログ本体（committed 静的シェル）。
+  ★ 機密ゼロ：カタログ実データ（案件名・画像）を一切含まない「器」。起動時に同一オリジン
+    /catalog.json ・ /catalog/img/{file} から読む（ブリッジ配信・§3.1）。file:// 直開き時は
+    /health プローブ失敗で空状態＋起動案内にフォールバックし壊れない（NFR-005）。
+  ★ 外部依存ゼロ：CDN・外部CSS/JS・Webフォント・外部画像URL・外部 fetch を使わない。
+-->
+<style>
+  :root {
+    --color-base: #FFFFFF; --color-main: #64B9E6; --color-main-deep: #2E8BC9;
+    --color-link: #1C6FA6; --color-accent: #FF4568; --color-accent-2: #F9BA5D;
+    --color-text: #374151; --color-border: #D6E9F5; --color-bg-subtle: #F0F7FC; --color-text-sub: #6B7280;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Hiragino Sans","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+    color: var(--color-text); background: var(--color-bg-subtle); line-height: 1.6; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 20px 20px 60px; }
+
+  header.hd { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  header.hd h1 { font-size: 21px; margin: 6px 0; }
+  header.hd .cnt { color: var(--color-text-sub); font-size: 13px; }
+
+  /* 社外秘の注記 */
+  .secure-note { display: flex; gap: 8px; align-items: center; margin: 10px 0 0; padding: 9px 13px;
+    background: #FFF0F3; border: 1px solid var(--color-accent); border-radius: 8px; font-size: 12.5px; }
+  .secure-note .mk { color: var(--color-accent); font-weight: 700; }
+
+  /* ブリッジ状態バナー */
+  .bridge-state { margin: 12px 0 0; padding: 10px 13px; border-radius: 8px; font-size: 12.5px;
+    border: 1px solid var(--color-border); background: #fff; display: none; }
+  .bridge-state.warn { display: block; background: #FFF8E8; border-color: var(--color-accent-2); }
+  .bridge-state code { background: var(--color-bg-subtle); padding: 1px 6px; border-radius: 4px; }
+
+  /* ツールバー:検索+追加 */
+  .toolbar { display: flex; gap: 10px; align-items: center; margin: 16px 0 0; flex-wrap: wrap; }
+  .search { flex: 1 1 240px; display: flex; align-items: center; gap: 6px; background: #fff;
+    border: 1px solid var(--color-border); border-radius: 8px; padding: 8px 12px; }
+  .search input { border: none; outline: none; width: 100%; font-size: 14px; color: var(--color-text); background: none; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; cursor: pointer;
+    border-radius: 8px; font-size: 13px; padding: 9px 16px; border: 1px solid var(--color-border); background: #fff; color: var(--color-link); }
+  .btn.primary { background: var(--color-main-deep); color: #fff; border: none; font-weight: 700; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* フィルタ */
+  .filters { background: #fff; border: 1px solid var(--color-border); border-radius: 10px; padding: 12px 14px; margin-top: 12px; }
+  .frow { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; flex-wrap: wrap; }
+  .frow .flabel { font-size: 12px; color: var(--color-text-sub); width: 64px; flex: none; padding-top: 4px; }
+  .fchips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .fchip { font-size: 12px; border: 1px solid var(--color-border); border-radius: 999px; padding: 4px 12px; background: #fff; cursor: pointer; }
+  .fchip.on { background: var(--color-main-deep); color: #fff; border-color: var(--color-main-deep); }
+  .fchip.color { display: inline-flex; align-items: center; gap: 6px; }
+  .fchip.color .sw { width: 12px; height: 12px; border-radius: 3px; }
+
+  .result-meta { display: flex; justify-content: space-between; align-items: center; margin: 16px 0 8px; font-size: 12.5px; color: var(--color-text-sub); flex-wrap: wrap; gap: 8px; }
+  .result-meta select { font-size: 12.5px; border: 1px solid var(--color-border); border-radius: 6px; padding: 4px 8px; background: #fff; color: var(--color-text); }
+
+  /* カタロググリッド */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 14px; }
+  .item { background: #fff; border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; }
+  .item .shot { aspect-ratio: 4/3; position: relative; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--color-main) 0%, var(--color-accent-2) 100%);
+    color: #fff; font-size: 13px; text-align: center; padding: 8px; overflow: hidden; }
+  .item .shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .item .src { position: absolute; top: 6px; left: 6px; font-size: 10px; padding: 2px 7px; border-radius: 4px; color: #fff; z-index: 1; }
+  .item .src.own { background: rgba(30,122,67,.9); }
+  .item .src.ref { background: rgba(201,130,31,.92); }
+  .item .zoom { position: absolute; bottom: 6px; right: 6px; font-size: 12px; background: rgba(0,0,0,.4); padding: 2px 6px; border-radius: 4px; z-index: 1; }
+  .item .meta { padding: 10px 12px; }
+  .item .cap { font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+  .item .tags { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+  .item .tags span { font-size: 10.5px; background: var(--color-bg-subtle); border: 1px solid var(--color-border); border-radius: 999px; padding: 2px 8px; }
+  .item .use { display: block; text-align: center; font-size: 12px; text-decoration: none; color: var(--color-link);
+    border: 1px solid var(--color-border); border-radius: 6px; padding: 6px; }
+  .item .use:hover { background: var(--color-bg-subtle); }
+
+  .empty { background: #fff; border: 1px dashed var(--color-border); border-radius: 12px; padding: 40px 20px; text-align: center; color: var(--color-text-sub); font-size: 13.5px; }
+  .empty .big { font-size: 34px; }
+
+  /* 画像追加(REQ-106) */
+  .uploader { background: #fff; border: 1px solid var(--color-border); border-radius: 12px; padding: 18px 20px; margin-top: 26px; }
+  .uploader h2 { font-size: 16px; margin: 0 0 4px; }
+  .uploader .sub { font-size: 12.5px; color: var(--color-text-sub); margin: 0 0 12px; }
+  .dropzone { border: 2px dashed var(--color-main); border-radius: 10px; background: var(--color-bg-subtle);
+    padding: 26px; text-align: center; color: var(--color-text-sub); }
+  .dropzone .big { font-size: 30px; }
+  .dropzone .t { font-size: 14px; color: var(--color-text); margin: 6px 0 2px; }
+  .import-actions { margin-top: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .import-status { font-size: 12.5px; color: var(--color-text-sub); }
+  .autotag { margin-top: 14px; border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; }
+  .autotag .at-head { background: var(--color-bg-subtle); padding: 8px 12px; font-size: 12.5px; color: var(--color-text); border-bottom: 1px solid var(--color-border); }
+  .autotag .at-body { padding: 12px; font-size: 12.5px; color: var(--color-text-sub); }
+
+  /* モーダル(SCR-001/002 と同方式・CSS-only チェックボックストグル) */
+  .modal-toggle { display: none; }
+  .modal-back { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(20,30,40,.72); align-items: center; justify-content: center; padding: 20px; }
+  .modal-toggle:checked + .modal-back { display: flex; }
+  .m-backdrop { position: absolute; inset: 0; cursor: zoom-out; }
+  .modal { background: #fff; border-radius: 12px; max-width: 1000px; width: 100%; max-height: 90vh; overflow: auto; position: relative; z-index: 1; }
+  .modal .m-img { aspect-ratio: 16/9; width: 100%; background: linear-gradient(135deg, var(--color-main), var(--color-accent-2)); display: flex; align-items: center; justify-content: center; color: #fff; border-radius: 12px 12px 0 0; overflow: hidden; }
+  .modal .m-img img { width: 100%; height: 100%; object-fit: contain; background: #111; }
+  .modal .m-body { padding: 14px 18px 18px; }
+  .modal .m-body h3 { margin: 0 0 6px; font-size: 15px; }
+  .modal .m-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .modal .m-tags span { font-size: 11.5px; background: var(--color-bg-subtle); border: 1px solid var(--color-border); border-radius: 999px; padding: 3px 10px; }
+  .modal .m-close { position: absolute; top: 10px; right: 12px; z-index: 1; width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(0,0,0,.5); color: #fff; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 18px; cursor: pointer; }
+  .modal .m-note { font-size: 11px; color: var(--color-text-sub); }
+
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .frow .flabel { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hd">
+    <h1>実績カタログ</h1>
+    <span class="cnt" id="headCount">読み込み中…</span>
+  </header>
+
+  <div class="secure-note">
+    <span class="mk">🔒</span>
+    <span>この画面で扱う画像は<b>社外秘</b>(クライアント名等を含む)です。<b>Git公開対象外</b>のフォルダ(<code>catalog/</code>)にのみ保存されます。収集見本は<b>社内の参考目的のみ</b>で使用し、公開・再配布・そっくり再現の材料にはしません。</span>
+  </div>
+
+  <div class="bridge-state" id="bridgeState"></div>
+
+  <div class="toolbar">
+    <div class="search"><span>🔍</span><input type="text" id="searchInput" placeholder="キーワードで探す(例:サロン ナチュラル 緑)"></div>
+    <a href="#add" class="btn primary">＋ 画像を追加</a>
+    <a href="/" class="btn" id="backToSettings">設定画面へ戻る</a>
+  </div>
+
+  <div class="filters" id="filters">
+    <div class="frow" data-facet="industry">
+      <span class="flabel">業種</span>
+      <div class="fchips">
+        <span class="fchip" data-val="美容・サロン">美容・サロン</span><span class="fchip" data-val="医療">医療</span><span class="fchip" data-val="士業">士業</span>
+        <span class="fchip" data-val="住宅・不動産">住宅・不動産</span><span class="fchip" data-val="飲食">飲食</span><span class="fchip" data-val="EC・物販">EC・物販</span>
+        <span class="fchip" data-val="教育">教育</span><span class="fchip" data-val="旅行・宿泊">旅行・宿泊</span>
+      </div>
+    </div>
+    <div class="frow" data-facet="taste">
+      <span class="flabel">テイスト</span>
+      <div class="fchips">
+        <span class="fchip" data-val="シンプル">シンプル</span><span class="fchip" data-val="ナチュラル">ナチュラル</span><span class="fchip" data-val="高級感">高級感</span>
+        <span class="fchip" data-val="ポップ">ポップ</span><span class="fchip" data-val="和風">和風</span><span class="fchip" data-val="かっこいい">かっこいい</span><span class="fchip" data-val="レトロ">レトロ</span>
+      </div>
+    </div>
+    <div class="frow" data-facet="colors">
+      <span class="flabel">主配色</span>
+      <div class="fchips">
+        <span class="fchip color" data-val="グリーン"><span class="sw" style="background:#2E7D6B"></span>グリーン</span>
+        <span class="fchip color" data-val="ブルー"><span class="sw" style="background:#2E5FA3"></span>ブルー</span>
+        <span class="fchip color" data-val="レッド"><span class="sw" style="background:#B23A48"></span>レッド</span>
+        <span class="fchip color" data-val="ゴールド"><span class="sw" style="background:#C6A15B"></span>ゴールド</span>
+        <span class="fchip color" data-val="ピンク"><span class="sw" style="background:#E86FA0"></span>ピンク</span>
+        <span class="fchip color" data-val="モノトーン"><span class="sw" style="background:#333"></span>モノトーン</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="result-meta">
+    <span id="resultCount">—</span>
+    <label>並び替え:
+      <select id="sortSelect">
+        <option value="new">新しい順</option>
+        <option value="old">古い順</option>
+        <option value="title">名前順</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <!-- 画像追加(REQ-106) -->
+  <div class="uploader" id="add">
+    <h2>実績・見本画像を追加する</h2>
+    <p class="sub">画像を <code>catalog/.pending/</code> に置くと、AIが業種・テイスト・主配色を<b>自動でタグ付け</b>してカタログに登録します。保存先はGit公開対象外のフォルダに限定されます。</p>
+    <div class="dropzone">
+      <div class="big">⬆️</div>
+      <p class="t">追加したい画像を <code>catalog/.pending/</code> フォルダに入れてください</p>
+      <p>JPG / PNG(複数可)</p>
+    </div>
+    <div class="import-actions">
+      <button type="button" class="btn primary" id="importBtn" disabled>取り込みを実行</button>
+      <span class="import-status" id="importStatus">ブリッジ未起動のため取り込みは実行できません。</span>
+    </div>
+    <div class="autotag">
+      <div class="at-head">自動タグ付けの結果(登録前に確認・修正できます)</div>
+      <div class="at-body" id="autotagBody">
+        取り込みを実行すると、AIが推定した業種・テイスト・主配色(6カテゴリ)・カラムを<b>登録前に提示</b>します。
+        内容を確認・修正してから、承認した分だけがカタログへ登録されます(<b>承認前に確定しません</b>)。
+      </div>
+    </div>
+  </div>
+
+  <!-- 拡大モーダルはグリッド描画時に各カードごと(CSS-only トグル)へ動的挿入する -->
+  <div id="modalHost"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // 主配色6カテゴリ(bridge.py CANONICAL_COLORS と一致・§3.3)
+  var CANONICAL_COLORS = ["グリーン", "ブルー", "レッド", "ゴールド", "ピンク", "モノトーン"];
+
+  // 選択状態(状態の単一源はDOM: fchip.on とこの sel を同期)
+  var sel = { industry: [], taste: [], colors: [], keyword: "", sort: "new" };
+  var allEntries = [];
+  var bridgeAlive = false;
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  // ---- 純関数: 絞り込み(業種×テイスト×配色×キーワード の AND) -----------------
+  // 各ファセット内の複数選択は OR、ファセット間は AND(§4.1)。
+  function filterEntries(entries, s) {
+    if (!Array.isArray(entries)) return [];
+    var kw = (s.keyword || "").trim().toLowerCase();
+    return entries.filter(function (e) {
+      if (s.industry && s.industry.length && s.industry.indexOf(e.industry) < 0) return false;
+      if (s.taste && s.taste.length && s.taste.indexOf(e.taste) < 0) return false;
+      if (s.colors && s.colors.length) {
+        var ec = Array.isArray(e.colors) ? e.colors : [];
+        var hit = s.colors.some(function (c) { return ec.indexOf(c) >= 0; });
+        if (!hit) return false;
+      }
+      if (kw) {
+        var hay = [e.title, e.industry, e.taste,
+          (Array.isArray(e.tags) ? e.tags.join(" ") : ""), e.note].join(" ").toLowerCase();
+        if (hay.indexOf(kw) < 0) return false;
+      }
+      return true;
+    });
+  }
+
+  function sortEntries(list, mode) {
+    var out = list.slice();
+    if (mode === "title") {
+      out.sort(function (a, b) { return String(a.title || "").localeCompare(String(b.title || ""), "ja"); });
+    } else {
+      out.sort(function (a, b) {
+        var av = String(a.addedAt || ""), bv = String(b.addedAt || "");
+        return mode === "old" ? (av < bv ? -1 : av > bv ? 1 : 0) : (av > bv ? -1 : av < bv ? 1 : 0);
+      });
+    }
+    return out;
+  }
+
+  function imgSrc(e) {
+    // ブリッジ配信時は同一オリジン絶対 /catalog/img/{file}、file:// スナップショット時は相対 img/{file}
+    var name = e.file || e.id || "";
+    if (!name) return "";
+    return (bridgeAlive ? "/catalog/img/" : "img/") + encodeURIComponent(name);
+  }
+
+  // ---- 描画 -------------------------------------------------------------------
+  function renderGrid() {
+    var grid = document.getElementById("grid");
+    var host = document.getElementById("modalHost");
+    var filtered = sortEntries(filterEntries(allEntries, sel), sel.sort);
+
+    document.getElementById("resultCount").textContent = filtered.length + " 件表示中";
+
+    if (!filtered.length) {
+      grid.innerHTML = "";
+      host.innerHTML = "";
+      var msg = allEntries.length
+        ? "条件に合う実績がありません。フィルタやキーワードを変えてみてください。"
+        : (bridgeAlive
+            ? "カタログはまだ空です。下の「実績・見本画像を追加する」から取り込んでください。"
+            : "ブリッジ未起動のためカタログを読み込めません。");
+      grid.innerHTML = '<div class="empty"><div class="big">🗂️</div><p>' + esc(msg) + "</p></div>";
+      return;
+    }
+
+    var cards = [], modals = [];
+    filtered.forEach(function (e) {
+      var mid = "m-" + esc(e.id || Math.random().toString(36).slice(2));
+      var srcClass = e.source === "ref" ? "ref" : "own";
+      var srcLabel = e.source === "ref" ? "収集見本" : "自社実績";
+      var src = imgSrc(e);
+      var tags = Array.isArray(e.tags) && e.tags.length
+        ? e.tags : [e.industry, e.taste].concat(Array.isArray(e.colors) ? e.colors : []);
+      var tagHtml = tags.filter(Boolean).map(function (t) { return "<span>" + esc(t) + "</span>"; }).join("");
+      var shotInner = src
+        ? '<img src="' + esc(src) + '" alt="' + esc(e.title || "") + '" loading="lazy">'
+        : esc(e.title || "画像");
+
+      cards.push(
+        '<div class="item">' +
+          '<label for="' + mid + '" class="shot">' + shotInner +
+            '<span class="src ' + srcClass + '">' + srcLabel + "</span>" +
+            '<span class="zoom">🔍</span>' +
+          "</label>" +
+          '<div class="meta">' +
+            '<div class="cap">' + esc(e.title || "") + "</div>" +
+            '<div class="tags">' + tagHtml + "</div>" +
+            '<a class="use" href="/">この雰囲気で生成 →</a>' +
+          "</div>" +
+        "</div>"
+      );
+
+      var refNote = e.source === "ref"
+        ? '<p class="m-note">社内の参考目的のみ。公開・再配布・そっくり再現の材料にはしません(第三者著作物)。</p>'
+        : '<p class="m-note">実際は原寸を縮小して表示します。</p>';
+      var mImg = src
+        ? '<img src="' + esc(src) + '" alt="' + esc(e.title || "") + '">'
+        : esc(e.title || "画像") + "(拡大プレビュー)";
+      modals.push(
+        '<input type="checkbox" class="modal-toggle" id="' + mid + '">' +
+        '<div class="modal-back">' +
+          '<label for="' + mid + '" class="m-backdrop"></label>' +
+          '<div class="modal"><label for="' + mid + '" class="m-close">×</label>' +
+            '<div class="m-img">' + mImg + "</div>" +
+            '<div class="m-body"><h3>' + esc(e.title || "") + " — " + srcLabel + "</h3>" +
+              '<div class="m-tags">' + tagHtml + "</div>" +
+              refNote +
+            "</div>" +
+          "</div>" +
+        "</div>"
+      );
+    });
+    grid.innerHTML = cards.join("");
+    host.innerHTML = modals.join("");
+  }
+
+  // ---- フィルタUIの結線 -------------------------------------------------------
+  function wireFilters() {
+    document.querySelectorAll("#filters .frow").forEach(function (row) {
+      var facet = row.getAttribute("data-facet");
+      row.querySelectorAll(".fchip").forEach(function (chip) {
+        chip.addEventListener("click", function () {
+          var val = chip.getAttribute("data-val");
+          var arr = sel[facet];
+          var i = arr.indexOf(val);
+          if (i >= 0) { arr.splice(i, 1); chip.classList.remove("on"); }
+          else { arr.push(val); chip.classList.add("on"); }
+          renderGrid();
+        });
+      });
+    });
+    document.getElementById("searchInput").addEventListener("input", function (ev) {
+      sel.keyword = ev.target.value; renderGrid();
+    });
+    document.getElementById("sortSelect").addEventListener("change", function (ev) {
+      sel.sort = ev.target.value; renderGrid();
+    });
+  }
+
+  // ---- データ読込(§3.1: /health プローブ → /catalog.json → フォールバック) ----
+  function probeHealth() {
+    return new Promise(function (resolve) {
+      if (location.protocol === "file:") { resolve(false); return; }
+      var ctrl = ("AbortController" in window) ? new AbortController() : null;
+      var timer = setTimeout(function () { if (ctrl) ctrl.abort(); resolve(false); }, 800);
+      var opts = ctrl ? { signal: ctrl.signal } : {};
+      fetch("/health", opts).then(function (r) {
+        clearTimeout(timer); resolve(r && r.ok);
+      }).catch(function () { clearTimeout(timer); resolve(false); });
+    });
+  }
+
+  function loadCatalog() {
+    return fetch("/catalog.json").then(function (r) {
+      if (!r || !r.ok) throw new Error("catalog.json");
+      return r.json();
+    }).then(function (data) {
+      var entries = (data && Array.isArray(data.entries)) ? data.entries : [];
+      // 主配色は許可6カテゴリのみ通す(軽検証・不正値は無視)
+      entries.forEach(function (e) {
+        if (Array.isArray(e.colors)) {
+          e.colors = e.colors.filter(function (c) { return CANONICAL_COLORS.indexOf(c) >= 0; });
+        }
+      });
+      return entries;
+    });
+  }
+
+  function setBridgeState(alive) {
+    bridgeAlive = alive;
+    var banner = document.getElementById("bridgeState");
+    var btn = document.getElementById("importBtn");
+    var st = document.getElementById("importStatus");
+    if (alive) {
+      banner.className = "bridge-state";
+      banner.textContent = "";
+      btn.disabled = false;
+      st.textContent = "画像を catalog/.pending/ に置いてから実行してください。";
+      document.getElementById("backToSettings").setAttribute("href", "/");
+    } else {
+      banner.className = "bridge-state warn";
+      banner.innerHTML = "ブリッジ未起動です。ターミナルで <code>python3 draft-gen/bridge.py</code> を起動すると、実績一覧が表示されます。";
+      btn.disabled = true;
+      st.textContent = "ブリッジ未起動のため取り込みは実行できません。";
+      document.getElementById("backToSettings").setAttribute("href", "index.html");
+    }
+  }
+
+  function updateHeadCount() {
+    var own = allEntries.filter(function (e) { return e.source !== "ref"; }).length;
+    var ref = allEntries.length - own;
+    document.getElementById("headCount").textContent =
+      "全 " + allEntries.length + " 点(自社実績 " + own + " / 収集見本 " + ref + ")";
+  }
+
+  // ---- ワンクリック取り込み(POST /catalog-import → /status ポーリング) --------
+  function pollStatus(jobId) {
+    var st = document.getElementById("importStatus");
+    fetch("/status/" + jobId).then(function (r) { return r.json(); }).then(function (j) {
+      st.textContent = j.message || j.state;
+      if (j.state === "running") { setTimeout(function () { pollStatus(jobId); }, 1500); return; }
+      document.getElementById("importBtn").disabled = false;
+      if (j.state === "done") { loadCatalog().then(function (e) { allEntries = e; updateHeadCount(); renderGrid(); }); }
+    }).catch(function () {
+      st.textContent = "状態の取得に失敗しました。";
+      document.getElementById("importBtn").disabled = false;
+    });
+  }
+
+  function wireImport() {
+    document.getElementById("importBtn").addEventListener("click", function () {
+      if (!bridgeAlive) return;
+      var btn = this, st = document.getElementById("importStatus");
+      btn.disabled = true; st.textContent = "取り込みを開始しています…";
+      fetch("/catalog-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ all: true })
+      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (res.ok && res.j.jobId) { pollStatus(res.j.jobId); }
+          else { st.textContent = (res.j && res.j.error) || "取り込みを開始できませんでした。"; btn.disabled = false; }
+        }).catch(function () { st.textContent = "取り込みの通信に失敗しました。"; btn.disabled = false; });
+    });
+  }
+
+  // ---- 起動 -------------------------------------------------------------------
+  document.addEventListener("DOMContentLoaded", function () {
+    wireFilters();
+    wireImport();
+    probeHealth().then(function (alive) {
+      setBridgeState(alive);
+      if (!alive) { allEntries = []; updateHeadCount(); renderGrid(); return; }
+      loadCatalog().then(function (entries) {
+        allEntries = entries; updateHeadCount(); renderGrid();
+      }).catch(function () {
+        allEntries = []; updateHeadCount(); renderGrid();
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>
