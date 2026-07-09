@@ -25,6 +25,7 @@ import os
 import re
 import subprocess
 import sys
+import urllib.parse
 
 # ============================================================================
 # 定数
@@ -449,6 +450,13 @@ def _run_server(port):
     root = repo_root()
     index_path = os.path.join(root, "draft-gen", "index.html")
     pending_dir = os.path.join(root, "mockups", ".pending")
+    # 実績カタログ(KLK-013・SCR-004)。catalog/ は Git除外・社外秘(§4.6)
+    catalog_html_path = os.path.join(root, "draft-gen", "catalog.html")
+    catalog_dir = os.path.join(root, "catalog")
+    catalog_json_path = os.path.join(catalog_dir, "catalog.json")
+    catalog_img_dir = os.path.join(catalog_dir, "img")
+    catalog_pending_dir = os.path.join(catalog_dir, ".pending")
+    _EMPTY_CATALOG = {"schema": "klk-catalog", "version": 1, "entries": []}
 
     jobs = {}
     jobs_lock = threading.Lock()
@@ -590,6 +598,66 @@ def _run_server(port):
             )
         _cleanup(pending_path)
 
+    def _run_catalog_import_job(job_id, pending_spec_path, started_at):
+        """ワーカースレッド: /catalog-import をヘッドレス実行し、catalog.json の登録件数を反映(§4.3)。
+
+        既存 _run_regen_job と同型。build_catalog_import_command(最小権限・危険フラグ非含有)を
+        shell=False で実行。登録の最終確定は /catalog-import スキル内の人間確認を経る(§4.5・M5)。
+        成功後 catalog/catalog.json の entries 件数を state="done" のメッセージへ反映する。
+        """
+        def _count_entries():
+            try:
+                with open(catalog_json_path, encoding="utf-8") as fh:
+                    data = json.load(fh)
+                return len(data.get("entries", [])) if isinstance(data, dict) else 0
+            except (OSError, ValueError):
+                return None
+
+        before = _count_entries()
+        cmd = build_catalog_import_command(pending_spec_path)
+        try:
+            proc = subprocess.run(
+                cmd,
+                cwd=root,
+                capture_output=True,
+                text=True,
+                timeout=BRIDGE_TIMEOUT_SEC,
+            )
+        except subprocess.TimeoutExpired:
+            with jobs_lock:
+                jobs[job_id]["state"] = "error"
+                jobs[job_id]["message"] = (
+                    "取り込みがタイムアウトしました({0}秒)。もう一度お試しください".format(
+                        BRIDGE_TIMEOUT_SEC
+                    )
+                )
+            _cleanup(pending_spec_path)
+            return
+        except Exception as exc:  # 起動失敗(claude 不在など)
+            with jobs_lock:
+                jobs[job_id]["state"] = "error"
+                jobs[job_id]["message"] = "取り込みの起動に失敗しました: {0}".format(exc)
+            _cleanup(pending_spec_path)
+            return
+
+        if proc.returncode != 0:
+            tail = (proc.stderr or proc.stdout or "").strip()[-400:]
+            with jobs_lock:
+                jobs[job_id]["state"] = "error"
+                jobs[job_id]["message"] = "取り込みに失敗しました。{0}".format(tail)
+            _cleanup(pending_spec_path)
+            return
+
+        after = _count_entries()
+        if before is not None and after is not None and after >= before:
+            msg = "取り込みが完了しました。カタログの登録は {0} 件です".format(after)
+        else:
+            msg = "取り込みが完了しました。カタログを確認してください"
+        with jobs_lock:
+            jobs[job_id]["state"] = "done"
+            jobs[job_id]["message"] = msg
+        _cleanup(pending_spec_path)
+
     def _cleanup(pending_path):
         try:
             if os.path.exists(pending_path):
@@ -635,6 +703,16 @@ def _run_server(port):
             if path.startswith("/status/"):
                 self._status(path[len("/status/"):])
                 return
+            # 実績カタログ(KLK-013・SCR-004・§4.3)
+            if path == "/catalog":
+                self._serve_catalog_html()
+                return
+            if path == "/catalog.json":
+                self._serve_catalog_json()
+                return
+            if path.startswith("/catalog/img/"):
+                self._serve_catalog_img(path[len("/catalog/img/"):])
+                return
             self._json(404, {"error": "not found"})
 
         def do_POST(self):
@@ -644,6 +722,9 @@ def _run_server(port):
                 return
             if path == "/regenerate":
                 self._regenerate()
+                return
+            if path == "/catalog-import":
+                self._catalog_import()
                 return
             self._json(404, {"error": "not found"})
 
@@ -661,6 +742,164 @@ def _run_server(port):
             self._cors()
             self.end_headers()
             self.wfile.write(body)
+
+        # --- 実績カタログ(KLK-013・SCR-004)handlers --------------------------
+        def _serve_catalog_html(self):
+            """GET /catalog — SCR-004本体 draft-gen/catalog.html を配信(§4.3・_serve_index と同型)。"""
+            try:
+                with open(catalog_html_path, "rb") as fh:
+                    body = fh.read()
+            except OSError:
+                self._json(500, {"error": "catalog.html を読み込めません"})
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self._cors()
+            self.end_headers()
+            self.wfile.write(body)
+
+        def _serve_catalog_json(self):
+            """GET /catalog.json — catalog/catalog.json を検証し配信(§4.3)。
+
+            不在/読取不能/不正なら空カタログ({schema,version,entries:[]})を 200 で返す
+            (画面は空状態表示・機密を漏らさない・グレースフル)。
+            """
+            try:
+                with open(catalog_json_path, encoding="utf-8") as fh:
+                    obj = json.load(fh)
+            except (OSError, ValueError):
+                self._json(200, dict(_EMPTY_CATALOG))
+                return
+            ok, _errors = validate_catalog(obj)
+            self._json(200, obj if ok else dict(_EMPTY_CATALOG))
+
+        def _serve_catalog_img(self, raw_name):
+            """GET /catalog/img/{name} — 画像を配信(§4.3・多層防御 R-5)。
+
+            ①URLデコード ②is_safe_catalog_name(文字集合/'..'/'/'/'\\'拒否)→ 不正 400
+            ③os.path.realpath で catalog/img/ 配下に収まることを再確認(シンボリックリンク保険)
+            ④実在確認(不在 404) ⑤catalog_content_type で Content-Type 設定し 200。
+            """
+            name = urllib.parse.unquote(raw_name)
+            if not is_safe_catalog_name(name):
+                self._json(400, {"error": "画像名が不正です"})
+                return
+            base = os.path.realpath(catalog_img_dir)
+            target = os.path.realpath(os.path.join(catalog_img_dir, name))
+            if target != base and not target.startswith(base + os.sep):
+                self._json(400, {"error": "画像名が不正です"})
+                return
+            if not os.path.isfile(target):
+                self._json(404, {"error": "画像が見つかりません"})
+                return
+            try:
+                with open(target, "rb") as fh:
+                    body = fh.read()
+            except OSError:
+                self._json(500, {"error": "画像を読み込めません"})
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", catalog_content_type(name))
+            self.send_header("Content-Length", str(len(body)))
+            self._cors()
+            self.end_headers()
+            self.wfile.write(body)
+
+        def _catalog_import(self):
+            """POST /catalog-import — 画像取り込みをヘッドレス起動(§4.3・_regenerate と同型)。
+
+            防御順: ①Origin(403) ②サイズ上限(413/400) ③JSON(400) ④validate_import_request(400)
+            ⑤catalog/.pending/ 内対象の実在確認(404) ⑥jobId 発行→.import.json 出力→worker→202。
+            """
+            # ① Origin 検証(M-SEC-1): body 読取前に弾く(_generate と同一)
+            if not is_allowed_origin(self.headers.get("Origin"), BRIDGE_HOST, port):
+                self._json(403, {"error": "許可されていないオリジンです"})
+                return
+            # ② サイズ上限(L-1): body 読取前に検証(多層防御)
+            try:
+                length = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length < 0:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length > MAX_BODY_BYTES:
+                self._json(413, {"error": "リクエストが大きすぎます"})
+                return
+            raw = self.rfile.read(length) if length else b""
+            # ③ JSON パース
+            try:
+                obj = json.loads(raw.decode("utf-8"))
+            except (ValueError, UnicodeDecodeError):
+                self._json(400, {"error": "リクエストJSONを解析できません"})
+                return
+            # ④ 入力検証(注入対策)
+            ok, errors = validate_import_request(obj)
+            if not ok:
+                self._json(400, {"error": "・".join(errors)})
+                return
+
+            # ⑤ catalog/.pending/ 内の対象を確定(実在確認)
+            if not os.path.isdir(catalog_pending_dir):
+                self._json(404, {"error": "取り込み待ちフォルダ(catalog/.pending/)がありません"})
+                return
+            if obj.get("all") is True:
+                try:
+                    names = sorted(
+                        n for n in os.listdir(catalog_pending_dir)
+                        if is_safe_catalog_name(n)
+                        and catalog_content_type(n) in ("image/jpeg", "image/png")
+                    )
+                except OSError:
+                    names = []
+            else:
+                names = list(obj["files"])
+                missing = [
+                    n for n in names
+                    if not os.path.isfile(os.path.join(catalog_pending_dir, n))
+                ]
+                if missing:
+                    self._json(404, {"error": "取り込み対象が見つかりません: {0}".format("・".join(missing))})
+                    return
+            if not names:
+                self._json(404, {"error": "取り込み対象の画像がありません(catalog/.pending/ に JPG/PNG を置いてください)"})
+                return
+
+            # ⑥ jobId 発行 → 検証済みジョブ仕様を pending へ書き worker 起動(プロンプトは pending パスのみ)
+            job_id = uuid.uuid4().hex
+            os.makedirs(catalog_pending_dir, exist_ok=True)
+            pending_spec_path = os.path.join(catalog_pending_dir, job_id + ".import.json")
+            with open(pending_spec_path, "w", encoding="utf-8") as fh:
+                json.dump(
+                    {
+                        "schema": "catalog-import-job",
+                        "version": 1,
+                        "files": names,
+                    },
+                    fh,
+                    ensure_ascii=False,
+                    indent=2,
+                )
+
+            started_at = _now()
+            with jobs_lock:
+                jobs[job_id] = {
+                    "state": "running",
+                    "started_at": started_at,
+                    "folder": None,
+                    "openTarget": None,
+                    "message": "取り込み中…",
+                }
+
+            worker = threading.Thread(
+                target=_run_catalog_import_job,
+                args=(job_id, pending_spec_path, started_at),
+                daemon=True,
+            )
+            worker.start()
+            self._json(202, {"jobId": job_id})
 
         def _generate(self):
             # ① Origin 検証(M-SEC-1): 状態変更は同一オリジン(+file://)のみ許可。body 読取前に弾く
