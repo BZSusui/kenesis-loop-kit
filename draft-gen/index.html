@@ -275,6 +275,7 @@
     display: none; margin: 0 0 12px; padding: 11px 14px; font-size: 13px;
     border-radius: 8px; border: 1px solid var(--color-border);
     display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+    white-space: pre-line; align-items: flex-start;
   }
   .bridge-status.bs-loading { background: var(--color-bg-subtle); border-color: var(--color-main); color: var(--color-main-deep); }
   .bridge-status.bs-done { background: var(--color-ok-bg); border-color: var(--color-ok); color: var(--color-ok); }
@@ -875,7 +876,9 @@ function setBridgeStatus(kind, text, spinner) {
 function showManualGuidance() {
   // ブリッジ非稼働／通信不可: 従来のクリップボード＋手順案内（NFR-005・SPEC §9）。
   setBridgeStatus('guide',
-    '生成指示書をクリップボードにコピーしました。Claude Code で /draft-generate に貼り付けると生成できます（ローカルブリッジ未起動）。',
+    '生成指示書をクリップボードにコピーしました（ローカルブリッジ未起動）。\n' +
+    'いますぐ生成するには、Claude Code のチャット欄にそのまま貼り付けて Enter（コマンドは自動判定されます）。\n' +
+    '次回からワンクリックにするには、draft-gen/起動.command をダブルクリック（またはターミナルで python3 draft-gen/bridge.py）でブリッジを起動してください。',
     false);
 }
 function showLoading(sec) {
@@ -888,7 +891,9 @@ function showBridgeDone(data) {
 }
 function showBridgeError(msg) {
   setBridgeStatus('error',
-    'エラー：' + msg + ' ／ 生成指示書はクリップボードにコピー済みです。Claude Code の /draft-generate に貼り付けても生成できます。',
+    'エラー：' + msg + '\n' +
+    '生成指示書はクリップボードにコピー済みです。Claude Code のチャット欄にそのまま貼り付けて Enter で生成できます（コマンドは自動判定）。\n' +
+    'ワンクリックで生成するには、draft-gen/起動.command をダブルクリック（またはターミナルで python3 draft-gen/bridge.py）でブリッジを起動してください。',
     false);
 }
 
