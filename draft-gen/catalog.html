@@ -197,7 +197,7 @@
     <div class="autotag">
       <div class="at-head">自動タグ付けの結果(登録前に確認・修正できます)</div>
       <div class="at-body" id="autotagBody">
-        取り込みを実行すると、AIが推定した業種・テイスト・主配色(6カテゴリ)・カラムを<b>登録前に提示</b>します。
+        取り込みを実行すると、AIが推定した業種・テイスト・主配色(7カテゴリ)・カラムを<b>登録前に提示</b>します。
         内容を確認・修正してから、承認した分だけがカタログへ登録されます(<b>承認前に確定しません</b>)。
       </div>
     </div>
@@ -380,7 +380,7 @@
       return r.json();
     }).then(function (data) {
       var entries = (data && Array.isArray(data.entries)) ? data.entries : [];
-      // 主配色は許可6カテゴリのみ通す(軽検証・不正値は無視)
+      // 主配色は許可7カテゴリのみ通す(軽検証・不正値は無視)
       entries.forEach(function (e) {
         if (Array.isArray(e.colors)) {
           e.colors = e.colors.filter(function (c) { return CANONICAL_COLORS.indexOf(c) >= 0; });
