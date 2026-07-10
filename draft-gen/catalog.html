@@ -163,6 +163,7 @@
         <span class="fchip color" data-val="ゴールド"><span class="sw" style="background:#C6A15B"></span>ゴールド</span>
         <span class="fchip color" data-val="ピンク"><span class="sw" style="background:#E86FA0"></span>ピンク</span>
         <span class="fchip color" data-val="モノトーン"><span class="sw" style="background:#333"></span>モノトーン</span>
+        <span class="fchip color" data-val="マルチカラー"><span class="sw" style="background:conic-gradient(from 0deg,#2E7D6B,#2E5FA3,#B23A48,#C6A15B,#E86FA0,#333,#2E7D6B)"></span>マルチカラー</span>
       </div>
     </div>
   </div>
@@ -210,8 +211,8 @@
 (function () {
   "use strict";
 
-  // 主配色6カテゴリ(bridge.py CANONICAL_COLORS と一致・§3.3)
-  var CANONICAL_COLORS = ["グリーン", "ブルー", "レッド", "ゴールド", "ピンク", "モノトーン"];
+  // 主配色7カテゴリ(bridge.py CANONICAL_COLORS と一致・§3.3・KLK-016で「マルチカラー」を追加)
+  var CANONICAL_COLORS = ["グリーン", "ブルー", "レッド", "ゴールド", "ピンク", "モノトーン", "マルチカラー"];
 
   // 選択状態(状態の単一源はDOM: fchip.on とこの sel を同期)
   var sel = { industry: [], taste: [], colors: [], keyword: "", sort: "new" };

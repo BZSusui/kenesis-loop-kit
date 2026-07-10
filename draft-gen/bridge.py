@@ -58,8 +58,8 @@ KNOWN_ADDR = {"NAV-01", "MV-01", "ABOUT-01", "MENU-01", "GALLERY-01", "FOOTER-01
 ADDR_RE = re.compile(r"^[A-Z][A-Z0-9]*-\d{2}$")  # 安全文字集合(SECTION-NN 連番拡張も許容・注入不能)
 LETTER_RE = re.compile(r"^[a-c]$")               # 複数案の letter(a-c)。単一案は letter 無し
 
-# 実績カタログ(KLK-013・SCR-004・REQ-105/106)—主配色6カテゴリ/安全名/MIME
-CANONICAL_COLORS = {"グリーン", "ブルー", "レッド", "ゴールド", "ピンク", "モノトーン"}  # ワイヤー主配色チップ6値(§3.3)
+# 実績カタログ(KLK-013・SCR-004・REQ-105/106)—主配色7カテゴリ/安全名/MIME
+CANONICAL_COLORS = {"グリーン", "ブルー", "レッド", "ゴールド", "ピンク", "モノトーン", "マルチカラー"}  # ワイヤー主配色チップ7値(§3.3・KLK-016で「マルチカラー」を追加)
 CATALOG_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")  # id/file の安全文字集合(先頭は英数)
 CATALOG_MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
 
@@ -378,6 +378,14 @@ def validate_catalog(obj):
             for c in colors:
                 if c not in CANONICAL_COLORS:
                     errors.append("{0}.colors に未対応の主配色 '{1}' があります".format(where, c))
+            # KLK-016: 件数(第1主配色が必須・最大3件)
+            if len(colors) < 1:
+                errors.append("{0}.colors は第1主配色が必須です(空配列不可)".format(where))
+            elif len(colors) > 3:
+                errors.append("{0}.colors は最大3件までです".format(where))
+            # KLK-016: マルチカラーは単独指定のみ(具体色と併用不可)
+            if "マルチカラー" in colors and len(colors) != 1:
+                errors.append("{0}.colors のマルチカラーは単独指定のみ可です(他色と併用不可)".format(where))
 
     return (len(errors) == 0), errors
 

@@ -69,8 +69,8 @@ DANGER_FLAGS = ("--dangerously-skip-permissions", "bypassPermissions")
 _ALLOW_HOSTS = ("www.w3.org", "example.com", "example.org", "example.net")
 _LOCAL_HOSTS = ("127.0.0.1", "localhost", "0.0.0.0")
 
-# 主配色6カテゴリ（ワイヤー主配色チップ・§3.3）。
-COLOR6 = ("グリーン", "ブルー", "レッド", "ゴールド", "ピンク", "モノトーン")
+# 主配色7カテゴリ（ワイヤー主配色チップ・§3.3・KLK-016で「マルチカラー」を追加）。
+COLOR7 = ("グリーン", "ブルー", "レッド", "ゴールド", "ピンク", "モノトーン", "マルチカラー")
 
 
 def _host(url):
@@ -149,18 +149,18 @@ check(
 )
 
 # ===========================================================================
-# S3 主配色6カテゴリ（スウォッチ付きチップ・REQ-105/§3.3）
+# S3 主配色7カテゴリ（スウォッチ付きチップ・REQ-105/§3.3・KLK-016）
 # ===========================================================================
-s3_all6 = all(f'data-val="{c}"' in CATALOG_HTML for c in COLOR6)
+s3_all7 = all(f'data-val="{c}"' in CATALOG_HTML for c in COLOR7)
 s3_swatch = 'class="sw"' in CATALOG_HTML and "fchip color" in CATALOG_HTML
-# フィルタ主配色行にちょうど6カテゴリのカラーチップ
+# フィルタ主配色行にちょうど7カテゴリのカラーチップ
 color_chip_vals = re.findall(r'class="fchip color"[^>]*data-val="([^"]+)"', CATALOG_HTML)
-s3_exactly6 = set(color_chip_vals) == set(COLOR6) and len(color_chip_vals) == 6
-s3 = s3_all6 and s3_swatch and s3_exactly6
+s3_exactly7 = set(color_chip_vals) == set(COLOR7) and len(color_chip_vals) == 7
+s3 = s3_all7 and s3_swatch and s3_exactly7
 check(
-    "S3 主配色6カテゴリ (グリーン/ブルー/レッド/ゴールド/ピンク/モノトーンがスウォッチ付きチップ .fchip.color .sw としてちょうど6件)",
+    "S3 主配色7カテゴリ (グリーン/ブルー/レッド/ゴールド/ピンク/モノトーン/マルチカラーがスウォッチ付きチップ .fchip.color .sw としてちょうど7件)",
     s3,
-    f"6カテゴリ存在={s3_all6}, スウォッチ={s3_swatch}, カラーチップ6件={s3_exactly6}({color_chip_vals})",
+    f"7カテゴリ存在={s3_all7}, スウォッチ={s3_swatch}, カラーチップ7件={s3_exactly7}({color_chip_vals})",
 )
 
 # ===========================================================================
@@ -222,7 +222,7 @@ r_file = vc(bad_file)[0] is False
 # source ∉ {own,ref}
 bad_src = copy.deepcopy(SAMPLE); bad_src["entries"][0]["source"] = "external"
 r_src = vc(bad_src)[0] is False
-# colors ∉ 6集合
+# colors ∉ 7集合
 bad_col = copy.deepcopy(SAMPLE); bad_col["entries"][0]["colors"] = ["ベージュ"]
 r_col = vc(bad_col)[0] is False
 # 非オブジェクト
@@ -230,30 +230,31 @@ r_nonobj = vc([])[0] is False and vc(None)[0] is False
 s6 = (ok_sample and r_schema and r_ver and r_entries and r_id and r_file
       and r_src and r_col and r_nonobj)
 check(
-    "S6 カタログJSONスキーマ検証 (validate_catalog: sample.json 受理; schema不一致/version≠1/entries非list/id欠落/file traversal/source∉{own,ref}/colors∉6集合/非オブジェクト を reject)",
+    "S6 カタログJSONスキーマ検証 (validate_catalog: sample.json 受理; schema不一致/version≠1/entries非list/id欠落/file traversal/source∉{own,ref}/colors∉7集合/非オブジェクト を reject)",
     s6,
     f"sample受理={ok_sample}, schema異常={r_schema}, version異常={r_ver}, entries非list={r_entries}, "
     f"id欠落={r_id}, file不正={r_file}, source異常={r_src}, colors異常={r_col}, 非obj={r_nonobj}",
 )
 
 # ===========================================================================
-# S7 主配色カテゴリ集合（CANONICAL_COLORS がちょうど6・集合メンバーシップ強制・§3.3/R-3）
+# S7 主配色カテゴリ集合（CANONICAL_COLORS がちょうど7・集合メンバーシップ強制・§3.3/R-3）
 # ===========================================================================
 cc = bridge.CANONICAL_COLORS
 s7_type = isinstance(cc, (set, frozenset))
-s7_exact = set(cc) == set(COLOR6) and len(cc) == 6
-# colors が集合外なら reject・6集合内なら受理（品質ではなく集合メンバーシップのみ）
+s7_exact = set(cc) == set(COLOR7) and len(cc) == 7
+# colors が集合外なら reject・7集合内なら受理（品質ではなく集合メンバーシップのみ）
+# 受理ケースは件数上限(1..3・KLK-016)と衝突しない ≤3件の部分集合を使う（R3）。
 one = copy.deepcopy(SAMPLE)
 one["entries"] = [dict(SAMPLE["entries"][0])]
-in_set = copy.deepcopy(one); in_set["entries"][0]["colors"] = list(COLOR6)
+in_set = copy.deepcopy(one); in_set["entries"][0]["colors"] = ["グリーン", "ブルー", "レッド"]
 s7_in = vc(in_set)[0] is True
 out_set = copy.deepcopy(one); out_set["entries"][0]["colors"] = ["グリーン", "ホワイト"]
 s7_out = vc(out_set)[0] is False
 s7 = s7_type and s7_exact and s7_in and s7_out
 check(
-    "S7 主配色カテゴリ集合 (CANONICAL_COLORS が set でちょうど6カテゴリ・validate_catalog が colors の集合メンバーシップを強制[6集合内○・集合外×]・タグ品質は検証しない)",
+    "S7 主配色カテゴリ集合 (CANONICAL_COLORS が set でちょうど7カテゴリ・validate_catalog が colors の集合メンバーシップを強制[7集合内○・集合外×]・タグ品質は検証しない)",
     s7,
-    f"set型={s7_type}, ちょうど6={s7_exact}({sorted(cc)}), 6集合内受理={s7_in}, 集合外reject={s7_out}",
+    f"set型={s7_type}, ちょうど7={s7_exact}({sorted(cc)}), 7集合内受理={s7_in}, 集合外reject={s7_out}",
 )
 
 # ===========================================================================
@@ -399,22 +400,22 @@ check(
 # ===========================================================================
 sk_human = ("登録前" in SKILL and ("確認" in SKILL and "修正" in SKILL)
             and "人間確認" in SKILL)
-sk_6cat = ("6カテゴリ" in SKILL and "CANONICAL_COLORS" in SKILL)
+sk_6cat = ("7カテゴリ" in SKILL and "CANONICAL_COLORS" in SKILL)
 sk_only = "catalog/" in SKILL and ("catalog/` 配下" in SKILL or "catalog/ 配下" in SKILL
                                    or "catalog/ の外へ" in SKILL)
 sk_secret = "機密" in SKILL or "社外秘" in SKILL or "REQ-011" in SKILL or "NFR-004" in SKILL
 sk_name = "name: catalog-import" in SKILL
 ru_schema = ("klk-catalog" in RULES and "version" in RULES and "entries" in RULES)
 ru_human = "登録前に確認" in RULES or ("人間承認" in RULES or "人間確認" in RULES)
-ru_6cat = all(c in RULES for c in COLOR6) and "CANONICAL_COLORS" in RULES
+ru_6cat = all(c in RULES for c in COLOR7) and "CANONICAL_COLORS" in RULES
 ru_only = "catalog/" in RULES and ("Git除外" in RULES or "社外秘" in RULES)
 s14 = (sk_human and sk_6cat and sk_only and sk_secret and sk_name
        and ru_schema and ru_human and ru_6cat and ru_only)
 check(
-    "S14 スキル・規約の記述 (SKILL.md/CATALOG_RULES.md: 登録前に人間が確認・修正／主配色6カテゴリ視覚推定／catalog/のみ保存・機密規律／カタログJSONスキーマ)",
+    "S14 スキル・規約の記述 (SKILL.md/CATALOG_RULES.md: 登録前に人間が確認・修正／主配色7カテゴリ視覚推定／catalog/のみ保存・機密規律／カタログJSONスキーマ)",
     s14,
-    f"SKILL(人間確認={sk_human},6カテゴリ={sk_6cat},catalog限定={sk_only},機密={sk_secret},name={sk_name}), "
-    f"RULES(スキーマ={ru_schema},人間確認={ru_human},6カテゴリ={ru_6cat},catalog限定={ru_only})",
+    f"SKILL(人間確認={sk_human},7カテゴリ={sk_6cat},catalog限定={sk_only},機密={sk_secret},name={sk_name}), "
+    f"RULES(スキーマ={ru_schema},人間確認={ru_human},7カテゴリ={ru_6cat},catalog限定={ru_only})",
 )
 
 # ===========================================================================
@@ -437,10 +438,47 @@ check(
 )
 
 # ===========================================================================
+# S16 主配色の件数検証（第1必須・最大3件・KLK-016/§4.1b）
+# ===========================================================================
+_one = copy.deepcopy(SAMPLE)
+_one["entries"] = [dict(SAMPLE["entries"][0])]
+
+
+def _with_colors(cols):
+    e = copy.deepcopy(_one)
+    e["entries"][0]["colors"] = cols
+    return vc(e)[0]
+
+
+s16_empty = _with_colors([]) is False                                  # 空配列 reject（第1必須）
+s16_one = _with_colors(["グリーン"]) is True                            # 1件 accept
+s16_three = _with_colors(["グリーン", "ブルー", "レッド"]) is True       # 3件 accept
+s16_four = _with_colors(["グリーン", "ブルー", "レッド", "ゴールド"]) is False  # 4件 reject
+s16 = s16_empty and s16_one and s16_three and s16_four
+check(
+    "S16 主配色の件数検証 (validate_catalog: colors=[]→reject[第1必須] / 1件→accept / 3件→accept / 4件→reject[最大3件])",
+    s16,
+    f"空配列reject={s16_empty}, 1件accept={s16_one}, 3件accept={s16_three}, 4件reject={s16_four}",
+)
+
+# ===========================================================================
+# S17 マルチカラー単独排他（具体色との併用不可・順序非依存・KLK-016/§4.1b）
+# ===========================================================================
+s17_solo = _with_colors(["マルチカラー"]) is True                       # 単独 accept
+s17_mix1 = _with_colors(["マルチカラー", "ピンク"]) is False             # 併用 reject
+s17_mix2 = _with_colors(["ピンク", "マルチカラー"]) is False             # 順序を変えても reject
+s17 = s17_solo and s17_mix1 and s17_mix2
+check(
+    "S17 マルチカラー単独排他 (validate_catalog: ['マルチカラー']→accept[単独] / ['マルチカラー','ピンク']→reject / ['ピンク','マルチカラー']→reject[順序非依存])",
+    s17,
+    f"単独accept={s17_solo}, 併用reject={s17_mix1}, 逆順併用reject={s17_mix2}",
+)
+
+# ===========================================================================
 # Report
 # ===========================================================================
 print("=" * 78)
-print("KLK-013 static/core acceptance checks (docs/designs/KLK-013.md §9 S群 S1-S15 を正とする)")
+print("KLK-013 static/core acceptance checks (docs/designs/KLK-013.md §9 S群 S1-S15＋KLK-016 S16-S17 を正とする)")
 print("対象: draft-gen/catalog.html(静的) + draft-gen/bridge.py(import 純関数 + ソース静的) +")
 print("      catalog-import/SKILL.md + CATALOG_RULES.md + tests/fixtures/klk013/catalog.sample.json +")
 print("      .gitignore 3ファイル")
