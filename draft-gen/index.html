@@ -194,7 +194,7 @@
     padding: 9px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; display: inline-block;
   }
 
-  /* 参考サムネイル（プレースホルダのみ・実画像なし） */
+  /* 参考サムネイル（骨格はHTML／実画像はJSが createElement で後付け＝器に画像タグ・リテラル無し・S13温存） */
   .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap: 10px; }
   .thumb {
     position: relative; aspect-ratio: 4/3; border-radius: 8px; overflow: hidden;
@@ -207,6 +207,8 @@
     color: rgba(255,255,255,.95); font-size: 12px; text-align: center; padding: 6px;
     background: linear-gradient(135deg, var(--color-main) 0%, var(--color-accent-2) 100%);
   }
+  /* JSが後付けする実画像（プレースホルダ .ph の上を覆う。cap/check/zoom は正のz-indexで前面のまま） */
+  .thumb .shot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
   .thumb .cap {
     position: relative; z-index: 1; width: 100%; padding: 4px 6px;
     background: rgba(0,0,0,.45); color: #fff; font-size: 11px;
@@ -245,8 +247,9 @@
     aspect-ratio: 16/9; width: 100%;
     background: linear-gradient(135deg, var(--color-main) 0%, var(--color-accent-2) 100%);
     display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px;
-    border-radius: 12px 12px 0 0;
+    border-radius: 12px 12px 0 0; overflow: hidden;
   }
+  .modal .m-img img { width: 100%; height: 100%; object-fit: contain; background: #000; }
   .modal .m-body { padding: 14px 18px 18px; }
   .modal .m-body h3 { margin: 0 0 4px; font-size: 15px; }
   .modal .m-body p { margin: 0; font-size: 13px; color: var(--color-text-sub); }
@@ -511,28 +514,12 @@
         </select>
       </span>
     </div>
-    <div class="thumbs" id="thumbs">
-      <div class="thumb" data-id="m1" data-label="サロン内観" data-tags="美容 / ナチュラル">
-        <span class="ph">サロン内観</span><span class="check">✓</span>
-        <button type="button" class="zoom" aria-label="拡大">🔍</button><span class="cap">美容 / ナチュラル</span></div>
-      <div class="thumb" data-id="m2" data-label="ヘアサロンLP" data-tags="美容 / 上質">
-        <span class="ph">ヘアサロンLP</span><span class="check">✓</span>
-        <button type="button" class="zoom" aria-label="拡大">🔍</button><span class="cap">美容 / 上質</span></div>
-      <div class="thumb" data-id="m3" data-label="ネイルサロン" data-tags="美容 / ポップ">
-        <span class="ph">ネイルサロン</span><span class="check">✓</span>
-        <button type="button" class="zoom" aria-label="拡大">🔍</button><span class="cap">美容 / ポップ</span></div>
-      <div class="thumb" data-id="m4" data-label="エステサロン" data-tags="美容 / 高級感">
-        <span class="ph">エステサロン</span><span class="check">✓</span>
-        <button type="button" class="zoom" aria-label="拡大">🔍</button><span class="cap">美容 / 高級感</span></div>
-      <div class="thumb" data-id="m5" data-label="クリニック" data-tags="医療 / 清潔感">
-        <span class="ph">クリニック</span><span class="check">✓</span>
-        <button type="button" class="zoom" aria-label="拡大">🔍</button><span class="cap">医療 / 清潔感</span></div>
-      <div class="thumb" data-id="m6" data-label="リラクゼーション" data-tags="美容 / やさしい">
-        <span class="ph">リラクゼーション</span><span class="check">✓</span>
-        <button type="button" class="zoom" aria-label="拡大">🔍</button><span class="cap">美容 / やさしい</span></div>
-    </div>
+    <!-- 実績カタログ由来の動的カード（JS renderThumbs が描画）。器のHTMLソースには実案件名・
+         画像タグのリテラルを一切書かない。ブリッジ非稼働／file:// では空＋案内文（機密・REQ-011/S13温存）。 -->
+    <div class="thumbs" id="thumbs"></div>
+    <p class="note-oq" id="thumbNote" style="display:none"></p>
     <div class="thumbs-foot">
-      <span>選択中: <b id="thumbCount">0 / 3枚</b></span>
+      <span>選択中: <b id="thumbCount">0 / 3枚</b>（推奨2〜3枚）</span>
       <a class="catalog-link" id="catalogLink" href="catalog.html">もっと探す → 実績カタログを開く →</a>
     </div>
     <div class="field-row" style="margin-top:14px">
@@ -590,7 +577,7 @@
 
 </div>
 
-<!-- 参考サムネイル拡大モーダル（JS制御・実画像は用いずプレースホルダを拡大表示） -->
+<!-- 参考サムネイル拡大モーダル（JS制御。ブリッジ稼働時は同一オリジン実画像・非稼働はプレースホルダ） -->
 <div class="modal-back" id="modalBack">
   <div class="modal">
     <button type="button" class="m-close" id="modalClose">×</button>
@@ -598,7 +585,7 @@
     <div class="m-body">
       <h3 id="modalTitle">実績</h3>
       <p id="modalTags"></p>
-      <p class="note-oq">実績画像は Git 管理外フォルダにのみ置く方針のため、ここではプレースホルダで表示します（REQ-011）。</p>
+      <p class="note-oq">ブリッジ稼働時は同一オリジン配信の実績画像を表示します。実データ（画像・案件名）は Git 管理外フォルダにのみ置く方針で、非稼働時はプレースホルダになります（REQ-011）。</p>
     </div>
   </div>
 </div>
@@ -788,7 +775,10 @@ function colLabelOf(col) {
 
 function selectedThumbs() {
   return Array.prototype.map.call(document.querySelectorAll('.thumb.selected'), function (el) {
-    return { id: el.dataset.id, label: el.dataset.label, tags: el.dataset.tags };
+    var tags;
+    try { tags = JSON.parse(el.dataset.tags || '[]'); } catch (e) { tags = []; }
+    if (!Array.isArray(tags)) tags = [];
+    return { id: el.dataset.id, label: el.dataset.label, tags: tags };
   });
 }
 
@@ -960,9 +950,22 @@ function pollStatus(jobId) {
 }
 
 function openModal(el) {
-  document.getElementById('modalImg').textContent = (el.dataset.label || '実績') + '（拡大プレビュー）';
-  document.getElementById('modalTitle').textContent = el.dataset.label || '実績';
-  document.getElementById('modalTags').textContent = el.dataset.tags || '';
+  var host = document.getElementById('modalImg');
+  var label = el.dataset.label || '実績';
+  var file = el.dataset.file || '';
+  host.textContent = '';
+  if (catalogAlive && file) {
+    // ブリッジ稼働時のみ同一オリジンの実画像を createElement で表示（器に画像タグのリテラルを残さない）。
+    var img = document.createElement('img');
+    img.setAttribute('src', '/catalog/img/' + encodeURIComponent(file));
+    img.setAttribute('alt', label);
+    img.onerror = function () { host.textContent = label + '（拡大プレビュー）'; };
+    host.appendChild(img);
+  } else {
+    host.textContent = label + '（拡大プレビュー）';
+  }
+  document.getElementById('modalTitle').textContent = label;
+  document.getElementById('modalTags').textContent = thumbTags(el).join(' / ');
   document.getElementById('modalBack').classList.add('open');
 }
 function closeModal() { document.getElementById('modalBack').classList.remove('open'); }
@@ -970,6 +973,211 @@ function closeModal() { document.getElementById('modalBack').classList.remove('o
 function updateThumbCount() {
   const n = document.querySelectorAll('.thumb.selected').length;
   document.getElementById('thumbCount').textContent = n + ' / 3枚';
+}
+
+// ============================================================================
+// 参考素材ピッカー: 実績カタログ接続（REQ-004・KLK-017）
+// 供給側は catalog.html / bridge.py の同一オリジン配信を流用（変更しない）:
+//   /health（稼働判定）・/catalog.json（メタ）・/catalog/img/{file}（画像）。
+// 機密（REQ-011）: 実データは Git 除外 catalog/ からの同一オリジン fetch のみ。
+//   器 index.html に実案件名・画像タグのリテラルを焼き込まない（画像は createElement で後付け＝S13温存）。
+// ============================================================================
+// 主配色カテゴリ（bridge.py / catalog.html の CANONICAL_COLORS と一致・KLK-016）。
+const CANONICAL_COLORS = ['グリーン', 'ブルー', 'レッド', 'ゴールド', 'ピンク', 'モノトーン', 'マルチカラー'];
+
+let catalogAlive = false;   // location.protocol!=='file:' かつ probeHealth() 真
+let catalogEntries = [];    // /catalog.json の entries（写像前の生データ）
+
+// テキスト→HTMLエスケープ（innerHTML テンプレートの注入対策）。
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// dataset.tags（JSON文字列）→ 配列。
+function thumbTags(el) {
+  var tags;
+  try { tags = JSON.parse(el.dataset.tags || '[]'); } catch (e) { tags = []; }
+  return Array.isArray(tags) ? tags : [];
+}
+
+// /catalog.json を相対（同一オリジン）で読む。catalog.html loadCatalog を移植。
+// 失敗/不正/空は [] を返す。colors は許可7カテゴリのみ通す（軽検証）。
+function loadCatalog() {
+  return fetch('/catalog.json').then(function (r) {
+    if (!r || !r.ok) throw new Error('catalog.json');
+    return r.json();
+  }).then(function (data) {
+    var entries = (data && Array.isArray(data.entries)) ? data.entries : [];
+    entries.forEach(function (e) {
+      if (Array.isArray(e.colors)) {
+        e.colors = e.colors.filter(function (c) { return CANONICAL_COLORS.indexOf(c) >= 0; });
+      }
+    });
+    return entries;
+  }).catch(function () { return []; });
+}
+
+// 現在の業種（自由入力優先）を返す。render() の industry 決定と同じ規則。
+function currentIndustry() {
+  var custom = document.getElementById('industryCustom').value.trim();
+  return custom || document.getElementById('industrySelect').value || '';
+}
+
+// 業種ラベル → 照合キー（先頭トークン: 最初の '(' より前）。
+function industryKey(label) {
+  return String(label || '').split('(')[0].trim();
+}
+
+// entry.industry と業種キーの双方向前方一致（三重タクソノミ不一致の吸収・§4.3）。
+function matchesIndustry(entry, key) {
+  if (!key) return true;
+  var a = entry.industry || '';
+  return a.indexOf(key) === 0 || key.indexOf(a) === 0;
+}
+
+// 現在のテイスト選択ラベル（未選択は null）。
+function currentTaste() {
+  var el = document.querySelector('input[name=taste]:checked');
+  return el ? el.dataset.label : null;
+}
+
+// #thumbFilter と業種/テイストに基づき対象を絞り、renderThumbs する。
+function applyThumbFilter() {
+  var mode = document.getElementById('thumbFilter').value;
+  var key = industryKey(currentIndustry());
+  var taste = currentTaste();
+  var note = '';
+  var list;
+  if (mode === 'すべての実績') {
+    list = catalogEntries.slice();
+  } else if (mode === '同じテイストのみ') {
+    // テイストは SCR-001 ラベルの先頭トークンで前方一致（例「高級感・上質」→ industry「高級感」）。
+    var tkey = taste ? industryKey(taste) : '';
+    list = tkey
+      ? catalogEntries.filter(function (e) {
+          var t = e.taste || '';
+          return t.indexOf(tkey) === 0 || tkey.indexOf(t) === 0;
+        })
+      : catalogEntries.slice();
+    if (list.length === 0 && catalogEntries.length) {
+      list = catalogEntries.slice();
+      note = '同じテイストの実績が見つからないため、すべての実績を表示しています';
+    }
+  } else {
+    // 既定「近い業種のみ」
+    list = catalogEntries.filter(function (e) { return matchesIndustry(e, key); });
+    if (list.length === 0 && catalogEntries.length) {
+      list = catalogEntries.slice();
+      note = '近い業種の実績が見つからないため、すべての実績を表示しています';
+    }
+  }
+  renderThumbs(list, note);
+}
+
+// カード骨格の HTML 文字列（class="thumb"・data-id= リテラルを必ず含める＝S13温存）。
+// 画像は書かない（画像タグのリテラルを器に残さない）。実画像は renderThumbs が createElement で後付け。
+function cardHtml(e) {
+  var tags = Array.isArray(e.tags) ? e.tags : [];
+  var cap = tags.slice(0, 2).join(' / ') || (e.industry || '');
+  return '<div class="thumb" data-id="' + esc(e.id) + '"' +
+    ' data-label="' + esc(e.title) + '"' +
+    ' data-tags="' + esc(JSON.stringify(tags)) + '"' +
+    ' data-file="' + esc(e.file || '') + '"' +
+    ' data-industry="' + esc(e.industry || '') + '"' +
+    ' data-taste="' + esc(e.taste || '') + '"' +
+    ' data-colors="' + esc(JSON.stringify(Array.isArray(e.colors) ? e.colors : [])) + '">' +
+    '<span class="ph">' + esc(e.title) + '</span>' +
+    '<span class="check">✓</span>' +
+    '<button type="button" class="zoom" aria-label="拡大">🔍</button>' +
+    '<span class="cap">' + esc(cap) + '</span></div>';
+}
+
+// 空状態の案内文を #thumbs に描画（textContent＝注入なし・実案件名は出さない）。
+function showThumbNotice(text) {
+  var host = document.getElementById('thumbs');
+  host.textContent = '';
+  var p = document.createElement('p');
+  p.className = 'hint';
+  p.style.gridColumn = '1 / -1';
+  p.style.margin = '0';
+  p.textContent = text;
+  host.appendChild(p);
+}
+
+// #thumbs を描画。稼働＋非空のときのみカード（骨格HTML＋実画像 createElement）。
+// 非稼働／空は案内文（実案件名は出さない）。再描画後に既選択 id を再適用する（§4.4）。
+// カード骨格は esc() 済みテンプレートを insertAdjacentHTML で挿入（HTML一括代入は非導入＝KLK-014 S5温存・
+// class="thumb"/data-id= リテラルを源へ残す＝S13温存。動的値は全て esc() で無害化）。
+function renderThumbs(list, note) {
+  var host = document.getElementById('thumbs');
+  var noteEl = document.getElementById('thumbNote');
+  var selectedIds = Array.prototype.map.call(
+    document.querySelectorAll('.thumb.selected'), function (el) { return el.dataset.id; });
+
+  if (!catalogAlive) {
+    showThumbNotice('ブリッジを起動すると実績カタログから参考を選べます');
+    if (noteEl) { noteEl.style.display = 'none'; noteEl.textContent = ''; }
+    updateThumbCount();
+    return;
+  }
+  if (!list || list.length === 0) {
+    showThumbNotice('条件に合う実績がありません。絞り込みを「すべての実績」に変えてみてください。');
+    if (noteEl) { noteEl.style.display = 'none'; noteEl.textContent = ''; }
+    updateThumbCount();
+    return;
+  }
+
+  host.textContent = '';
+  host.insertAdjacentHTML('beforeend', list.map(cardHtml).join(''));
+  // 実画像は createElement で後付け（器に画像タグのリテラルを残さない＝S13温存）。
+  Array.prototype.forEach.call(host.querySelectorAll('.thumb'), function (card) {
+    var file = card.dataset.file;
+    if (!file) return;
+    var img = document.createElement('img');
+    img.className = 'shot';
+    img.setAttribute('src', '/catalog/img/' + encodeURIComponent(file));
+    img.setAttribute('alt', card.dataset.label || '実績');
+    img.setAttribute('loading', 'lazy');
+    img.onerror = function () { img.remove(); };   // 失敗時は .ph プレースホルダのまま
+    card.appendChild(img);
+    if (selectedIds.indexOf(card.dataset.id) >= 0) card.classList.add('selected');
+  });
+  // data-file を持たないカード（想定外）にも選択状態を復元。
+  Array.prototype.forEach.call(host.querySelectorAll('.thumb'), function (card) {
+    if (selectedIds.indexOf(card.dataset.id) >= 0) card.classList.add('selected');
+  });
+  bindThumbs();
+  if (noteEl) {
+    if (note) { noteEl.textContent = note; noteEl.style.display = 'block'; }
+    else { noteEl.style.display = 'none'; noteEl.textContent = ''; }
+  }
+  updateThumbCount();
+  render();
+}
+
+// 現在の .thumb 群へ選択トグル（最大3）＋拡大ハンドラを（再）登録。
+function bindThumbs() {
+  document.querySelectorAll('#thumbs .thumb').forEach(function (t) {
+    t.addEventListener('click', function (e) {
+      if (e.target.closest('.zoom')) { openModal(t); return; }
+      if (!t.classList.contains('selected') &&
+          document.querySelectorAll('.thumb.selected').length >= 3) return;
+      t.classList.toggle('selected');
+      updateThumbCount();
+      render();
+    });
+  });
+}
+
+// init から一度だけ呼ぶ。稼働判定→カタログ読込→現在条件で描画。
+async function setupThumbPicker() {
+  catalogAlive = (location.protocol !== 'file:') && await probeHealth();
+  if (!catalogAlive) { renderThumbs([]); return; }
+  catalogEntries = await loadCatalog();
+  if (!catalogEntries.length) { renderThumbs([]); return; }
+  applyThumbFilter();
 }
 
 // ---- イベント登録 ----------------------------------------------------------
@@ -1022,15 +1230,16 @@ function init() {
     render();
   });
 
-  // 参考サムネイル: 選択トグル（最大3）＋拡大
-  document.querySelectorAll('.thumb').forEach(function (t) {
-    t.addEventListener('click', function (e) {
-      if (e.target.closest('.zoom')) { openModal(t); return; }
-      if (!t.classList.contains('selected') && document.querySelectorAll('.thumb.selected').length >= 3) return;
-      t.classList.toggle('selected');
-      updateThumbCount();
-      render();
-    });
+  // 参考サムネイル: 実績カタログ由来の動的カード（選択トグル最大3・拡大）は
+  //   renderThumbs→bindThumbs が描画のたびに結線する（KLK-017）。
+  // 絞り込み #thumbFilter と業種/テイストの変更で対象を再描画（既選択 id は保持）。
+  document.getElementById('thumbFilter').addEventListener('change', applyThumbFilter);
+  ['industrySelect', 'industryCustom'].forEach(function (id) {
+    document.getElementById(id).addEventListener('input', function () { if (catalogEntries.length) applyThumbFilter(); });
+    document.getElementById(id).addEventListener('change', function () { if (catalogEntries.length) applyThumbFilter(); });
+  });
+  document.querySelectorAll('input[name=taste]').forEach(function (el) {
+    el.addEventListener('change', function () { if (catalogEntries.length) applyThumbFilter(); });
   });
   document.getElementById('modalClose').addEventListener('click', closeModal);
   document.getElementById('modalBack').addEventListener('click', function (e) {
@@ -1054,6 +1263,9 @@ function init() {
     const cl = document.getElementById('catalogLink');
     if (cl) cl.href = BRIDGE_ORIGIN + '/catalog';
   }).catch(function () {});
+
+  // 参考素材ピッカーを実績カタログへ接続（稼働時のみ /catalog.json を描画・KLK-017）。
+  setupThumbPicker().catch(function () { renderThumbs([]); });
 }
 
 document.addEventListener('DOMContentLoaded', init);
