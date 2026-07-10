@@ -464,27 +464,31 @@
     <p class="note-oq">貼り付け内容が読み取れない場合は、理由を表示して手動での色指定を促します(セクション7)。②のメインカラーは配色ジェネレーターで使ったメイン傾向をそのまま流用できます。</p>
   </section>
 
-  <!-- ⑥ 参考素材 -->
+  <!-- ⑥ 参考素材（KLK-017: 実績カタログ接続。稼働時=実績グリッド / 非稼働=案内 の2状態） -->
   <section class="card">
     <div class="lbl"><span class="step">6</span><h2>参考にする素材</h2><span class="opt">推奨</span>
       <span class="reqid">実績2〜3枚 / REQ-004・102</span></div>
-    <p class="hint">選んだ業種に近い実績をまず表示します。「この雰囲気で」という参考を2〜3枚選べます。サムネイルをクリックすると拡大表示。</p>
+    <p class="hint">ローカルブリッジ稼働時のみ、実績カタログ(SCR-004)から選んだ業種に近い実績を表示します。「この雰囲気で」という参考を最大3枚選べます。🔍で拡大表示。実データ(画像・案件名)は Git 管理外フォルダにのみ置き、同一オリジンで読み込みます(REQ-011)。</p>
+
+    <p class="note-oq" style="margin:0 0 6px"><b>【状態A】ブリッジ稼働時</b> — 実績カタログのグリッドを表示(下は骨格イメージ。実際は実績画像＋実データが入ります)</p>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
       <span style="font-size:12px;color:var(--color-main-deep);background:var(--color-bg-subtle);border:1px solid var(--color-border);border-radius:999px;padding:4px 12px">
-        業種「美容・サロン」に近い実績を表示中</span>
+        業種「(選択中の業種)」に近い実績を表示中</span>
       <span class="sub-inline" style="font-size:12px">絞り込み: <select style="width:auto;padding:5px 8px;font-size:12px"><option>近い業種のみ</option><option>すべての実績</option><option>同じテイストのみ</option></select></span>
     </div>
     <div class="thumbs">
-      <label for="m1" class="thumb selected"><span class="ph">サロン内観</span><span class="check">✓</span><span class="cap">美容 / ナチュラル 🔍</span></label>
-      <label for="m2" class="thumb selected"><span class="ph">ヘアサロンLP</span><span class="check">✓</span><span class="cap">美容 / 上質 🔍</span></label>
-      <label for="m3" class="thumb"><span class="ph">ネイルサロン</span><span class="check">✓</span><span class="cap">美容 / ポップ 🔍</span></label>
-      <label for="m4" class="thumb"><span class="ph">エステサロン</span><span class="check">✓</span><span class="cap">美容 / 高級感 🔍</span></label>
-      <label for="m5" class="thumb"><span class="ph">クリニック</span><span class="check">✓</span><span class="cap">医療 / 清潔感 🔍</span></label>
-      <label for="m6" class="thumb"><span class="ph">リラクゼーション</span><span class="check">✓</span><span class="cap">美容 / やさしい 🔍</span></label>
+      <label for="m1" class="thumb selected"><span class="ph">実績サムネイル</span><span class="check">✓</span><span class="cap">業種 / テイスト 🔍</span></label>
+      <label class="thumb selected"><span class="ph">実績サムネイル</span><span class="check">✓</span><span class="cap">業種 / テイスト 🔍</span></label>
+      <label class="thumb"><span class="ph">実績サムネイル</span><span class="check">✓</span><span class="cap">業種 / テイスト 🔍</span></label>
+      <label class="thumb"><span class="ph">実績サムネイル</span><span class="check">✓</span><span class="cap">業種 / テイスト 🔍</span></label>
+    </div>
+    <p class="note-oq" style="margin:10px 0 6px"><b>【状態B】ブリッジ非稼働 / file:// 単体</b> — 空表示＋案内(生成はブロックしない)</p>
+    <div class="thumbs">
+      <span class="hint" style="grid-column:1/-1;margin:0">ブリッジを起動すると実績カタログから参考を選べます</span>
     </div>
     <div class="thumbs-foot">
-      <span>選択中: <b>2 / 3枚</b></span>
-      <span class="catalog-link">もっと探す → <span class="muted">実績カタログを開く(未作成: SCR-004)</span></span>
+      <span>選択中: <b>2 / 3枚</b>（推奨2〜3枚）</span>
+      <span class="catalog-link">もっと探す → 実績カタログを開く →</span>
     </div>
     <div class="field-row" style="margin-top:14px">
       <div class="col" style="flex-basis:100%">
@@ -527,79 +531,24 @@
 
 </div>
 
-<!-- 参考サムネイルの拡大モーダル(チェックボックス方式・原寸w1920px相当をw1000pxに縮小表示)
-     閉じても元のスクロール位置を維持します(URLを変えないため) -->
+<!-- 参考サムネイルの拡大モーダル(チェックボックス方式・拡大プレビュー。KLK-017: 稼働時は
+     同一オリジン配信の実績画像を表示。実データは Git 管理外フォルダにのみ置く方針・REQ-011) -->
 <input type="checkbox" class="modal-toggle" id="m1">
 <div class="modal-back">
   <label for="m1" class="m-backdrop"></label>
   <div class="modal">
     <label for="m1" class="m-close">×</label>
-    <div class="m-img">サロン内観の実績サイト(拡大プレビュー)</div>
-    <div class="m-body"><h3>美容室サイト実績 — サロン内観</h3>
-      <p>テイスト: ナチュラル / 主配色: グリーン系 / カラム: 1カラム</p>
-      <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。この参考をベースに雰囲気を寄せます。</p></div>
-  </div>
-</div>
-<input type="checkbox" class="modal-toggle" id="m2">
-<div class="modal-back">
-  <label for="m2" class="m-backdrop"></label>
-  <div class="modal">
-    <label for="m2" class="m-close">×</label>
-    <div class="m-img">ヘアサロンLPの実績サイト(拡大プレビュー)</div>
-    <div class="m-body"><h3>ヘアサロンLP実績</h3>
-      <p>テイスト: 上質 / 主配色: モノトーン+ゴールド / カラム: 1カラム</p>
-      <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。</p></div>
-  </div>
-</div>
-<input type="checkbox" class="modal-toggle" id="m3">
-<div class="modal-back">
-  <label for="m3" class="m-backdrop"></label>
-  <div class="modal">
-    <label for="m3" class="m-close">×</label>
-    <div class="m-img">ネイルサロンの実績サイト(拡大プレビュー)</div>
-    <div class="m-body"><h3>ネイルサロン実績</h3>
-      <p>テイスト: ポップ / 主配色: ピンク系 / カラム: 2カラム</p>
-      <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。</p></div>
-  </div>
-</div>
-<input type="checkbox" class="modal-toggle" id="m4">
-<div class="modal-back">
-  <label for="m4" class="m-backdrop"></label>
-  <div class="modal">
-    <label for="m4" class="m-close">×</label>
-    <div class="m-img">エステサロンの実績サイト(拡大プレビュー)</div>
-    <div class="m-body"><h3>エステサロン実績</h3>
-      <p>テイスト: 高級感 / 主配色: ベージュ+ブラウン / カラム: 1カラム</p>
-      <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。</p></div>
-  </div>
-</div>
-<input type="checkbox" class="modal-toggle" id="m5">
-<div class="modal-back">
-  <label for="m5" class="m-backdrop"></label>
-  <div class="modal">
-    <label for="m5" class="m-close">×</label>
-    <div class="m-img">クリニックの実績サイト(拡大プレビュー)</div>
-    <div class="m-body"><h3>クリニック実績</h3>
-      <p>テイスト: 清潔感 / 主配色: ブルー系 / カラム: 3カラム</p>
-      <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。</p></div>
-  </div>
-</div>
-<input type="checkbox" class="modal-toggle" id="m6">
-<div class="modal-back">
-  <label for="m6" class="m-backdrop"></label>
-  <div class="modal">
-    <label for="m6" class="m-close">×</label>
-    <div class="m-img">リラクゼーションの実績サイト(拡大プレビュー)</div>
-    <div class="m-body"><h3>リラクゼーションサロン実績</h3>
-      <p>テイスト: やさしい / 主配色: くすみグリーン / カラム: 1カラム</p>
-      <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。</p></div>
+    <div class="m-img">実績サイト(拡大プレビュー)</div>
+    <div class="m-body"><h3>(実績タイトル) — 実績</h3>
+      <p>テイスト: (テイスト) / 主配色: (主配色) / カラム: (カラム)</p>
+      <p class="m-note">ブリッジ稼働時は同一オリジン配信の実績画像を表示します。非稼働時はプレースホルダになります。実データ(画像・案件名)は Git 管理外フォルダにのみ置きます(REQ-011)。</p></div>
   </div>
 </div>
 
 <!-- 生成実行(固定フッター) -->
 <div class="actionbar">
-  <span class="summary">美容・サロン / 1カラム / シンプル / 3案 — この内容で生成します</span>
-  <a href="SCR-004-catalog.html" class="btn-ghost" style="pointer-events:none;color:#9aa3af;border-color:#e5e7eb">実績カタログ(未作成)</a>
+  <span class="summary">(業種) / (カラム) / (テイスト) / 3案 — この内容で生成します</span>
+  <a href="SCR-004-catalog.html" class="btn-ghost">実績カタログ</a>
   <a href="SCR-002-compare.html" class="btn-primary">この内容で生成 →</a>
 </div>
 
