@@ -92,7 +92,8 @@
   .modal-back { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(20,30,40,.72); align-items: center; justify-content: center; padding: 20px; }
   .modal-toggle:checked + .modal-back { display: flex; }
   .m-backdrop { position: absolute; inset: 0; cursor: zoom-out; }
-  .modal { background: #fff; border-radius: 12px; max-width: 600px; width: 100%; max-height: 90vh; overflow: auto; position: relative; z-index: 1; }
+  .modal { background: #fff; border-radius: 12px; max-width: 600px; width: 100%; max-height: 90vh; overflow: hidden; position: relative; z-index: 1; }
+  .modal .m-scroll { max-height: 90vh; overflow-y: auto; }
   .modal .m-img { width: 100%; min-height: 140px; background: linear-gradient(135deg, var(--color-main), var(--color-accent-2)); display: flex; align-items: center; justify-content: center; color: #fff; border-radius: 12px 12px 0 0; }
   .modal .m-body { padding: 14px 18px 18px; }
   .modal .m-body h3 { margin: 0 0 6px; font-size: 15px; }
@@ -229,40 +230,48 @@
 <div class="modal-back">
   <label for="c1" class="m-backdrop"></label>
   <div class="modal"><label for="c1" class="m-close">×</label>
-    <div class="m-img">サロン内観サイト(拡大プレビュー)</div>
-    <div class="m-body"><h3>サロン内観サイト — 自社実績</h3>
-      <div class="m-tags"><span>美容・サロン</span><span>ナチュラル</span><span>グリーン</span><span>1カラム</span></div>
-      <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。</p></div>
+    <div class="m-scroll">
+      <div class="m-img">サロン内観サイト(拡大プレビュー)</div>
+      <div class="m-body"><h3>サロン内観サイト — 自社実績</h3>
+        <div class="m-tags"><span>美容・サロン</span><span>ナチュラル</span><span>グリーン</span><span>1カラム</span></div>
+        <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。</p></div>
+    </div>
   </div>
 </div>
 <input type="checkbox" class="modal-toggle" id="c2">
 <div class="modal-back">
   <label for="c2" class="m-backdrop"></label>
   <div class="modal"><label for="c2" class="m-close">×</label>
-    <div class="m-img">オーガニックカフェ(拡大プレビュー)</div>
-    <div class="m-body"><h3>オーガニックカフェ — 自社実績</h3>
-      <div class="m-tags"><span>飲食</span><span>ナチュラル</span><span>グリーン</span><span>2カラム</span></div>
-      <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。</p></div>
+    <div class="m-scroll">
+      <div class="m-img">オーガニックカフェ(拡大プレビュー)</div>
+      <div class="m-body"><h3>オーガニックカフェ — 自社実績</h3>
+        <div class="m-tags"><span>飲食</span><span>ナチュラル</span><span>グリーン</span><span>2カラム</span></div>
+        <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。</p></div>
+    </div>
   </div>
 </div>
 <input type="checkbox" class="modal-toggle" id="c3">
 <div class="modal-back">
   <label for="c3" class="m-backdrop"></label>
   <div class="modal"><label for="c3" class="m-close">×</label>
-    <div class="m-img">ヨガスタジオLP(拡大プレビュー)</div>
-    <div class="m-body"><h3>ヨガスタジオLP — 自社実績</h3>
-      <div class="m-tags"><span>美容</span><span>ナチュラル</span><span>ベージュ</span><span>1カラム</span></div>
-      <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。</p></div>
+    <div class="m-scroll">
+      <div class="m-img">ヨガスタジオLP(拡大プレビュー)</div>
+      <div class="m-body"><h3>ヨガスタジオLP — 自社実績</h3>
+        <div class="m-tags"><span>美容</span><span>ナチュラル</span><span>ベージュ</span><span>1カラム</span></div>
+        <p class="m-note">実際は原寸(約w1920px)を w1000px 程度に縮小して表示します。</p></div>
+    </div>
   </div>
 </div>
 <input type="checkbox" class="modal-toggle" id="c4">
 <div class="modal-back">
   <label for="c4" class="m-backdrop"></label>
   <div class="modal"><label for="c4" class="m-close">×</label>
-    <div class="m-img">海外サロン(収集見本・拡大プレビュー)</div>
-    <div class="m-body"><h3>海外サロン — 収集見本(第三者著作物)</h3>
-      <div class="m-tags"><span>美容</span><span>ナチュラル</span><span>グリーン</span><span>参考のみ</span></div>
-      <p class="m-note">社内の参考目的のみ。公開・再配布・そっくり再現の材料にはしません。</p></div>
+    <div class="m-scroll">
+      <div class="m-img">海外サロン(収集見本・拡大プレビュー)</div>
+      <div class="m-body"><h3>海外サロン — 収集見本(第三者著作物)</h3>
+        <div class="m-tags"><span>美容</span><span>ナチュラル</span><span>グリーン</span><span>参考のみ</span></div>
+        <p class="m-note">社内の参考目的のみ。公開・再配布・そっくり再現の材料にはしません。</p></div>
+    </div>
   </div>
 </div>
 
