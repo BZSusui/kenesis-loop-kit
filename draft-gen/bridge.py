@@ -470,6 +470,8 @@ def _run_server(port):
 
     root = repo_root()
     index_path = os.path.join(root, "draft-gen", "index.html")
+    # 配色ジェネレーター(KLK-019・REQ-003)。外部依存ゼロの単一HTMLを固定1ファイル配信
+    palette_index_path = os.path.join(root, "palette", "index.html")
     pending_dir = os.path.join(root, "mockups", ".pending")
     # 実績カタログ(KLK-013・SCR-004)。catalog/ は Git除外・社外秘(§4.6)
     catalog_html_path = os.path.join(root, "draft-gen", "catalog.html")
@@ -752,6 +754,10 @@ def _run_server(port):
             if path.startswith("/catalog/img/"):
                 self._serve_catalog_img(path[len("/catalog/img/"):])
                 return
+            # 配色ジェネレーター(KLK-019・REQ-003)。ブリッジ配信時 ../palette/index.html は /palette/index.html に解決
+            if path in ("/palette", "/palette/", "/palette/index.html"):
+                self._serve_palette()
+                return
             self._json(404, {"error": "not found"})
 
         def do_POST(self):
@@ -774,6 +780,22 @@ def _run_server(port):
                     body = fh.read()
             except OSError:
                 self._json(500, {"error": "index.html を読み込めません"})
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self._cors()
+            self.end_headers()
+            self.wfile.write(body)
+
+        def _serve_palette(self):
+            """GET /palette[/][index.html] — 配色ジェネレーター palette/index.html を配信
+               (KLK-019・REQ-003・_serve_index と同型・固定1ファイル決め打ち)。"""
+            try:
+                with open(palette_index_path, "rb") as fh:
+                    body = fh.read()
+            except OSError:
+                self._json(500, {"error": "palette/index.html を読み込めません"})
                 return
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
