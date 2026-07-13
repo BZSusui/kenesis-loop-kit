@@ -34,6 +34,7 @@ BRIDGE_HOST = "127.0.0.1"          # ★ 0.0.0.0 禁止(U-8/NFR-004)
 DEFAULT_PORT = 8765                # env KLK_BRIDGE_PORT で上書き可(U-4)
 BRIDGE_TIMEOUT_SEC = 900           # subprocess ハードタイムアウト(NFR-001 目安10分に余裕)
 MAX_BODY_BYTES = 1 << 20           # POST /generate ボディ上限(1 MiB・L-1 多層防御)
+UPLOAD_MAX_BODY_BYTES = 8 << 20    # POST /upload ボディ上限(8 MiB・写真向け・KLK-020 §3.3。JSONルートの MAX_BODY_BYTES は据え置き)
 
 # カラム構成 canonical(KLK-006 §4.4 / DRAFT_RULES §8)
 CANONICAL_COLUMNS = {
@@ -108,6 +109,15 @@ def validate_instruction(obj):
     main = colors.get("main") if isinstance(colors, dict) else None
     if not (isinstance(main, str) and _HEX_RE.match(main)):
         errors.append("colors.main(主色)が有効なHEXではありません")
+
+    # KLK-020 §4.2: MVフリー実写真(REQ-104・案X)の別キー mvPhoto は「存在するときのみ」検証する
+    # (standard/従来 instruction は mvPhoto を持たず、この分岐に入らない＝後方互換・等価)。
+    # スキル側 basename 限定の一次防御に対する多層防御として、file を安全名(is_safe_catalog_name)に限定し
+    # traversal/注入(../ や / \ を含む名)を弾く(mockups/.uploads/ 外を読ませない・R-3)。
+    mv = obj.get("mvPhoto")
+    if mv is not None:
+        if not isinstance(mv, dict) or not is_safe_catalog_name(mv.get("file")):
+            errors.append("mvPhoto.file が不正です(安全名のみ)")
 
     return (len(errors) == 0), errors
 
@@ -339,6 +349,22 @@ def catalog_content_type(name):
     return CATALOG_MIME.get(ext, "application/octet-stream")
 
 
+def sniff_image_ext(head):
+    """先頭バイト列から画像拡張子を判定する(マジックバイト・Content-Type は信用しない・KLK-020 §3.2)。
+
+    JPEG(FF D8 FF)→'.jpg' / PNG(89 50 4E 47 0D 0A 1A 0A)→'.png' / それ以外→None。副作用なし。
+    クライアントのファイル名・Content-Type ではなく本体先頭バイトを正とする(保存面をゼロにする一助)。
+    """
+    if not isinstance(head, (bytes, bytearray)):
+        return None
+    b = bytes(head)
+    if b[:3] == b"\xff\xd8\xff":
+        return ".jpg"
+    if b[:8] == b"\x89PNG\r\n\x1a\n":
+        return ".png"
+    return None
+
+
 def validate_catalog(obj):
     """カタログJSONを検証する(§4.1・多層防御)。
 
@@ -473,6 +499,9 @@ def _run_server(port):
     # 配色ジェネレーター(KLK-019・REQ-003)。外部依存ゼロの単一HTMLを固定1ファイル配信
     palette_index_path = os.path.join(root, "palette", "index.html")
     pending_dir = os.path.join(root, "mockups", ".pending")
+    # MVフリー実写真(KLK-020・REQ-104)のアップロード先ステージング。mockups/ 除外に内包され自動Git除外
+    # (§3.4・.gitignore 変更不要)。保存名はサーバ生成(upl-<uuid>.<ext>)＝traversal 面ゼロ。
+    uploads_dir = os.path.join(root, "mockups", ".uploads")
     # 実績カタログ(KLK-013・SCR-004)。catalog/ は Git除外・社外秘(§4.6)
     catalog_html_path = os.path.join(root, "draft-gen", "catalog.html")
     catalog_dir = os.path.join(root, "catalog")
@@ -771,6 +800,9 @@ def _run_server(port):
             if path == "/catalog-import":
                 self._catalog_import()
                 return
+            if path == "/upload":
+                self._upload()
+                return
             self._json(404, {"error": "not found"})
 
         # --- handlers --------------------------------------------------------
@@ -961,6 +993,54 @@ def _run_server(port):
             )
             worker.start()
             self._json(202, {"jobId": job_id})
+
+        def _upload(self):
+            """POST /upload — MVフリー実写真の生バイナリ直POST受信(KLK-020・§4.3・§3.2/3.3/3.4)。
+
+            生バイナリ直POST(multipart/cgi 非使用)。既存POSTと同一防御順:
+            ①Origin(403) ②サイズ上限(UPLOAD_MAX_BODY_BYTES 超過→413 / 不正Content-Length→400)
+            ③本体読取(空→400) ④マジックバイトで JPEG/PNG 二重検証(非画像→400。Content-Type は信用しない)
+            ⑤保存: 保存名はサーバ生成 upl-<uuid>.<ext> で mockups/.uploads/ へ(クライアントのファイル名・
+                    Content-Type を保存パスに未使用＝パストラバーサル面ゼロ) ⑥200 JSON で savedName 返却。
+            新規経路にサブプロセス起動は無い(画像保存のみ・危険フラグ非含有・localhost限定は既存防御で維持)。
+            """
+            # ① Origin 検証(M-SEC-1): body 読取前に弾く(_generate と同一)
+            if not is_allowed_origin(self.headers.get("Origin"), BRIDGE_HOST, port):
+                self._json(403, {"error": "許可されていないオリジンです"})
+                return
+            # ② サイズ上限: /upload 専用 UPLOAD_MAX_BODY_BYTES(8 MiB)を body 読取前に検証(多層防御)
+            try:
+                length = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length < 0:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length > UPLOAD_MAX_BODY_BYTES:
+                self._json(413, {"error": "リクエストが大きすぎます"})
+                return
+            # ③ 本体読取(生バイナリ)
+            raw = self.rfile.read(length) if length else b""
+            if not raw:
+                self._json(400, {"error": "画像がありません"})
+                return
+            # ④ 画像判定(マジックバイト・Content-Type は信用しない)
+            ext = sniff_image_ext(raw[:16])
+            if ext is None:
+                self._json(400, {"error": "画像として認識できません(JPEG/PNGのみ)"})
+                return
+            # ⑤ 保存(保存名はサーバ生成＝安全名・basename・危険文字なし)
+            saved_name = "upl-" + uuid.uuid4().hex + ext
+            try:
+                os.makedirs(uploads_dir, exist_ok=True)
+                with open(os.path.join(uploads_dir, saved_name), "wb") as fh:
+                    fh.write(raw)
+            except OSError:
+                self._json(500, {"error": "画像を保存できませんでした"})
+                return
+            # ⑥ 応答(保存名を返す。instruction.mvPhoto.file に載せる)
+            self._json(200, {"savedName": saved_name})
 
         def _generate(self):
             # ① Origin 検証(M-SEC-1): 状態変更は同一オリジン(+file://)のみ許可。body 読取前に弾く
