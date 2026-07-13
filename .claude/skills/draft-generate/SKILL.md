@@ -78,8 +78,10 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
   合わせる（全体2カラム `2col-full-*` は `.m-layout` が NAV/HERO を内包・サイドバー全高。本文のみ `2col-body-*` は
   HERO を grid の外に出す。旧 `2col-sub-*` は `2col-body-*` へ正規化してから書く）。**全案で同一の `data-columns`**。
 - **番地ラベル（全案共通）**: 各セクションに `.addr > .pin`（NAV-01 / MV-01 / ABOUT-01 / MENU-01 / GALLERY-01 / FOOTER-01）。
-- **アタリ画像**: a方式（色面＋`.desc`＋`.kw`。HERO は `.atari-tag`。キーワード未定は `.desc` のみ）。`atari:"free-photo"` でも
-  a方式で生成し「b方式は別チケット（REQ-104）」と注記。
+- **アタリ画像**: a方式（色面＋`.desc`＋`.kw`。HERO は `.atari-tag`。キーワード未定は `.desc` のみ）。
+  **REQ-104 b方式（KLK-020・MV-01 限定）**: `atari:"free-photo"` かつ `mvPhoto.file` 供給時は **MV-01 のアタリのみ**を
+  出力フォルダ同梱の**相対** `<img src="assets/mv.<ext>">` で実写真化する（他枠は a方式・DRAFT_RULES §3.1）。未供給・
+  ステージング画像の読込失敗時は MV-01 も a方式へフォールバック。`variants≥2` は同じ画像を全案共通で MV-01 に入れる。
 - **仮文言**: 業種（`industry.resolved`）・テイスト（`taste`）に合った実文言。ダミー禁止。未定は `(要検討: …)`。
 - **印刷CSS / 出現アニメ / レスポンシブ**: DRAFT_RULES §6〜§8 のとおり（`@media print` で補助非表示・`IntersectionObserver`・
   `@media (max-width:640px)`・モバイルファーストで `.m-aside` を本文の後ろに畳む §8）。
@@ -108,6 +110,13 @@ DRAFT_RULES §9 に従い **Claude Code が Write** で保存する（保存分�
     `mockups/{…}/compare.html`（DRAFT_RULES §13）。
 - `mockups/{…}/instruction.json`＝入力の生成指示書の写し（そのまま保存し、再実行・監査を可能にする）。**一部失敗時も
   必ず保存する**（SPEC §7・入力を失わない）。
+- **MVフリー実写真の同梱（REQ-104 b方式・KLK-020・MV-01 限定）**: `atari:"free-photo"` かつ `mvPhoto.file` 供給時、
+  ステージング画像 `mockups/.uploads/{mvPhoto.file}` を出力フォルダの `assets/mv.<ext>`（拡張子は元ファイル準拠）へ
+  **コピー**し、各案（全案共通）の MV-01 アタリを相対 `<img src="assets/mv.<ext>">` にする（DRAFT_RULES §3.1）。
+  `mvPhoto.file` は **basename のみ・安全名**（`^[A-Za-z0-9][A-Za-z0-9._-]*$`・`..`／絶対パス／パス区切りを拒否）を確認し、
+  **`mockups/.uploads/` 配下からのみ読む**（多層防御・ブリッジ側 `validate_instruction` も同名を再検証）。ステージング画像が
+  無い／読めないときは MV-01 を a方式で出力し、手順5で「MV 実写真を反映できず a方式にした」旨を報告する。`assets/` も
+  `mockups/` 配下のためGit除外（機密＝実写真は追跡対象に入らない）。
 - **一部失敗（U-G）**: 失敗案のファイルは作らず `compare.html` からも参照しない。失敗があれば `compare.html` の
   `.partial-note` に「案Xの生成が一部失敗したため成功案のみ表示／設定を変えて再生成できます」を焼き込む。
 - `mockups/` はGit除外（`.gitignore` 3ファイルに登録済み）。案件名・生成物はコミットされない。
@@ -122,7 +131,8 @@ DRAFT_RULES §9 に従い **Claude Code が Write** で保存する（保存分�
 - 生成した**案数と各案の配色方向**（案A＝指示書に忠実／案B＝濃色高級／案C＝明色ポップ）。
 - 生成したセクションの番地ラベル一覧（NAV-01〜FOOTER-01・全案共通）。
 - `(要検討: …)` で残した箇所の一覧（人間が後で埋める箇所）。
-- 除外した外部参照（`atari:"free-photo"` を a方式に切り替えた等）。
+- MV 実写真の反映有無（`atari:"free-photo"`＋`mvPhoto.file` を `assets/mv.<ext>` に同梱し MV-01 を相対 `<img>` にした／
+  未供給・読込失敗で MV-01 を a方式にした）。その他の除外した外部参照があれば併記する。
 - **一部失敗があれば**その案と、`compare.html` に失敗を明示した旨・SCR-001 で設定を変えて再生成できる導線。
 - 開き方: **複数案は `compare.html`**（案A/B/C を切り替え・サムネイルの「原寸 ↗」で各案を別タブ表示）、**1案は `index.html`**
   をブラウザで開く（ダブルクリック・印刷プレビューで補助表示が消え PDF 化できる）。高品質PDFは各案の原寸別タブから印刷する。
@@ -131,10 +141,12 @@ DRAFT_RULES §9 に従い **Claude Code が Write** で保存する（保存分�
 
 - 受付チェックを飛ばして、不足項目を会話の文脈から推測で補って生成すること。
 - 外部リソース（CDN・外部CSS/JS・Webフォント・外部画像URL）に依存するHTMLを生成すること。
-- アタリ画像に `<img src>` や実写真URLを使うこと（a方式＝色面のみ）。
+- アタリ画像に `<img src>` や実写真URLを使うこと（a方式＝色面のみ）。**例外**: REQ-104 使用時の **MV-01 のみ**、
+  出力フォルダ同梱の**相対** `<img src="assets/…">` を許可する（KLK-020・DRAFT_RULES §3.1。外部 http(s) 画像URL は依然禁止）。
 - 部分再生成の**エンジン**（REQ-103・番地指定でセクションを作り直す処理そのもの）を本スキルで実装すること（それは新スキル
   `/draft-regenerate`・KLK-012 の責務）。本スキルは `compare.html` に🔄トリガー導線を焼き込むのみ（DRAFT_RULES §13/§14）。
-  フリー実写真b方式（REQ-104）・見本URL反映（REQ-102）も本スキルで実装しない（別チケット）。
+  見本URL反映（REQ-102）は本スキルで実装しない（別チケット）。フリー実写真 b方式（REQ-104）は **MV-01 限定で実装済み**
+  （KLK-020・アップロード画像を `assets/` へ同梱し MV-01 を相対 `<img>` に・DRAFT_RULES §3.1・手順4）。
 - 案間でカラム骨格・番地・セクション構成を変えること（案間の差は**配色テーマ主軸**に限る・DRAFT_RULES §12）。
 - `compare.html` の iframe・原寸リンクに外部URLや案別ファイル以外を指定すること（同ディレクトリ相対 `.html` のみ）。
 - 失敗案のファイルを保存・比較ハブから参照すること（成功案のみ・`.partial-note` で失敗通知）。

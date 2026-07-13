@@ -21,8 +21,10 @@
   見比べる**比較ハブ `compare.html`**（SCR-002・構造規約は §13）を併せて生成する（`variants:1` は比較ハブなし）。
 - 一部の案が失敗しても**成功案のみ**を保存・表示し、`compare.html` の `.partial-note` に失敗を焼き込んで通知する
   （REQ-008 失敗時挙動・§12・SKILL 手順4/5）。入力の写し `instruction.json` は常に保存する。
-- **別チケット（本スキルでは実装しない）**: 部分再生成 REQ-103（🔄 セクション単位の作り直し）・フリー実写真
-  b方式 REQ-104・見本URL反映 REQ-102。
+- **別チケット（本スキルでは実装しない）**: 部分再生成 REQ-103（🔄 セクション単位の作り直し）・見本URL反映 REQ-102。
+- **REQ-104 フリー実写真 b方式は MV-01 限定で実装済み（KLK-020）**: `atari:"free-photo"` かつ `mvPhoto.file` 供給時のみ、
+  **メインビジュアル（MV-01）のアタリだけ**をアップロード画像で実写真化する（**出力フォルダへ同梱・相対 `<img>`**・§3/§1/§12）。
+  他のアタリ枠は常に a方式。画像未供給・読込失敗は MV-01 も a方式へフォールバックする。外部 http 画像URL の埋め込みは依然禁止。
 
 ---
 
@@ -33,6 +35,9 @@
 - **禁止**: `<link rel="stylesheet">`・`<script src="…">`・`@import`・Webフォント（`fonts.googleapis.com` /
   `fonts.gstatic.com`）・CDN（`cdn.*` / `unpkg.com` / `jsdelivr` 等）・外部画像URL（`<img src="http…">`）。
 - アイコン・図はUnicode文字（絵文字等）またはインラインSVGで表現する。**アタリ画像は色面のみ**（`<img>` を使わない・§3）。
+- **例外（REQ-104 使用時のみ・KLK-020）**: `atari:"free-photo"` かつ `mvPhoto.file` 供給時、**MV-01 のアタリに限り**
+  出力フォルダ同梱の**相対** `<img src="assets/mv.<ext>">` を使ってよい（**相対参照のみ**。`http(s)://` の外部 img は依然禁止）。
+  同梱画像はフォルダ内で自己完結し、外部URL 0件の原則は維持される。
 - 外部URL参照は 0 件（`www.w3.org` / `example.com` `.org` `.net` のみ例外）。実在の顧客名・案件名・URL・
   シークレット（api key / secret / password / token / private key）を含めない（NFR-004 / REQ-011）。
 
@@ -76,7 +81,6 @@
 - **HERO の背景アタリ**は `.atari-tag`（右下の小ラベル）で「アタリ内容 / 検索キーワード」を示す（**印刷で非表示**・§6）。
 - **kw 無フォールバック（REQ-006）**: 検索キーワードが定まらない箇所は `.kw` を省き `.desc` のみとする
   （例: ギャラリーのスタイル一覧）。**ゴールデンサンプルは kw 有・kw 無の両方を含む**。
-- `atari` が `free-photo`（b方式）でも**本チケットは a方式で生成**し「フリー実写真（b方式）は別チケット（REQ-104）」と注記する。
 
 ```html
 <div class="atari">
@@ -86,6 +90,30 @@
 </div>
 <!-- kw 無フォールバック -->
 <div class="atari"><span class="ic">📷</span><span class="desc">ボブ</span></div>
+```
+
+### 3.1 MV-01 フリー実写真 b方式（REQ-104・KLK-020・MV-01 限定）
+
+`atari:"free-photo"` かつ `mvPhoto.file` 供給時は、**MV-01（HERO）のアタリのみ**を実写真（相対 `<img>`）にする。
+**他のアタリ枠（NAV / ABOUT / MENU / GALLERY / FOOTER・および MENU 等の枠内アタリ）は常に a方式**。
+`mvPhoto` 未供給・ステージング画像が読めない場合は **MV-01 も a方式へフォールバック**（SPEC §7「失敗要素は除外して継続」）。
+
+- スキルが `mockups/.uploads/{mvPhoto.file}` を出力フォルダの `assets/mv.<ext>` へコピーし（SKILL 手順4）、
+  MV-01 のアタリを**相対** `<img class="mv-photo" src="assets/mv.<ext>" alt="{業種}のメインビジュアル">` に差し替える。
+- テキスト（キャッチコピー・CTA）の可読性のため、`<img>` の上に半透明オーバーレイを重ねる。`.atari-tag`（検索KWラベル）は
+  実写真が入るため**省いてよい**。**外部 http(s) 画像URLは使わない**（相対同梱のみ・§1 の例外条項）。
+- `variants≥2` のときは**同じアップロード画像を全案共通**で MV-01 に相対参照する（画像コピーは1回・§12）。
+
+```html
+<!-- REQ-104 b方式: MV-01 のみ実写真（相対同梱・他枠は a方式） -->
+<div class="sec">
+  <div class="addr"><span class="pin">MV-01</span></div>
+  <div class="m-hero mv-hero">
+    <img class="mv-photo" src="assets/mv.jpg" alt="美容室のメインビジュアル">
+    <div class="mv-overlay"></div>
+    <h1 class="catch">…</h1><p class="lead">…</p><span class="hero-cta">…</span>
+  </div>
+</div>
 ```
 
 ---
@@ -296,6 +324,8 @@ SCR-002 mock テーマ変数へ写す。**生成ルート要素（`.mock` 等）
 - `layout.columns`（カラム骨格・§8 の6系統のいずれか。**全案同一の `data-columns`**）・番地ラベル6種（§2）・
   セクション構成（NAV / HERO / ABOUT / MENU / GALLERY / FOOTER）・業種（`industry.resolved`）とテイストの骨子・
   アタリ a方式（§3）・仮文言の骨子・外部依存ゼロ・印刷CSS（§6）・アニメ ON/OFF（§7）。
+  **ただし REQ-104 使用時は MV-01 のみ実写真**（`atari:"free-photo"` かつ `mvPhoto.file` 供給時・**同じアップロード画像を
+  全案共通**で相対参照・§3.1）。MV-01 以外の枠は全案 a方式で不変。
 
 **案ごとに振る（配色主軸＋テイスト副次差）:**
 
