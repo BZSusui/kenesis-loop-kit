@@ -1,0 +1,35 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": {
+    "project": "サンプル・フリー写真カフェ",
+    "createdAt": "2026-07-14T09:00:00.000Z",
+    "source": "SCR-001"
+  },
+  "industry": {
+    "preset": "飲食・カフェ",
+    "custom": "",
+    "resolved": "飲食・カフェ"
+  },
+  "layout": { "columns": "1col" },
+  "taste": "ナチュラル・やさしい",
+  "colors": {
+    "mode": "explicit",
+    "main": "#6b8e5a",
+    "sub": "#3c4a33",
+    "accent": "#d98b4a",
+    "bg": "#f7f4ee",
+    "autofill": []
+  },
+  "references": {
+    "thumbnails": [],
+    "sampleUrls": []
+  },
+  "atari": "free-photo",
+  "output": {
+    "variants": 1,
+    "mobile": { "enabled": false, "widthPx": 375 },
+    "animation": true
+  },
+  "mvPhoto": { "file": "upl-0123456789abcdef0123456789abcdef.jpg" }
+}
