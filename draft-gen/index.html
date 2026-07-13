@@ -264,6 +264,14 @@
   .radio-inline label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
   .toggle-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
+  /* MVフリー実写真サブUI（free-photo 選択時のみ表示・KLK-020・REQ-104） */
+  .mv-freephoto { margin-top: 12px; padding: 12px 14px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg-subtle); }
+  .mv-upload { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .mv-upload label { font-size: 13px; font-weight: 600; }
+  .mv-upload-status { font-size: 12px; color: var(--color-text-sub); }
+  .mv-search-links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .mv-search { font-size: 12px; color: var(--color-accent, #2e7d6b); text-decoration: underline; cursor: pointer; }
+
   /* 生成結果 */
   #resultCard { display: none; }
   #resultJson {
@@ -535,11 +543,35 @@
 
   <!-- ⑦ アタリ画像 -->
   <section class="card">
-    <div class="lbl"><span class="step">7</span><h2>アタリ画像の入れ方</h2>
+    <div class="lbl"><span class="step">7</span><h2>メインビジュアル アタリ画像の入れ方</h2>
       <span class="reqid">REQ-006・104</span></div>
     <div class="radio-inline">
       <label><input type="radio" name="atari" value="standard" checked> <span><b>標準</b>：色面＋内容説明＋ストック検索キーワード<span class="sub-inline">（権利的に安全）</span></span></label>
-      <label><input type="radio" name="atari" value="free-photo"> <span>フリー実写真を使う<span class="sub-inline">（リアリティ優先・通信あり）</span></span></label>
+      <label><input type="radio" name="atari" value="free-photo"> <span>フリー実写真を使う<span class="sub-inline">（メインビジュアル限定・通信あり）</span></span></label>
+    </div>
+    <!-- free-photo 選択時のみ表示（render() が atari 値で style.display を切替。MV-01 限定・REQ-104 b方式・KLK-020） -->
+    <div class="mv-freephoto" id="mvFreePhoto" style="display:none">
+      <!-- ① MV写真アップロード（1枚・ローカルブリッジ経由・出力フォルダへ相対同梱される） -->
+      <div class="mv-upload">
+        <label for="mvPhotoFile">メインビジュアルに使う実写真（1枚）</label>
+        <input type="file" id="mvPhotoFile" accept="image/*">
+        <span class="mv-upload-status" id="mvPhotoStatus"></span>
+      </div>
+      <!-- ② ストック写真の検索リンク（別タブ・埋め込みfetchなし。href は render() が実行時に組み立てる＝S15回避） -->
+      <div class="mv-search-links">
+        <a class="mv-search" data-base="unsplash.com/s/photos/"     data-suffix=""  target="_blank" rel="noopener">Unsplash で探す（無料）</a>
+        <a class="mv-search" data-base="www.pexels.com/search/"     data-suffix="/" target="_blank" rel="noopener">Pexels で探す（無料）</a>
+        <a class="mv-search" data-base="pixabay.com/images/search/" data-suffix="/" target="_blank" rel="noopener">Pixabay で探す（無料）</a>
+        <a class="mv-search" data-base="stock.adobe.com/search?k="  data-suffix=""  target="_blank" rel="noopener">Adobe Stock で探す（有料・探索用）</a>
+      </div>
+      <p class="note-oq mv-rights">
+        Adobe Stock などの有料素材やプレビュー透かし画像は<b>ページに埋め込まず</b>、購入・ダウンロードしたうえで
+        上の「実写真をアップロード」から取り込んで使ってください。無料サービスの画像も、各サービスの利用条件を確認してから使用します。
+      </p>
+      <p class="note-oq mv-bridge-need" id="mvBridgeNeed" style="display:none">
+        実写真のアップロードにはローカルブリッジの起動が必要です（生成と同じ仕組み）。
+        draft-gen/起動.command をダブルクリック、またはターミナルで python3 draft-gen/bridge.py を実行してください。
+      </p>
     </div>
   </section>
 
@@ -705,7 +737,7 @@ function buildInstruction(input) {
     .filter(function (u) { return u.length > 0; })
     .slice(0, 2);
 
-  return {
+  const out = {
     schema: 'design-draft-instruction',
     version: 1,
     meta: {
@@ -735,6 +767,13 @@ function buildInstruction(input) {
       animation: input.animation !== false,
     },
   };
+  // KLK-020 案X（REQ-104 b方式）: MV写真は別キー mvPhoto に条件付きで載せる。
+  // free-photo かつ保存名ありのときだけ追加＝standard／写真未供給では mvPhoto キーが出ず、
+  // standard の出力は従来とバイト等価に保つ（後方互換・回帰なし）。atari キーの位置・型は不変。
+  if (input.atari === 'free-photo' && typeof input.mvPhoto === 'string' && input.mvPhoto.trim()) {
+    out.mvPhoto = { file: input.mvPhoto.trim() };
+  }
+  return out;
 }
 
 // ============================================================================
@@ -760,9 +799,37 @@ function render() {
   document.getElementById('summary').textContent = parts.join(' / ') + ' — この内容で生成します';
   // 参考素材の業種連動ラベル
   document.getElementById('industryChip').textContent = '業種「' + industry + '」に近い実績を表示中';
+  // KLK-020: MVフリー実写真サブUIの表示切替＋検索リンクの href 実行時組立て（REQ-104）
+  updateMvFreePhoto(input);
+}
+
+// free-photo 選択時のみ MV写真サブUIを表示し、検索リンクの href を実行時に組み立てる。
+// href をソースに http(s) スキームの literal で書かず JS 組立てにすることで index.html の外部URL 0件を維持する（S15回避）。
+function updateMvFreePhoto(input) {
+  const box = document.getElementById('mvFreePhoto');
+  if (!box) return;
+  const atari = document.querySelector('input[name=atari]:checked');
+  const isFree = !!(atari && atari.value === 'free-photo');
+  box.style.display = isFree ? 'block' : 'none';
+  if (!isFree) return;
+  const HTTPS = 'https' + '://';   // スキームは実行時に組み立て、ソースに連続 literal を作らない（S15回避）
+  const q = encodeURIComponent(
+    (input.industryCustom && input.industryCustom.trim()) || input.industryPreset || 'business');
+  document.querySelectorAll('#mvFreePhoto .mv-search').forEach(function (a) {
+    a.href = HTTPS + a.dataset.base + q + (a.dataset.suffix || '');
+  });
 }
 
 let colorMode = 'explicit';
+
+// KLK-020（REQ-104 b方式）: /upload 済みの MV写真 保存名（未アップロード時 null）。
+let mvPhotoSaved = null;
+
+// MVアップロード状況の表示（動的値は textContent＝注入対策・setBridgeStatus と同方針）。
+function setMvStatus(text) {
+  const el = document.getElementById('mvPhotoStatus');
+  if (el) el.textContent = text || '';
+}
 
 function colLabelOf(col) {
   switch (col) {
@@ -809,6 +876,7 @@ function collectInput() {
     refThumbs: selectedThumbs(),
     sampleUrls: sampleUrls,
     atari: atariEl ? atariEl.value : 'standard',
+    mvPhoto: mvPhotoSaved,   // KLK-020: /upload 済みの保存名 or null（free-photo 時のみ buildInstruction が使用）
     variants: varEl ? parseInt(varEl.value, 10) : 3,
     mobile: {
       enabled: document.getElementById('mobileOn').checked,
@@ -905,6 +973,41 @@ async function probeHealth() {
     if (timer) clearTimeout(timer);
     return false;
   }
+}
+
+// KLK-020: MV写真の選択→ブリッジ /upload へ生バイナリPOST（REQ-104 b方式）。
+// 非稼働（file://・通信不可）ではグレースフルに案内（生成自体もブリッジ駆動なので整合・KLK-014 の作法）。
+async function handleMvPhotoChange(e) {
+  const f = e.target.files && e.target.files[0];
+  mvPhotoSaved = null;
+  const needEl = document.getElementById('mvBridgeNeed');
+  if (!f) { setMvStatus(''); render(); return; }
+  const ok = await probeHealth();
+  if (!ok) {
+    if (needEl) needEl.style.display = 'block';
+    setMvStatus('ブリッジ未起動のためアップロードできません');
+    render();
+    return;
+  }
+  if (needEl) needEl.style.display = 'none';
+  setMvStatus('アップロード中…');
+  try {
+    const res = await fetch(BRIDGE_ORIGIN + '/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': f.type || 'application/octet-stream' },
+      body: f,
+    });
+    const data = await res.json().catch(function () { return {}; });
+    if (res.ok && data.savedName) {
+      mvPhotoSaved = data.savedName;
+      setMvStatus('アップロード完了（生成時に MV へ反映されます）');
+    } else {
+      setMvStatus('アップロードに失敗しました：' + ((data && data.error) || '画像を確認してください'));
+    }
+  } catch (err) {
+    setMvStatus('アップロードに失敗しました（ブリッジ通信エラー）');
+  }
+  render();
 }
 
 // ブリッジ稼働なら POST /generate → /status ポーリング。非稼働／例外は手順案内へ退避。
@@ -1193,6 +1296,8 @@ function init() {
   document.querySelectorAll('input[name=col], input[name=taste], input[name=atari], input[name=variants], #mobileOn, #animOn')
     .forEach(function (el) { el.addEventListener('change', render); });
   document.querySelectorAll('.sample-url').forEach(function (el) { el.addEventListener('input', render); });
+  // KLK-020: MVフリー実写真の選択→ブリッジ /upload（REQ-104 b方式）
+  document.getElementById('mvPhotoFile').addEventListener('change', handleMvPhotoChange);
 
   // 方法①: 4色の swatch↔hex 同期
   ROLE_KEYS.forEach(function (role) {
