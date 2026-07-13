@@ -441,6 +441,19 @@ def build_catalog_import_command(pending_spec_path, allow_open=False):
     return cmd
 
 
+MTIME_TOLERANCE_SEC = 2.0   # 再生成の mtime 更新判定の許容差(FS の秒切り詰め吸収・KLK-018 U2)
+
+
+def is_job_success(returncode, artifact_ok):
+    """終了コードに依存しない成否判定(KLK-018)。副作用なし・S群 import 対象。
+
+    成果物(artifact_ok=True)があれば returncode を問わず成功。無ければ returncode==0 のときのみ成功。
+    ＝「returncode!=0 かつ 成果物なし」だけを失敗とする(成果物ありを優先)。
+    timeout・起動失敗は本関数の手前で独立に失敗確定させる(温存)。
+    """
+    return bool(artifact_ok) or returncode == 0
+
+
 def repo_root():
     """このファイル(draft-gen/bridge.py)からリポジトリルート(draft-gen の親)を返す。"""
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -500,20 +513,24 @@ def _run_server(port):
             _cleanup(pending_path)
             return
 
-        if proc.returncode != 0:
-            tail = (proc.stderr or proc.stdout or "").strip()[-400:]
-            with jobs_lock:
-                jobs[job_id]["state"] = "error"
-                jobs[job_id]["message"] = "生成に失敗しました。{0}".format(tail)
-            _cleanup(pending_path)
-            return
-
         # 保存規約(DRAFT_RULES §9)から表示物パスを決定論的に構築し、ブリッジ自身が開く(U-5)
         # 日付はジョブ開始時刻基準(L-2): 日跨ぎ長時間ジョブでも保存先フォルダがずれない
+        # KLK-018: 表示物パス構築を失敗判定の前へ移動し、成果物の存在を主判定にする
         date_str = started_at.strftime("%Y-%m-%d")
         folder = build_folder(date_str, project)
         open_target = select_open_target(folder, variants)
         abs_target = os.path.join(root, open_target)
+
+        # KLK-018: 終了コード単独ではなく成果物(表示物)の存在を優先して判定する
+        if not is_job_success(proc.returncode, os.path.exists(abs_target)):
+            # 診断はサーバコンソール(stderr)のみ。生JSONはブラウザ(message)に出さない
+            print("[bridge] 生成 失敗 exit={0}".format(proc.returncode), file=sys.stderr)
+            with jobs_lock:
+                jobs[job_id]["state"] = "error"
+                jobs[job_id]["message"] = "生成できませんでした。もう一度お試しください。解決しない場合は Claude Code（claude）が起動しているかご確認ください"
+            _cleanup(pending_path)
+            return
+
         opened = False
         try:
             subprocess.run(
@@ -570,11 +587,22 @@ def _run_server(port):
             _cleanup(pending_path)
             return
 
-        if proc.returncode != 0:
-            tail = (proc.stderr or proc.stdout or "").strip()[-400:]
+        # KLK-018: 上書き方式のため対象の mtime 更新検知を成果物有無の主判定にする(U2)
+        abs_regen_target = os.path.join(root, target)
+        try:
+            artifact_ok = (
+                os.path.isfile(abs_regen_target)
+                and os.path.getmtime(abs_regen_target) >= started_at.timestamp() - MTIME_TOLERANCE_SEC
+            )
+        except OSError:
+            artifact_ok = False
+
+        if not is_job_success(proc.returncode, artifact_ok):
+            # 診断はサーバコンソール(stderr)のみ。生JSONはブラウザ(message)に出さない
+            print("[bridge] 再生成 失敗 exit={0}".format(proc.returncode), file=sys.stderr)
             with jobs_lock:
                 jobs[job_id]["state"] = "error"
-                jobs[job_id]["message"] = "再生成に失敗しました。{0}".format(tail)
+                jobs[job_id]["message"] = "再生成できませんでした。もう一度お試しください。解決しない場合は Claude Code（claude）が起動しているかご確認ください"
             _cleanup(pending_path)
             return
 
@@ -648,15 +676,18 @@ def _run_server(port):
             _cleanup(pending_spec_path)
             return
 
-        if proc.returncode != 0:
-            tail = (proc.stderr or proc.stdout or "").strip()[-400:]
+        # KLK-018: catalog.json 可読(after is not None)を成果物有無の主判定にする(U3)
+        # 0件承認(件数不変)も正常系のため after>=before ではなく after is not None を用いる
+        after = _count_entries()
+        if not is_job_success(proc.returncode, after is not None):
+            # 診断はサーバコンソール(stderr)のみ。生JSONはブラウザ(message)に出さない
+            print("[bridge] 取り込み 失敗 exit={0}".format(proc.returncode), file=sys.stderr)
             with jobs_lock:
                 jobs[job_id]["state"] = "error"
-                jobs[job_id]["message"] = "取り込みに失敗しました。{0}".format(tail)
+                jobs[job_id]["message"] = "取り込みできませんでした。もう一度お試しください。解決しない場合は Claude Code（claude）が起動しているかご確認ください"
             _cleanup(pending_spec_path)
             return
 
-        after = _count_entries()
         if before is not None and after is not None and after >= before:
             msg = "取り込みが完了しました。カタログの登録は {0} 件です".format(after)
         else:
