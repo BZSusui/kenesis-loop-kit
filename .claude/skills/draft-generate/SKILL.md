@@ -67,8 +67,9 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
 ### 3. 生成（`output.variants` に応じ最大3案）
 
 `output.variants`（1〜3）ぶんループし、各案について DRAFT_RULES に完全準拠した**単一HTML**を1枚ずつ書く。
-**カラム骨格・番地・セクション構成・業種/テイストの骨子・アタリ a方式は全案で固定**し、**案間の差は配色テーマを主軸に
-振る**（振れ幅規約は DRAFT_RULES §12）。各案（`index.html` または `index-{letter}.html`）は次を満たす:
+**カラム数（`data-columns`）・番地・セクション構成・業種/テイストの骨子・アタリ a方式は全案で固定**し、**案間の差は
+配色テーマ（§5の5変数）とレイアウト原型（`data-archetype`・§12.1）を両振り**する（振れ幅規約は DRAFT_RULES §12）。
+各案（`index.html` または `index-{letter}.html`）は次を満たす:
 
 - **配色（案ごとに振る）**: `colors.main/sub/accent/bg`（+ `autofill`）を DRAFT_RULES §5 の表どおり
   `--m-main/--m-nav/--m-accent/--m-bg/--m-text` へマッピングし、生成ルート要素に**案別の5変数**を定義（本体は `var(--m-*)`
@@ -76,7 +77,12 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
   にテーマを振る（DRAFT_RULES §12）。案間で少なくとも `--m-main` が異なること。
 - **カラム構成（全案共通）**: 生成ルート要素に `data-columns="{正規化後の canonical 値}"` を付け、DRAFT_RULES §8 の6系統骨格に
   合わせる（全体2カラム `2col-full-*` は `.m-layout` が NAV/HERO を内包・サイドバー全高。本文のみ `2col-body-*` は
-  HERO を grid の外に出す。旧 `2col-sub-*` は `2col-body-*` へ正規化してから書く）。**全案で同一の `data-columns`**。
+  HERO を grid の外に出す。旧 `2col-sub-*` は `2col-body-*` へ正規化してから書く）。**全案で同一の `data-columns`**（列数固定）。
+- **レイアウト原型（案ごとに振る・KLK-021・DRAFT_RULES §12.1）**: 生成ルート要素に `data-columns` と並べて
+  `data-archetype="{値}"` を付ける。3値enum＝`stack-centered`（案A・中央寄せ標準）／`split-editorial`（案B・左寄せ非対称・
+  serif上質）／`banded-showcase`（案C・帯構成ビジュアル先行・sans）。**列数（`data-columns`）は変えず**、HERO重心・見出し整列・
+  ABOUT比率・帯/ギャラリー比重だけを archetype に合わせて振る。**案間で `data-archetype` が相違**すること（`--m-main` 相違と
+  同型の機械検証フック）。単案（`variants:1`）は既定 `stack-centered`。
 - **番地ラベル（全案共通）**: 各セクションに `.addr > .pin`（NAV-01 / MV-01 / ABOUT-01 / MENU-01 / GALLERY-01 / FOOTER-01）。
 - **アタリ画像**: a方式（色面＋`.desc`＋`.kw`。HERO は `.atari-tag`。キーワード未定は `.desc` のみ）。
   **REQ-104 b方式（KLK-020・MV-01 限定）**: `atari:"free-photo"` かつ `mvPhoto.file` 供給時は **MV-01 のアタリのみ**を

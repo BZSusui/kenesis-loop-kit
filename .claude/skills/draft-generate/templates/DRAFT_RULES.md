@@ -17,7 +17,7 @@
   仮文言・スクロール出現アニメ）を非エンジニアが確認・印刷できる単一HTML。
 - 本スキルは生成指示書の **`output.variants`（1〜3）に応じて最大3案**を一括生成する（REQ-008）。各案は独立した
   単一HTML（`variants:1` は `index.html`、`variants≥2` は `index-a.html`/`index-b.html`/`index-c.html`）で、
-  **配色テーマを主軸に方向性を振る**（振れ幅規約は §12・カラム骨格や番地は全案共通）。複数案のときは案を切り替えて
+  **配色テーマとレイアウト原型（`data-archetype`）を両振りする**（振れ幅規約は §12/§12.1・カラム数や番地は全案共通）。複数案のときは案を切り替えて
   見比べる**比較ハブ `compare.html`**（SCR-002・構造規約は §13）を併せて生成する（`variants:1` は比較ハブなし）。
 - 一部の案が失敗しても**成功案のみ**を保存・表示し、`compare.html` の `.partial-note` に失敗を焼き込んで通知する
   （REQ-008 失敗時挙動・§12・SKILL 手順4/5）。入力の写し `instruction.json` は常に保存する。
@@ -318,7 +318,10 @@ SCR-002 mock テーマ変数へ写す。**生成ルート要素（`.mock` 等）
 ## 12. 複数案バリエーション規約（REQ-008・U-C/U-G）
 
 同一の生成指示書から `output.variants`（1〜3）ぶんの案を出す際の**振れ幅**を規約化し、非決定的生成でも品質を安定させる。
-**配色テーマを主軸**にし、骨格（構造）は全案で固定する。
+案ごとに振る軸は **2つ**: **配色テーマ（§5の5変数）** と **レイアウト原型（`data-archetype`・下の 12.1）**。両者を両振りして
+「同じ紙面の色違い」ではなく、色も構成も見分けられる案にする（KLK-021）。**カラム数（`data-columns`）を含む骨格は全案で
+固定**する（比較の等条件性・§8骨格の安定）。`data-archetype` は `data-columns` と**直交**し、**列数を変えずに**紙面の構成・
+重心だけを切り替える。
 
 **全案で固定（案間で変えない）:**
 - `layout.columns`（カラム骨格・§8 の6系統のいずれか。**全案同一の `data-columns`**）・番地ラベル6種（§2）・
@@ -327,13 +330,13 @@ SCR-002 mock テーマ変数へ写す。**生成ルート要素（`.mock` 等）
   **ただし REQ-104 使用時は MV-01 のみ実写真**（`atari:"free-photo"` かつ `mvPhoto.file` 供給時・**同じアップロード画像を
   全案共通**で相対参照・§3.1）。MV-01 以外の枠は全案 a方式で不変。
 
-**案ごとに振る（配色主軸＋テイスト副次差）:**
+**案ごとに振る（配色 × レイアウト原型の両振り＋テイスト副次差）:**
 
-| 案 | letter | 配色方針 | 副次の振れ |
-|---|---|---|---|
-| 案A（ベース） | `a` | **生成指示書の配色に忠実**（`colors.main/sub/accent/bg` ＋ §5 autofill 補完のまま） | 標準テイスト |
-| 案B | `b` | `colors.main` を起点に**濃色・高級方向**へ調和させた別テーマ（例 紺＋金） | フォント／見出しトーンを上質寄り（serif 等） |
-| 案C | `c` | `colors.main` を起点に**明色・ポップ方向**へ調和させた別テーマ（例 桃＋シアン） | sans-serif・角丸・軽い配色 |
+| 案 | letter | 配色方針 | レイアウト原型（`data-archetype`・12.1） | 副次の振れ |
+|---|---|---|---|---|
+| 案A（ベース） | `a` | **生成指示書の配色に忠実**（`colors.main/sub/accent/bg` ＋ §5 autofill 補完のまま） | `stack-centered`（中央寄せ標準） | 標準テイスト |
+| 案B | `b` | `colors.main` を起点に**濃色・高級方向**へ調和させた別テーマ（例 紺＋金） | `split-editorial`（左寄せ・非対称） | フォント／見出しトーンを上質寄り（serif 等） |
+| 案C | `c` | `colors.main` を起点に**明色・ポップ方向**へ調和させた別テーマ（例 桃＋シアン） | `banded-showcase`（帯構成・ビジュアル先行） | sans-serif・角丸・軽い配色 |
 
 - 各案は §5 の**5変数（`--m-main`/`--m-nav`/`--m-accent`/`--m-bg`/`--m-text`）を案別の値で定義**する。案間で
   少なくとも `--m-main` が異なること（配色方向の差が機械検証で確認できる）。
@@ -344,6 +347,36 @@ SCR-002 mock テーマ変数へ写す。**生成ルート要素（`.mock` 等）
 - **一部失敗（U-G）**: 生成ループで各案の成否を把握する。**成功案のみ** `index-{letter}.html` を保存し `compare.html` に
   載せる。失敗があれば `compare.html` に `.partial-note` を焼き込み（失敗案の明示＋「設定を変えて再生成できます」＝SCR-001
   再実行に寄せた文言）、報告でも通知する。失敗案のファイルは作らず比較ハブから参照しない。`instruction.json` は常に保存する。
+
+### 12.1 レイアウト原型 `data-archetype`（KLK-021・列数を変えないレイアウト差別化）
+
+複数案のレイアウト差を、**カラム数（`data-columns`）を変えずに**表す離散属性。生成ルート `.mock` に `data-columns` と
+**並べて** `data-archetype="{値}"` を付ける。`data-columns` がマクロ骨格（サイドバー有無・列数）を、`data-archetype` が
+その内側の**構成・重心**（HERO重心・見出し整列・帯/余白リズム・ギャラリー比重）を決める。**両者は直交**し、archetype は
+`.m-layout` の列数・サイドバー位置に触れない。
+
+**enum（3値・固定語彙・案別に割り当てる）:**
+
+| `data-archetype` | 割当案 | レイアウトの型（`data-columns` は不変・列数を変えない） |
+|---|---|---|
+| `stack-centered` | 案A `a` | 中央寄せの標準構成。`.m-hero{align-items:center;text-align:center}`・`.m-sec h2{text-align:center}`・対称グリッド。既存 klk007/009 骨格に忠実 |
+| `split-editorial` | 案B `b` | エディトリアル/非対称。`.m-hero{align-items:flex-start;text-align:left}`・`.m-sec h2{text-align:left;border-left:…}`・`.m-about{grid-template-columns:1.4fr .9fr}`（**列数=2は不変**・比率のみ非対称）。serif で上質方向（配色の濃色・高級と同調） |
+| `banded-showcase` | 案C `c` | ビジュアル先行/帯構成。`.m-hero{justify-content:flex-end;text-align:left}`（下寄せキャプション）・セクションを全幅帯で交互色・GALLERY 比重増・見出しに下線アクセント。sans-serif で軽い方向（配色の明色・ポップと同調） |
+
+**不変条件（機械検証の正・check_klk021.py S群）:**
+1. **全案 `data-columns` 同一**（列数固定を維持・§8 canonical の6値のいずれか）。`--m-main` 相違検証と同じ骨格で
+   `data-columns` 同一を確認する。
+2. **案間 `data-archetype` 相違**（3案で3値 distinct・各値は上の enum のいずれか）。`--m-main` distinct と**同型**の離散
+   フックで機械検証できる。
+3. **配色は従来どおり案間で振る**（`--m-main` 相違を維持）＝**配色＋レイアウトの両振り**。
+4. **archetype は実 CSS 差として現れる**こと（属性だけの飾りにしない）。HERO の整列シグネチャ
+   （`justify-content`/`align-items`/`text-align` の組）が案間で相違する。
+
+- **単案（`variants:1`）**: `data-archetype` は既定 `stack-centered`（従来の中央寄せ標準）でよい。単案では相違検証は働かない。
+- **additive**: 既存生成物（`data-archetype` 無し）や §13 compare.html・§14 部分再生成の構造には影響しない。部分再生成は
+  対象 `.sec` 以外を保存するため、`data-archetype` はルート属性として保持される（§14 の「カラム骨格を保持」と同じ扱い）。
+- 代表出力（ゴールデン）: `tests/fixtures/klk021/index-a.html`（`stack-centered`）／`index-b.html`（`split-editorial`）／
+  `index-c.html`（`banded-showcase`）。3案とも `data-columns="2col-body-right"` 同一・`--m-main` 相違。
 
 ---
 
@@ -413,7 +446,8 @@ SCR-002 mock テーマ変数へ写す。**生成ルート要素（`.mock` 等）
 1. **配色5変数**（`--m-main`/`--m-nav`/`--m-accent`/`--m-bg`/`--m-text`）= **対象 `index-{letter}.html` のルート `.mock` 定義から
    実値を読む**（インライン `style="--m-*:…"` 形式・`<style>` 内 `.mock { --m-*:…; }` 形式の双方）。**★ `instruction.json` からは
    読まない**（案B/C は `colors.main` から派生した別テーマのため、指示書から読むと配色が壊れる・§12）。新セクションも `var(--m-*)` で参照する。
-2. **カラム骨格**（ルート要素の `data-columns`・§8）。
+2. **カラム骨格とレイアウト原型**（ルート要素の `data-columns`・§8／`data-archetype`・§12.1）。どちらもルート属性として
+   バイト等価で保持する（対象 `.sec` の差し替えでルート属性は変えない）。
 3. **全番地ラベル**（他5セクションの `.pin` と対象セクションの `.pin {addr}`・§2）。番地ラベル文字列は変えない。
 4. **`<head>` の CSS**（`.reveal`/`@media print`/`.atari` 等）・**`</body>` 直前のアニメ `<script>`**（§7）。
    アニメ状態は対象ファイルの現状に合わせる（ON 案は `.reveal` を付け、OFF 案は付けない）。

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<!--
+  KLK-021 ゴールデンサンプル（複数案・案B / letter=b）— DRAFT_RULES.md 準拠の案別 standalone
+  これはテスト検証用のプレースホルダ出力です。実在の顧客・案件ではありません。
+  案件名: サンプル陶芸工房サイト / 業種: 工芸・体験教室 / カラム: 2col-body-right（全案共通）
+  レイアウト原型: split-editorial（案B・左寄せ非対称・エディトリアル・DRAFT_RULES §12.1）
+  配色方向: 案B 濃色・高級方向（紺＋金・serif上質）
+  実生成物は mockups/{日付}_{案件名}/index-b.html に保存されます（Git除外）。
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>サンプル陶芸工房サイト | デザインラフ 案B</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Yu Mincho", "Hiragino Mincho ProN", serif; line-height: 1.8; }
+
+  /* ===== 生成ラフ本体（配色は5つのCSS変数で適用・DRAFT_RULES §5） ===== */
+  /* 案B: 濃色・高級方向（紺＋金） */
+  .mock {
+    --m-main: #22303a;
+    --m-nav: #161f26;
+    --m-accent: #c6a15b;
+    --m-bg: #f3f1ec;
+    --m-text: #2b2b2b;
+    background: var(--m-bg); color: var(--m-text); overflow: hidden; position: relative;
+  }
+
+  /* 番地ラベル（画面のみ・印刷では非表示） */
+  .sec { position: relative; }
+  .addr { position: absolute; top: 8px; left: 8px; z-index: 5; display: inline-flex; gap: 6px; align-items: center; }
+  .addr .pin {
+    background: rgba(17, 24, 39, .82); color: #fff; font-size: 10px; letter-spacing: .04em;
+    padding: 2px 7px; border-radius: 4px; font-family: ui-monospace, monospace;
+  }
+
+  /* スクロール出現アニメ（DRAFT_RULES §7・ON） */
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+  .m-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 22px; background: var(--m-nav); color: #fff; }
+  .m-nav .logo { font-size: 17px; font-weight: 700; letter-spacing: .1em; }
+  .m-nav ul { display: flex; gap: 18px; list-style: none; margin: 0; padding: 0; font-size: 12px; }
+  .m-nav .cta { background: var(--m-accent); color: #1a1a1a; padding: 6px 14px; border-radius: 2px; font-size: 12px; font-weight: 700; }
+
+  /* HERO（レイアウト原型 split-editorial: 左寄せ・非対称・DRAFT_RULES §12.1） */
+  .m-hero {
+    position: relative; min-height: 360px; display: flex; flex-direction: column;
+    align-items: flex-start; justify-content: center; text-align: left; color: #fff; padding: 48px 56px;
+    background: linear-gradient(rgba(15, 22, 28, .5), rgba(15, 22, 28, .42)),
+      repeating-linear-gradient(45deg, var(--m-main), var(--m-main) 14px,
+        color-mix(in srgb, var(--m-main) 88%, #000) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 28px);
+  }
+  .m-hero .catch { font-size: 36px; font-weight: 700; letter-spacing: .06em; margin: 0 0 14px; max-width: 640px; border-left: 4px solid var(--m-accent); padding-left: 18px; text-shadow: 0 2px 8px rgba(0, 0, 0, .35); }
+  .m-hero .lead { font-size: 15px; max-width: 480px; margin: 0 0 24px; }
+  .m-hero .hero-cta { background: var(--m-accent); color: #1a1a1a; padding: 12px 30px; border-radius: 2px; font-size: 14px; letter-spacing: .05em; font-weight: 700; }
+  .atari-tag {
+    position: absolute; bottom: 8px; right: 8px; background: rgba(0, 0, 0, .55); color: #fff;
+    font-size: 10px; padding: 3px 8px; border-radius: 4px; font-family: "Hiragino Sans", sans-serif;
+  }
+
+  /* 本文のみ2カラム（2col-body-right）: HERO は grid の外・本文＋サイドバー右列（§8） */
+  .m-layout { display: grid; grid-template-columns: 1fr 300px; gap: 26px; max-width: 1040px; margin: 0 auto; padding: 12px; }
+  .m-main-col { order: 0; min-width: 0; }
+  .m-aside { order: 1; }
+  .m-aside .card { background: #fff; border-radius: 2px; box-shadow: 0 3px 12px rgba(0, 0, 0, .1); padding: 16px; margin-bottom: 16px; border-top: 3px solid var(--m-accent); }
+  .m-aside h4 { margin: 0 0 8px; font-size: 14px; color: var(--m-main); }
+  .m-aside p { margin: 0; font-size: 12.5px; color: #6B7280; }
+
+  .m-sec { padding: 34px 20px; }
+  /* 見出し（split-editorial: 左寄せ＋左罫） */
+  .m-sec h2 { text-align: left; font-size: 23px; letter-spacing: .08em; margin: 0 0 4px; color: var(--m-main); border-left: 3px solid var(--m-accent); padding-left: 12px; }
+  .m-sec .en { text-align: left; font-size: 11px; letter-spacing: .3em; color: var(--m-accent); margin: 0 0 22px 15px; font-family: ui-monospace, monospace; }
+  .todo { color: #B54; background: #FFF0F0; border: 1px dashed #E39; border-radius: 4px; padding: 1px 6px; font-size: 12.5px; font-family: "Hiragino Sans", sans-serif; }
+
+  /* アタリ画像（色面＋説明＋検索キーワード・DRAFT_RULES §3・a方式） */
+  .atari {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--m-main) 22%, #fff), color-mix(in srgb, var(--m-accent) 26%, #fff));
+    border: 1px dashed color-mix(in srgb, var(--m-main) 45%, #999);
+    border-radius: 3px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; color: color-mix(in srgb, var(--m-main) 55%, #333); padding: 14px; gap: 4px;
+    font-family: "Hiragino Sans", sans-serif;
+  }
+  .atari .ic { font-size: 22px; }
+  .atari .desc { font-size: 12.5px; font-weight: 600; }
+  .atari .kw { font-size: 11px; color: #6B7280; }
+  .atari .kw b { font-family: ui-monospace, monospace; color: var(--m-main); }
+
+  /* ABOUT（split-editorial: 非対称グリッド 1.4fr .9fr・列数=2は不変） */
+  .m-about { display: grid; grid-template-columns: 1.4fr .9fr; gap: 26px; align-items: center; }
+  .m-about .atari { min-height: 190px; }
+  .m-about .txt h3 { font-size: 19px; color: var(--m-main); margin: 0 0 10px; }
+  .m-about .txt p { font-size: 13.5px; margin: 0; }
+
+  .m-menu { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .m-card { background: #fff; border-radius: 2px; overflow: hidden; box-shadow: 0 3px 12px rgba(0, 0, 0, .1); }
+  .m-card .atari { min-height: 120px; border-radius: 0; border: none; border-bottom: 1px dashed #bbb; }
+  .m-card .ct { padding: 14px; text-align: left; }
+  .m-card .ct h4 { margin: 0 0 6px; font-size: 15px; color: var(--m-main); }
+  .m-card .ct .price { font-size: 13px; color: var(--m-accent); font-weight: 700; }
+  .m-card .ct p { font-size: 12px; margin: 6px 0 0; color: #6B7280; }
+
+  .m-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .m-gallery .atari { aspect-ratio: 1; min-height: 0; padding: 8px; }
+  .m-gallery .atari .ic { font-size: 16px; }
+  .m-gallery .atari .desc { font-size: 10.5px; }
+
+  .m-foot { background: var(--m-nav); color: #fff; text-align: center; padding: 30px 20px; }
+  .m-foot .fcta { display: inline-block; background: var(--m-accent); color: #1a1a1a; padding: 12px 34px; border-radius: 2px; font-size: 14px; margin-bottom: 16px; font-weight: 700; }
+  .m-foot .fnav { font-size: 11px; opacity: .85; }
+
+  /* ===== レスポンシブ（DRAFT_RULES §8・NFR-002・モバイルファースト） ===== */
+  @media (max-width: 640px) {
+    .m-nav ul { display: none; }
+    .m-nav::after { content: "\2630"; color: #fff; font-size: 20px; }
+    .m-hero { padding: 36px 24px; }
+    .m-hero .catch { font-size: 26px; }
+    .m-layout { grid-template-columns: 1fr; }
+    .m-main-col { order: 0; }
+    .m-aside { order: 1; }
+    .m-about, .m-menu, .m-gallery { grid-template-columns: 1fr; }
+    .m-gallery { grid-template-columns: repeat(2, 1fr); }
+    .m-sec { padding: 26px 16px; }
+  }
+
+  /* ===== 印刷（PDF化）: 補助表示を隠す・DRAFT_RULES §6 ===== */
+  @media print {
+    .addr, .atari-tag, .anim-note { display: none !important; }
+    body { background: #fff; }
+    .mock { box-shadow: none; border-radius: 0; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mock" data-columns="2col-body-right" data-archetype="split-editorial">
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">NAV-01</span></div>
+    <div class="m-nav">
+      <span class="logo">SAMPLE POTTERY</span>
+      <ul><li>ABOUT</li><li>COURSE</li><li>GALLERY</li><li>ACCESS</li></ul>
+      <span class="cta">体験を予約</span>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">MV-01</span></div>
+    <div class="m-hero">
+      <h1 class="catch">土にふれる、静かな時間。</h1>
+      <p class="lead">はじめての方も、手ぶらで。ろくろと手びねりで、世界にひとつの器をつくる工房です。</p>
+      <span class="hero-cta">体験コースを見る ＞</span>
+      <span class="atari-tag">📷 アタリ: ろくろを回す手元のクローズアップ / 検索: pottery wheel hands clay</span>
+    </div>
+  </div>
+
+  <div class="m-layout">
+    <div class="m-main-col">
+
+      <div class="sec reveal">
+        <div class="addr"><span class="pin">ABOUT-01</span></div>
+        <div class="m-sec" style="background:#fff">
+          <h2>CONCEPT</h2><div class="en">工房について</div>
+          <div class="m-about">
+            <div class="atari">
+              <span class="ic">📷</span>
+              <span class="desc">窯出しされた器の並ぶ棚</span>
+              <span class="kw">検索: <b>handmade ceramic shelf</b></span>
+            </div>
+            <div class="txt">
+              <h3>使うほどに、愛着が育つ器を。</h3>
+              <p>暮らしになじむ形と釉薬にこだわり、日々の食卓で長く使える器づくりを大切にしています。<span class="todo">(要検討: 主宰者の経歴や作陶年数など信頼感につながる一文)</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec reveal">
+        <div class="addr"><span class="pin">MENU-01</span></div>
+        <div class="m-sec">
+          <h2>COURSE</h2><div class="en">体験コース・料金</div>
+          <div class="m-menu">
+            <div class="m-card">
+              <div class="atari"><span class="ic">📷</span><span class="desc">手びねりの器</span><span class="kw">検索: <b>hand-building pottery</b></span></div>
+              <div class="ct"><h4>手びねり体験</h4><div class="price">¥3,300〜</div><p>約90分・お茶碗やカップを1点</p></div>
+            </div>
+            <div class="m-card">
+              <div class="atari"><span class="ic">📷</span><span class="desc">電動ろくろ</span><span class="kw">検索: <b>electric pottery wheel</b></span></div>
+              <div class="ct"><h4>電動ろくろ体験</h4><div class="price">¥4,800〜</div><p>約120分・成形から仕上げまで</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec reveal">
+        <div class="addr"><span class="pin">GALLERY-01</span></div>
+        <div class="m-sec" style="background:#fff">
+          <h2>GALLERY</h2><div class="en">作品ギャラリー</div>
+          <!-- キーワード未定のため .desc のみ（kw 無フォールバック・DRAFT_RULES §3） -->
+          <div class="m-gallery">
+            <div class="atari"><span class="ic">📷</span><span class="desc">飯碗</span></div>
+            <div class="atari"><span class="ic">📷</span><span class="desc">マグカップ</span></div>
+            <div class="atari"><span class="ic">📷</span><span class="desc">小皿</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <aside class="m-aside">
+      <div class="card reveal">
+        <h4>開講日</h4>
+        <p>火〜日 10:00 / 13:00 / 15:30<br>（月曜定休・要予約）</p>
+      </div>
+      <div class="card reveal">
+        <h4>アクセス</h4>
+        <p><span class="todo">(要検討: 最寄り駅・徒歩分数・駐車場の有無)</span></p>
+      </div>
+    </aside>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">FOOTER-01</span></div>
+    <div class="m-foot">
+      <div class="fcta">体験を予約する</div>
+      <div class="fnav">ABOUT ・ COURSE ・ GALLERY ・ ACCESS ・ お問い合わせ<br>© SAMPLE POTTERY</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) {
+      els.forEach(function (e) { e.classList.add('in'); });
+      return;
+    }
+    var io = new IntersectionObserver(function (ens) {
+      ens.forEach(function (x) {
+        if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); }
+      });
+    }, { threshold: .12 });
+    els.forEach(function (e) { io.observe(e); });
+  })();
+</script>
+
+</body>
+</html>

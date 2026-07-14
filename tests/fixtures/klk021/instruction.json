@@ -1,0 +1,35 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": {
+    "project": "サンプル陶芸工房サイト",
+    "createdAt": "2026-07-14T09:00:00.000Z",
+    "source": "SCR-001"
+  },
+  "industry": {
+    "preset": "工芸・体験教室(陶芸 / ハンドメイド / ワークショップ)",
+    "custom": "",
+    "resolved": "工芸・体験教室(陶芸 / ハンドメイド / ワークショップ)"
+  },
+  "layout": { "columns": "2col-body-right" },
+  "taste": "ナチュラル・クラフト",
+  "colors": {
+    "mode": "explicit",
+    "main": "#9c5a3c",
+    "sub": "#5b3423",
+    "accent": "#c98a3a",
+    "bg": "#f6f1ea",
+    "autofill": []
+  },
+  "references": {
+    "thumbnails": [
+      { "id": "m1", "label": "工房の器棚", "tags": "工芸 / ナチュラル" }
+    ],
+    "sampleUrls": []
+  },
+  "atari": "standard",
+  "output": {
+    "variants": 3,
+    "mobile": { "enabled": false, "widthPx": 375 }
+  }
+}
