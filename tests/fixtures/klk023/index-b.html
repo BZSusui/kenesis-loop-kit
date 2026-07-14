@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<!--
+  KLK-023 ゴールデンサンプル（本文構造の差別化・案B / letter=b）— DRAFT_RULES.md §12.1.1 準拠
+  これはテスト検証用のプレースホルダ出力です。実在の顧客・案件ではありません。
+  案件名: サンプル洋菓子店サイト / 業種: 飲食・洋菓子 / カラム: 1col（全案共通）/ セクション集合: ABOUT,MENU,GALLERY,CTA（全案共通）
+  レイアウト原型: split-editorial — 並び順=ABOUT,GALLERY,MENU,CTA / HERO=split / MENU=pat-list / GALLERY=pat-wide / ABOUT=img-right
+  配色方向: 案B 濃色・高級（ネイビー＋ゴールド・serif）
+  実生成物は mockups/{日付}_{案件名}/index-b.html に保存されます（Git除外）。
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>サンプル洋菓子店サイト | デザインラフ 案B</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Yu Mincho", "Hiragino Mincho ProN", serif; line-height: 1.8; }
+  .mock { --m-main: #2a2f45; --m-nav: #191d2e; --m-accent: #c6a15b; --m-bg: #f2f1ee; --m-text: #2b2b2b; background: var(--m-bg); color: var(--m-text); overflow: hidden; position: relative; }
+  .sec { position: relative; }
+  .addr { position: absolute; top: 8px; left: 8px; z-index: 5; display: inline-flex; gap: 6px; align-items: center; }
+  .addr .pin { background: rgba(17,24,39,.82); color: #fff; font-size: 10px; letter-spacing: .04em; padding: 2px 7px; border-radius: 4px; font-family: ui-monospace, monospace; }
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+  .m-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 22px; background: var(--m-nav); color: #fff; }
+  .m-nav .logo { font-size: 17px; font-weight: 700; letter-spacing: .1em; }
+  .m-nav ul { display: flex; gap: 16px; list-style: none; margin: 0; padding: 0; font-size: 12px; }
+  .m-nav .cta { background: var(--m-accent); color: #1a1a1a; padding: 6px 14px; border-radius: 2px; font-size: 12px; font-weight: 700; }
+
+  /* HERO 型: split（左テキスト・右ビジュアルの左右分割・data-hero="split"） */
+  .m-hero { position: relative; min-height: 340px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; text-align: left; gap: 28px; color: #fff; padding: 44px 48px;
+    background: linear-gradient(rgba(15,18,30,.5), rgba(15,18,30,.42)), repeating-linear-gradient(45deg, var(--m-main), var(--m-main) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 28px); }
+  .m-hero .hero-copy { flex: 1; }
+  .m-hero .catch { font-size: 34px; font-weight: 700; letter-spacing: .06em; margin: 0 0 14px; border-left: 4px solid var(--m-accent); padding-left: 16px; text-shadow: 0 2px 8px rgba(0,0,0,.35); }
+  .m-hero .lead { font-size: 15px; max-width: 460px; margin: 0 0 22px; }
+  .m-hero .hero-cta { background: var(--m-accent); color: #1a1a1a; padding: 12px 30px; border-radius: 2px; font-size: 14px; font-weight: 700; }
+  .m-hero .hero-visual { flex: 0 0 40%; align-self: stretch; min-height: 200px; border: 1px dashed rgba(255,255,255,.5); border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: rgba(255,255,255,.85); }
+  .atari-tag { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-family: "Hiragino Sans", sans-serif; }
+
+  .m-sec { padding: 40px 28px; max-width: 920px; margin: 0 auto; }
+  .m-sec h2 { text-align: left; font-size: 23px; letter-spacing: .06em; margin: 0 0 4px; color: var(--m-main); border-left: 3px solid var(--m-accent); padding-left: 12px; }
+  .m-sec .en { text-align: left; font-size: 11px; letter-spacing: .3em; color: var(--m-accent); margin: 0 0 22px 15px; font-family: ui-monospace, monospace; }
+  .todo { color: #B54; background: #FFF0F0; border: 1px dashed #E39; border-radius: 4px; padding: 1px 6px; font-size: 12.5px; font-family: "Hiragino Sans", sans-serif; }
+
+  .atari { background: linear-gradient(135deg, color-mix(in srgb, var(--m-main) 22%, #fff), color-mix(in srgb, var(--m-accent) 26%, #fff)); border: 1px dashed color-mix(in srgb, var(--m-main) 45%, #999); border-radius: 3px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: color-mix(in srgb, var(--m-main) 55%, #333); padding: 14px; gap: 4px; font-family: "Hiragino Sans", sans-serif; }
+  .atari .ic { font-size: 22px; }
+  .atari .desc { font-size: 12.5px; font-weight: 600; }
+  .atari .kw { font-size: 11px; color: #6B7280; }
+  .atari .kw b { font-family: ui-monospace, monospace; color: var(--m-main); }
+
+  /* ABOUT 画像配置: img-right（右画像・左キャプション。DOM は txt→atari） */
+  .m-about.img-right { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; align-items: center; }
+  .m-about.img-right .atari { min-height: 190px; }
+  .m-about .txt h3 { font-size: 19px; color: var(--m-main); margin: 0 0 10px; }
+  .m-about .txt p { font-size: 13.5px; margin: 0; }
+
+  /* MENU 型: pat-list（横並びリスト・各行=左サムネ＋右テキスト） */
+  .m-menu.pat-list { display: flex; flex-direction: column; gap: 12px; }
+  .m-menu.pat-list .m-item { display: flex; gap: 16px; align-items: center; background: #fff; border-radius: 3px; box-shadow: 0 2px 8px rgba(0,0,0,.08); padding: 12px 16px; }
+  .m-menu.pat-list .m-item .atari { flex: 0 0 96px; min-height: 72px; }
+  .m-menu.pat-list .m-item .ct { flex: 1; }
+  .m-menu .ct h4 { margin: 0 0 4px; font-size: 15px; color: var(--m-main); }
+  .m-menu .ct .price { font-size: 13px; color: var(--m-accent); font-weight: 700; }
+  .m-menu .ct p { margin: 4px 0 0; font-size: 12px; color: #6B7280; }
+
+  /* GALLERY 型: pat-wide（横帯ワイド・2列・16:9） */
+  .m-gallery.pat-wide { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .m-gallery.pat-wide .atari { aspect-ratio: 16 / 9; min-height: 0; padding: 10px; }
+  .m-gallery .atari .ic { font-size: 20px; }
+  .m-gallery .atari .desc { font-size: 12px; }
+
+  .m-cta { background: var(--m-main); color: #fff; text-align: center; padding: 42px 22px; }
+  .m-cta h2 { font-size: 22px; margin: 0 0 8px; color: #fff; }
+  .m-cta p { margin: 0 0 18px; font-size: 13.5px; opacity: .92; }
+  .m-cta .cta-btn { display: inline-block; background: var(--m-accent); color: #1a1a1a; padding: 14px 40px; border-radius: 2px; font-size: 15px; font-weight: 700; }
+
+  .m-foot { background: var(--m-nav); color: #fff; text-align: center; padding: 30px 20px; }
+  .m-foot .fnav { font-size: 11px; opacity: .85; }
+
+  @media (max-width: 640px) {
+    .m-nav ul { display: none; }
+    .m-nav::after { content: "\2630"; color: #fff; font-size: 20px; }
+    .m-hero { flex-direction: column; align-items: flex-start; padding: 32px 22px; }
+    .m-hero .catch { font-size: 25px; }
+    .m-hero .hero-visual { width: 100%; flex-basis: auto; }
+    .m-about.img-right, .m-gallery.pat-wide { grid-template-columns: 1fr; }
+    .m-sec { padding: 28px 16px; }
+  }
+  @media print {
+    .addr, .atari-tag, .anim-note { display: none !important; }
+    body { background: #fff; }
+    .mock { box-shadow: none; border-radius: 0; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mock" data-columns="1col" data-archetype="split-editorial" data-section-order="ABOUT,GALLERY,MENU,CTA" data-nav-position="top">
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">NAV-01</span></div>
+    <div class="m-nav">
+      <span class="logo">SAMPLE PATISSERIE</span>
+      <ul><li>ABOUT</li><li>GALLERY</li><li>MENU</li><li>SHOP</li></ul>
+      <span class="cta">オンライン注文</span>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">MV-01</span></div>
+    <div class="m-hero" data-hero="split">
+      <div class="hero-copy">
+        <h1 class="catch">しあわせは、ひと口から。</h1>
+        <p class="lead">季節の果実と素材のよさを生かした、毎日のごほうびになる焼き菓子と生ケーキのお店です。</p>
+        <span class="hero-cta">お菓子を見る ＞</span>
+      </div>
+      <div class="hero-visual">📷 アタリ: ショーケースの一枚</div>
+      <span class="atari-tag">📷 アタリ: ショーケースに並ぶ色とりどりのケーキ / 検索: patisserie cake showcase</span>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">ABOUT-01</span></div>
+    <div class="m-sec" style="background:#fff">
+      <h2>CONCEPT</h2><div class="en">お店について</div>
+      <div class="m-about img-right">
+        <div class="txt">
+          <h3>素材から、ていねいに。</h3>
+          <p>厳選したバターと季節の果実を使い、ひとつひとつ手づくりしています。<span class="todo">(要検討: 創業年・シェフの経歴など信頼の一文)</span></p>
+        </div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">仕込み中のパティシエの手元</span><span class="kw">検索: <b>pastry chef hands</b></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">GALLERY-01</span></div>
+    <div class="m-sec">
+      <h2>GALLERY</h2><div class="en">商品ギャラリー</div>
+      <div class="m-gallery pat-wide">
+        <div class="atari"><span class="ic">📷</span><span class="desc">ケーキA</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">焼き菓子</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">ギフト箱</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">季節限定</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">MENU-01</span></div>
+    <div class="m-sec" style="background:#fff">
+      <h2>MENU</h2><div class="en">お菓子・料金</div>
+      <div class="m-menu pat-list">
+        <div class="m-item"><div class="atari"><span class="ic">📷</span><span class="desc">ショートケーキ</span></div><div class="ct"><h4>苺のショートケーキ</h4><div class="price">¥520〜</div><p>定番の生クリームケーキ</p></div></div>
+        <div class="m-item"><div class="atari"><span class="ic">📷</span><span class="desc">季節のタルト</span></div><div class="ct"><h4>季節のタルト</h4><div class="price">¥480〜</div><p>旬の果実をふんだんに</p></div></div>
+        <div class="m-item"><div class="atari"><span class="ic">📷</span><span class="desc">クッキー缶</span></div><div class="ct"><h4>クッキー缶</h4><div class="price">¥2,200〜</div><p>贈り物にも人気</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">CTA-01</span></div>
+    <div class="m-cta">
+      <h2>大切な日に、特別なお菓子を</h2>
+      <p>ホールケーキ・ギフトのご注文を承ります。</p>
+      <span class="cta-btn">ご注文はこちら</span>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">FOOTER-01</span></div>
+    <div class="m-foot">
+      <div class="fnav">ABOUT ・ GALLERY ・ MENU ・ SHOP ・ お問い合わせ<br>© SAMPLE PATISSERIE</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
+    var io = new IntersectionObserver(function (ens) { ens.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } }); }, { threshold: .12 });
+    els.forEach(function (e) { io.observe(e); });
+  })();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,33 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": {
+    "project": "サンプル洋菓子店サイト",
+    "createdAt": "2026-07-14T09:20:00.000Z",
+    "source": "SCR-001"
+  },
+  "industry": {
+    "preset": "飲食・洋菓子(パティスリー / ケーキ / 焼き菓子)",
+    "custom": "",
+    "resolved": "飲食・洋菓子(パティスリー / ケーキ / 焼き菓子)"
+  },
+  "layout": { "columns": "1col", "navPosition": "top" },
+  "sections": ["ABOUT", "MENU", "GALLERY", "CTA"],
+  "sectionOptions": { "CTA": { "purpose": "order", "label": "ご注文はこちら" } },
+  "taste": "ナチュラル・やさしい",
+  "colors": {
+    "mode": "explicit",
+    "main": "#b5654e",
+    "sub": "#5e3b2e",
+    "accent": "#d99a4e",
+    "bg": "#f8f3ee",
+    "autofill": []
+  },
+  "references": { "thumbnails": [], "sampleUrls": [] },
+  "atari": "standard",
+  "output": {
+    "variants": 3,
+    "mobile": { "enabled": false, "widthPx": 375 },
+    "animation": true
+  }
+}

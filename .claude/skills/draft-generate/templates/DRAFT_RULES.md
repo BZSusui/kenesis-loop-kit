@@ -430,6 +430,38 @@ SCR-002 mock テーマ変数へ写す。**生成ルート要素（`.mock` 等）
 - 代表出力（ゴールデン）: `tests/fixtures/klk021/index-a.html`（`stack-centered`）／`index-b.html`（`split-editorial`）／
   `index-c.html`（`banded-showcase`）。3案とも `data-columns="2col-body-right"` 同一・`--m-main` 相違。
 
+#### 12.1.1 本文構造の束（KLK-023・archetype を「整列だけ」から「本文の組み立て」へ深化）
+
+KLK-021 の archetype は整列と配色しか振らず、本文の**組み立て**（並び順・各セクション内部の型）が3案で同じになりがち
+だった。archetype に**本文構造の束**を持たせ、案間で**実際に違う紙面**にする。**カラム数（`data-columns`）と
+セクション集合（`sections`・§2.1）は全案同一**（＝公平比較）を保ち、振るのは**並び順と各セクション内部の構造**だけ。
+
+**archetype → 本文構造の束（案別・すべて離散マーカーで機械検証可能）:**
+
+| archetype | 並び順（本文） | HERO `data-hero` | MENU `.m-menu` | GALLERY `.m-gallery` | ABOUT `.m-about` | 区切り |
+|---|---|---|---|---|---|---|
+| `stack-centered`（a） | canonical（選択順のまま） | `full`（全面中央） | `pat-cards` | `pat-grid` | `img-left` | プレーン |
+| `split-editorial`（b） | ABOUT→GALLERY→MENU（入替） | `split`（左右分割） | `pat-list`（横並びリスト） | `pat-wide`（横帯ワイド） | `img-right` | 罫線 |
+| `banded-showcase`（c） | GALLERY先行 | `band`（下寄せ帯） | `pat-zigzag`（ジグザグ交互） | `pat-mosaic`（大小モザイク） | `img-top`（横長画像＋下キャプション） | 全幅帯（交互色） |
+
+**離散マーカー契約（生成物に焼き込み・機械検証フック）:**
+- ルート `.mock`: `data-columns`（**全案同一**）・`data-archetype`（相違）・**`data-section-order`**（本文セクションの DOM 順を
+  カンマ連結・案間**相違**）・`data-nav-position`（§2.1）。
+- `.m-hero` に **`data-hero="full|split|band"`**（案間相違）＋ HERO 整列シグネチャも相違（§12.1 継承）。
+- `.m-menu` に **`pat-cards|pat-list|pat-zigzag`**、`.m-gallery` に **`pat-grid|pat-mosaic|pat-wide`**、`.m-about` に
+  **`img-left|img-right|img-top`** を付す（案間**相違**・各修飾は**実際に異なる grid/flex 宣言**を伴う＝属性だけの飾りにしない）。
+
+**不変条件（機械検証の正・check_klk023.py）:** 3案で ①`data-columns` 同一 ②本文セクション集合同一（並べ替えのみ・抜き差し
+しない）③`--m-main` 相違 ④`data-archetype` 相違 に加えて、⑤`data-section-order` ⑥`data-hero` ⑦MENU型 ⑧GALLERY型
+⑨ABOUT画像配置 が**それぞれ案間で相違**（＝複数の構造軸が動く）。
+
+- **ABOUT画像配置**は `img-left`（左画像右キャプション）/ `img-right`（右画像左キャプション）/ `img-top`（横長画像の下に
+  キャプション）。パターン増・他セクション内部の型拡充は後続チケット。
+- **番地の一意性は不変**: 並べ替えても各セクションの `.pin` は1回のまま（§2・§14 の一意性を保持）。誘導系（CTA/CONTACT）は
+  末尾寄りを保つ。
+- 代表出力（ゴールデン）: `tests/fixtures/klk023/index-a/b/c.html`。3案とも `data-columns="1col"` 同一・
+  `sections=[ABOUT,MENU,GALLERY,CTA]` 同一・上の⑤〜⑨が案間相違。
+
 ---
 
 ## 13. 比較画面 compare.html の構造規約（REQ-008 / REQ-009・U-B/U-H）

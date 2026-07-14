@@ -78,11 +78,15 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
 - **カラム構成（全案共通）**: 生成ルート要素に `data-columns="{正規化後の canonical 値}"` を付け、DRAFT_RULES §8 の6系統骨格に
   合わせる（全体2カラム `2col-full-*` は `.m-layout` が NAV/HERO を内包・サイドバー全高。本文のみ `2col-body-*` は
   HERO を grid の外に出す。旧 `2col-sub-*` は `2col-body-*` へ正規化してから書く）。**全案で同一の `data-columns`**（列数固定）。
-- **レイアウト原型（案ごとに振る・KLK-021・DRAFT_RULES §12.1）**: 生成ルート要素に `data-columns` と並べて
+- **レイアウト原型（案ごとに振る・KLK-021/023・DRAFT_RULES §12.1/§12.1.1）**: 生成ルート要素に `data-columns` と並べて
   `data-archetype="{値}"` を付ける。3値enum＝`stack-centered`（案A・中央寄せ標準）／`split-editorial`（案B・左寄せ非対称・
-  serif上質）／`banded-showcase`（案C・帯構成ビジュアル先行・sans）。**列数（`data-columns`）は変えず**、HERO重心・見出し整列・
-  ABOUT比率・帯/ギャラリー比重だけを archetype に合わせて振る。**案間で `data-archetype` が相違**すること（`--m-main` 相違と
-  同型の機械検証フック）。単案（`variants:1`）は既定 `stack-centered`。
+  serif上質）／`banded-showcase`（案C・帯構成ビジュアル先行・sans）。**列数（`data-columns`）とセクション集合（`sections`）は
+  全案同一**にし、archetype ごとに**本文構造の束**を振る（§12.1.1）: **並び順**（ルート `data-section-order` に本文DOM順を焼き込み・
+  案A canonical／案B ABOUT→GALLERY→MENU／案C GALLERY先行）・**HERO型**（`.m-hero` に `data-hero="full|split|band"`）・
+  **MENU型**（`.m-menu` に `pat-cards|pat-list|pat-zigzag`）・**GALLERY型**（`.m-gallery` に `pat-grid|pat-mosaic|pat-wide`）・
+  **ABOUT画像配置**（`.m-about` に `img-left|img-right|img-top`）。各修飾は**実際に異なる grid/flex** を伴わせる（飾りにしない）。
+  **案間で `data-archetype`・`data-section-order`・`data-hero`・MENU/GALLERY/ABOUT の型が相違**すること（複数の構造軸が動く・
+  `--m-main` 相違と同型の機械検証フック）。番地は並べ替えても各1回のまま（§2）。単案（`variants:1`）は既定 `stack-centered`。
 - **番地ラベル（全案共通）**: 各セクションに `.addr > .pin`。既定は NAV-01 / MV-01 / ABOUT-01 / MENU-01 / GALLERY-01 /
   FOOTER-01 の6種。
 - **本文セクション選択（KLK-022・DRAFT_RULES §2.1）**: `NAV-01`/`MV-01`/`FOOTER-01` は**常時必須**。本文は
