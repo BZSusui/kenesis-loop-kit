@@ -70,6 +70,7 @@
   .opt { color: var(--color-text-sub); font-size: 11px; border: 1px solid var(--color-border);
          border-radius: 4px; padding: 1px 6px; margin-left: 4px; }
   .hint { color: var(--color-text-sub); font-size: 12px; margin: 2px 0 10px; }
+  .subhead { font-size: 13px; font-weight: 700; margin: 10px 0 8px; color: var(--color-text); }
   .reqid { color: var(--color-text-sub); font-size: 11px; margin-left: auto; }
 
   label { font-size: 13px; }
@@ -433,9 +434,56 @@
     </div>
   </section>
 
-  <!-- ④ テイスト -->
+  <!-- ④ 本文コンテンツ構成（KLK-022: ヘッダー位置＋本文セクション選択＋CTA目的） -->
   <section class="card">
-    <div class="lbl"><span class="step">4</span><h2>デザインテイスト</h2><span class="opt">できれば</span>
+    <div class="lbl"><span class="step">4</span><h2>本文コンテンツ構成</h2><span class="opt">できれば</span>
+      <span class="reqid">REQ-005 / KLK-022</span></div>
+    <p class="hint">クライアントの簡易ワイヤーがある場合は、載せたい本文セクションを選びます。<b>メインビジュアルとフッターは常に入ります。</b>選ばなければ ABOUT・MENU・GALLERY で生成します（従来どおり）。</p>
+
+    <div class="subhead">ヘッダー（グローバルナビ）の位置</div>
+    <div class="radio-inline" style="margin-bottom:14px">
+      <label><input type="radio" name="navPosition" value="top" checked> メインビジュアルの上（サイト最上部）</label>
+      <label><input type="radio" name="navPosition" value="below-hero"> メインビジュアルの下</label>
+    </div>
+
+    <div class="subhead">本文に追加するセクション（複数選択可）</div>
+    <div class="chips" id="sectionChips">
+      <span class="chip"><input type="checkbox" name="section" value="ABOUT" id="secABOUT" checked><label for="secABOUT">ABOUT（会社案内・コンセプト）</label></span>
+      <span class="chip"><input type="checkbox" name="section" value="MENU" id="secMENU" checked><label for="secMENU">MENU（取扱カテゴリ・事業内容）</label></span>
+      <span class="chip"><input type="checkbox" name="section" value="GALLERY" id="secGALLERY" checked><label for="secGALLERY">GALLERY（作品・商品・実績）</label></span>
+      <span class="chip"><input type="checkbox" name="section" value="SEARCH" id="secSEARCH"><label for="secSEARCH">SEARCH（条件検索フォーム）</label></span>
+      <span class="chip"><input type="checkbox" name="section" value="CTA" id="secCTA"><label for="secCTA">CTA（誘導バナー）</label></span>
+      <span class="chip"><input type="checkbox" name="section" value="VOICE" id="secVOICE"><label for="secVOICE">VOICE（お客様の声）</label></span>
+      <span class="chip"><input type="checkbox" name="section" value="FAQ" id="secFAQ"><label for="secFAQ">FAQ（よくある質問）</label></span>
+      <span class="chip"><input type="checkbox" name="section" value="SNS" id="secSNS"><label for="secSNS">SNS（埋め込み枠）</label></span>
+      <span class="chip"><input type="checkbox" name="section" value="ACCESS" id="secACCESS"><label for="secACCESS">ACCESS（所在地・営業時間）</label></span>
+      <span class="chip"><input type="checkbox" name="section" value="CONTACT" id="secCONTACT"><label for="secCONTACT">CONTACT（お問い合わせ誘導）</label></span>
+      <span class="chip"><input type="checkbox" name="section" value="NEWS" id="secNEWS"><label for="secNEWS">NEWS（お知らせ・新着）</label></span>
+      <span class="chip"><input type="checkbox" name="section" value="PRICE" id="secPRICE"><label for="secPRICE">PRICE（料金・プラン表）</label></span>
+      <span class="chip"><input type="checkbox" name="section" value="FLOW" id="secFLOW"><label for="secFLOW">FLOW（ご利用の流れ）</label></span>
+      <span class="chip"><input type="checkbox" name="section" value="STAFF" id="secSTAFF"><label for="secSTAFF">STAFF（スタッフ・作家紹介）</label></span>
+    </div>
+
+    <div class="cta-purpose" id="ctaPurposeBox" style="margin-top:14px">
+      <div class="subhead">CTA（誘導バナー）の誘導先 <span class="sub-inline">— CTAを選んだときに使います</span></div>
+      <div class="radio-inline" style="gap:10px">
+        <select id="ctaPurpose">
+          <option value="contact">お問い合わせ</option>
+          <option value="order">ご注文・購入</option>
+          <option value="reserve">ご予約</option>
+          <option value="document">資料請求</option>
+          <option value="signup">会員登録・友だち追加</option>
+          <option value="custom">カスタム（自由入力）</option>
+        </select>
+        <input type="text" id="ctaLabel" placeholder="ボタン文言を自由入力（カスタム時）例：無料で相談する" style="flex:1;min-width:200px">
+      </div>
+      <p class="note-oq">SNS・地図は外部通信ゼロのため、実際の埋め込みや実地図ではなく「ここに入る」というアタリ（色面）で表現します。</p>
+    </div>
+  </section>
+
+  <!-- ⑤ テイスト -->
+  <section class="card">
+    <div class="lbl"><span class="step">5</span><h2>デザインテイスト</h2><span class="opt">できれば</span>
       <span class="reqid">1つ選択 / REQ-101</span></div>
     <p class="hint">仕上がりの方向性を1つだけ選びます（選ぶと生成結果がブレにくくなります）。</p>
     <div class="chips" id="tasteChips">
@@ -456,7 +504,7 @@
 
   <!-- ⑤ 配色 -->
   <section class="card">
-    <div class="lbl"><span class="step">5</span><h2>配色</h2><span class="req">必須</span>
+    <div class="lbl"><span class="step">6</span><h2>配色</h2><span class="req">必須</span>
       <span class="reqid">REQ-003</span></div>
     <p class="hint">3通りの決め方があります —— ①各色を直接入力／②メインだけ決めて残りを自動生成／③配色ジェネレーターの出力を貼り付け。いずれも下の4色に反映されます（メインが決まっていれば生成できます）。</p>
 
@@ -512,7 +560,7 @@
 
   <!-- ⑥ 参考素材 -->
   <section class="card">
-    <div class="lbl"><span class="step">6</span><h2>参考にする素材</h2><span class="opt">推奨</span>
+    <div class="lbl"><span class="step">7</span><h2>参考にする素材</h2><span class="opt">推奨</span>
       <span class="reqid">実績2〜3枚 / REQ-004・102</span></div>
     <p class="hint">選んだ業種に近い実績をまず表示します。「この雰囲気で」という参考を最大3枚選べます。🔍で拡大表示。</p>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
@@ -543,7 +591,7 @@
 
   <!-- ⑦ アタリ画像 -->
   <section class="card">
-    <div class="lbl"><span class="step">7</span><h2>メインビジュアル アタリ画像の入れ方</h2>
+    <div class="lbl"><span class="step">8</span><h2>メインビジュアル アタリ画像の入れ方</h2>
       <span class="reqid">REQ-006・104</span></div>
     <div class="radio-inline">
       <label><input type="radio" name="atari" value="standard" checked> <span><b>標準</b>：色面＋内容説明＋ストック検索キーワード<span class="sub-inline">（権利的に安全）</span></span></label>
@@ -577,7 +625,7 @@
 
   <!-- ⑧ 案数・スマホ -->
   <section class="card">
-    <div class="lbl"><span class="step">8</span><h2>生成する案の数・オプション</h2>
+    <div class="lbl"><span class="step">9</span><h2>生成する案の数・オプション</h2>
       <span class="reqid">REQ-008・201</span></div>
     <div class="radio-inline" style="margin-bottom:12px">
       <label><input type="radio" name="variants" value="1"> 1案</label>
@@ -640,6 +688,30 @@
 const COLUMN_KEYS = ['1col', '2col-full-left', '2col-full-right', '2col-body-left', '2col-body-right', '3col'];
 const ROLE_KEYS = ['main', 'sub', 'accent', 'bg'];
 const ROLE_NAMES = ['メイン', 'サブ', 'アクセント', '背景'];
+
+// KLK-022: 本文セクション選択（中身の器）。SECTION_KEYS は canonical 生成順（DRAFT_RULES §2 拡張）。
+// buildInstruction はこの順に選択分だけ整形する。MV/FOOTER は暗黙必須のため含めない。
+const SECTION_KEYS = ['NEWS', 'ABOUT', 'MENU', 'PRICE', 'GALLERY', 'SEARCH', 'FLOW', 'VOICE', 'STAFF', 'FAQ', 'SNS', 'ACCESS', 'CTA', 'CONTACT'];
+const NAV_POSITIONS = ['top', 'below-hero'];  // ヘッダー位置（MV上 / MV下）
+const CTA_PURPOSES = ['contact', 'order', 'reserve', 'document', 'signup', 'custom'];  // CTA 誘導先
+const CTA_DEFAULT_LABEL = {
+  contact: 'お問い合わせはこちら',
+  order: 'ご注文はこちら',
+  reserve: 'ご予約はこちら',
+  document: '資料を請求する',
+  signup: '友だち追加・会員登録',
+};
+const SECTIONS_DEFAULT = ['ABOUT', 'MENU', 'GALLERY'];  // 無指定時の後方互換（従来6固定の本文3種）
+
+// 選択セクション配列を「SECTION_KEYS のみ・重複なし・canonical順」に整形する（純関数）。
+// 空/無効/未配列は後方互換の既定（ABOUT/MENU/GALLERY）にフォールバックする。
+function normalizeSections(list) {
+  if (!Array.isArray(list)) return SECTIONS_DEFAULT.slice();
+  const set = {};
+  list.forEach(function (s) { if (SECTION_KEYS.indexOf(s) >= 0) set[s] = true; });
+  const out = SECTION_KEYS.filter(function (k) { return set[k]; });
+  return out.length ? out : SECTIONS_DEFAULT.slice();
+}
 
 // #rgb / #rrggbb（大小可）→ #rrggbb（小文字）。それ以外は null。
 function normalizeHex(s) {
@@ -723,6 +795,18 @@ function buildInstruction(input) {
 
   const columns = COLUMN_KEYS.indexOf(input.column) >= 0 ? input.column : (input.column || null);
 
+  // KLK-022: ヘッダー位置・選択セクション・セクション個別設定（後方互換の既定つき）
+  const navPosition = NAV_POSITIONS.indexOf(input.navPosition) >= 0 ? input.navPosition : 'top';
+  const sections = normalizeSections(input.sections);
+  const sectionOptions = {};
+  if (sections.indexOf('CTA') >= 0) {
+    const purposeIn = String((input.ctaPurpose != null ? input.ctaPurpose : '')).trim();
+    const purpose = CTA_PURPOSES.indexOf(purposeIn) >= 0 ? purposeIn : 'contact';
+    const rawLabel = String((input.ctaLabel != null ? input.ctaLabel : '')).replace(/[\u0000-\u001f]/g, '').trim().slice(0, 40);
+    const label = rawLabel || CTA_DEFAULT_LABEL[purpose] || CTA_DEFAULT_LABEL.contact;
+    sectionOptions.CTA = { purpose: purpose, label: label };
+  }
+
   const nVar = parseInt(input.variants, 10);
   const variants = nVar === 1 ? 1 : 3;
 
@@ -746,7 +830,9 @@ function buildInstruction(input) {
       source: 'SCR-001',
     },
     industry: { preset: preset, custom: custom, resolved: resolved },
-    layout: { columns: columns },
+    layout: { columns: columns, navPosition: navPosition },
+    sections: sections,
+    sectionOptions: sectionOptions,
     taste: (input.taste != null ? input.taste : null),
     colors: {
       mode: colorsIn.mode || 'explicit',
@@ -860,11 +946,20 @@ function collectInput() {
   const sampleUrls = Array.prototype.map.call(document.querySelectorAll('.sample-url'), function (i) {
     return i.value.trim();
   }).filter(function (s) { return s.length > 0; }).slice(0, 2);
+  const navEl = document.querySelector('input[name=navPosition]:checked');
+  const sections = Array.prototype.map.call(
+    document.querySelectorAll('input[name=section]:checked'), function (el) { return el.value; });
+  const ctaPurposeEl = document.getElementById('ctaPurpose');
+  const ctaLabelEl = document.getElementById('ctaLabel');
   return {
     projectName: document.getElementById('projectName').value.trim(),
     industryPreset: document.getElementById('industrySelect').value,
     industryCustom: document.getElementById('industryCustom').value,
     column: colEl ? colEl.value : null,
+    navPosition: navEl ? navEl.value : 'top',
+    sections: sections,
+    ctaPurpose: ctaPurposeEl ? ctaPurposeEl.value : null,
+    ctaLabel: ctaLabelEl ? ctaLabelEl.value : null,
     taste: tasteEl ? tasteEl.dataset.label : null,
     colors: {
       main: document.getElementById('hex-main').value,

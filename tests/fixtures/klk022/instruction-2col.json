@@ -1,0 +1,33 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": {
+    "project": "サンプル学習塾サイト",
+    "createdAt": "2026-07-14T09:10:00.000Z",
+    "source": "SCR-001"
+  },
+  "industry": {
+    "preset": "教育・スクール(学習塾 / 予備校 / 習い事)",
+    "custom": "",
+    "resolved": "教育・スクール(学習塾 / 予備校 / 習い事)"
+  },
+  "layout": { "columns": "2col-body-right", "navPosition": "below-hero" },
+  "sections": ["NEWS", "MENU", "PRICE", "FAQ", "CONTACT"],
+  "sectionOptions": {},
+  "taste": "先進的・シャープ",
+  "colors": {
+    "mode": "explicit",
+    "main": "#2f5fb0",
+    "sub": "#1e3a6b",
+    "accent": "#f0a020",
+    "bg": "#f5f7fb",
+    "autofill": []
+  },
+  "references": { "thumbnails": [], "sampleUrls": [] },
+  "atari": "standard",
+  "output": {
+    "variants": 1,
+    "mobile": { "enabled": false, "widthPx": 375 },
+    "animation": true
+  }
+}

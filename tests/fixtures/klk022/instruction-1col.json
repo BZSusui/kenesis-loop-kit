@@ -1,0 +1,33 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": {
+    "project": "サンプル整体院サイト",
+    "createdAt": "2026-07-14T09:00:00.000Z",
+    "source": "SCR-001"
+  },
+  "industry": {
+    "preset": "治療院・リラク(整体 / 鍼灸 / リラクゼーション)",
+    "custom": "",
+    "resolved": "治療院・リラク(整体 / 鍼灸 / リラクゼーション)"
+  },
+  "layout": { "columns": "1col", "navPosition": "top" },
+  "sections": ["ABOUT", "GALLERY", "VOICE", "ACCESS", "CTA"],
+  "sectionOptions": { "CTA": { "purpose": "reserve", "label": "ご予約はこちら" } },
+  "taste": "ナチュラル・やさしい",
+  "colors": {
+    "mode": "explicit",
+    "main": "#3a7ca5",
+    "sub": "#2a4d5e",
+    "accent": "#e0a458",
+    "bg": "#f4f7f8",
+    "autofill": []
+  },
+  "references": { "thumbnails": [], "sampleUrls": [] },
+  "atari": "standard",
+  "output": {
+    "variants": 1,
+    "mobile": { "enabled": false, "widthPx": 375 },
+    "animation": true
+  }
+}

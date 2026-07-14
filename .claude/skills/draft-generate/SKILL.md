@@ -83,7 +83,15 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
   serif上質）／`banded-showcase`（案C・帯構成ビジュアル先行・sans）。**列数（`data-columns`）は変えず**、HERO重心・見出し整列・
   ABOUT比率・帯/ギャラリー比重だけを archetype に合わせて振る。**案間で `data-archetype` が相違**すること（`--m-main` 相違と
   同型の機械検証フック）。単案（`variants:1`）は既定 `stack-centered`。
-- **番地ラベル（全案共通）**: 各セクションに `.addr > .pin`（NAV-01 / MV-01 / ABOUT-01 / MENU-01 / GALLERY-01 / FOOTER-01）。
+- **番地ラベル（全案共通）**: 各セクションに `.addr > .pin`。既定は NAV-01 / MV-01 / ABOUT-01 / MENU-01 / GALLERY-01 /
+  FOOTER-01 の6種。
+- **本文セクション選択（KLK-022・DRAFT_RULES §2.1）**: `NAV-01`/`MV-01`/`FOOTER-01` は**常時必須**。本文は
+  `instruction.sections`（**無指定は ABOUT/MENU/GALLERY**）で**選ばれたセクションだけ**を canonical順に、各自の `{KEY}-01`
+  番地つきで出す（語彙14種＝NEWS/ABOUT/MENU/PRICE/GALLERY/SEARCH/FLOW/VOICE/STAFF/FAQ/SNS/ACCESS/CTA/CONTACT）。
+  **`layout.navPosition`** が `top`（既定）なら NAV-01 を MV-01 の上、`below-hero` なら下に置く。**SNS/地図は外部依存ゼロの
+  ため実埋め込み・実地図を出さずアタリ色面**にする（§1）。**CTA** は `sectionOptions.CTA.purpose`（label優先）で見出し・
+  ボタン文言を可変にする（contact/order/reserve/document/signup/custom・§2.1）。**複数案は全案で同じ sections/navPosition**
+  （中身を揃え、配色・レイアウト型だけ振る）。
 - **アタリ画像**: a方式（色面＋`.desc`＋`.kw`。HERO は `.atari-tag`。キーワード未定は `.desc` のみ）。
   **REQ-104 b方式（KLK-020・MV-01 限定）**: `atari:"free-photo"` かつ `mvPhoto.file` 供給時は **MV-01 のアタリのみ**を
   出力フォルダ同梱の**相対** `<img src="assets/mv.<ext>">` で実写真化する（他枠は a方式・DRAFT_RULES §3.1）。未供給・

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<!--
+  KLK-022 ゴールデンサンプル（本文セクション選択・1col / navPosition=top）— DRAFT_RULES.md §2.1 準拠
+  これはテスト検証用のプレースホルダ出力です。実在の顧客・案件ではありません。
+  案件名: サンプル整体院サイト / 業種: 治療院・リラク / カラム: 1col / ヘッダー位置: MV上
+  選択セクション: ABOUT・GALLERY・VOICE・ACCESS・CTA（canonical順）。MV/FOOTERは常時。
+  非選択（MENU/PRICE/SEARCH/FLOW/STAFF/FAQ/SNS/CONTACT/NEWS）は出力されない。
+  CTA誘導先: reserve → ボタン「ご予約はこちら」。
+  実生成物は mockups/{日付}_{案件名}/index.html に保存されます（Git除外）。
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>サンプル整体院サイト | デザインラフ</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Hiragino Sans", "Yu Gothic", system-ui, sans-serif; line-height: 1.7; }
+  .mock {
+    --m-main: #3a7ca5; --m-nav: #2a4d5e; --m-accent: #e0a458; --m-bg: #f4f7f8; --m-text: #333;
+    background: var(--m-bg); color: var(--m-text); overflow: hidden; position: relative;
+  }
+  .sec { position: relative; }
+  .addr { position: absolute; top: 8px; left: 8px; z-index: 5; display: inline-flex; gap: 6px; align-items: center; }
+  .addr .pin { background: rgba(17,24,39,.82); color: #fff; font-size: 10px; letter-spacing: .04em; padding: 2px 7px; border-radius: 4px; font-family: ui-monospace, monospace; }
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+  .m-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 22px; background: var(--m-nav); color: #fff; }
+  .m-nav .logo { font-size: 17px; font-weight: 700; letter-spacing: .06em; }
+  .m-nav ul { display: flex; gap: 16px; list-style: none; margin: 0; padding: 0; font-size: 12px; }
+  .m-nav .cta { background: var(--m-accent); color: #fff; padding: 6px 14px; border-radius: 4px; font-size: 12px; }
+
+  .m-hero {
+    position: relative; min-height: 320px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; color: #fff; padding: 40px 20px;
+    background: linear-gradient(rgba(20,40,50,.34), rgba(20,40,50,.34)),
+      repeating-linear-gradient(45deg, var(--m-main), var(--m-main) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 28px);
+  }
+  .m-hero .catch { font-size: 32px; font-weight: 700; letter-spacing: .06em; margin: 0 0 12px; text-shadow: 0 2px 8px rgba(0,0,0,.3); }
+  .m-hero .lead { font-size: 15px; max-width: 520px; margin: 0 0 20px; }
+  .m-hero .hero-cta { background: var(--m-accent); color: #fff; padding: 12px 30px; border-radius: 4px; font-size: 14px; }
+  .atari-tag { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 10px; padding: 3px 8px; border-radius: 4px; }
+
+  .m-sec { padding: 38px 22px; max-width: 900px; margin: 0 auto; }
+  .m-sec h2 { text-align: center; font-size: 22px; letter-spacing: .1em; margin: 0 0 4px; color: var(--m-main); }
+  .m-sec .en { text-align: center; font-size: 11px; letter-spacing: .3em; color: var(--m-accent); margin-bottom: 22px; font-family: ui-monospace, monospace; }
+  .todo { color: #B54; background: #FFF0F0; border: 1px dashed #E39; border-radius: 4px; padding: 1px 6px; font-size: 12.5px; }
+
+  .atari { background: linear-gradient(135deg, color-mix(in srgb, var(--m-main) 22%, #fff), color-mix(in srgb, var(--m-accent) 26%, #fff)); border: 1px dashed color-mix(in srgb, var(--m-main) 45%, #999); border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: color-mix(in srgb, var(--m-main) 55%, #333); padding: 14px; gap: 4px; }
+  .atari .ic { font-size: 22px; }
+  .atari .desc { font-size: 12.5px; font-weight: 600; }
+  .atari .kw { font-size: 11px; color: #6B7280; }
+  .atari .kw b { font-family: ui-monospace, monospace; color: var(--m-main); }
+
+  .m-about { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: center; }
+  .m-about .atari { min-height: 170px; }
+  .m-about .txt h3 { font-size: 18px; color: var(--m-main); margin: 0 0 10px; }
+  .m-about .txt p { font-size: 13.5px; margin: 0; }
+
+  .m-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .m-gallery .atari { aspect-ratio: 1; min-height: 0; padding: 8px; }
+  .m-gallery .atari .ic { font-size: 16px; }
+  .m-gallery .atari .desc { font-size: 10.5px; }
+
+  .m-voice { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .m-voice .vcard { background: #fff; border-radius: 6px; box-shadow: 0 3px 12px rgba(0,0,0,.08); padding: 16px; display: flex; gap: 12px; align-items: flex-start; }
+  .m-voice .avatar { flex: 0 0 44px; height: 44px; border-radius: 50%; background: color-mix(in srgb, var(--m-main) 30%, #fff); display: flex; align-items: center; justify-content: center; }
+  .m-voice .vc-body h4 { margin: 0 0 4px; font-size: 13px; color: var(--m-main); }
+  .m-voice .vc-body p { margin: 0; font-size: 12.5px; }
+
+  .m-access { display: grid; grid-template-columns: 1.3fr .9fr; gap: 20px; align-items: stretch; }
+  .m-access .map-atari { min-height: 180px; }
+  .m-access .info dt { font-weight: 700; color: var(--m-main); font-size: 13px; margin-top: 10px; }
+  .m-access .info dd { margin: 2px 0 0; font-size: 13px; }
+
+  .m-cta { background: var(--m-main); color: #fff; text-align: center; padding: 40px 22px; }
+  .m-cta h2 { font-size: 22px; margin: 0 0 8px; color: #fff; }
+  .m-cta p { margin: 0 0 18px; font-size: 13.5px; opacity: .92; }
+  .m-cta .cta-btn { display: inline-block; background: var(--m-accent); color: #fff; padding: 14px 40px; border-radius: 4px; font-size: 15px; font-weight: 700; letter-spacing: .04em; }
+
+  .m-foot { background: var(--m-nav); color: #fff; text-align: center; padding: 30px 20px; }
+  .m-foot .fnav { font-size: 11px; opacity: .85; }
+
+  @media (max-width: 640px) {
+    .m-nav ul { display: none; }
+    .m-nav::after { content: "\2630"; color: #fff; font-size: 20px; }
+    .m-hero .catch { font-size: 24px; }
+    .m-about, .m-gallery, .m-voice, .m-access { grid-template-columns: 1fr; }
+    .m-gallery { grid-template-columns: repeat(2, 1fr); }
+    .m-sec { padding: 26px 16px; }
+  }
+  @media print {
+    .addr, .atari-tag, .anim-note { display: none !important; }
+    body { background: #fff; }
+    .mock { box-shadow: none; border-radius: 0; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mock" data-columns="1col" data-nav-position="top">
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">NAV-01</span></div>
+    <div class="m-nav">
+      <span class="logo">SAMPLE SEITAI</span>
+      <ul><li>当院について</li><li>施術例</li><li>お客様の声</li><li>アクセス</li></ul>
+      <span class="cta">ご予約</span>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">MV-01</span></div>
+    <div class="m-hero">
+      <h1 class="catch">その不調、根本から。</h1>
+      <p class="lead">つらい肩こり・腰の重さに、一人ひとりの体に合わせた施術で向き合う整体院です。</p>
+      <span class="hero-cta">はじめての方へ ＞</span>
+      <span class="atari-tag">📷 アタリ: 明るい施術ルームでの整体シーン / 検索: relaxing massage therapy room</span>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">ABOUT-01</span></div>
+    <div class="m-sec" style="background:#fff">
+      <h2>CONCEPT</h2><div class="en">当院について</div>
+      <div class="m-about">
+        <div class="atari">
+          <span class="ic">📷</span>
+          <span class="desc">施術を行う院長の様子</span>
+          <span class="kw">検索: <b>chiropractor at work</b></span>
+        </div>
+        <div class="txt">
+          <h3>その場しのぎではなく、戻らない体へ。</h3>
+          <p>骨格と筋肉の両面から丁寧に調整し、再発しにくい体づくりをめざします。<span class="todo">(要検討: 施術者の資格・経験年数など信頼につながる一文)</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">GALLERY-01</span></div>
+    <div class="m-sec">
+      <h2>GALLERY</h2><div class="en">施術例・院内の様子</div>
+      <div class="m-gallery">
+        <div class="atari"><span class="ic">📷</span><span class="desc">施術ベッド</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">待合スペース</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">受付</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">VOICE-01</span></div>
+    <div class="m-sec" style="background:#fff">
+      <h2>VOICE</h2><div class="en">お客様の声</div>
+      <div class="m-voice">
+        <div class="vcard">
+          <div class="avatar">🙂</div>
+          <div class="vc-body"><h4>40代・女性</h4><p>長年の肩こりが軽くなりました。<span class="todo">(要検討: 実際のお客様の声に差し替え)</span></p></div>
+        </div>
+        <div class="vcard">
+          <div class="avatar">🙂</div>
+          <div class="vc-body"><h4>30代・男性</h4><p>丁寧に説明してくれて安心して通えます。<span class="todo">(要検討: 実際のお客様の声に差し替え)</span></p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">ACCESS-01</span></div>
+    <div class="m-sec">
+      <h2>ACCESS</h2><div class="en">アクセス・営業時間</div>
+      <div class="m-access">
+        <!-- 地図は外部依存ゼロのためアタリ面（実地図の埋め込みはしない・DRAFT_RULES §2.1） -->
+        <div class="atari map-atari"><span class="ic">🗺️</span><span class="desc">地図が入る枠（アタリ）</span><span class="kw"><span class="todo">(要検討: 最寄り駅からの地図)</span></span></div>
+        <dl class="info">
+          <dt>住所</dt><dd><span class="todo">(要検討: 所在地)</span></dd>
+          <dt>営業時間</dt><dd>平日 10:00〜20:00 / 土日 9:00〜18:00（水曜定休）</dd>
+          <dt>電話</dt><dd><span class="todo">(要検討: 電話番号)</span></dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">CTA-01</span></div>
+    <div class="m-cta">
+      <h2>まずは一度、体の状態をチェック</h2>
+      <p>ご予約はお電話・Webから受け付けています。お気軽にどうぞ。</p>
+      <span class="cta-btn">ご予約はこちら</span>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">FOOTER-01</span></div>
+    <div class="m-foot">
+      <div class="fnav">当院について ・ 施術例 ・ お客様の声 ・ アクセス<br>© SAMPLE SEITAI</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
+    var io = new IntersectionObserver(function (ens) {
+      ens.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } });
+    }, { threshold: .12 });
+    els.forEach(function (e) { io.observe(e); });
+  })();
+</script>
+
+</body>
+</html>

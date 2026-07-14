@@ -51,6 +51,14 @@ COLUMN_ALIAS = {
     "2col-sub-right": "2col-body-right",
 }
 
+# セクション選択(KLK-022・§2.1)—本文セクション語彙14種・ヘッダー位置・CTA誘導先
+SECTION_KEYS = {
+    "NEWS", "ABOUT", "MENU", "PRICE", "GALLERY", "SEARCH", "FLOW",
+    "VOICE", "STAFF", "FAQ", "SNS", "ACCESS", "CTA", "CONTACT",
+}
+NAV_POSITIONS = {"top", "below-hero"}
+CTA_PURPOSES = {"contact", "order", "reserve", "document", "signup", "custom"}
+
 JOB_ID_RE = re.compile(r"^[0-9a-f]{32}$")
 _HEX_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
@@ -109,6 +117,48 @@ def validate_instruction(obj):
     main = colors.get("main") if isinstance(colors, dict) else None
     if not (isinstance(main, str) and _HEX_RE.match(main)):
         errors.append("colors.main(主色)が有効なHEXではありません")
+
+    # KLK-022 §2.1: ヘッダー位置・本文セクション選択・CTA誘導先。
+    # すべて「存在するときのみ」厳格検証する(無指定=後方互換の既定・従来 instruction は分岐に入らない)。
+    if isinstance(layout, dict) and "navPosition" in layout:
+        if layout.get("navPosition") not in NAV_POSITIONS:
+            errors.append("layout.navPosition が未対応の値です(top/below-hero のみ)")
+
+    sections = obj.get("sections")
+    if sections is not None:
+        if not isinstance(sections, list):
+            errors.append("sections が配列ではありません")
+        else:
+            seen = set()
+            for s in sections:
+                if s not in SECTION_KEYS:
+                    errors.append("sections に未対応のセクションが含まれます: {0}".format(s))
+                elif s in seen:
+                    errors.append("sections にセクションの重複があります: {0}".format(s))
+                else:
+                    seen.add(s)
+
+    section_options = obj.get("sectionOptions")
+    if section_options is not None:
+        if not isinstance(section_options, dict):
+            errors.append("sectionOptions がオブジェクトではありません")
+        else:
+            for key, opt in section_options.items():
+                if key not in SECTION_KEYS:
+                    errors.append("sectionOptions に未対応のキーがあります: {0}".format(key))
+                    continue
+                if not isinstance(opt, dict):
+                    errors.append("sectionOptions.{0} がオブジェクトではありません".format(key))
+                    continue
+                if key == "CTA":
+                    purpose = opt.get("purpose")
+                    if purpose is not None and purpose not in CTA_PURPOSES:
+                        errors.append("sectionOptions.CTA.purpose が未対応の値です")
+                    label = opt.get("label")
+                    if label is not None:
+                        if not isinstance(label, str) or len(label) > 40 \
+                                or any(ord(ch) < 32 for ch in label):
+                            errors.append("sectionOptions.CTA.label が不正です(40字以内・制御文字不可)")
 
     # KLK-020 §4.2: MVフリー実写真(REQ-104・案X)の別キー mvPhoto は「存在するときのみ」検証する
     # (standard/従来 instruction は mvPhoto を持たず、この分岐に入らない＝後方互換・等価)。
