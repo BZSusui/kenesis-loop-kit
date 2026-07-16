@@ -1,0 +1,37 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": {
+    "project": "サンプル工務店サイト",
+    "createdAt": "2026-07-16T09:00:00.000Z",
+    "source": "SCR-001"
+  },
+  "industry": {
+    "preset": "建築・工務店(注文住宅 / リフォーム / 施工)",
+    "custom": "",
+    "resolved": "建築・工務店(注文住宅 / リフォーム / 施工)"
+  },
+  "layout": { "columns": "1col", "navPosition": "top" },
+  "sections": ["ABOUT", "MENU", "GALLERY"],
+  "sectionOptions": {},
+  "copy": {
+    "mvCatch": "地域とともに、次の10年へ。\n確かな技術を、暮らしのそばに。",
+    "mvLead": "創業以来、住まいの困りごとに向き合ってきた工務店です。新築からリフォームまで、まずはお気軽にご相談ください。"
+  },
+  "taste": "シンプル・ミニマル",
+  "colors": {
+    "mode": "explicit",
+    "main": "#4a6b52",
+    "sub": "#2e4436",
+    "accent": "#c8a24b",
+    "bg": "#f5f6f2",
+    "autofill": []
+  },
+  "references": { "thumbnails": [], "sampleUrls": [] },
+  "atari": "standard",
+  "output": {
+    "variants": 1,
+    "mobile": { "enabled": false, "widthPx": 375 },
+    "animation": true
+  }
+}

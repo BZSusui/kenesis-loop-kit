@@ -101,6 +101,9 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
   出力フォルダ同梱の**相対** `<img src="assets/mv.<ext>">` で実写真化する（他枠は a方式・DRAFT_RULES §3.1）。未供給・
   ステージング画像の読込失敗時は MV-01 も a方式へフォールバック。`variants≥2` は同じ画像を全案共通で MV-01 に入れる。
 - **仮文言**: 業種（`industry.resolved`）・テイスト（`taste`）に合った実文言。ダミー禁止。未定は `(要検討: …)`。
+  **指定コピー優先（KLK-024・DRAFT_RULES §4.1）**: `copy.mvCatch`/`copy.mvLead` があるときは MV-01 の
+  キャッチ/リードに**その文言をそのまま**使う（言い換え禁止・改行 `\n` は `<br>` に変換して行組を保持・
+  HTMLエスケープして埋め込む・複数案でも全案共通）。無指定のフィールドのみAIが提案する。
 - **印刷CSS / 出現アニメ / レスポンシブ**: DRAFT_RULES §6〜§8 のとおり（`@media print` で補助非表示・`IntersectionObserver`・
   `@media (max-width:640px)`・モバイルファーストで `.m-aside` を本文の後ろに畳む §8）。
 - **成否の把握（一部失敗・U-G）**: 各案の生成が成立したかを案ごとに把握する。成功した案のみ letter を成功順に a→b→c で

@@ -479,6 +479,14 @@
       </div>
       <p class="note-oq">SNS・地図は外部通信ゼロのため、実際の埋め込みや実地図ではなく「ここに入る」というアタリ（色面）で表現します。</p>
     </div>
+
+    <!-- KLK-024: MVキャッチコピー・リード文の事前指定（任意・改行保持） -->
+    <div class="copy-spec" id="copySpecBox" style="margin-top:14px">
+      <div class="subhead">メインビジュアルの文言 <span class="sub-inline">— キャッチコピーが決まっている場合（任意）</span></div>
+      <textarea id="mvCatch" rows="2" maxlength="60" placeholder="キャッチコピー（例：しあわせは、ひと口から。）改行するとそのまま2行組になります" style="width:100%"></textarea>
+      <textarea id="mvLead" rows="2" maxlength="200" placeholder="リード文（キャッチの下に入る短い説明文・任意）" style="width:100%;margin-top:8px"></textarea>
+      <p class="note-oq">未入力の場合は業種・テイストに合わせてAIが文言を提案します（従来どおり）。入力した文言は<b>そのまま</b>反映され、複数案でも全案共通です。</p>
+    </div>
   </section>
 
   <!-- ⑤ テイスト -->
@@ -713,6 +721,14 @@ function normalizeSections(list) {
   return out.length ? out : SECTIONS_DEFAULT.slice();
 }
 
+// KLK-024: 指定コピー（MVキャッチ/リード）の整形（純関数）。改行(\n)は保持し（\r\n→\n 正規化）、
+// それ以外の制御文字を除去 → 前後空白除去 → 最大長で切り詰め。未指定/非文字列は '' を返す。
+function sanitizeCopy(s, max) {
+  if (typeof s !== 'string') return '';
+  const t = s.replace(/\r\n?/g, '\n').replace(/[\u0000-\u0009\u000b-\u001f]/g, '').trim();
+  return t.slice(0, max);
+}
+
 // #rgb / #rrggbb（大小可）→ #rrggbb（小文字）。それ以外は null。
 function normalizeHex(s) {
   if (typeof s !== 'string') return null;
@@ -859,6 +875,15 @@ function buildInstruction(input) {
   if (input.atari === 'free-photo' && typeof input.mvPhoto === 'string' && input.mvPhoto.trim()) {
     out.mvPhoto = { file: input.mvPhoto.trim() };
   }
+  // KLK-024: 指定コピー（MVキャッチ/リード）。指定があるときのみ copy キーを載せる
+  // （無指定の出力は従来とバイト等価＝後方互換・mvPhoto と同型）。改行(\n)は保持される（生成側で <br> 化・§4.1）。
+  const mvCatch = sanitizeCopy(input.mvCatch, 60);
+  const mvLead = sanitizeCopy(input.mvLead, 200);
+  if (mvCatch || mvLead) {
+    out.copy = {};
+    if (mvCatch) out.copy.mvCatch = mvCatch;
+    if (mvLead) out.copy.mvLead = mvLead;
+  }
   return out;
 }
 
@@ -951,6 +976,8 @@ function collectInput() {
     document.querySelectorAll('input[name=section]:checked'), function (el) { return el.value; });
   const ctaPurposeEl = document.getElementById('ctaPurpose');
   const ctaLabelEl = document.getElementById('ctaLabel');
+  const mvCatchEl = document.getElementById('mvCatch');
+  const mvLeadEl = document.getElementById('mvLead');
   return {
     projectName: document.getElementById('projectName').value.trim(),
     industryPreset: document.getElementById('industrySelect').value,
@@ -960,6 +987,8 @@ function collectInput() {
     sections: sections,
     ctaPurpose: ctaPurposeEl ? ctaPurposeEl.value : null,
     ctaLabel: ctaLabelEl ? ctaLabelEl.value : null,
+    mvCatch: mvCatchEl ? mvCatchEl.value : null,   // KLK-024: 指定コピー（未入力は buildInstruction が copy キー自体を省く）
+    mvLead: mvLeadEl ? mvLeadEl.value : null,
     taste: tasteEl ? tasteEl.dataset.label : null,
     colors: {
       main: document.getElementById('hex-main').value,

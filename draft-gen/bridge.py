@@ -59,6 +59,9 @@ SECTION_KEYS = {
 NAV_POSITIONS = {"top", "below-hero"}
 CTA_PURPOSES = {"contact", "order", "reserve", "document", "signup", "custom"}
 
+# 指定コピー(KLK-024・§4.1)—MVキャッチ/リードの上限文字数（SCR-001 側の切詰めと同値）
+COPY_MAX = {"mvCatch": 60, "mvLead": 200}
+
 JOB_ID_RE = re.compile(r"^[0-9a-f]{32}$")
 _HEX_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
@@ -159,6 +162,24 @@ def validate_instruction(obj):
                         if not isinstance(label, str) or len(label) > 40 \
                                 or any(ord(ch) < 32 for ch in label):
                             errors.append("sectionOptions.CTA.label が不正です(40字以内・制御文字不可)")
+
+    # KLK-024 §4.1: 指定コピー(MVキャッチ/リード)。「存在するときのみ」厳格検証する(無指定=後方互換・
+    # 従来 instruction は分岐に入らない・mvPhoto と同型)。改行(\n)のみ許可し他の制御文字は拒否。
+    copy = obj.get("copy")
+    if copy is not None:
+        if not isinstance(copy, dict):
+            errors.append("copy がオブジェクトではありません")
+        else:
+            for key, val in copy.items():
+                if key not in COPY_MAX:
+                    errors.append("copy に未対応のキーがあります: {0}".format(key))
+                    continue
+                if not isinstance(val, str) or not val.strip() \
+                        or len(val) > COPY_MAX[key] \
+                        or any(ord(ch) < 32 and ch != "\n" for ch in val):
+                    errors.append(
+                        "copy.{0} が不正です({1}字以内・改行以外の制御文字不可・空不可)".format(
+                            key, COPY_MAX[key]))
 
     # KLK-020 §4.2: MVフリー実写真(REQ-104・案X)の別キー mvPhoto は「存在するときのみ」検証する
     # (standard/従来 instruction は mvPhoto を持たず、この分岐に入らない＝後方互換・等価)。
