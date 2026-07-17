@@ -1401,10 +1401,69 @@ function bindThumbs() {
   });
 }
 
+// ============================================================================
+// KLK-026: カタログ非表示時の能動ガイダンスと自動復帰（同一オリジン設計は不変・additive）
+// - file:// で開かれた場合: 稼働検知（probeHealth は絶対URLのため file:// でも可）に応じて
+//   「ブリッジ経由で開き直す」リンク or 起動.command の手順を案内する。カタログ本体
+//   （/catalog.json・/catalog/img/）は従来どおり同一オリジンのみ（REQ-011・供給面を広げない）。
+// - http（ブリッジ経由）で /health が一時失敗した場合: 再探知し、復帰したらカタログを自動読込。
+// - 動的文言・リンクは createElement / textContent で組立（注入なし）。リンク href は
+//   既存の localhost 定数 BRIDGE_ORIGIN から組み立てる（外部URL 0 を保つ）。
+// ============================================================================
+function showCatalogGuidance(alive) {
+  var host = document.getElementById('thumbs');
+  if (!host) return;
+  host.textContent = '';
+  var p = document.createElement('p');
+  p.className = 'hint';
+  p.style.gridColumn = '1 / -1';
+  p.style.margin = '0';
+  if (location.protocol === 'file:') {
+    if (alive) {
+      p.textContent = 'ブリッジは起動中です。実績カタログを使うには、この画面をブリッジ経由で開き直してください（入力中の内容は引き継がれません）: ';
+      var a = document.createElement('a');
+      a.href = BRIDGE_ORIGIN + '/';
+      a.textContent = BRIDGE_ORIGIN + '/';
+      p.appendChild(a);
+    } else {
+      p.textContent = '実績カタログを表示するには draft-gen/起動.command をダブルクリック'
+        + '（またはターミナルで python3 draft-gen/bridge.py を実行）し、'
+        + '表示される ' + BRIDGE_ORIGIN + '/ からこの画面を開いてください。起動を自動で再確認しています…';
+    }
+  } else {
+    p.textContent = 'ブリッジとの接続を再確認しています…（復帰すると実績カタログを自動で読み込みます）';
+  }
+  host.appendChild(p);
+}
+
+// 3秒 × 最大40回（約2分）で再探知。無限ポーリングはしない。
+// file:// は稼働検知したら開き直しリンク提示で打ち切り（同一オリジン制約のため自動読込はしない）。
+// http はカタログを自動読込して完全復帰する（リロード不要）。
+function startCatalogRecovery() {
+  var attempts = 0;
+  var MAX_ATTEMPTS = 40;
+  var tick = async function () {
+    attempts++;
+    var alive = await probeHealth();
+    if (location.protocol === 'file:') {
+      showCatalogGuidance(alive);
+      if (alive) return;   // リンク提示が最終形（以後の再探知は不要）
+    } else if (alive) {
+      catalogAlive = true;
+      catalogEntries = await loadCatalog();
+      if (catalogEntries.length) { applyThumbFilter(); } else { renderThumbs([]); }
+      return;              // 自動復帰完了
+    }
+    if (attempts < MAX_ATTEMPTS) setTimeout(tick, 3000);
+  };
+  tick();
+}
+
 // init から一度だけ呼ぶ。稼働判定→カタログ読込→現在条件で描画。
+// 非稼働時は KLK-026 のガイダンス・再探知に引き継ぐ（同一オリジン設計は不変）。
 async function setupThumbPicker() {
   catalogAlive = (location.protocol !== 'file:') && await probeHealth();
-  if (!catalogAlive) { renderThumbs([]); return; }
+  if (!catalogAlive) { renderThumbs([]); startCatalogRecovery(); return; }
   catalogEntries = await loadCatalog();
   if (!catalogEntries.length) { renderThumbs([]); return; }
   applyThumbFilter();
