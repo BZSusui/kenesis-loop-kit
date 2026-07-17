@@ -1424,14 +1424,17 @@ function init() {
   document.getElementById('mvPhotoFile').addEventListener('change', handleMvPhotoChange);
 
   // 方法①: 4色の swatch↔hex 同期
+  // KLK-025: Safari は input[type=color] の input イベントが初回選択で発火しないことがあるため、
+  // カラーピッカーは input / change の両イベントで拾う（ハンドラは冪等＝二重発火は無害）。
   ROLE_KEYS.forEach(function (role) {
     const pick = document.getElementById('pick-' + role);
     const hex = document.getElementById('hex-' + role);
-    pick.addEventListener('input', function () {
+    const applyPick = function () {
       hex.value = pick.value.toLowerCase();
       colorMode = 'explicit';
       render();
-    });
+    };
+    ['input', 'change'].forEach(function (ev) { pick.addEventListener(ev, applyPick); });
     hex.addEventListener('input', function () {
       const norm = normalizeHex(hex.value);
       if (norm) pick.value = norm;
@@ -1440,11 +1443,14 @@ function init() {
     });
   });
 
-  // 方法②: メインのみ
-  document.getElementById('mainOnlyPick').addEventListener('input', function (e) {
+  // 方法②: メインのみ（KLK-025: 同上・input / change の両イベントで拾う）
+  const applyMainOnly = function (e) {
     setColorRole('main', e.target.value);
     colorMode = 'main-only';
     render();
+  };
+  ['input', 'change'].forEach(function (ev) {
+    document.getElementById('mainOnlyPick').addEventListener(ev, applyMainOnly);
   });
 
   // 方法③: 貼り付け取り込み
