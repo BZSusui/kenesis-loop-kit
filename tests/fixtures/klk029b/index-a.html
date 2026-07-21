@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<!--
+  KLK-029 副ゴールデンサンプル（セクション内型プール・案A / letter=a）— DRAFT_RULES.md §12.1.2 準拠
+  これはテスト検証用のプレースホルダ出力です。実在の顧客・案件ではありません。
+  案件名: サンプル整体サロンサイト / 業種: 整体・リラクゼーション / カラム: 1col（全案共通）/ nav: below-hero（全案共通）
+  セクション集合: VOICE,FLOW,STAFF（全案共通）
+  型プール割り当て: 1col×below-hero → offset 3 → 案A=index3 → VOICE=voice-two-col / FLOW=flow-arrow-band / STAFF=staff-list
+  レイアウト原型: stack-centered / 配色: 案A ブルーグレー（指示書に忠実）
+  実生成物は mockups/{日付}_{案件名}/index-a.html に保存されます（Git除外）。
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>サンプル整体サロンサイト | デザインラフ 案A</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Hiragino Sans", "Yu Gothic", system-ui, sans-serif; line-height: 1.7; }
+  .mock { --m-main: #3f6f8f; --m-nav: #26404f; --m-accent: #d98a5a; --m-bg: #f4f6f8; --m-text: #333; background: var(--m-bg); color: var(--m-text); overflow: hidden; position: relative; }
+  .sec { position: relative; }
+  .addr { position: absolute; top: 8px; left: 8px; z-index: 5; display: inline-flex; gap: 6px; align-items: center; }
+  .addr .pin { background: rgba(17,24,39,.82); color: #fff; font-size: 10px; letter-spacing: .04em; padding: 2px 7px; border-radius: 4px; font-family: ui-monospace, monospace; }
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+  .m-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 22px; background: var(--m-nav); color: #fff; }
+  .m-nav .logo { font-size: 17px; font-weight: 700; letter-spacing: .06em; }
+  .m-nav ul { display: flex; gap: 16px; list-style: none; margin: 0; padding: 0; font-size: 12px; }
+  .m-nav .cta { background: var(--m-accent); color: #fff; padding: 6px 14px; border-radius: 4px; font-size: 12px; }
+
+  .m-hero { position: relative; min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #fff; padding: 40px 20px;
+    background: linear-gradient(rgba(20,34,44,.34), rgba(20,34,44,.34)), repeating-linear-gradient(45deg, var(--m-main), var(--m-main) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 28px); }
+  .m-hero .catch { font-size: 32px; font-weight: 700; letter-spacing: .06em; margin: 0 0 12px; text-shadow: 0 2px 8px rgba(0,0,0,.3); }
+  .m-hero .lead { font-size: 15px; max-width: 520px; margin: 0 0 20px; }
+  .m-hero .hero-cta { background: var(--m-accent); color: #fff; padding: 12px 30px; border-radius: 4px; font-size: 14px; }
+  .atari-tag { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 10px; padding: 3px 8px; border-radius: 4px; }
+
+  .m-sec { padding: 40px 24px; max-width: 940px; margin: 0 auto; }
+  .m-sec h2 { text-align: center; font-size: 22px; letter-spacing: .1em; margin: 0 0 4px; color: var(--m-main); }
+  .m-sec .en { text-align: center; font-size: 11px; letter-spacing: .3em; color: var(--m-accent); margin-bottom: 22px; font-family: ui-monospace, monospace; }
+  .todo { color: #B54; background: #FFF0F0; border: 1px dashed #E39; border-radius: 4px; padding: 1px 6px; font-size: 12.5px; }
+
+  .atari { background: linear-gradient(135deg, color-mix(in srgb, var(--m-main) 22%, #fff), color-mix(in srgb, var(--m-accent) 26%, #fff)); border: 1px dashed color-mix(in srgb, var(--m-main) 45%, #999); border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: color-mix(in srgb, var(--m-main) 55%, #333); padding: 14px; gap: 4px; }
+  .atari .ic { font-size: 22px; }
+  .atari .desc { font-size: 12.5px; font-weight: 600; }
+  .atari .kw { font-size: 11px; color: #6B7280; }
+  .atari .kw b { font-family: ui-monospace, monospace; color: var(--m-main); }
+
+  /* VOICE 型: voice-two-col（2カラム千鳥・項ごとに引用｜アバターを order で交互反転・index3） */
+  .m-voice.voice-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .m-voice.voice-two-col .v-item { display: grid; grid-template-columns: 64px 1fr; gap: 12px; align-items: center; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.08); padding: 14px; }
+  .m-voice.voice-two-col .v-item:nth-child(even) .va { order: 2; }
+  .m-voice.voice-two-col .v-item:nth-child(even) .vt { order: 1; }
+  .m-voice.voice-two-col .va { min-height: 56px; }
+  .m-voice .quote { font-size: 13px; margin: 0 0 6px; }
+  .m-voice .who { font-size: 12px; color: var(--m-main); font-weight: 700; }
+
+  /* FLOW 型: flow-arrow-band（全幅の矢羽根シェブロン帯を横連結・index3） */
+  .m-flow.flow-arrow-band { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; }
+  .m-flow.flow-arrow-band .step { background: color-mix(in srgb, var(--m-main) 12%, #fff); padding: 18px 26px; clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, 0 100%, 18px 50%); text-align: center; }
+  .m-flow.flow-arrow-band .step:first-child { clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, 0 100%); }
+  .m-flow .n { font-weight: 700; color: var(--m-accent); }
+  .m-flow h4 { font-size: 14px; color: var(--m-main); margin: 4px 0; }
+  .m-flow p { font-size: 12px; margin: 0; }
+
+  /* STAFF 型: staff-list（横1行×人数のリスト・写真左＋情報右・index3） */
+  .m-staff.staff-list { display: flex; flex-direction: column; gap: 14px; }
+  .m-staff.staff-list .st { display: grid; grid-template-columns: 96px 1fr; gap: 16px; align-items: center; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.08); padding: 12px 16px; }
+  .m-staff.staff-list .st .atari { min-height: 80px; }
+  .m-staff .name { font-size: 14px; color: var(--m-main); font-weight: 700; }
+  .m-staff .role { font-size: 11.5px; color: #6B7280; }
+  .m-staff .bio { font-size: 12px; margin: 4px 0 0; }
+
+  .m-foot { background: var(--m-nav); color: #fff; text-align: center; padding: 30px 20px; }
+  .m-foot .fnav { font-size: 11px; opacity: .85; }
+
+  @media (max-width: 640px) {
+    .m-nav ul { display: none; }
+    .m-nav::after { content: "\2630"; color: #fff; font-size: 20px; }
+    .m-hero .catch { font-size: 24px; }
+    .m-voice.voice-two-col { grid-template-columns: 1fr; }
+    .m-voice.voice-two-col .v-item, .m-voice.voice-two-col .v-item:nth-child(even) .va, .m-voice.voice-two-col .v-item:nth-child(even) .vt { grid-template-columns: 1fr; order: 0; }
+    .m-flow.flow-arrow-band { grid-auto-flow: row; }
+    .m-flow.flow-arrow-band .step, .m-flow.flow-arrow-band .step:first-child { clip-path: none; }
+    .m-staff.staff-list .st { grid-template-columns: 1fr; }
+    .m-sec { padding: 28px 16px; }
+  }
+  @media print {
+    .addr, .atari-tag, .anim-note { display: none !important; }
+    body { background: #fff; }
+    .mock { box-shadow: none; border-radius: 0; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mock" data-columns="1col" data-archetype="stack-centered" data-section-order="VOICE,FLOW,STAFF" data-nav-position="below-hero">
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">MV-01</span></div>
+    <div class="m-hero">
+      <h1 class="catch">からだの声に、耳をすます。</h1>
+      <p class="lead">その日の状態に合わせた施術で、緊張した筋肉をゆるめ、めぐりのよい毎日へ導きます。</p>
+      <span class="hero-cta">空き状況を見る ＞</span>
+      <span class="atari-tag">📷 アタリ: 落ち着いた施術室の様子 / 検索: relaxation therapy room</span>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">NAV-01</span></div>
+    <div class="m-nav">
+      <span class="logo">SAMPLE BODY CARE</span>
+      <ul><li>VOICE</li><li>FLOW</li><li>STAFF</li></ul>
+      <span class="cta">ご予約</span>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">VOICE-01</span></div>
+    <div class="m-sec">
+      <h2>VOICE</h2><div class="en">お客様の声</div>
+      <div class="m-voice voice-two-col">
+        <div class="v-item"><div class="atari va"><span class="ic">📷</span><span class="desc">お客様の写真</span></div><div class="vt"><p class="quote">肩こりがつらかったのですが、施術後はとても軽くなりました。</p><div class="who">40代・会社員</div></div></div>
+        <div class="v-item"><div class="atari va"><span class="ic">📷</span><span class="desc">お客様の写真</span></div><div class="vt"><p class="quote">姿勢の説明がわかりやすく、自宅でのケアも続けられています。</p><div class="who">30代・主婦</div></div></div>
+        <div class="v-item"><div class="atari va"><span class="ic">📷</span><span class="desc">お客様の写真</span></div><div class="vt"><p class="quote">腰の張りが和らぎ、よく眠れるようになりました。</p><div class="who">50代・自営業</div></div></div>
+        <div class="v-item"><div class="atari va"><span class="ic">📷</span><span class="desc">お客様の写真</span></div><div class="vt"><p class="quote">丁寧なカウンセリングで安心して通えます。</p><div class="who">20代・学生</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">FLOW-01</span></div>
+    <div class="m-sec" style="background:#fff">
+      <h2>FLOW</h2><div class="en">ご利用の流れ</div>
+      <div class="m-flow flow-arrow-band">
+        <div class="step"><div class="n">1</div><h4>ご予約</h4><p>Web・お電話で。</p></div>
+        <div class="step"><div class="n">2</div><h4>カウンセリング</h4><p>お悩みを伺います。</p></div>
+        <div class="step"><div class="n">3</div><h4>施術</h4><p>状態に合わせて。</p></div>
+        <div class="step"><div class="n">4</div><h4>アフター</h4><p>ケアの助言まで。</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">STAFF-01</span></div>
+    <div class="m-sec">
+      <h2>STAFF</h2><div class="en">スタッフ紹介</div>
+      <div class="m-staff staff-list">
+        <div class="st"><div class="atari"><span class="ic">📷</span><span class="desc">スタッフ写真</span></div><div><div class="name">山本（仮）</div><div class="role">代表セラピスト</div><p class="bio">解剖学に基づく施術を得意としています。<span class="todo">(要検討: 保有資格・施術歴)</span></p></div></div>
+        <div class="st"><div class="atari"><span class="ic">📷</span><span class="desc">スタッフ写真</span></div><div><div class="name">中村（仮）</div><div class="role">セラピスト</div><p class="bio">やさしい圧のボディケアが人気です。</p></div></div>
+        <div class="st"><div class="atari"><span class="ic">📷</span><span class="desc">スタッフ写真</span></div><div><div class="name">小林（仮）</div><div class="role">セラピスト</div><p class="bio">姿勢改善のアドバイスを大切にしています。</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">FOOTER-01</span></div>
+    <div class="m-foot">
+      <div class="fnav">VOICE ・ FLOW ・ STAFF ・ ご予約<br>© SAMPLE BODY CARE</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
+    var io = new IntersectionObserver(function (ens) { ens.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } }); }, { threshold: .12 });
+    els.forEach(function (e) { io.observe(e); });
+  })();
+</script>
+
+</body>
+</html>

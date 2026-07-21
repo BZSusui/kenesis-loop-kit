@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<!--
+  KLK-029 ゴールデンサンプル（比較ハブ・3案すべて成功）— DRAFT_RULES.md §13 準拠
+  これはテスト検証用のプレースホルダ出力です。実在の顧客・案件ではありません。
+  案件名: サンプルヘアサロンサイト / 3案（案A/B/C）/ 単一ファイル・外部依存ゼロ・CSS-only 案切替
+  VOICE/FLOW/STAFF のセクション内型プール（§12.1.2）を見比べる（KLK-029）。
+  各案の原寸は同ディレクトリの index-a.html / index-b.html / index-c.html。
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>サンプルヘアサロンサイト | デザインラフ比較（3案）</title>
+<style>
+  :root {
+    --color-main-deep: #2E8BC9; --color-link: #1C6FA6; --color-accent-2: #F9BA5D;
+    --color-text: #374151; --color-text-sub: #6B7280; --color-border: #D6E9F5; --color-bg-subtle: #F0F7FC;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif; color: var(--color-text); background: var(--color-bg-subtle); line-height: 1.6; }
+  .info-bar { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; height: 32px; padding: 0 14px; background: #333; color: #fff; font-size: 12px; }
+  .toolchrome { max-width: 1120px; margin: 0 auto; padding: 16px 20px 0; }
+  .proj-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .proj-head h1 { font-size: 20px; margin: 6px 0; }
+  .proj-head .sub { color: var(--color-text-sub); font-size: 13px; }
+  .settings-chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 0; }
+  .settings-chips span { font-size: 12px; background: #fff; border: 1px solid var(--color-border); border-radius: 999px; padding: 3px 11px; }
+  .variant-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 16px 0 0; }
+  .seg { display: inline-flex; border: 1px solid var(--color-border); border-radius: 9px; overflow: hidden; background: #fff; }
+  .seg label { padding: 9px 20px; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--color-text-sub); border-right: 1px solid var(--color-border); }
+  .seg label:last-child { border-right: none; }
+  .thumbstrip { display: flex; gap: 10px; margin-left: auto; flex-wrap: wrap; }
+  .vthumb { width: 108px; border: 2px solid var(--color-border); border-radius: 8px; overflow: hidden; background: #fff; font-size: 11px; }
+  .vthumb .mini { height: 40px; }
+  .vthumb .cap { padding: 4px 6px; display: flex; justify-content: space-between; align-items: center; }
+  .vthumb .cap .full { color: var(--color-link); font-size: 10px; text-decoration: none; }
+  .tabctrl { position: absolute; opacity: 0; pointer-events: none; }
+  .toolbar { max-width: 1120px; margin: 14px auto 0; padding: 0 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; cursor: pointer; border-radius: 8px; font-size: 13px; padding: 9px 16px; border: 1px solid var(--color-border); background: #fff; color: var(--color-link); }
+  .btn.primary { background: var(--color-main-deep); color: #fff; border: none; font-weight: 700; }
+  .print-link { display: none; }
+  .canvas { max-width: 1120px; margin: 14px auto 60px; padding: 0 20px; }
+  .stage { background: #cfd6dd; border: 1px solid var(--color-border); border-radius: 12px; padding: 18px; overflow: hidden; }
+  .stage-label { font-size: 11px; color: #5b6875; margin-bottom: 10px; }
+  .pane { display: none; }
+  .pane iframe { width: 100%; height: 78vh; border: 0; background: #fff; border-radius: 6px; box-shadow: 0 6px 24px rgba(0,0,0,.14); }
+  #ra:checked ~ .canvas #paneA,
+  #rb:checked ~ .canvas #paneB,
+  #rc:checked ~ .canvas #paneC { display: block; }
+  #ra:checked ~ .toolchrome label[for=ra],
+  #rb:checked ~ .toolchrome label[for=rb],
+  #rc:checked ~ .toolchrome label[for=rc] { background: var(--color-main-deep); color: #fff; }
+  #ra:checked ~ .toolchrome .vthumb.va,
+  #rb:checked ~ .toolchrome .vthumb.vb,
+  #rc:checked ~ .toolchrome .vthumb.vc { border-color: var(--color-main-deep); box-shadow: 0 0 0 3px rgba(46,139,201,.18); }
+  #ra:checked ~ .toolbar .print-a,
+  #rb:checked ~ .toolbar .print-b,
+  #rc:checked ~ .toolbar .print-c { display: inline-flex; }
+  @media (max-width: 640px) {
+    .variant-bar { flex-direction: column; align-items: stretch; }
+    .thumbstrip { margin-left: 0; justify-content: center; }
+    .pane iframe { height: 68vh; }
+  }
+  @media print {
+    .info-bar, .toolchrome, .toolbar, .stage-label { display: none !important; }
+    body, .canvas, .stage { background: #fff; margin: 0; padding: 0; }
+    .stage { border: none; border-radius: 0; }
+    .pane iframe { box-shadow: none; border-radius: 0; height: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="info-bar">
+  <span>デザインラフ比較 | 3案</span>
+  <span>外部依存ゼロ / CSS-only 案切替</span>
+</div>
+
+<input type="radio" name="variant" id="ra" class="tabctrl" checked>
+<input type="radio" name="variant" id="rb" class="tabctrl">
+<input type="radio" name="variant" id="rc" class="tabctrl">
+
+<div class="toolchrome">
+  <div class="proj-head">
+    <h1>サンプルヘアサロンサイト</h1>
+    <span class="sub">生成日 2026-07-21 / 3案</span>
+  </div>
+  <div class="settings-chips">
+    <span>業種: 美容・ヘアサロン</span>
+    <span>カラム: 1カラム（全案共通）</span>
+    <span>セクション: ABOUT/VOICE/FLOW/STAFF/CTA（全案共通）</span>
+    <span>レイアウト: VOICE/FLOW/STAFF は型プールで案別に差別化（§12.1.2）</span>
+    <span>配色: グリーン系（案A基準）</span>
+  </div>
+
+  <div class="variant-bar">
+    <div class="seg">
+      <label for="ra">案A</label>
+      <label for="rb">案B</label>
+      <label for="rc">案C</label>
+    </div>
+    <div class="thumbstrip">
+      <div class="vthumb va">
+        <div class="mini" style="background:#2e7d6b"></div>
+        <div class="cap"><span>案A</span><a href="index-a.html" target="_blank" class="full">原寸 ↗</a></div>
+      </div>
+      <div class="vthumb vb">
+        <div class="mini" style="background:#2a2f45"></div>
+        <div class="cap"><span>案B</span><a href="index-b.html" target="_blank" class="full">原寸 ↗</a></div>
+      </div>
+      <div class="vthumb vc">
+        <div class="mini" style="background:#e8578a"></div>
+        <div class="cap"><span>案C</span><a href="index-c.html" target="_blank" class="full">原寸 ↗</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <a href="index-a.html" target="_blank" class="btn primary print-link print-a">🖨 選択中の案(A)を原寸で開いて印刷 / PDF</a>
+  <a href="index-b.html" target="_blank" class="btn primary print-link print-b">🖨 選択中の案(B)を原寸で開いて印刷 / PDF</a>
+  <a href="index-c.html" target="_blank" class="btn primary print-link print-c">🖨 選択中の案(C)を原寸で開いて印刷 / PDF</a>
+  <span style="font-size:12px;color:var(--color-text-sub)">← 設定を変えて再生成したいときは SCR-001 の設定画面からやり直せます / サムネイルの「原寸 ↗」で各案を別タブに実寸表示</span>
+</div>
+
+<div class="canvas">
+  <div class="pane" id="paneA">
+    <div class="stage">
+      <div class="stage-label">案A — stack-centered（VOICE カード / FLOW 横並び / STAFF グリッド）</div>
+      <iframe src="index-a.html" title="案A プレビュー"></iframe>
+    </div>
+  </div>
+  <div class="pane" id="paneB">
+    <div class="stage">
+      <div class="stage-label">案B — split-editorial（VOICE 引用スタック / FLOW タイムライン / STAFF 横スクロール）</div>
+      <iframe src="index-b.html" title="案B プレビュー"></iframe>
+    </div>
+  </div>
+  <div class="pane" id="paneC">
+    <div class="stage">
+      <div class="stage-label">案C — banded-showcase（VOICE フィーチャー / FLOW 番号カード / STAFF フィーチャー）</div>
+      <iframe src="index-c.html" title="案C プレビュー"></iframe>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

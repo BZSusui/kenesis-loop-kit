@@ -1,0 +1,33 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": {
+    "project": "サンプル整体サロンサイト",
+    "createdAt": "2026-07-21T10:05:00.000Z",
+    "source": "SCR-001"
+  },
+  "industry": {
+    "preset": "整体・リラクゼーション(施術 / ボディケア)",
+    "custom": "",
+    "resolved": "整体・リラクゼーション(施術 / ボディケア)"
+  },
+  "layout": { "columns": "1col", "navPosition": "below-hero" },
+  "sections": ["VOICE", "FLOW", "STAFF"],
+  "sectionOptions": {},
+  "taste": "落ち着き・信頼",
+  "colors": {
+    "mode": "explicit",
+    "main": "#3f6f8f",
+    "sub": "#26404f",
+    "accent": "#d98a5a",
+    "bg": "#f4f6f8",
+    "autofill": []
+  },
+  "references": { "thumbnails": [], "sampleUrls": [] },
+  "atari": "standard",
+  "output": {
+    "variants": 3,
+    "mobile": { "enabled": false, "widthPx": 375 },
+    "animation": true
+  }
+}

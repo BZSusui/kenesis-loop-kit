@@ -100,6 +100,8 @@
 | 14 | CONTACT | `CONTACT-01` | CONTACT | お問い合わせ誘導（ボタン/リンク） |
 
 - **並び順**: v1 は上の canonical 順のうち**選ばれた分だけ**。案ごとの並び替え・型振りは KLK-023。
+- **VOICE/FLOW/STAFF の内部型**: これら3セクションは案ごとに5型プールから型を選ぶ（§12.1.2・KLK-029）。ここの語彙行は
+  セクションの**有無**の器のみを定義し、内部レイアウトの型振りは §12.1.2 の表引きで決める。
 - **ヘッダー位置**: `navPosition:top` は `NAV-01` を `MV-01` の**上**、`below-hero` は **下**に置く（番地文字列は不変）。
 - **SNS/地図の制約**: 外部依存ゼロ（§1・NFR-005）のため実埋め込み・実地図は不可。アタリ色面で「ここに入る」を示す。
 
@@ -493,6 +495,97 @@ KLK-021 の archetype は整列と配色しか振らず、本文の**組み立�
 - 代表出力（ゴールデン）: `tests/fixtures/klk023/index-a/b/c.html`。3案とも `data-columns="1col"` 同一・
   `sections=[ABOUT,MENU,GALLERY,CTA]` 同一・上の⑤〜⑨が案間相違。
 
+#### 12.1.2 セクション内型プール方式（KLK-029・VOICE/FLOW/STAFF・§12.1.1 と直交する新設・additive）
+
+§12.1.1 は HERO/MENU/GALLERY/ABOUT を archetype に1対1で固定する。KLK-029 は VOICE/FLOW/STAFF に**5型のプール**を持たせ、
+**案ごとに異なる型を「表を読むだけ」で決める**新方式を **additive** に足す。§12.1.1（既存の a/b/c 固定軸・klk021/023 ゴールデン）は
+**一切変えない**。理恵さんの最終ゴール（各セクションを段階的に多種多様＝20型以上へ）を後で作り直さずに叶えるための土台（STEP A）。
+
+**設計原理（算術を使わない・決定的）:** 「文字コード合計 mod N」等の算術は Claude が寸分違わず再現できないため**禁止**。
+すべて**書き下した明示表**を「読むだけ」で決める。キーは指示書中の**全案不変**な2値（`data-columns`・§8／`navPosition`・§2.1）
+なので、**同一指示書＝同一の型割り当て**（決定性）になる。
+
+**(1) 型プール（各セクション5型・index 0〜4 固定・順序を変えない）:**
+
+容器は `m-{sec}`（`.m-voice`/`.m-flow`/`.m-staff`）に**プールマーカー1個**を足す（KLK-023 の `class="m-menu pat-cards"` と同型）。
+各マーカーは**実際に異なる grid/flex/order 宣言**を伴う（属性だけの飾りにしない）。index0 は「最も定番・従来寄り」を置く。
+
+| section | 容器 | index0 | index1 | index2 | index3 | index4 |
+|---|---|---|---|---|---|---|
+| VOICE | `.m-voice` | `voice-cards` | `voice-quote-stack` | `voice-feature` | `voice-two-col` | `voice-slider` |
+| FLOW | `.m-flow` | `flow-row` | `flow-timeline` | `flow-number-card` | `flow-arrow-band` | `flow-vertical-split` |
+| STAFF | `.m-staff` | `staff-grid` | `staff-hscroll` | `staff-feature` | `staff-list` | `staff-two-col` |
+
+各型の見た目とモバイルの畳み方（`@media (max-width:640px)`）:
+
+- **VOICE** — `voice-cards`: 声カードを横3列（`grid-template-columns:repeat(3,1fr)`／モバイル1列）。
+  `voice-quote-stack`: 縦積みの引用ブロック＋左罫線アクセント（`flex-direction:column`＋各項 `border-left`）。
+  `voice-feature`: 代表の声を大きく1枚＋下に小カード3枚（`grid-template-columns:1fr`＋`.voice-rest{repeat(3,1fr)}`）。
+  `voice-two-col`: 2カラム千鳥で `order` 交互反転（`grid-template-columns:1fr 1fr`＋偶数項 `order`／モバイルは縦積み・order解除）。
+  `voice-slider`: 横スクロール風1行（`flex-wrap:nowrap;overflow-x:auto`＋各カード `flex:0 0 260px`）。
+- **FLOW** — `flow-row`: 横並び①→②→③（`flex-direction:row`＋各 `flex:1`／モバイル縦積み）。
+  `flow-timeline`: 縦タイムライン＋左縦線（`flex-direction:column`＋`border-left`）。
+  `flow-number-card`: 番号大きめカードのグリッド（`grid-template-columns:repeat(4,1fr)`／モバイル2列）。
+  `flow-arrow-band`: 全幅の矢羽根帯（`grid-auto-flow:column`＋各帯 `clip-path`／モバイルは `grid-auto-flow:row`）。
+  `flow-vertical-split`: 各ステップ＝2カラム（左大番号／右説明）を縦に並べる（`flex-direction:column`＋`.step{grid-template-columns:88px 1fr}`）。
+- **STAFF** — `staff-grid`: 顔写真グリッド4列（`grid-template-columns:repeat(4,1fr)`／モバイル2列）。
+  `staff-hscroll`: 横スクロール風1列（`flex-wrap:nowrap;overflow-x:auto`＋各 `flex:0 0 200px`）。
+  `staff-feature`: 代表1名を大写し＋残りをリスト（`grid-template-columns:1.2fr .8fr`／モバイル縦積み）。
+  `staff-list`: 横1行×人数のリスト（`flex-direction:column`＋各 `.st{grid-template-columns:96px 1fr}`）。
+  `staff-two-col`: 2カラムのプロフィールカード（`grid-template-columns:repeat(2,1fr)`／モバイル1列）。
+
+**(2) オフセット表（`data-columns` × `navPosition` → offset・12セルを全書き下し）:**
+
+| data-columns ＼ navPosition | `top` | `below-hero` |
+|---|---|---|
+| `1col` | 0 | 3 |
+| `2col-full-left` | 1 | 4 |
+| `2col-full-right` | 2 | 0 |
+| `2col-body-left` | 3 | 1 |
+| `2col-body-right` | 4 | 2 |
+| `3col` | 0 | 3 |
+
+**(3) 割り当て表（offset → 案A/B/C の pool index・5行を全書き下し）:**
+
+| offset | 案A（`a`） | 案B（`b`） | 案C（`c`） |
+|---|---|---|---|
+| 0 | 0 | 1 | 2 |
+| 1 | 1 | 2 | 3 |
+| 2 | 2 | 3 | 4 |
+| 3 | 3 | 4 | 0 |
+| 4 | 4 | 0 | 1 |
+
+- 全12セルの offset 集合 = {0,1,2,3,4}、割り当て表の全 index 集合 = {0,1,2,3,4} → **プール全体が到達可能**（システムとして）。
+- 各割り当て行は連続3窓（wrap 込み）で必ず**3値 distinct** → **3案で型が重複しない**。
+- キー2値は全案不変 → **同一指示書＝同一割り当て**（決定性）。1col でも `navPosition` を切替れば offset 0 と 3 の両方に届き、
+  1col のまま5型すべてに到達できる（2次元キーの狙い）。
+
+**(4) Claude の生成手順（表を"読むだけ"・計算しない・SKILL 手順3 に転記）:**
+
+1. ルートの `data-columns`（正規化後・§8）と `navPosition`（§2.1）を確定する（既に §8/§2.1 で確定済み）。
+2. **オフセット表**で該当する1セルを読み、offset（0〜4）を得る（**表を読むだけ・算術しない**）。
+3. **割り当て表**の offset 行から (idxA, idxB, idxC) の3つの pool index を読む。
+4. VOICE/FLOW/STAFF が `sections` にあるとき、各案の容器へ **プール[該当 index] のマーカー**を付け、対応する CSS ブロックを
+   `<head>` に含める。例: 1col×top（offset 0）→ 案A VOICE=`voice-cards`／案B=`voice-quote-stack`／案C=`voice-feature`
+   （FLOW/STAFF も同 index で `flow-*`/`staff-*` の対応マーカー）。
+5. `variants:1`（単案）は archetype 既定 `stack-centered`＝**案A相当** → 各セクションは **idxA のマーカー**を使う（単一・案間 distinct 検証は働かない）。
+
+**(5) 後方互換・不変（additive）:**
+
+- **未選択は no-op（そのセクションが出ない）**: VOICE/FLOW/STAFF が `sections` に無ければセクション自体を出さず、プール
+  マーカー・CSS とも不発。既存生成物・klk021/023 ゴールデン・§12.1.1 の既存軸は影響を受けない。
+- data-columns 同一・`sections` 集合同一・番地一意性（VOICE-01/FLOW-01/STAFF-01 各1回・§2/§14）は不変。セクションの**有無**は
+  案間で同じで、変わるのは**内部マーカーだけ**。
+
+**(6) STEP B での型追加（"データ追加だけ"で完結・拡張性）:**
+
+型を 5→N に増やすときは **(a) 型プールへ1行（マーカー）を追記、(b) 対応する CSS ブロックを1つ追加、(c) 割り当て表を N 行
+（連続3窓）に伸ばし、オフセット表の値域を 0..(N-1) へ広げる** だけで済む。**選択ロジック・検証の作り直しは不要**（表構造は不変）。
+ABOUT/MENU/GALLERY のプール方式化・ラフ画像からの型抽出も STEP B（別チケット）。
+
+- 代表出力（ゴールデン）: `tests/fixtures/klk029/index-a/b/c.html`（1col×top＝offset0）＋ `tests/fixtures/klk029b/index-a/b/c.html`
+  （1col×below-hero＝offset3）。両者の union で VOICE/FLOW/STAFF 各プールの5マーカー全てが実 HTML に出現する（到達可能性の実証）。
+
 ---
 
 ## 13. 比較画面 compare.html の構造規約（REQ-008 / REQ-009・U-B/U-H）
@@ -581,3 +674,19 @@ KLK-021 の archetype は整列と配色しか振らず、本文の**組み立�
 
 **トリガー導線（`compare.html` の🔄再生成コントロール・§13 と対）:** ローカルブリッジ経由のワンクリック導線は §13 の
 「🔄 セクション再生成」コントロールを参照する。
+
+**VOICE/FLOW/STAFF のプールマーカー再付与（KLK-029・§12.1.2 と対・additive）:**
+
+対象 `.sec` が **VOICE-01 / FLOW-01 / STAFF-01** のときは、そのセクションが持つべき**プールマーカー**（`voice-*`/`flow-*`/`staff-*`・
+§12.1.2）を再付与してから差し替える。マーカーは**対象HTMLだけで自己決定できる**（`instruction.json` 不要・決定的）:
+
+1. 対象HTMLのルート `.mock` から **`data-columns`** と **`data-nav-position`** の実値を読む（両方とも生成時に焼き込み済み・§8/§2.1）。
+2. §12.1.2 の**オフセット表**で (`data-columns` × `data-nav-position`) の1セルを読み offset を得る。
+3. 対象ファイルの **letter**（`index-{letter}.html` の a/b/c。単案 `index.html` は案A相当＝letter=a）から、§12.1.2 の
+   **割り当て表**の offset 行で pool index を読む。
+4. その `pool[index]` のマーカーを容器 `.m-{sec}` に付け、対応 CSS ブロックが `<head>` に無ければ足す（他5セクション・配色・
+   ルート属性は不変）。→ 元の生成と**同じ型**が決定的に再現される（表を読むだけ・算術なし）。
+
+- `compare.html` の再生成 `<select>` は基本6番地のまま（VOICE 等は追加しない・§13）。ブラウザ経由の VOICE/FLOW/STAFF 部分
+  再生成は既存制約どおり非対象。手動 `/draft-regenerate {folder} {letter} VOICE-01` は番地パターン（`^[A-Z][A-Z0-9]*-\d{2}$`）が
+  既に許容する。`bridge.py`（KNOWN_ADDR / ADDR_RE）への変更は不要。

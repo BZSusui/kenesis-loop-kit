@@ -87,6 +87,16 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
   **ABOUT画像配置**（`.m-about` に `img-left|img-right|img-top`）。各修飾は**実際に異なる grid/flex** を伴わせる（飾りにしない）。
   **案間で `data-archetype`・`data-section-order`・`data-hero`・MENU/GALLERY/ABOUT の型が相違**すること（複数の構造軸が動く・
   `--m-main` 相違と同型の機械検証フック）。番地は並べ替えても各1回のまま（§2）。単案（`variants:1`）は既定 `stack-centered`。
+- **VOICE/FLOW/STAFF の内部型プール（KLK-029・DRAFT_RULES §12.1.2）**: これら3セクションが `sections` にあるときは、案ごとに
+  **5型プールから型を選ぶ**（archetype とは別軸・§12.1.1 は不変）。選択は**算術せず表を読むだけ**で決める:
+  ① ルートの `data-columns`（正規化後）と `navPosition` を確定 → ② **オフセット表**（`data-columns`×`navPosition`→offset 0〜4）で
+  1セルを読む → ③ **割り当て表**（offset 行→ (idxA,idxB,idxC)）を読む → ④ 各案の容器 `.m-voice`/`.m-flow`/`.m-staff` に
+  `pool[index]` のマーカーを付け、対応 CSS を `<head>` に含める。プール（index0〜4）は
+  **VOICE**=`voice-cards`/`voice-quote-stack`/`voice-feature`/`voice-two-col`/`voice-slider`、
+  **FLOW**=`flow-row`/`flow-timeline`/`flow-number-card`/`flow-arrow-band`/`flow-vertical-split`、
+  **STAFF**=`staff-grid`/`staff-hscroll`/`staff-feature`/`staff-list`/`staff-two-col`（各マーカーは**実際に異なる grid/flex/order**
+  を伴う・飾りにしない）。**同一指示書＝同一割り当て**（キー2値は全案不変で決定的）・**3案で型が相違**（連続3窓 distinct）。
+  未選択セクションは no-op（出さない）。単案（`variants:1`）は idxA のマーカーで1型のみ。
 - **番地ラベル（全案共通）**: 各セクションに `.addr > .pin`。既定は NAV-01 / MV-01 / ABOUT-01 / MENU-01 / GALLERY-01 /
   FOOTER-01 の6種。
 - **本文セクション選択（KLK-022・DRAFT_RULES §2.1）**: `NAV-01`/`MV-01`/`FOOTER-01` は**常時必須**。本文は
