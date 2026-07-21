@@ -525,7 +525,7 @@
   <section class="card">
     <div class="lbl"><span class="step">6</span><h2>配色</h2><span class="req">必須</span>
       <span class="reqid">REQ-003</span></div>
-    <p class="hint">3通りの決め方があります —— ①各色を直接入力／②メインだけ決めて残りを自動生成／③配色ジェネレーターの出力を貼り付け。いずれも下の4色に反映されます（メインが決まっていれば生成できます）。</p>
+    <p class="hint">3通りの決め方があります —— ①各色を直接入力／②メインだけ決めて残りを自動生成／③配色ジェネレーターの出力を貼り付け。いずれも下の4色に反映されます（メインが決まっていれば生成できます）。カラーコードは <b>#なし6桁（例 444850）でも入力できます</b>（Photoshopのスポイトでコピーした値をそのまま貼り付けOK）。</p>
 
     <!-- 方法①：4色を直接入力（swatch↔hex 同期） -->
     <div class="palette-grid">
@@ -743,7 +743,10 @@ function sanitizeCopy(s, max) {
 // #rgb / #rrggbb（大小可）→ #rrggbb（小文字）。それ以外は null。
 function normalizeHex(s) {
   if (typeof s !== 'string') return null;
-  const t = s.trim();
+  // KLK-028: #省略の6桁（Photoshop等のスポイトでコピーした値・例 444850）も受理する。
+  // 3桁の#省略は誤入力（一般語）と紛らわしいため従来どおり # 必須（smoke_klk006 D4 のピンとも整合）。
+  let t = s.trim();
+  if (/^[0-9a-fA-F]{6}$/.test(t)) t = '#' + t;
   let m = /^#([0-9a-fA-F]{6})$/.exec(t);
   if (m) return '#' + m[1].toLowerCase();
   m = /^#([0-9a-fA-F]{3})$/.exec(t);
@@ -1576,6 +1579,11 @@ function init() {
       if (norm) pick.value = norm;
       colorMode = 'explicit';
       render();
+    });
+    // KLK-028: 確定（blur）時に正規形 #rrggbb へ表示を整形（#なし6桁の受理を目に見える形に。入力途中は非干渉）
+    hex.addEventListener('change', function () {
+      const norm = normalizeHex(hex.value);
+      if (norm) { hex.value = norm; pick.value = norm; render(); }
     });
   });
 
