@@ -162,6 +162,22 @@ def validate_instruction(obj):
                         if not isinstance(label, str) or len(label) > 40 \
                                 or any(ord(ch) < 32 for ch in label):
                             errors.append("sectionOptions.CTA.label が不正です(40字以内・制御文字不可)")
+                # KLK-027 §4.2: 見出し/リードは全セクション共通の任意キー(存在時のみ検証・CTA とも併用可)。
+                # heading は1行(制御文字不可)・lead は改行(\n)のみ許可。
+                heading = opt.get("heading")
+                if heading is not None:
+                    if not isinstance(heading, str) or not heading.strip() \
+                            or len(heading) > 40 \
+                            or any(ord(ch) < 32 for ch in heading):
+                        errors.append(
+                            "sectionOptions.{0}.heading が不正です(40字以内・1行・制御文字不可・空不可)".format(key))
+                lead = opt.get("lead")
+                if lead is not None:
+                    if not isinstance(lead, str) or not lead.strip() \
+                            or len(lead) > 200 \
+                            or any(ord(ch) < 32 and ch != "\n" for ch in lead):
+                        errors.append(
+                            "sectionOptions.{0}.lead が不正です(200字以内・改行以外の制御文字不可・空不可)".format(key))
 
     # KLK-024 §4.1: 指定コピー(MVキャッチ/リード)。「存在するときのみ」厳格検証する(無指定=後方互換・
     # 従来 instruction は分岐に入らない・mvPhoto と同型)。改行(\n)のみ許可し他の制御文字は拒否。

@@ -104,6 +104,9 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
   **指定コピー優先（KLK-024・DRAFT_RULES §4.1）**: `copy.mvCatch`/`copy.mvLead` があるときは MV-01 の
   キャッチ/リードに**その文言をそのまま**使う（言い換え禁止・改行 `\n` は `<br>` に変換して行組を保持・
   HTMLエスケープして埋め込む・複数案でも全案共通）。無指定のフィールドのみAIが提案する。
+  **セクション文言も同様（KLK-027・§4.2）**: `sectionOptions.{KEY}.heading` は該当セクションの見出し（h2）に
+  そのまま、`sectionOptions.{KEY}.lead` は見出し直下の `<p class="sec-lead">`（`\n`→`<br>`）として反映する。
+  無指定セクションは `.sec-lead` を出さずAI提案のまま。CTA の purpose/label とは独立に併用できる。
 - **印刷CSS / 出現アニメ / レスポンシブ**: DRAFT_RULES §6〜§8 のとおり（`@media print` で補助非表示・`IntersectionObserver`・
   `@media (max-width:640px)`・モバイルファーストで `.m-aside` を本文の後ろに畳む §8）。
 - **成否の把握（一部失敗・U-G）**: 各案の生成が成立したかを案ごとに把握する。成功した案のみ letter を成功順に a→b→c で

@@ -1,0 +1,40 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": {
+    "project": "サンプル革工房サイト",
+    "createdAt": "2026-07-21T09:00:00.000Z",
+    "source": "SCR-001"
+  },
+  "industry": {
+    "preset": "工芸・ハンドメイド(革小物 / アクセサリー / 雑貨)",
+    "custom": "",
+    "resolved": "工芸・ハンドメイド(革小物 / アクセサリー / 雑貨)"
+  },
+  "layout": { "columns": "1col", "navPosition": "top" },
+  "sections": ["ABOUT", "MENU", "GALLERY", "CTA"],
+  "sectionOptions": {
+    "ABOUT": {
+      "heading": "私たちについて",
+      "lead": "小さな工房から始まった、手仕事の店です。ひと針ずつ、長く使える革小物を仕立てています。"
+    },
+    "MENU": { "heading": "できること" },
+    "CTA": { "purpose": "contact", "label": "お問い合わせはこちら" }
+  },
+  "taste": "ナチュラル・シンプル",
+  "colors": {
+    "mode": "explicit",
+    "main": "#7a5c3e",
+    "sub": "#4a3826",
+    "accent": "#b98a4e",
+    "bg": "#f7f4ef",
+    "autofill": []
+  },
+  "references": { "thumbnails": [], "sampleUrls": [] },
+  "atari": "standard",
+  "output": {
+    "variants": 1,
+    "mobile": { "enabled": false, "widthPx": 375 },
+    "animation": true
+  }
+}
