@@ -457,6 +457,8 @@ def validate_catalog(obj):
 
     schema=='klk-catalog' / version==1 / entries=list / 各 entry の
     id(安全名)・file(安全名)・source∈{own,ref}・colors⊆CANONICAL_COLORS を検証。
+    sectionLayouts(任意・KLK-030) は present のとき object かつ各値が非空文字列で
+    あることを構造検証する(値の語彙照合は行わない。語彙の正は DRAFT_RULES §12.1.1/§12.1.2)。
     返却: (ok: bool, errors: list[str])。ok=False のとき errors に理由を列挙する。
     """
     errors = []
@@ -499,6 +501,19 @@ def validate_catalog(obj):
             # KLK-016: マルチカラーは単独指定のみ(具体色と併用不可)
             if "マルチカラー" in colors and len(colors) != 1:
                 errors.append("{0}.colors のマルチカラーは単独指定のみ可です(他色と併用不可)".format(where))
+        # KLK-030: sectionLayouts(任意)。present→shape検証 / absent→OK。
+        # 値の語彙の正は DRAFT_RULES §12.1.1/§12.1.2。ここでは語彙照合をしない
+        # (bridge.py に語彙表を持つと第3の複製になり STEP B 追従性を損なうため)。品質は M群/人間確認ゲート。
+        sl = entry.get("sectionLayouts")
+        if sl is not None:
+            if not isinstance(sl, dict):
+                errors.append("{0}.sectionLayouts はオブジェクト(セクションKEY→型マーカーのmap)ではありません".format(where))
+            else:
+                for k, v in sl.items():
+                    if not isinstance(k, str) or not k:
+                        errors.append("{0}.sectionLayouts に非文字列/空のキーがあります".format(where))
+                    if not isinstance(v, str) or not v:
+                        errors.append("{0}.sectionLayouts['{1}'] の値は非空文字列である必要があります".format(where, k))
 
     return (len(errors) == 0), errors
 

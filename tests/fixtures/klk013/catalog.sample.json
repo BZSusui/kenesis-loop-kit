@@ -13,6 +13,7 @@
       "source": "own",
       "columns": "1col",
       "tags": ["美容", "ナチュラル", "グリーン", "1カラム"],
+      "sectionLayouts": {"HERO": "split", "ABOUT": "img-left", "VOICE": "voice-quote-stack", "GALLERY": "other"},
       "note": "架空のダミー実績。落ち着いた内観写真主体",
       "addedAt": "2026-07-09T09:00:00.000Z"
     },
