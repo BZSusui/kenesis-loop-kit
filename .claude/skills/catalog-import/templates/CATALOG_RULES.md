@@ -24,6 +24,7 @@
       "source": "own",
       "columns": "1col",
       "tags": ["美容", "ナチュラル", "グリーン", "1カラム"],
+      "sectionLayouts": {"HERO": "split", "ABOUT": "img-left"},
       "note": "落ち着いた内観写真主体。ヘッダ余白広め",
       "addedAt": "2026-07-09T09:00:00.000Z"
     }
@@ -48,12 +49,18 @@
 | `entries[].source` | `"own"` \| `"ref"` | ✓ | own=自社実績(緑バッジ)/ref=収集見本(橙バッジ・第三者著作物) |
 | `entries[].columns` | `1col`/`2col-full-left`/`2col-full-right`/`2col-body-left`/`2col-body-right`/`3col` | - | カラム構成ヒント(DRAFT_RULES §8) |
 | `entries[].tags` | string配列 | - | 表示用の非正規化タグ(キーワード検索対象)。省略時は構造値から導出 |
+| `entries[].sectionLayouts` | オブジェクト(`"SECTION_KEY":"型マーカー"`)。キーは7セクション(HERO/ABOUT/MENU/GALLERY/VOICE/FLOW/STAFF)・1セクション1型 | - | セクション別レイアウト型(参考準拠生成 KLK-031 の土台)。**値の語彙の正は DRAFT_RULES §12.1.1/§12.1.2(ここには再掲しない・乖離時は DRAFT_RULES に合わせる)**。キー省略＝未判定/該当なし、値 `"other"`＝プール外。`null` は使わない |
 | `entries[].note` | string | - | 用途メモ(キーワード検索対象) |
 | `entries[].addedAt` | ISO8601 | - | 取り込み日時(「新しい順」並び替え用) |
 
 `validate_catalog` は最低限 **schema / version / entries=list / 各entryの id・file・source∈{own,ref}・
 colors⊆7カテゴリ・件数1..3(第1必須・最大3件)・マルチカラー単独排他** を検証する。id/file の欠落や
 安全名違反、`source` の逸脱、7カテゴリ外の色、空配列/4件以上、マルチカラーと具体色の併用は reject。
+
+`sectionLayouts` は present のとき **object かつ各値が非空文字列**であることを構造(shape)検証する
+(array・数値・空文字は reject / absent は OK)。**値の語彙照合は行わない**(品質＝正しいマーカーかは、
+色と同じく M群/人間確認ゲートで担保する。色の集合メンバーシップが S群なのは正が bridge.py にあるからで、
+レイアウト型は正が DRAFT_RULES §12.1.x にあるため対称的に「機械は shape だけ・語彙は人間」とする)。
 
 ---
 
@@ -79,6 +86,7 @@ colors⊆7カテゴリ・件数1..3(第1必須・最大3件)・マルチカラ�
 - **テイスト**: 配色・余白・書体感から単一。
 - **主配色**: 支配的な色面を7カテゴリへ寄せる。第1主配色を必須で1件、拮抗する色があれば第2/第3を任意で足す(最大3件)。単一色を決められない多色サイトは `マルチカラー` を単独指定(他色と併用しない)。
 - **カラム**: 全体レイアウトから DRAFT_RULES §8 の6値に近いものを推定(任意)。
+- **セクション別レイアウト型**(`sectionLayouts`・任意): 参考画像に写る各セクションを **DRAFT_RULES §12.1.1/§12.1.2 の型プール**へ寄せ、1セクション1型で提案する。対象は語彙を持つ7セクション(HERO/ABOUT/MENU/GALLERY/VOICE/FLOW/STAFF)のみ。**該当セクションが画像に無い/未判定はキーを省略**、**近い型が無い(プール外)は `"other"`**。**型マーカーの語彙は再掲しない(正は DRAFT_RULES §12.1.x・乖離時はそちらに合わせる。独自語で付けない)**。確定は人間承認後のみ。
 - **own/ref**: 既定 `own`。収集見本は取り込み指示で `ref` が明示された分のみ `ref` にする。
 - **確定は人間承認後のみ**。推測で `catalog.json` に書き込まない(登録前に確認・修正できる導線を必ず通す)。
 

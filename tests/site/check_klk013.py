@@ -475,6 +475,58 @@ check(
 )
 
 # ===========================================================================
+# S18 sectionLayouts の shape 検証（validate_catalog・任意・KLK-030/§4-2）
+# ===========================================================================
+def _with_section_layouts(sl):
+    e = copy.deepcopy(_one)
+    e["entries"][0]["sectionLayouts"] = sl
+    return vc(e)[0]
+
+
+# sectionLayouts 無し → accept（後方互換・既存3エントリ相当）
+_no_sl = copy.deepcopy(_one)
+_no_sl["entries"][0].pop("sectionLayouts", None)
+s18_absent = vc(_no_sl)[0] is True
+s18_empty = _with_section_layouts({}) is True                                         # 空map accept
+s18_valid = _with_section_layouts({"VOICE": "voice-quote-stack", "ABOUT": "img-left"}) is True  # 妥当 accept
+s18_other = _with_section_layouts({"VOICE": "other"}) is True                          # 番兵 accept
+s18_array = _with_section_layouts(["VOICE"]) is False                                  # 配列 reject
+s18_numval = _with_section_layouts({"VOICE": 3}) is False                              # 非文字列値 reject
+s18_emptyval = _with_section_layouts({"VOICE": ""}) is False                           # 空文字列値 reject
+s18 = (s18_absent and s18_empty and s18_valid and s18_other
+       and s18_array and s18_numval and s18_emptyval)
+check(
+    "S18 sectionLayouts の shape 検証 (validate_catalog: 無し/空map/妥当map/'other'→accept ; 配列/非文字列値/空文字列値→reject ; 値の語彙照合はしない)",
+    s18,
+    f"無しaccept={s18_absent}, 空mapaccept={s18_empty}, 妥当accept={s18_valid}, otheraccept={s18_other}, "
+    f"配列reject={s18_array}, 非文字列値reject={s18_numval}, 空文字列値reject={s18_emptyval}",
+)
+
+# ===========================================================================
+# S19 ドキュメントの語彙参照方式・自動確定禁止（CATALOG_RULES/SKILL・KLK-030/§4-6）
+# ===========================================================================
+# CATALOG_RULES.md に sectionLayouts フィールド定義があり、値の語彙の正として
+# DRAFT_RULES §12.1 を参照する文言を含む（＝参照方式・再掲しない）。
+ru_sl_field = "sectionLayouts" in RULES
+ru_sl_ref = ("DRAFT_RULES" in RULES and "12.1" in RULES)
+# CATALOG_RULES の sectionLayouts フィールド定義行の近傍に DRAFT_RULES 参照があること
+# （同一段落で参照方式を担保。JSON例の出現ではなくフィールド定義行を anchor にする）。
+_ri = RULES.find("entries[].sectionLayouts")
+_rseg = RULES[_ri:_ri + 600] if _ri >= 0 else ""
+ru_sl_ref_near = ("DRAFT_RULES" in _rseg and "12.1" in _rseg)
+# SKILL.md 手順2/3 に sectionLayouts の提案＋人間確認の記述がある（自動確定しない）。
+sk_sl = "sectionLayouts" in SKILL
+sk_sl_pool = ("DRAFT_RULES" in SKILL and "12.1" in SKILL)
+sk_sl_no_auto = "人間確認なしで自動確定" in SKILL
+s19 = (ru_sl_field and ru_sl_ref and ru_sl_ref_near and sk_sl and sk_sl_pool and sk_sl_no_auto)
+check(
+    "S19 語彙参照方式・自動確定禁止 (CATALOG_RULES: sectionLayouts 定義＋DRAFT_RULES §12.1 参照[再掲しない] ; SKILL: 型提案＋DRAFT_RULES §12.1 語彙＋人間確認なし自動確定の禁止)",
+    s19,
+    f"RULES(定義={ru_sl_field},DRAFT_RULES参照={ru_sl_ref},近傍参照={ru_sl_ref_near}), "
+    f"SKILL(記載={sk_sl},§12.1語彙={sk_sl_pool},自動確定禁止={sk_sl_no_auto})",
+)
+
+# ===========================================================================
 # Report
 # ===========================================================================
 print("=" * 78)
