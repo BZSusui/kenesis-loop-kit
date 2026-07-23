@@ -527,6 +527,39 @@ check(
 )
 
 # ===========================================================================
+# S20 業種タクソノミ17区分（catalog.html 業種チップの語彙 pin・KLK-032）
+# ===========================================================================
+# 器（catalog.html）の業種チップがちょうど17個・正準17区分と集合一致・
+# 各チップの data-val とラベルが同一文字列であることを静的検証する。
+# 実データ（catalog.json）の industry⊆17 は Git除外でCI外 → M群/人間ゲートで担保。
+INDUSTRY17 = (
+    "飲食店・カフェ・食関連", "美容室・エステ・化粧品", "ファッション",
+    "スクール・教室", "不動産・建築", "ホテル・旅館・レジャー",
+    "士業事務所（法律/会計/コンサルティング他）", "コーポレート／BtoB", "EC・物販",
+    "フィットネス・ジム・スポーツ", "イベント・キャンペーンLP", "ジュエリー・時計・貴金属",
+    "クリニック・病院・介護リハビリ", "農業・ファーム", "求人・採用",
+    "アート・ポートフォリオ", "その他・団体/NPO",
+)
+# 業種 frow（data-facet="industry"）だけを切り出す（taste/colors のチップを拾わない）。
+_ind0 = CATALOG_HTML.find('data-facet="industry"')
+_ind1 = CATALOG_HTML.find('data-facet="taste"', _ind0)
+_ind_seg = CATALOG_HTML[_ind0:_ind1] if 0 <= _ind0 < _ind1 else ""
+# class="fchip"（color チップは class="fchip color" なので除外される）の data-val とラベル。
+_ind_pairs = re.findall(r'class="fchip"\s+data-val="([^"]+)"\s*>([^<]+)</span>', _ind_seg)
+_ind_vals = [v for v, _ in _ind_pairs]
+s20_count = len(_ind_vals) == 17
+s20_set = set(_ind_vals) == set(INDUSTRY17)
+s20_val_eq_label = all(v == lbl for v, lbl in _ind_pairs)
+s20 = s20_count and s20_set and s20_val_eq_label
+check(
+    "S20 業種17区分 (catalog.html 業種チップがちょうど17個・正準17区分と集合一致・各 data-val==ラベル)",
+    s20,
+    f"17個={s20_count}({len(_ind_vals)}), 集合一致={s20_set}"
+    f"{'' if s20_set else ' 差分=' + str(set(_ind_vals) ^ set(INDUSTRY17))}, "
+    f"data-val==ラベル={s20_val_eq_label}",
+)
+
+# ===========================================================================
 # Report
 # ===========================================================================
 print("=" * 78)
