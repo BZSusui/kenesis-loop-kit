@@ -170,6 +170,12 @@
         <span class="fchip color" data-val="マルチカラー"><span class="sw" style="background:conic-gradient(from 0deg,#2E7D6B,#2E5FA3,#B23A48,#C6A15B,#E86FA0,#333,#2E7D6B)"></span>マルチカラー</span>
       </div>
     </div>
+    <div class="frow" data-facet="source">
+      <span class="flabel">種別</span>
+      <div class="fchips">
+        <span class="fchip" data-val="own">自社実績</span><span class="fchip" data-val="ref">収集見本</span>
+      </div>
+    </div>
   </div>
 
   <div class="result-meta">
@@ -219,7 +225,7 @@
   var CANONICAL_COLORS = ["グリーン", "ブルー", "レッド", "ゴールド", "ピンク", "モノトーン", "マルチカラー"];
 
   // 選択状態(状態の単一源はDOM: fchip.on とこの sel を同期)
-  var sel = { industry: [], taste: [], colors: [], keyword: "", sort: "new" };
+  var sel = { industry: [], taste: [], colors: [], source: [], keyword: "", sort: "new" };
   var allEntries = [];
   var bridgeAlive = false;
 
@@ -237,6 +243,7 @@
     return entries.filter(function (e) {
       if (s.industry && s.industry.length && s.industry.indexOf(e.industry) < 0) return false;
       if (s.taste && s.taste.length && s.taste.indexOf(e.taste) < 0) return false;
+      if (s.source && s.source.length && s.source.indexOf(e.source) < 0) return false;
       if (s.colors && s.colors.length) {
         var ec = Array.isArray(e.colors) ? e.colors : [];
         var hit = s.colors.some(function (c) { return ec.indexOf(c) >= 0; });

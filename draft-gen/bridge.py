@@ -73,7 +73,11 @@ LETTER_RE = re.compile(r"^[a-c]$")               # 複数案の letter(a-c)。�
 # 実績カタログ(KLK-013・SCR-004・REQ-105/106)—主配色7カテゴリ/安全名/MIME
 CANONICAL_COLORS = {"グリーン", "ブルー", "レッド", "ゴールド", "ピンク", "モノトーン", "マルチカラー"}  # ワイヤー主配色チップ7値(§3.3・KLK-016で「マルチカラー」を追加)
 CATALOG_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")  # id/file の安全文字集合(先頭は英数)
-CATALOG_MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
+CATALOG_MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}  # 配信MIME(GET /catalog/img/)。png変換方式ゆえ webp は保存せず=不変
+
+# 取込許可拡張子(POST /catalog-import 全件列挙 用・配信MIMEとは目的が別・KLK-033)。
+# webp は取込時に sips で png へ変換して保存するため、列挙の許可集合にのみ含める(配信MIMEには入れない)。
+CATALOG_IMPORT_EXTS = {".jpg", ".jpeg", ".png", ".webp"}
 
 
 # ============================================================================
@@ -434,6 +438,18 @@ def catalog_content_type(name):
         return "application/octet-stream"
     _, ext = os.path.splitext(name.lower())
     return CATALOG_MIME.get(ext, "application/octet-stream")
+
+
+def catalog_import_ext_ok(name):
+    """POST /catalog-import 全件列挙の取込許可拡張子か(配信MIMEではなく取込許可集合で判定・KLK-033)。副作用なし。
+
+    webp は取込時に sips で png へ変換して保存するため取込許可集合には含めるが、配信MIME(CATALOG_MIME)
+    には含めない(png/jpg のみ配信)。取込列挙と配信は目的が異なるため別集合で切り分ける。
+    """
+    if not isinstance(name, str):
+        return False
+    _, ext = os.path.splitext(name.lower())
+    return ext in CATALOG_IMPORT_EXTS
 
 
 def sniff_image_ext(head):
@@ -1045,7 +1061,7 @@ def _run_server(port):
                     names = sorted(
                         n for n in os.listdir(catalog_pending_dir)
                         if is_safe_catalog_name(n)
-                        and catalog_content_type(n) in ("image/jpeg", "image/png")
+                        and catalog_import_ext_ok(n)  # 取込許可集合(jpg/jpeg/png/webp)で判定・KLK-033
                     )
                 except OSError:
                     names = []
@@ -1059,7 +1075,7 @@ def _run_server(port):
                     self._json(404, {"error": "取り込み対象が見つかりません: {0}".format("・".join(missing))})
                     return
             if not names:
-                self._json(404, {"error": "取り込み対象の画像がありません(catalog/.pending/ に JPG/PNG を置いてください)"})
+                self._json(404, {"error": "取り込み対象の画像がありません(catalog/.pending/ に JPG / PNG / WebP を置いてください)"})
                 return
 
             # ⑥ jobId 発行 → 検証済みジョブ仕様を pending へ書き worker 起動(プロンプトは pending パスのみ)

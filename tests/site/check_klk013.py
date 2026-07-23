@@ -125,7 +125,7 @@ check(
 # S2 SCR-004 構造（ワイヤー準拠・REQ-105/106）
 # ===========================================================================
 s2_filters = "class=\"filters\"" in CATALOG_HTML
-s2_facets = all(f'data-facet="{f}"' in CATALOG_HTML for f in ("industry", "taste", "colors"))
+s2_facets = all(f'data-facet="{f}"' in CATALOG_HTML for f in ("industry", "taste", "colors", "source"))
 s2_grid = re.search(r'class="grid"', CATALOG_HTML) is not None
 s2_item = ".item" in CATALOG_HTML and re.search(r'class="item"', CATALOG_HTML) is not None
 s2_src = (".src.own" in CATALOG_HTML and ".src.ref" in CATALOG_HTML
@@ -141,9 +141,9 @@ s2_autotag = "autotag" in CATALOG_HTML
 s2 = (s2_filters and s2_facets and s2_grid and s2_item and s2_src and s2_modal
       and s2_uploader and s2_dropzone and s2_autotag)
 check(
-    "S2 SCR-004 構造 (.filters[業種/テイスト/主配色の3 data-facet]・.grid・.item・.src.own/.src.ref・CSS-only .modal-toggle:checked・.uploader#add の .dropzone＋.autotag)",
+    "S2 SCR-004 構造 (.filters[業種/テイスト/主配色/種別の4 data-facet]・.grid・.item・.src.own/.src.ref・CSS-only .modal-toggle:checked・.uploader#add の .dropzone＋.autotag)",
     s2,
-    f".filters={s2_filters}, 3facet={s2_facets}, .grid={s2_grid}, .item={s2_item}, "
+    f".filters={s2_filters}, 4facet={s2_facets}, .grid={s2_grid}, .item={s2_item}, "
     f"own/refバッジ={s2_src}, CSS-onlyモーダル={s2_modal}, uploader#add={s2_uploader}, "
     f"dropzone={s2_dropzone}, autotag={s2_autotag}",
 )
@@ -167,16 +167,18 @@ check(
 # S4 絞り込みロジック（filterEntries AND フィルタ＋/catalog.json 描画・REQ-105）
 # ===========================================================================
 s4_fn = "function filterEntries" in CATALOG_HTML
-s4_facets = all(k in CATALOG_HTML for k in ("s.industry", "s.taste", "s.colors", "keyword"))
+s4_facets = all(k in CATALOG_HTML for k in ("s.industry", "s.taste", "s.colors", "s.source", "keyword"))
 s4_and = "return false" in CATALOG_HTML  # 各ファセット不一致で除外＝AND 合成
 s4_fetch = "fetch(\"/catalog.json\")" in CATALOG_HTML or "fetch('/catalog.json')" in CATALOG_HTML
 s4_render = "renderGrid" in CATALOG_HTML
-s4 = s4_fn and s4_facets and s4_and and s4_fetch and s4_render
+# sel に source[] が初期化されていること（KLK-033・無いと wireFilters の sel[facet] が undefined で throw）
+s4_sel_source = re.search(r'var sel\s*=\s*\{[^}]*\bsource\s*:\s*\[\]', CATALOG_HTML) is not None
+s4 = s4_fn and s4_facets and s4_and and s4_fetch and s4_render and s4_sel_source
 check(
-    "S4 絞り込みロジック (filterEntries: 業種×テイスト×配色×keyword の AND フィルタ・fetch('/catalog.json')→renderGrid)",
+    "S4 絞り込みロジック (filterEntries: 業種×テイスト×配色×種別×keyword の AND フィルタ・sel.source[] 初期化・fetch('/catalog.json')→renderGrid)",
     s4,
-    f"filterEntries={s4_fn}, 4ファセット={s4_facets}, AND(除外)={s4_and}, "
-    f"/catalog.json fetch={s4_fetch}, renderGrid={s4_render}",
+    f"filterEntries={s4_fn}, 5ファセット(source含む)={s4_facets}, AND(除外)={s4_and}, "
+    f"/catalog.json fetch={s4_fetch}, renderGrid={s4_render}, sel.source初期化={s4_sel_source}",
 )
 
 # ===========================================================================
@@ -560,6 +562,75 @@ check(
 )
 
 # ===========================================================================
+# S21 種別フィルタ frow（catalog.html・own/ref・label≠val・KLK-033）
+# ===========================================================================
+# 種別 frow（data-facet="source"）だけを切り出す（industry/taste/colors のチップを拾わない）。
+# frow の後ろは colors frow の直後＝filters を閉じる </div>。次 frow が無いので </div> で区切る。
+_src0 = CATALOG_HTML.find('data-facet="source"')
+_src1 = CATALOG_HTML.find('</div>', _src0 + 1) if _src0 >= 0 else -1
+# fchips の内側までを含めるため、frow 全体（fchips を閉じる直前まで）を広めに切り出す。
+_src_seg = CATALOG_HTML[_src0:_src0 + 400] if _src0 >= 0 else ""
+# class="fchip"（color チップは class="fchip color" なので除外される）の data-val とラベル。
+_src_pairs = re.findall(r'class="fchip"\s+data-val="([^"]+)"\s*>([^<]+)</span>', _src_seg)
+_src_map = dict(_src_pairs)
+s21_frow = _src0 >= 0
+s21_count = len(_src_pairs) == 2
+s21_vals = set(v for v, _ in _src_pairs) == {"own", "ref"}
+s21_labels = set(lbl for _, lbl in _src_pairs) == {"自社実績", "収集見本"}
+s21_pairing = _src_map.get("own") == "自社実績" and _src_map.get("ref") == "収集見本"
+s21_label_ne_val = all(v != lbl for v, lbl in _src_pairs)  # 業種/テイスト(label==val)と異なる
+s21 = s21_frow and s21_count and s21_vals and s21_labels and s21_pairing and s21_label_ne_val
+check(
+    "S21 種別フィルタ frow (catalog.html data-facet=\"source\" にチップ2個・data-val∈{own,ref}・ラベル∈{自社実績,収集見本}・own↔自社実績/ref↔収集見本・label≠val)",
+    s21,
+    f"frow存在={s21_frow}, 2チップ={s21_count}({_src_pairs}), val∈own/ref={s21_vals}, "
+    f"ラベル一致={s21_labels}, 対応={s21_pairing}, label≠val={s21_label_ne_val}",
+)
+
+# ===========================================================================
+# S22 取込許可拡張子（catalog_import_ext_ok・全件列挙 webp 許可・配信MIME非含有・KLK-033）
+# ===========================================================================
+cie = bridge.catalog_import_ext_ok
+# 実ファイル名で判定（os.path.splitext は先頭ドットのみの ".webp" を拡張子無しの隠しファイル名として
+# 扱うため、bare ".webp" は取込対象にならない＝is_safe_catalog_name も先頭ドットを拒否する。よって
+# 現実の拡張子付き名 "a.webp"/"thumb.webp" で判定する）。
+s22_webp = (cie("a.webp") is True and cie("thumb.webp") is True and cie("A.WEBP") is True)
+s22_std = (cie("x.jpg") is True and cie("x.jpeg") is True and cie("x.png") is True)
+s22_gif = (cie("x.gif") is False and cie("x.txt") is False)
+s22_nonstr = (cie(None) is False and cie(123) is False)
+s22_pure = s22_webp and s22_std and s22_gif and s22_nonstr
+# 全件列挙フィルタが catalog_import_ext_ok を使う（catalog_content_type in (jpeg,png) 併用を廃止）
+s22_enum = "catalog_import_ext_ok(n)" in BRIDGE_SRC
+# 404文言に WebP/webp を含む
+s22_404 = re.search(r"取り込み対象の画像がありません.*[Ww]eb[Pp]", BRIDGE_SRC) is not None
+# 配信MIME CATALOG_MIME に webp が入っていない（配信/取込の切り分け・退行検知）
+s22_mime = ".webp" not in getattr(bridge, "CATALOG_MIME", {})
+# 取込許可集合 CATALOG_IMPORT_EXTS には webp が入っている
+s22_impexts = ".webp" in getattr(bridge, "CATALOG_IMPORT_EXTS", set())
+s22 = s22_pure and s22_enum and s22_404 and s22_mime and s22_impexts
+check(
+    "S22 取込許可拡張子 (catalog_import_ext_ok: webp/jpg/jpeg/png○・gif等/非str× ; 全件列挙が同関数使用 ; 404文言に WebP ; 配信 CATALOG_MIME に webp 非含有 ; CATALOG_IMPORT_EXTS に webp)",
+    s22,
+    f"webp○={s22_webp}, jpg/png○={s22_std}, gif×={s22_gif}, 非str×={s22_nonstr}, "
+    f"全件列挙使用={s22_enum}, 404にWebP={s22_404}, 配信MIMEにwebp無={s22_mime}, 取込集合にwebp={s22_impexts}",
+)
+
+# ===========================================================================
+# S23 SKILL/CATALOG_RULES の webp/sips/png/ref 文言 pin（KLK-033）
+# ===========================================================================
+sk_webp = ("webp" in SKILL.lower()) and ("sips" in SKILL) and ("png" in SKILL.lower()) and ("変換" in SKILL)
+sk_webp_ref = ("ref" in SKILL) and ("既定候補" in SKILL or "ref` を既定" in SKILL)
+ru_webp = ("webp" in RULES.lower()) and ("sips" in RULES) and ("png" in RULES.lower())
+ru_webp_ref = ("ref" in RULES) and ("既定候補" in RULES or "webp→ref" in RULES)
+s23 = sk_webp and sk_webp_ref and ru_webp and ru_webp_ref
+check(
+    "S23 SKILL/CATALOG_RULES 文言 (SKILL: webp/sips/png/変換＋webp→ref既定候補 ; CATALOG_RULES: webp/sips/png＋webp→ref既定候補)",
+    s23,
+    f"SKILL(webp/sips/png/変換={sk_webp}, ref既定={sk_webp_ref}), "
+    f"RULES(webp/sips/png={ru_webp}, ref既定={ru_webp_ref})",
+)
+
+# ===========================================================================
 # Report
 # ===========================================================================
 print("=" * 78)
@@ -583,10 +654,10 @@ print("  - D1 catalog/ の Git 除外成立（git check-ignore catalog/catalog.j
 print("  - D2 Quality Gate 全緑（python3 -m unittest discover -s tests・KLK-006〜012 回帰なし）")
 print()
 print("M群（環境制約で静的検証外 = tester がブリッジ起動＋実 /catalog-import＋ブラウザで手動確認）:")
-print("  - M1 カタログ閲覧・絞り込み（業種×テイスト×主配色×キーワード・拡大モーダル・/catalog/img/ 表示）")
+print("  - M1 カタログ閲覧・絞り込み（業種×テイスト×主配色×種別[own/ref]×キーワード・拡大モーダル・/catalog/img/ 表示）")
 print("  - M2 file:// フォールバック（空状態＋起動案内・任意 catalog/catalog.html オフライン閲覧）")
-print("  - M3 実画像取り込み＋自動タグ付け＋人間確認（承認前に確定しない）")
-print("  - M4 自動タグ品質（業種/テイスト/主配色の妥当性・目視評価）")
+print("  - M3 実画像取り込み＋自動タグ付け＋人間確認（承認前に確定しない）; webp を1枚置き sips 変換で png 生成→ref 既定提示→人間ゲートで own 上書き可（KLK-033）")
+print("  - M4 自動タグ品質（業種/テイスト/主配色の妥当性・目視評価）; webp→png 変換後 png の視覚認識品質（KLK-033・webpフィクスチャ本環境生成不能ゆえ実変換はM群）")
 print("  - M5 ワンクリック取り込み（POST 実HTTP・jobId→ポーリング→一覧更新・不正Origin403）")
 print("  - M6 機密のローカル完結・封じ込め（git status に現れず・/catalog/img/ で .. が catalog/img/ 外を読めない）")
 print("  - M7 収集見本（ref）の著作物表記（橙バッジ＋社内参考のみ注記）")
