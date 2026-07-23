@@ -1,6 +1,6 @@
 ---
 name: catalog-import
-description: 実績カタログ(SCR-004・REQ-106)へ新規画像を取り込むスキル。catalog/.pending/ に置かれた画像(JPG/PNG)を Read で視覚認識し、業種・テイスト・主配色(7カテゴリ)・カラム構成・用途メモを推定して、登録前に人間へ提示し確認・修正を受けてから、承認された分だけ catalog/img/ へ移動し catalog/catalog.json へ追記する。ユーザーが「画像を取り込んで」「実績をカタログに登録して」「自動でタグ付けして」と言ったとき、またはローカルブリッジ(draft-gen/bridge.py)の POST /catalog-import が渡すジョブ仕様パス(catalog/.pending/{jobId}.import.json)を受けたときに使う。推定結果を人間確認なしで自動確定してはならない。
+description: 実績カタログ(SCR-004・REQ-106)へ新規画像を取り込むスキル。catalog/.pending/ に置かれた画像(JPG/PNG/WebP・webp は sips で png へ変換)を Read で視覚認識し、業種・テイスト・主配色(7カテゴリ)・カラム構成・用途メモを推定して、登録前に人間へ提示し確認・修正を受けてから、承認された分だけ catalog/img/ へ移動し catalog/catalog.json へ追記する。ユーザーが「画像を取り込んで」「実績をカタログに登録して」「自動でタグ付けして」と言ったとき、またはローカルブリッジ(draft-gen/bridge.py)の POST /catalog-import が渡すジョブ仕様パス(catalog/.pending/{jobId}.import.json)を受けたときに使う。推定結果を人間確認なしで自動確定してはならない。
 ---
 
 # 実績カタログ取り込み — 新規画像をAI自動タグ付けして人間確認のうえ登録する
@@ -24,7 +24,7 @@ description: 実績カタログ(SCR-004・REQ-106)へ新規画像を取り込む
 | `templates/CATALOG_RULES.md` | **取り込みの前に必ず全体を読む**。カタログJSONスキーマ・主配色7カテゴリ・タグ付け規約・機密規律の正 |
 | `draft-gen/bridge.py`(`validate_catalog`/`is_safe_catalog_name`/`CANONICAL_COLORS`) | JSON整形・安全名・許可色カテゴリの決定論的な正(スキーマは CATALOG_RULES と同一) |
 | `docs/wireframes/SCR-004-catalog.html` | 見た目の正(`.autotag`「登録前に確認・修正できます」・own/refバッジ・主配色7チップ) |
-| 対象画像 `catalog/.pending/*.jpg` / `*.png` | 取り込み対象。**Read で開いて視覚認識**し業種・テイスト・主配色・カラムを推定する |
+| 対象画像 `catalog/.pending/*.jpg` / `*.png` / `*.webp` | 取り込み対象。webp は手順2-0で `sips` により png へ変換したうえで、**Read で開いて視覚認識**し業種・テイスト・主配色・カラムを推定する |
 
 ## 起動と入力(2経路・後方互換)
 
@@ -34,7 +34,7 @@ description: 実績カタログ(SCR-004・REQ-106)へ新規画像を取り込む
   `schema` が `"catalog-import-job"` / `version` が `1` であることを確認し、`files`(取り込み対象のファイル名の列挙)を取り出す。
   ブリッジが検証済みの安全名のみを書くため、プロンプトに可変ユーザー文字列は載らない(注入対策)。
 - **② 手動 `$ARGUMENTS`**: `catalog/.pending/` 内の対象ファイル名の列挙(例 `salon_top.jpg cafe.png`)。
-  **未指定のときは `catalog/.pending/` 内の JPG/PNG 全件**を対象にする。
+  **未指定のときは `catalog/.pending/` 内の JPG / PNG / WebP 全件**を対象にする。
   収集見本(第三者著作物)を取り込むときは、その旨(`ref`)を指示に明示する(既定は自社実績 `own`)。
 - いずれの経路でも**同じ受付チェック**へ合流する。スキーマ・機密規律・人間確認ゲートは経路によらず同一。
 
@@ -43,9 +43,22 @@ description: 実績カタログ(SCR-004・REQ-106)へ新規画像を取り込む
 ### 1. 受付(機密規律・安全名の確認)
 
 - `templates/CATALOG_RULES.md` を**全体読み込む**。
-- 対象は `catalog/.pending/` 内の JPG/PNG のみ。各ファイル名が**安全名**(`^[A-Za-z0-9][A-Za-z0-9._-]*$`・`..`/`/`/`\` を含まない)
+- 対象は `catalog/.pending/` 内の JPG / PNG / WebP のみ。各ファイル名が**安全名**(`^[A-Za-z0-9][A-Za-z0-9._-]*$`・`..`/`/`/`\` を含まない)
   であることを確認する。安全でない名前・`catalog/.pending/` の外を指す入力は**取り込まず**理由を伝えて停止する。
 - ジョブ仕様経路のときは `schema=="catalog-import-job"` / `version==1` を確認する。異なれば停止する。
+
+### 2-0. webp の png 変換(受理拡張子に webp を含むとき・KLK-033)
+
+- 対象が `.webp` の場合、視覚認識(Read)の前に **OS標準 `sips` で png へ変換**する:
+  ```
+  sips -s format png catalog/.pending/<対象>.webp --out catalog/img/<新id>.png
+  ```
+  `<新id>` は手順4と同じ連番採番規則で `cat-00NN` を先に確定してよい(`catalog/img/` と `catalog.json` の
+  双方を見て最大連番の次)。
+- 以後この画像は変換後の png(`cat-00NN.png`)を正として **Read・移動・追記**する。**webp を直接 Read しない**。
+- **変換失敗**(sips 非0終了・出力 png 未生成)は当該ファイルを**取り込まず理由を提示して skip** する
+  (手順1受付・「してはならないこと」の停止規律にそのまま合流)。
+- `sips` は macOS標準(`/usr/bin/sips`)ゆえ **Python 依存を増やさない**(NFR-005 と整合)。
 
 ### 2. 視覚認識(AI自動タグ付け・§3.3)
 
@@ -68,7 +81,9 @@ description: 実績カタログ(SCR-004・REQ-106)へ新規画像を取り込む
   無い/未判定はキー省略**、**プール外は `"other"`**。**型マーカーは DRAFT_RULES §12.1.x の語彙のみ**(独自語で付けない・語彙の正は
   DRAFT_RULES)。参考準拠生成(KLK-031)の土台。
 - **用途メモ**(`note`・任意): レイアウトの特徴を短く。
-- **own/ref**: 既定 `own`(自社実績)。収集見本は取り込み指示で `ref` を明示された分のみ `ref`。
+- **own/ref**: 既定 `own`(自社実績)。ただし **webp から変換したエントリ(web拾いサムネ＝第三者著作物)は
+  `ref`(収集見本) を既定候補**として提示する。収集見本は取り込み指示で `ref` を明示された分も `ref`。
+  いずれも手順3の人間確認ゲートで own↔ref を上書き可(自動確定はしない・KLK-033)。
 
 ### 3. 人間確認(必須ゲート・登録前に確認・修正)
 
@@ -84,6 +99,8 @@ description: 実績カタログ(SCR-004・REQ-106)へ新規画像を取り込む
 
 - 画像を `catalog/img/{id}.{ext}` へ**移動**する(`id` は既存 `entries` と衝突しない一意な連番。例 `cat-0001`・`cat-0002`…。
   `catalog/img/` と `catalog.json` の双方を見て最大連番の次を採る)。`file` は移動後の実ファイル名。
+  **webp から変換した画像は手順2-0で既に `catalog/img/cat-00NN.png` として生成済み**なので、ここでは元 webp を
+  移動せず `id`/`file`(=`cat-00NN.png`)を確定して catalog.json へ追記する(元 webp は取り込み対象済み)。
 - `catalog/catalog.json` の `entries` へ `CATALOG_RULES.md` スキーマ準拠のエントリを追記し、`generatedAt` を現在時刻(ISO8601)に更新する。
   `catalog.json` が無ければ `{"schema":"klk-catalog","version":1,"entries":[]}` から作る。**承認された `sectionLayouts` のみ**を
   entry に書く(省略・`{}` も可・該当なしのキーは作らない)。
