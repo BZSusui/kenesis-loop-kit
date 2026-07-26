@@ -237,6 +237,31 @@ SCR-002 mock テーマ変数へ写す。**生成ルート要素（`.mock` 等）
      style="--m-main:#2e7d6b; --m-nav:#24463e; --m-accent:#e8a33d; --m-bg:#f7f5f0; --m-text:#333;">
 ```
 
+### 5.1 参考配色の7カテゴリ→hex 変換表（KLK-034・案A限定・決定的）
+
+`references.colorSource:"reference"` かつ `references.thumbnails[0].colors`（7カテゴリ・1..3件）があるとき、
+**案Aに限り** §5 の入力を次の**明示表**で差し替える（表を読むだけ・算術しない・§12.1.2 と同じ決定性原理）:
+
+| 7カテゴリ | hex | トーンの意図 |
+|---|---|---|
+| グリーン | `#2E7D6B` | 深緑（ワイヤーSCR-002 案Aの基準緑） |
+| ブルー | `#2C5F8A` | 落ち着いた紺青 |
+| レッド | `#B3402F` | 朱寄りの赤（彩度を上げすぎない） |
+| ゴールド | `#C6A15B` | ワイヤー案Bの金 |
+| ピンク | `#E86FA0` | ワイヤー案Cの桃 |
+| モノトーン | `#444850` | 墨色 |
+| マルチカラー | （表引きしない） | 下のフォールバックへ |
+
+- `colors[0]` → 案A `--m-main`。`colors[1]`（あれば）→ 案A `--m-accent`。`colors[2]` は反映しない。
+- `sub`/`bg`/`--m-text` は §5 の autofill 規則をそのまま適用する（main 起点の color-mix）。
+- **マルチカラー（単独指定のみ・§2規約）のフォールバック**: 表引きせず**指示書の指定色（従来の案A忠実・§12）**へ
+  退避し、実効の配色ソースを `"specified"` として扱う（案Aルートの `data-ref-colors="specified"`・§12.2 と
+  compare.html の注記にその旨を出す）。
+- `references.colorSource:"specified"` のとき配色は従来どおり（レイアウトだけ §12.2 で参考準拠）。
+- **案B/C の配色は常に従来どおり**（指示書 `colors.main` 起点の濃色/明色・§12）。案間 `--m-main` 相違の不変条件は
+  維持する（万一表引き hex と案B/C の派生色が一致する場合は、案B/C 側の派生で必ずずらす＝§12 既存要件）。
+- `colorSource` が無い・`thumbnails` が無い指示書は本節不発（従来どおり・後方互換）。
+
 ---
 
 ## 6. 印刷CSS（@media print・REQ-009 / NFR-003）
@@ -586,6 +611,56 @@ ABOUT/MENU/GALLERY のプール方式化・ラフ画像からの型抽出も STE
 - 代表出力（ゴールデン）: `tests/fixtures/klk029/index-a/b/c.html`（1col×top＝offset0）＋ `tests/fixtures/klk029b/index-a/b/c.html`
   （1col×below-hero＝offset3）。両者の union で VOICE/FLOW/STAFF 各プールの5マーカー全てが実 HTML に出現する（到達可能性の実証）。
 
+### 12.2 参考準拠レイアウト（KLK-034・席替え規則・§12.1.1/§12.1.2 と直交・additive）
+
+SCR-001 でカタログサムネイルを選んだ指示書では、**案Aを「参考準拠案」**にする。対象は
+**`references.thumbnails[0]`（先頭の1件）のみ**。その `sectionLayouts`（KLK-030 の1対1 map・語彙は §12.1.1/§12.1.2）を
+セクション型の割り当てに反映する。`thumbnails` が無い・`sectionLayouts` が無い指示書は本節不発（従来どおり・後方互換）。
+`variants:1`（単案）は案A相当なので同様に適用する。
+
+**規則（各セクションKEYごとに独立に適用・等値比較のみ・算術しない）:**
+
+1. KEY が指示書 `sections` に無い → 何もしない（セクション自体が出ない・§12.1.2(5) と同じ）。
+2. 参考の値 v が無い（キー省略）・`"other"`・語彙外 → 何もしない（そのセクションは従来規則のまま）。
+3. **案A := v**（参考の型をそのまま採る）。
+4. **席替え**: 既定で v と同じ型を持つ案があれば、**その案は「案Aの既定型」を代わりに使う**。
+   - §12.1.1 系（HERO/MENU/GALLERY/ABOUT）: v を下の既定型表の案B/C列と比べ、一致した案 := 案Aの既定型。
+   - §12.1.2 系（VOICE/FLOW/STAFF）: v の pool index を表引き結果 (idxA,idxB,idxC) の idxB/idxC と比べ、
+     一致した案 := `pool[idxA]`。
+   - どの案とも重複しなければ案B/C は従来のまま。→ いずれの場合も **3案の型は常に3値 distinct**
+     （§12.1.1⑥⑦⑧⑨・§12.1.2 の不変条件を維持）。
+
+**§12.1.1 の既定型（席替えの参照表・§12.1.1 表の転記）:**
+
+| KEY | 案A既定 | 案B既定 | 案C既定 |
+|---|---|---|---|
+| HERO | `full` | `split` | `band` |
+| MENU | `pat-cards` | `pat-list` | `pat-zigzag` |
+| GALLERY | `pat-grid` | `pat-wide` | `pat-mosaic` |
+| ABOUT | `img-left` | `img-right` | `img-top` |
+
+**本節が触らないもの（スコープ外・不変）:** `data-columns`・`sections` 集合・並び順（`data-section-order`）・
+`data-archetype`（3案 distinct のまま）・番地一意性（§2/§14）・§4 文言・アニメ/印刷。HERO の整列シグネチャは
+`data-hero` の型に付随して振る（`full`=中央/`split`=左/`band`=下寄せ帯）＝型が distinct ならシグネチャ相違
+（§12.1 不変条件4）も維持される。
+
+**生成物マーカー（機械検証フック）:**
+- **案Aルート `.mock` のみ**に `data-ref-id="{thumbnails[0].id}"` と `data-ref-colors="reference|specified"`
+  （**実効**の配色ソース・§5.1。マルチカラーfallback は `specified`）を付ける。案B/C のルートにはどちらも付けない。
+- compare.html: 案Aカードに `.ref-badge`「参考準拠: {label}（{id}）／参考は着想のみ・そっくり再現はしません」を出す
+  （own/ref を問わず同文言・§13 に additive）。
+
+**規律（そっくり再現の禁止）:** 生成は参考の**タグ（型マーカー・配色カテゴリ）だけ**を受け取り、参考の画像・実文言には
+一切アクセスしない（模写は構造的に不可能）。収集見本（`source:"ref"`）は第三者著作物であり、参考準拠は**着想の反映に限る**。
+1:1 の複製・実在サイトの文言流用をしてはならない。
+
+- **部分再生成（§14）との整合**: ルートに `data-ref-id` があるファイルの部分再生成は、対象セクションの**現行マーカーを
+  保持**する（§14「参考準拠の保持」・表引き既定へ戻さない＝参考の型が再生成で失われない）。
+- 将来拡張（未採番・後続）: 対象を「案×thumbnails[n]」へ広げる場合も本規則を案ごとに独立適用すればよい（作り直し不要）。
+  `sectionLayouts` の多値化（KLK-031）は「先頭値を採る」拡張で成立する。
+- 代表出力（ゴールデン）: `tests/fixtures/klk034/`（席替え/無衝突/other/省略/プール直採用/プール席替え＋§5.1 表引き）・
+  `tests/fixtures/klk034b/`（マルチカラーfallback＋HERO 席替え）。参照データはダミー（実カタログ非依存）。
+
 ---
 
 ## 13. 比較画面 compare.html の構造規約（REQ-008 / REQ-009・U-B/U-H）
@@ -686,6 +761,13 @@ ABOUT/MENU/GALLERY のプール方式化・ラフ画像からの型抽出も STE
    **割り当て表**の offset 行で pool index を読む。
 4. その `pool[index]` のマーカーを容器 `.m-{sec}` に付け、対応 CSS ブロックが `<head>` に無ければ足す（他5セクション・配色・
    ルート属性は不変）。→ 元の生成と**同じ型**が決定的に再現される（表を読むだけ・算術なし）。
+
+**参考準拠の保持（KLK-034・§12.2 と対）:** 対象HTMLのルート `.mock` に **`data-ref-id` があるファイル（＝参考準拠の案A）**は、
+表引き・archetype 既定より**「対象セクションの現行マーカー」を優先**する: 差し替え前の対象 `.sec` 内の容器
+（`.m-hero` の `data-hero` ／ `.m-menu`・`.m-gallery`・`.m-about`・`.m-voice`・`.m-flow`・`.m-staff` の型マーカー）を読み取り、
+**同じ型マーカーで再生成**する（§12.2 の席替え結果＝参考の型を保持。対象HTMLだけで自己決定・`instruction.json` 不要・決定的）。
+現行マーカーが読めない/語彙外のときのみ、上の従来規則（表引き・archetype 既定）へフォールバックする。
+`data-ref-id` が無いファイル（従来生成・案B/C）は本段落の対象外＝従来規則のまま。
 
 - `compare.html` の再生成 `<select>` は基本6番地のまま（VOICE 等は追加しない・§13）。ブラウザ経由の VOICE/FLOW/STAFF 部分
   再生成は既存制約どおり非対象。手動 `/draft-regenerate {folder} {letter} VOICE-01` は番地パターン（`^[A-Z][A-Z0-9]*-\d{2}$`）が

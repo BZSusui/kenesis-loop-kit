@@ -598,6 +598,16 @@
       <span>選択中: <b id="thumbCount">0 / 3枚</b>（推奨2〜3枚）</span>
       <a class="catalog-link" id="catalogLink" href="catalog.html">もっと探す → 実績カタログを開く →</a>
     </div>
+    <!-- KLK-034: 参考準拠の配色トグル。サムネイル1件以上選択時のみ表示（updateThumbCount が制御）。
+         参考準拠（案A）に使うのは最初に選択した1件（DRAFT_RULES §12.2/§5.1）。 -->
+    <div class="field-row" id="refColorRow" style="display:none;margin-top:10px">
+      <div class="col" style="flex-basis:100%">
+        <label>参考準拠の配色（案Aに反映）</label>
+        <label><input type="radio" name="refColorSource" value="reference" checked> 参考の配色を使う（推奨）</label>
+        <label><input type="radio" name="refColorSource" value="specified"> 指定色を使う</label>
+        <p class="note-oq" style="margin:6px 0 0">参考準拠に使うのは<b>最初に選択した1件</b>です（案Aのレイアウト・配色に反映されます。2件目以降は参考タグとして添付のみ）。参考は着想の反映に限り、そっくり再現はしません。</p>
+      </div>
+    </div>
     <div class="field-row" style="margin-top:14px">
       <div class="col" style="flex-basis:100%">
         <label>見本サイトのURL（任意・最大2件）</label>
@@ -858,7 +868,12 @@ function buildInstruction(input) {
   const wpx = parseInt(mobileIn.widthPx, 10);
 
   const thumbs = (Array.isArray(input.refThumbs) ? input.refThumbs : []).slice(0, 3).map(function (t) {
-    return { id: t.id, label: t.label, tags: t.tags };
+    var o = { id: t.id, label: t.label, tags: t.tags };
+    // KLK-034: 参考準拠タグ（あるときのみ載せる＝additive。旧指示書と同形を保つ）。
+    if (Array.isArray(t.colors) && t.colors.length) o.colors = t.colors.slice(0, 3);
+    if (t.sectionLayouts && typeof t.sectionLayouts === 'object') o.sectionLayouts = t.sectionLayouts;
+    if (t.source === 'own' || t.source === 'ref') o.source = t.source;
+    return o;
   });
   const sampleUrls = (Array.isArray(input.sampleUrls) ? input.sampleUrls : [])
     .map(function (u) { return String(u || '').trim(); })
@@ -886,7 +901,12 @@ function buildInstruction(input) {
       bg: bg,
       autofill: autofill,
     },
-    references: { thumbnails: thumbs, sampleUrls: sampleUrls },
+    references: (function () {
+      var refs = { thumbnails: thumbs, sampleUrls: sampleUrls };
+      // KLK-034: サムネ選択時のみ配色ソースを付与（無選択の指示書は従来形＝後方互換）。
+      if (thumbs.length > 0) refs.colorSource = (input.refColorSource === 'specified') ? 'specified' : 'reference';
+      return refs;
+    })(),
     atari: input.atari || 'standard',
     output: {
       variants: variants,
@@ -987,7 +1007,16 @@ function selectedThumbs() {
     var tags;
     try { tags = JSON.parse(el.dataset.tags || '[]'); } catch (e) { tags = []; }
     if (!Array.isArray(tags)) tags = [];
-    return { id: el.dataset.id, label: el.dataset.label, tags: tags };
+    var t = { id: el.dataset.id, label: el.dataset.label, tags: tags };
+    // KLK-034: 参考準拠タグ（colors / sectionLayouts / source）。あるときのみ載せる（additive・既存3キーは不変）。
+    var colors;
+    try { colors = JSON.parse(el.dataset.colors || '[]'); } catch (e) { colors = []; }
+    if (Array.isArray(colors) && colors.length) t.colors = colors;
+    var sl;
+    try { sl = JSON.parse(el.dataset.sl || 'null'); } catch (e) { sl = null; }
+    if (sl && typeof sl === 'object' && !Array.isArray(sl) && Object.keys(sl).length) t.sectionLayouts = sl;
+    if (el.dataset.source === 'own' || el.dataset.source === 'ref') t.source = el.dataset.source;
+    return t;
   });
 }
 
@@ -1034,6 +1063,11 @@ function collectInput() {
       mode: colorMode,
     },
     refThumbs: selectedThumbs(),
+    // KLK-034: 参考準拠の配色ソース（reference | specified）。サムネ選択時のみ buildInstruction が使用。
+    refColorSource: (function () {
+      var el = document.querySelector('input[name=refColorSource]:checked');
+      return el ? el.value : 'reference';
+    })(),
     sampleUrls: sampleUrls,
     atari: atariEl ? atariEl.value : 'standard',
     mvPhoto: mvPhotoSaved,   // KLK-020: /upload 済みの保存名 or null（free-photo 時のみ buildInstruction が使用）
@@ -1239,6 +1273,9 @@ function closeModal() { document.getElementById('modalBack').classList.remove('o
 function updateThumbCount() {
   const n = document.querySelectorAll('.thumb.selected').length;
   document.getElementById('thumbCount').textContent = n + ' / 3枚';
+  // KLK-034: 配色トグルは1件以上選択時のみ表示（無選択の指示書には colorSource を出さない）。
+  const row = document.getElementById('refColorRow');
+  if (row) row.style.display = n > 0 ? '' : 'none';
 }
 
 // ============================================================================
@@ -1280,6 +1317,11 @@ function loadCatalog() {
       if (Array.isArray(e.colors)) {
         e.colors = e.colors.filter(function (c) { return CANONICAL_COLORS.indexOf(c) >= 0; });
       }
+      // KLK-034: sectionLayouts の軽検証（object かつ値が非空文字列のみ通す。不正は捨てる）。
+      var sl = e.sectionLayouts;
+      var slOk = sl && typeof sl === 'object' && !Array.isArray(sl) &&
+        Object.keys(sl).every(function (k) { return typeof sl[k] === 'string' && sl[k].length > 0; });
+      if (!slOk) delete e.sectionLayouts;
     });
     return entries;
   }).catch(function () { return []; });
@@ -1353,7 +1395,10 @@ function cardHtml(e) {
     ' data-file="' + esc(e.file || '') + '"' +
     ' data-industry="' + esc(e.industry || '') + '"' +
     ' data-taste="' + esc(e.taste || '') + '"' +
-    ' data-colors="' + esc(JSON.stringify(Array.isArray(e.colors) ? e.colors : [])) + '">' +
+    ' data-colors="' + esc(JSON.stringify(Array.isArray(e.colors) ? e.colors : [])) + '"' +
+    // KLK-034: 参考準拠タグ（source / sectionLayouts）。loadCatalog で軽検証済みの値のみ載る。
+    ' data-source="' + esc(e.source || '') + '"' +
+    ' data-sl="' + esc(JSON.stringify(e.sectionLayouts || null)) + '">' +
     '<span class="ph">' + esc(e.title) + '</span>' +
     '<span class="check">✓</span>' +
     '<button type="button" class="zoom" aria-label="拡大">🔍</button>' +
