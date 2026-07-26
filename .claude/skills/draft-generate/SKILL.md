@@ -97,6 +97,14 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
   **STAFF**=`staff-grid`/`staff-hscroll`/`staff-feature`/`staff-list`/`staff-two-col`（各マーカーは**実際に異なる grid/flex/order**
   を伴う・飾りにしない）。**同一指示書＝同一割り当て**（キー2値は全案不変で決定的）・**3案で型が相違**（連続3窓 distinct）。
   未選択セクションは no-op（出さない）。単案（`variants:1`）は idxA のマーカーで1型のみ。
+- **参考準拠（KLK-034・DRAFT_RULES §12.2/§5.1）**: `references.thumbnails` が1件以上ある指示書では**案Aを参考準拠案**に
+  する（対象は **thumbnails[0] のみ**）。①**レイアウト**: `thumbnails[0].sectionLayouts` の各値を §12.2 の**席替え規則**で
+  反映する（案A=参考の型。既定でその型を持つ案があればその案は案Aの既定型へ。キー省略/`"other"`/語彙外は従来のまま。
+  等値比較のみ・算術しない）。②**配色**: `references.colorSource:"reference"`（既定）なら案Aの `--m-main`（＋colors[1]→
+  `--m-accent`）を **§5.1 の7カテゴリ→hex表**で決める（マルチカラーは指定色へフォールバック）。`"specified"` なら配色は
+  従来のまま。③**マーカー**: 案Aルートに `data-ref-id`/`data-ref-colors`（案B/C には付けない）、compare.html の案Aカードに
+  `.ref-badge`「参考準拠: {label}（{id}）／参考は着想のみ・そっくり再現はしません」。`references` の拡張キーが無い指示書は
+  全て従来どおり（後方互換）。
 - **番地ラベル（全案共通）**: 各セクションに `.addr > .pin`。既定は NAV-01 / MV-01 / ABOUT-01 / MENU-01 / GALLERY-01 /
   FOOTER-01 の6種。
 - **本文セクション選択（KLK-022・DRAFT_RULES §2.1）**: `NAV-01`/`MV-01`/`FOOTER-01` は**常時必須**。本文は
@@ -185,3 +193,6 @@ DRAFT_RULES §9 に従い **Claude Code が Write** で保存する（保存分�
 - `compare.html` の iframe・原寸リンクに外部URLや案別ファイル以外を指定すること（同ディレクトリ相対 `.html` のみ）。
 - 失敗案のファイルを保存・比較ハブから参照すること（成功案のみ・`.partial-note` で失敗通知）。
 - 実在の顧客名・個人情報・シークレットを生成HTMLに含めること。
+- 参考準拠（KLK-034・DRAFT_RULES §12.2）で参考の**画像・実文言**を参照・模写すること（受け取るのはタグ＝型マーカーと
+  配色カテゴリのみ）。収集見本（`source:"ref"`）は第三者著作物であり、**着想の反映に限る**（1:1 の複製・実在サイトの
+  文言流用の禁止）。

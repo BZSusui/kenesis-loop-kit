@@ -1,0 +1,52 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": {
+    "project": "サンプル参考準拠サイト",
+    "createdAt": "2026-07-26T10:00:00.000Z",
+    "source": "SCR-001"
+  },
+  "industry": {
+    "preset": "美容・ヘアサロン(カット / カラー / トリートメント)",
+    "custom": "",
+    "resolved": "美容・ヘアサロン(カット / カラー / トリートメント)"
+  },
+  "layout": { "columns": "1col", "navPosition": "top" },
+  "sections": ["ABOUT", "MENU", "GALLERY", "VOICE", "FLOW", "STAFF", "CTA"],
+  "sectionOptions": { "CTA": { "purpose": "reserve", "label": "ご予約はこちら" } },
+  "taste": "シンプル・洗練",
+  "colors": {
+    "mode": "explicit",
+    "main": "#2e7d6b",
+    "sub": "#24463e",
+    "accent": "#e8a33d",
+    "bg": "#f5f7f4",
+    "autofill": []
+  },
+  "references": {
+    "thumbnails": [
+      {
+        "id": "cat-9034",
+        "label": "ダミー見本（参考準拠検証用）",
+        "tags": ["ダミー", "検証用"],
+        "colors": ["ブルー", "ゴールド"],
+        "sectionLayouts": {
+          "HERO": "split",
+          "MENU": "pat-cards",
+          "GALLERY": "other",
+          "VOICE": "voice-slider",
+          "FLOW": "flow-timeline"
+        },
+        "source": "ref"
+      }
+    ],
+    "sampleUrls": [],
+    "colorSource": "reference"
+  },
+  "atari": "standard",
+  "output": {
+    "variants": 3,
+    "mobile": { "enabled": false, "widthPx": 375 },
+    "animation": true
+  }
+}

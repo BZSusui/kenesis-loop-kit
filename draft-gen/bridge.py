@@ -210,6 +210,37 @@ def validate_instruction(obj):
         if not isinstance(mv, dict) or not is_safe_catalog_name(mv.get("file")):
             errors.append("mvPhoto.file が不正です(安全名のみ)")
 
+    # KLK-034 §12.2/§5.1: 参考準拠の拡張キー。「存在するときのみ」検証する(無指定=後方互換・
+    # 旧 instruction は分岐に入らない)。colors は7カテゴリ(1..3件・マルチカラー単独)、
+    # sectionLayouts は shape のみ(object・値が非空文字列。語彙照合は validate_catalog と同方針でしない)。
+    refs = obj.get("references")
+    if refs is not None and isinstance(refs, dict):
+        color_source = refs.get("colorSource")
+        if color_source is not None and color_source not in ("reference", "specified"):
+            errors.append("references.colorSource が未対応の値です(reference/specified のみ)")
+        thumbs = refs.get("thumbnails")
+        if isinstance(thumbs, list):
+            for i, t in enumerate(thumbs):
+                if not isinstance(t, dict):
+                    continue  # 形の細部は従来どおりスキル側(ここは拡張キーの多層防御のみ)
+                t_colors = t.get("colors")
+                if t_colors is not None:
+                    if not isinstance(t_colors, list) or not (1 <= len(t_colors) <= 3) \
+                            or any(c not in CANONICAL_COLORS for c in t_colors) \
+                            or ("マルチカラー" in t_colors and len(t_colors) > 1):
+                        errors.append(
+                            "references.thumbnails[{0}].colors が不正です(7カテゴリ・1..3件・マルチカラー単独)".format(i))
+                t_sl = t.get("sectionLayouts")
+                if t_sl is not None:
+                    if not isinstance(t_sl, dict) \
+                            or any(not isinstance(v, str) or not v.strip() for v in t_sl.values()):
+                        errors.append(
+                            "references.thumbnails[{0}].sectionLayouts が不正です(object・値は非空文字列)".format(i))
+                t_source = t.get("source")
+                if t_source is not None and t_source not in ("own", "ref"):
+                    errors.append(
+                        "references.thumbnails[{0}].source が不正です(own/ref のみ)".format(i))
+
     return (len(errors) == 0), errors
 
 
