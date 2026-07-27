@@ -1,0 +1,33 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": {
+    "project": "サンプルギャラリー型サイト",
+    "createdAt": "2026-07-27T11:00:00.000Z",
+    "source": "SCR-001"
+  },
+  "industry": {
+    "preset": "アート・ポートフォリオ",
+    "custom": "",
+    "resolved": "アート・ポートフォリオ"
+  },
+  "layout": { "columns": "1col", "navPosition": "below-hero" },
+  "sections": ["ABOUT", "GALLERY", "CTA"],
+  "sectionOptions": { "CTA": { "purpose": "contact", "label": "お問い合わせはこちら" } },
+  "taste": "かっこいい・洗練",
+  "colors": {
+    "mode": "explicit",
+    "main": "#2e7d6b",
+    "sub": "#24463e",
+    "accent": "#e8a33d",
+    "bg": "#f5f7f4",
+    "autofill": []
+  },
+  "references": { "thumbnails": [], "sampleUrls": [] },
+  "atari": "standard",
+  "output": {
+    "variants": 3,
+    "mobile": { "enabled": false, "widthPx": 375 },
+    "animation": true
+  }
+}
