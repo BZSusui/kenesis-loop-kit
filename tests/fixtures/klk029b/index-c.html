@@ -4,7 +4,8 @@
   これはテスト検証用のプレースホルダ出力です。実在の顧客・案件ではありません。
   案件名: サンプル整体サロンサイト / 業種: 整体・リラクゼーション / カラム: 1col（全案共通）/ nav: below-hero（全案共通）
   セクション集合: VOICE,FLOW,STAFF（全案共通）
-  型プール割り当て: 1col×below-hero → offset 3 → 案C=index0（wrap）→ VOICE=voice-cards / FLOW=flow-row / STAFF=staff-grid
+  型プール割り当て: 1col×below-hero → offset 3 → 案C=index5（KLK-035 で N=6 化・巡回 (3,4,5)）→
+    VOICE=voice-zigzag / FLOW=flow-zigzag / STAFF=staff-zigzag（旧 N=5 では index0 だった。案A=index3・案B=index4 は不変）
   レイアウト原型: banded-showcase / 配色: 案C 明色・ポップ（テラコッタ＋ティール・sans）
   実生成物は mockups/{日付}_{案件名}/index-c.html に保存されます（Git除外）。
 -->
@@ -48,25 +49,28 @@
   .atari .kw { font-size: 11px; color: #6B7280; }
   .atari .kw b { font-family: ui-monospace, monospace; color: var(--m-main); }
 
-  /* VOICE 型: voice-cards（声カードを横3列・index0・wrap） */
-  .m-voice.voice-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .m-voice.voice-cards .v-card { background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(201,111,74,.14); padding: 16px; }
-  .m-voice.voice-cards .v-card .atari { min-height: 60px; width: 60px; border-radius: 50%; margin: 0 auto 10px; }
-  .m-voice .quote { font-size: 13px; margin: 0 0 10px; }
-  .m-voice .who { font-size: 12px; color: var(--m-main); font-weight: 800; text-align: center; }
+  /* VOICE 型: voice-zigzag（全幅カード縦積み・画像/文章 左右交互・index5・KLK-035） */
+  .m-voice.voice-zigzag { display: flex; flex-direction: column; gap: 18px; }
+  .m-voice.voice-zigzag .v-card { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center; background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(201,111,74,.14); padding: 18px; }
+  .m-voice.voice-zigzag .v-card:nth-child(even) .v-photo { order: 2; }
+  .m-voice.voice-zigzag .v-photo .atari { min-height: 120px; }
+  .m-voice .quote { font-size: 13.5px; margin: 0 0 10px; }
+  .m-voice .who { font-size: 12px; color: var(--m-main); font-weight: 800; }
 
-  /* FLOW 型: flow-row（横並び①→②→③・index0・wrap） */
-  .m-flow.flow-row { display: flex; flex-direction: row; gap: 0; align-items: stretch; }
-  .m-flow.flow-row .step { flex: 1; text-align: center; padding: 0 12px; position: relative; }
-  .m-flow.flow-row .step:not(:last-child)::after { content: "\25B6"; position: absolute; right: -8px; top: 22px; color: var(--m-accent); }
-  .m-flow .n { width: 44px; height: 44px; border-radius: 50%; background: var(--m-main); color: #fff; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-weight: 800; }
+  /* FLOW 型: flow-zigzag（全幅ステップ縦積み・番号/説明 左右交互・index5・KLK-035） */
+  .m-flow.flow-zigzag { display: flex; flex-direction: column; gap: 16px; }
+  .m-flow.flow-zigzag .step { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center; background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 4px 16px rgba(201,111,74,.10); }
+  .m-flow.flow-zigzag .step:nth-child(even) .fz-body { order: 2; }
+  .m-flow.flow-zigzag .fz-visual { display: flex; align-items: center; justify-content: center; min-height: 90px; }
+  .m-flow .n { width: 48px; height: 48px; border-radius: 50%; background: var(--m-main); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; }
   .m-flow h4 { font-size: 15px; color: var(--m-main); margin: 0 0 6px; }
   .m-flow p { font-size: 12.5px; margin: 0; }
 
-  /* STAFF 型: staff-grid（顔写真グリッド4列・index0・wrap） */
-  .m-staff.staff-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-  .m-staff.staff-grid .st { text-align: center; }
-  .m-staff.staff-grid .st .atari { aspect-ratio: 1; min-height: 0; margin-bottom: 8px; }
+  /* STAFF 型: staff-zigzag（全幅カード縦積み・画像左右交互・index5・KLK-035） */
+  .m-staff.staff-zigzag { display: flex; flex-direction: column; gap: 14px; }
+  .m-staff.staff-zigzag .st { display: grid; grid-template-columns: 200px 1fr; gap: 18px; align-items: center; background: #fff; border-radius: 12px; padding: 14px; box-shadow: 0 4px 16px rgba(201,111,74,.10); }
+  .m-staff.staff-zigzag .st:nth-child(even) .st-photo { order: 2; }
+  .m-staff.staff-zigzag .st-photo .atari { aspect-ratio: 4/3; min-height: 0; }
   .m-staff .name { font-size: 14px; color: var(--m-main); font-weight: 800; }
   .m-staff .role { font-size: 11.5px; color: #6B7280; }
 
@@ -77,10 +81,12 @@
     .m-nav ul { display: none; }
     .m-nav::after { content: "\2630"; color: #fff; font-size: 20px; }
     .m-hero .catch { font-size: 25px; }
-    .m-voice.voice-cards { grid-template-columns: 1fr; }
-    .m-flow.flow-row { flex-direction: column; }
-    .m-flow.flow-row .step:not(:last-child)::after { content: "\25BC"; right: auto; left: 50%; top: auto; bottom: -6px; }
-    .m-staff.staff-grid { grid-template-columns: repeat(2, 1fr); }
+    .m-voice.voice-zigzag .v-card { grid-template-columns: 1fr; }
+    .m-voice.voice-zigzag .v-card:nth-child(even) .v-photo { order: 0; }
+    .m-flow.flow-zigzag .step { grid-template-columns: 1fr; }
+    .m-flow.flow-zigzag .step:nth-child(even) .fz-body { order: 0; }
+    .m-staff.staff-zigzag .st { grid-template-columns: 1fr; }
+    .m-staff.staff-zigzag .st:nth-child(even) .st-photo { order: 0; }
     .m-sec { padding: 26px 16px; }
   }
   @media print {
@@ -118,10 +124,10 @@
     <div class="addr"><span class="pin">VOICE-01</span></div>
     <div class="m-sec band">
       <h2>VOICE</h2><div class="en">お客様の声</div>
-      <div class="m-voice voice-cards">
-        <div class="v-card"><div class="atari"><span class="ic">📷</span><span class="desc">お客様の写真</span></div><p class="quote">肩こりがつらかったのですが、施術後はとても軽くなりました。</p><div class="who">40代・会社員</div></div>
-        <div class="v-card"><div class="atari"><span class="ic">📷</span><span class="desc">お客様の写真</span></div><p class="quote">姿勢の説明がわかりやすく、自宅でのケアも続けられています。</p><div class="who">30代・主婦</div></div>
-        <div class="v-card"><div class="atari"><span class="ic">📷</span><span class="desc">お客様の写真</span></div><p class="quote">腰の張りが和らぎ、よく眠れるようになりました。</p><div class="who">50代・自営業</div></div>
+      <div class="m-voice voice-zigzag">
+        <div class="v-card"><div class="v-photo"><div class="atari"><span class="ic">📷</span><span class="desc">お客様の写真</span></div></div><div class="v-body"><p class="quote">肩こりがつらかったのですが、施術後はとても軽くなりました。</p><div class="who">40代・会社員</div></div></div>
+        <div class="v-card"><div class="v-photo"><div class="atari"><span class="ic">📷</span><span class="desc">お客様の写真</span></div></div><div class="v-body"><p class="quote">姿勢の説明がわかりやすく、自宅でのケアも続けられています。</p><div class="who">30代・主婦</div></div></div>
+        <div class="v-card"><div class="v-photo"><div class="atari"><span class="ic">📷</span><span class="desc">お客様の写真</span></div></div><div class="v-body"><p class="quote">腰の張りが和らぎ、よく眠れるようになりました。</p><div class="who">50代・自営業</div></div></div>
       </div>
     </div>
   </div>
@@ -130,10 +136,10 @@
     <div class="addr"><span class="pin">FLOW-01</span></div>
     <div class="m-sec band">
       <h2>FLOW</h2><div class="en">ご利用の流れ</div>
-      <div class="m-flow flow-row">
-        <div class="step"><div class="n">1</div><h4>ご予約</h4><p>Web またはお電話でご予約ください。</p></div>
-        <div class="step"><div class="n">2</div><h4>カウンセリング</h4><p>お悩みと状態をていねいに伺います。</p></div>
-        <div class="step"><div class="n">3</div><h4>施術・お仕上げ</h4><p>ホームケアの助言もお伝えします。</p></div>
+      <div class="m-flow flow-zigzag">
+        <div class="step"><div class="fz-visual"><div class="n">1</div></div><div class="fz-body"><h4>ご予約</h4><p>Web またはお電話でご予約ください。</p></div></div>
+        <div class="step"><div class="fz-visual"><div class="n">2</div></div><div class="fz-body"><h4>カウンセリング</h4><p>お悩みと状態をていねいに伺います。</p></div></div>
+        <div class="step"><div class="fz-visual"><div class="n">3</div></div><div class="fz-body"><h4>施術・お仕上げ</h4><p>ホームケアの助言もお伝えします。</p></div></div>
       </div>
     </div>
   </div>
@@ -142,11 +148,11 @@
     <div class="addr"><span class="pin">STAFF-01</span></div>
     <div class="m-sec band">
       <h2>STAFF</h2><div class="en">スタッフ紹介</div>
-      <div class="m-staff staff-grid">
-        <div class="st"><div class="atari"><span class="ic">📷</span><span class="desc">スタッフ写真</span></div><div class="name">山本（仮）</div><div class="role">代表セラピスト</div></div>
-        <div class="st"><div class="atari"><span class="ic">📷</span><span class="desc">スタッフ写真</span></div><div class="name">中村（仮）</div><div class="role">セラピスト</div></div>
-        <div class="st"><div class="atari"><span class="ic">📷</span><span class="desc">スタッフ写真</span></div><div class="name">小林（仮）</div><div class="role">セラピスト</div></div>
-        <div class="st"><div class="atari"><span class="ic">📷</span><span class="desc">スタッフ写真</span></div><div class="name">加藤（仮）</div><div class="role">受付</div></div>
+      <div class="m-staff staff-zigzag">
+        <div class="st"><div class="st-photo"><div class="atari"><span class="ic">📷</span><span class="desc">スタッフ写真</span></div></div><div class="st-body"><div class="name">山本（仮）</div><div class="role">代表セラピスト</div></div></div>
+        <div class="st"><div class="st-photo"><div class="atari"><span class="ic">📷</span><span class="desc">スタッフ写真</span></div></div><div class="st-body"><div class="name">中村（仮）</div><div class="role">セラピスト</div></div></div>
+        <div class="st"><div class="st-photo"><div class="atari"><span class="ic">📷</span><span class="desc">スタッフ写真</span></div></div><div class="st-body"><div class="name">小林（仮）</div><div class="role">セラピスト</div></div></div>
+        <div class="st"><div class="st-photo"><div class="atari"><span class="ic">📷</span><span class="desc">スタッフ写真</span></div></div><div class="st-body"><div class="name">加藤（仮）</div><div class="role">受付</div></div></div>
       </div>
     </div>
   </div>

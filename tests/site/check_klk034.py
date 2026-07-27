@@ -47,9 +47,9 @@ DEFAULT_1211 = {
 
 # §12.1.2 型プール・オフセット表・割り当て表（check_klk029.py と同一ミラー）
 POOL = {
-    "VOICE": ["voice-cards", "voice-quote-stack", "voice-feature", "voice-two-col", "voice-slider"],
-    "FLOW": ["flow-row", "flow-timeline", "flow-number-card", "flow-arrow-band", "flow-vertical-split"],
-    "STAFF": ["staff-grid", "staff-hscroll", "staff-feature", "staff-list", "staff-two-col"],
+    "VOICE": ["voice-cards", "voice-quote-stack", "voice-feature", "voice-two-col", "voice-slider", "voice-zigzag"],
+    "FLOW": ["flow-row", "flow-timeline", "flow-number-card", "flow-arrow-band", "flow-vertical-split", "flow-zigzag"],
+    "STAFF": ["staff-grid", "staff-hscroll", "staff-feature", "staff-list", "staff-two-col", "staff-zigzag"],
 }
 OFFSET = {
     ("1col", "top"): 0, ("1col", "below-hero"): 3,
@@ -57,9 +57,9 @@ OFFSET = {
     ("2col-full-right", "top"): 2, ("2col-full-right", "below-hero"): 0,
     ("2col-body-left", "top"): 3, ("2col-body-left", "below-hero"): 1,
     ("2col-body-right", "top"): 4, ("2col-body-right", "below-hero"): 2,
-    ("3col", "top"): 0, ("3col", "below-hero"): 3,
+    ("3col", "top"): 5, ("3col", "below-hero"): 3,
 }
-ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 0), 4: (4, 0, 1)}
+ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}
 
 # §5.1 7カテゴリ→hex 変換表（DRAFT_RULES §5.1 のミラー・小文字比較）
 HEX7 = {

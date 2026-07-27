@@ -1,0 +1,33 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": {
+    "project": "サンプル2カラム型プールサイト",
+    "createdAt": "2026-07-27T10:00:00.000Z",
+    "source": "SCR-001"
+  },
+  "industry": {
+    "preset": "整体・リラクゼーション",
+    "custom": "",
+    "resolved": "整体・リラクゼーション"
+  },
+  "layout": { "columns": "2col-body-right", "navPosition": "top" },
+  "sections": ["VOICE", "FLOW", "STAFF", "CTA"],
+  "sectionOptions": { "CTA": { "purpose": "reserve", "label": "ご予約はこちら" } },
+  "taste": "ナチュラル・やさしい",
+  "colors": {
+    "mode": "explicit",
+    "main": "#2e7d6b",
+    "sub": "#24463e",
+    "accent": "#e8a33d",
+    "bg": "#f5f7f4",
+    "autofill": []
+  },
+  "references": { "thumbnails": [], "sampleUrls": [] },
+  "atari": "standard",
+  "output": {
+    "variants": 3,
+    "mobile": { "enabled": false, "widthPx": 375 },
+    "animation": true
+  }
+}

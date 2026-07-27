@@ -30,25 +30,25 @@ NEW_COLS = {"1col", "2col-full-left", "2col-full-right", "2col-body-left", "2col
 NAV_ENUM = {"top", "below-hero"}
 ARCHETYPE_ENUM = {"stack-centered", "split-editorial", "banded-showcase"}
 
-# §12.1.2 型プール（index 0〜4・順序固定）
+# §12.1.2 型プール（index 0〜5・順序固定・KLK-035 で index5 追加＝各6型）
 POOL = {
-    "voice": ["voice-cards", "voice-quote-stack", "voice-feature", "voice-two-col", "voice-slider"],
-    "flow": ["flow-row", "flow-timeline", "flow-number-card", "flow-arrow-band", "flow-vertical-split"],
-    "staff": ["staff-grid", "staff-hscroll", "staff-feature", "staff-list", "staff-two-col"],
+    "voice": ["voice-cards", "voice-quote-stack", "voice-feature", "voice-two-col", "voice-slider", "voice-zigzag"],
+    "flow": ["flow-row", "flow-timeline", "flow-number-card", "flow-arrow-band", "flow-vertical-split", "flow-zigzag"],
+    "staff": ["staff-grid", "staff-hscroll", "staff-feature", "staff-list", "staff-two-col", "staff-zigzag"],
 }
 ALL_MARKERS = [m for sec in ("voice", "flow", "staff") for m in POOL[sec]]
 
-# §12.1.2 オフセット表（data-columns × navPosition → offset・12セル全書き下し）
+# §12.1.2 オフセット表（data-columns × navPosition → offset・12セル全書き下し・KLK-035 で 3col×top=5）
 OFFSET = {
     ("1col", "top"): 0, ("1col", "below-hero"): 3,
     ("2col-full-left", "top"): 1, ("2col-full-left", "below-hero"): 4,
     ("2col-full-right", "top"): 2, ("2col-full-right", "below-hero"): 0,
     ("2col-body-left", "top"): 3, ("2col-body-left", "below-hero"): 1,
     ("2col-body-right", "top"): 4, ("2col-body-right", "below-hero"): 2,
-    ("3col", "top"): 0, ("3col", "below-hero"): 3,
+    ("3col", "top"): 5, ("3col", "below-hero"): 3,
 }
-# §12.1.2 割り当て表（offset → 案A/B/C の pool index・5行）
-ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 0), 4: (4, 0, 1)}
+# §12.1.2 割り当て表（offset → 案A/B/C の pool index・6行・巡回 (o,o+1,o+2) mod 6・KLK-035）
+ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}
 
 results = []
 
