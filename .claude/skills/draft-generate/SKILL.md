@@ -83,10 +83,16 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
   serif上質）／`banded-showcase`（案C・帯構成ビジュアル先行・sans）。**列数（`data-columns`）とセクション集合（`sections`）は
   全案同一**にし、archetype ごとに**本文構造の束**を振る（§12.1.1）: **並び順**（ルート `data-section-order` に本文DOM順を焼き込み・
   案A canonical／案B ABOUT→GALLERY→MENU／案C GALLERY先行）・**HERO型**（`.m-hero` に `data-hero="full|split|band"`）・
-  **MENU型**（`.m-menu` に `pat-cards|pat-list|pat-zigzag`）・**GALLERY型**（`.m-gallery` に `pat-grid|pat-mosaic|pat-wide`）・
-  **ABOUT画像配置**（`.m-about` に `img-left|img-right|img-top`）。各修飾は**実際に異なる grid/flex** を伴わせる（飾りにしない）。
-  **案間で `data-archetype`・`data-section-order`・`data-hero`・MENU/GALLERY/ABOUT の型が相違**すること（複数の構造軸が動く・
+  **MENU型**（`.m-menu` に `pat-cards|pat-list|pat-zigzag`）・**ABOUT画像配置**（`.m-about` に `img-left|img-right|img-top`）。
+  各修飾は**実際に異なる grid/flex** を伴わせる（飾りにしない）。**GALLERY型は §12.1.3（下記の GALLERY プール）で決定**する（KLK-036・archetype 固定から分離）。
+  **案間で `data-archetype`・`data-section-order`・`data-hero`・MENU/ABOUT の型が相違**すること（複数の構造軸が動く・
   `--m-main` 相違と同型の機械検証フック）。番地は並べ替えても各1回のまま（§2）。単案（`variants:1`）は既定 `stack-centered`。
+- **GALLERY の内部型プール（KLK-036・DRAFT_RULES §12.1.3）**: GALLERY が `sections` にあるときは、案ごとに **GALLERY プール（4型）から
+  型を選ぶ**（archetype とは別軸・§12.1.1 の他3セクションは不変）。選択は**算術せず表を読むだけ**: ① `data-columns`（正規化後）と
+  `navPosition` を確定 → ② §12.1.2 の**オフセット表**（共有）で offset(0〜5) → ③ **§12.1.3 の GALLERY 割り当て表**（offset 行→ (idxA,idxB,idxC)・
+  巡回 **mod 4**）→ ④ 各案の `.m-gallery` に `pool[index]` のマーカーを付け対応 CSS を含める。プール（index0〜3）は
+  `pat-grid`/`pat-wide`/`pat-mosaic`/`pat-slider`（`pat-slider`=横スクロール/カルーセル・`flex-wrap:nowrap;overflow-x:auto`・実CSS差）。
+  **offset0（1col×top）は (pat-grid,pat-wide,pat-mosaic)＝従来の archetype 既定と一致**（後方互換）。同一指示書＝同一割り当て・3案 distinct（連続3窓 mod4）。未選択は no-op。単案は idxA。
 - **VOICE/FLOW/STAFF の内部型プール（KLK-029/035・DRAFT_RULES §12.1.2）**: これら3セクションが `sections` にあるときは、案ごとに
   **型プール（各6型）から型を選ぶ**（archetype とは別軸・§12.1.1 は不変・3セクションは常に同数）。選択は**算術せず表を読むだけ**で決める:
   ① ルートの `data-columns`（正規化後）と `navPosition` を確定 → ② **オフセット表**（`data-columns`×`navPosition`→offset 0〜5）で

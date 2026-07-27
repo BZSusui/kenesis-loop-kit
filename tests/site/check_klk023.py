@@ -38,7 +38,7 @@ NEW_COLS = {"1col", "2col-full-left", "2col-full-right", "2col-body-left", "2col
 ARCHETYPE_ENUM = {"stack-centered", "split-editorial", "banded-showcase"}
 HERO_ENUM = {"full", "split", "band"}
 MENU_ENUM = {"pat-cards", "pat-list", "pat-zigzag"}
-GAL_ENUM = {"pat-grid", "pat-wide", "pat-mosaic"}
+GAL_ENUM = {"pat-grid", "pat-wide", "pat-mosaic", "pat-slider"}  # KLK-036: GALLERY は §12.1.3 プール(4型)。1col×top=offset0 は従来の(grid,wide,mosaic)
 ABOUT_ENUM = {"img-left", "img-right", "img-top"}
 GOLDENS = (("a", IDXA), ("b", IDXB), ("c", IDXC))
 
@@ -152,7 +152,7 @@ check("S5 MENU型の相違 (.m-menu 修飾 pat-cards/list/zigzag が distinct)",
 
 # S6 GALLERY型の相違
 s6 = distinct3(GAL) and all(g in GAL_ENUM for g in GAL)
-check("S6 GALLERY型の相違 (.m-gallery 修飾 pat-grid/wide/mosaic が distinct)", s6, f"gallery={GAL}")
+check("S6 GALLERY型の相違 (.m-gallery 修飾が §12.1.3 プール4型内・案間 distinct)", s6, f"gallery={GAL}")
 
 # S7 ABOUT画像配置の相違
 s7 = distinct3(ABOUT) and all(a in ABOUT_ENUM for a in ABOUT)
