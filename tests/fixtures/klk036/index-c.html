@@ -32,7 +32,7 @@
 
   /* HERO 型: panel-band（全幅背景＋見出し＋下部に横一列フィルム風パネル群・§12.1.3 index5・KLK-040/041・data-hero="panel-band"）
      整列シグネチャは (flex-end / center / center) を維持（§12.1 不変条件4・6型 distinct）。見た目は「見出し上・下部フィルム」に作り替え（KLK-041） */
-  .m-hero { position: relative; display: grid; grid-template-rows: 1fr auto; justify-content: flex-end; align-items: center; text-align: center; min-height: 480px; padding: 0; color: #fff;
+  .m-hero { position: relative; display: grid; grid-template-rows: 1fr auto; grid-template-columns: 1fr; justify-content: flex-end; align-items: center; text-align: center; min-height: 480px; padding: 0; color: #fff;
     background: linear-gradient(rgba(58,45,40,.28), rgba(58,45,40,.5)), repeating-linear-gradient(45deg, var(--m-main), var(--m-main) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 28px); }
   .m-hero .hero-text { width: 100%; padding: 56px 20px 24px; }
   /* 下部フィルム: 幅いっぱい・パネル多め・細かい・直角（フィルムのコマ風） */
