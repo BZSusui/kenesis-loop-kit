@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <!--
-  KLK-037 ゴールデン（HERO/ABOUT/GALLERY §12.1.3 プール・案C / letter=c）— 1col×below-hero→offset3→(3,0,1)
-  offset3→HERO/ABOUT/GALLERY 各 index(3,0,1)：案A=overlap/img-overlap/pat-slider・案B=full/img-left/pat-grid・案C=split/img-right/pat-wide。
+  KLK-040 ゴールデン（HERO/ABOUT/GALLERY §12.1.3 プール・案C / letter=c）— 1col×below-hero→offset3
+  KLK-040 で HERO/ABOUT が6型化（mod6）・GALLERY は4型のまま（mod4）。offset3→HERO/ABOUT 各 index(3,4,5)・GALLERY 各 index(3,0,1)：
+  案A=overlap/img-overlap/pat-slider・案B=center-scroll/img-circle/pat-grid・案C=panel-band/img-zigzag/pat-wide。
   これはテスト検証用のプレースホルダ出力です。実在の顧客・案件ではありません（サンプル）。
   案件名: サンプルギャラリー型サイト / 業種: アート・ポートフォリオ / カラム: 1col（全案共通）/ nav: below-hero（全案共通）
-  セクション集合: ABOUT,GALLERY,CTA（全案共通）/ 並び順=GALLERY,ABOUT,CTA（GALLERY先行）/ archetype=banded-showcase / HERO=split(index1) / ABOUT=img-right(index1) / GALLERY=pat-wide(index1)
+  セクション集合: ABOUT,GALLERY,CTA（全案共通）/ 並び順=GALLERY,ABOUT,CTA（GALLERY先行）/ archetype=banded-showcase / HERO=panel-band(index5) / ABOUT=img-zigzag(index5) / GALLERY=pat-wide(index1)
   配色方向: 案C 明色テラコッタ（sans・帯構成）
   実生成物は mockups/{日付}_{案件名}/index-c.html に保存されます（Git除外）。
 -->
@@ -29,14 +30,17 @@
   .m-nav ul { display: flex; gap: 16px; list-style: none; margin: 0; padding: 0; font-size: 12px; }
   .m-nav .cta { background: var(--m-accent); color: #fff; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; }
 
-  /* HERO 型: split（左テキスト・右ビジュアルの左右分割・§12.1.3 index1・data-hero="split"） */
-  .m-hero { position: relative; min-height: 360px; display: flex; flex-direction: row; align-items: center; justify-content: space-between; text-align: left; gap: 28px; color: #fff; padding: 40px 44px;
-    background: linear-gradient(rgba(58,45,40,.22), rgba(58,45,40,.46)), repeating-linear-gradient(45deg, var(--m-main), var(--m-main) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 28px); }
-  .m-hero .hero-copy { flex: 1; }
+  /* HERO 型: panel-band（全幅背景＋見出し＋下部に横一列フィルム風パネル群・§12.1.3 index5・KLK-040/041・data-hero="panel-band"）
+     整列シグネチャは (flex-end / center / center) を維持（§12.1 不変条件4・6型 distinct）。見た目は「見出し上・下部フィルム」に作り替え（KLK-041） */
+  .m-hero { position: relative; display: grid; grid-template-rows: 1fr auto; grid-template-columns: 1fr; justify-content: flex-end; align-items: center; text-align: center; min-height: 480px; padding: 0; color: #fff;
+    background: linear-gradient(rgba(58,45,40,.28), rgba(58,45,40,.5)), repeating-linear-gradient(45deg, var(--m-main), var(--m-main) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 28px); }
+  .m-hero .hero-text { width: 100%; padding: 56px 20px 24px; }
+  /* 下部フィルム: 幅いっぱい・パネル多め・細かい・直角（フィルムのコマ風） */
+  .m-hero .hero-panels { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; width: 100%; padding: 0 10px 20px; }
+  .m-hero .hero-panels .atari { aspect-ratio: 3 / 4; min-height: 0; border-radius: 0; }
   .m-hero .catch { font-size: 34px; font-weight: 800; letter-spacing: .04em; margin: 0 0 10px; text-shadow: 0 2px 8px rgba(0,0,0,.3); }
-  .m-hero .lead { font-size: 15px; max-width: 460px; margin: 0 0 18px; }
+  .m-hero .lead { font-size: 15px; max-width: 460px; margin: 0 auto 18px; }
   .m-hero .hero-cta { background: var(--m-accent); color: #fff; padding: 12px 30px; border-radius: 24px; font-size: 14px; font-weight: 700; }
-  .m-hero .hero-visual { flex: 0 0 40%; align-self: stretch; min-height: 200px; border: 1px dashed rgba(255,255,255,.5); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: rgba(255,255,255,.85); }
   .atari-tag { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 10px; padding: 3px 8px; border-radius: 4px; }
 
   .m-sec { padding: 40px 22px; max-width: 940px; margin: 0 auto; border-radius: 14px; }
@@ -51,9 +55,11 @@
   .atari .kw { font-size: 11px; color: #6B7280; }
   .atari .kw b { font-family: ui-monospace, monospace; color: var(--m-main); }
 
-  /* ABOUT 画像配置: img-right（右画像・左キャプション。DOM は txt→atari・§12.1.3 index1） */
-  .m-about.img-right { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; align-items: center; }
-  .m-about.img-right .atari { min-height: 200px; }
+  /* ABOUT 画像配置: img-zigzag（複数段・画像左右交互のストーリー型・§12.1.3 index5・KLK-040 新型） */
+  .m-about.img-zigzag { display: flex; flex-direction: column; gap: 24px; }
+  .m-about.img-zigzag .ab-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: center; }
+  .m-about.img-zigzag .ab-row:nth-child(even) .atari { order: 2; }
+  .m-about.img-zigzag .ab-row .atari { min-height: 180px; }
   .m-about .txt h3 { font-size: 18px; color: var(--m-main); margin: 0 0 10px; }
   .m-about .txt p { font-size: 13.5px; margin: 0; }
 
@@ -74,10 +80,11 @@
   @media (max-width: 640px) {
     .m-nav ul { display: none; }
     .m-nav::after { content: "\2630"; color: #fff; font-size: 20px; }
-    .m-hero { flex-direction: column; align-items: flex-start; padding: 32px 22px; }
     .m-hero .catch { font-size: 25px; }
-    .m-hero .hero-visual { width: 100%; flex-basis: auto; }
-    .m-about.img-right, .m-gallery.pat-wide { grid-template-columns: 1fr; }
+    .m-hero .hero-panels { grid-template-columns: repeat(3, 1fr); }
+    .m-about.img-zigzag .ab-row { grid-template-columns: 1fr; }
+    .m-about.img-zigzag .ab-row:nth-child(even) .atari { order: 0; }
+    .m-gallery.pat-wide { grid-template-columns: 1fr; }
     .m-sec { padding: 26px 16px; }
   }
   @media print {
@@ -94,14 +101,21 @@
 
   <div class="sec reveal">
     <div class="addr"><span class="pin">MV-01</span></div>
-    <div class="m-hero" data-hero="split">
-      <div class="hero-copy">
+    <div class="m-hero" data-hero="panel-band">
+      <div class="hero-text">
         <h1 class="catch">余白に、物語を宿す。</h1>
         <p class="lead">絵画・立体・インスタレーション。素材と対話しながら生まれた作品を、一枚ずつ静かにご紹介します。</p>
         <span class="hero-cta">作品を見る ＞</span>
       </div>
-      <div class="hero-visual">📷 アタリ: 代表作の一枚</div>
-      <span class="atari-tag">📷 アタリ: アトリエで制作中の作家の手元 / 検索: artist studio hands painting</span>
+      <div class="hero-panels">
+        <div class="atari"><span class="ic">📷</span><span class="desc">みなも</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">個展会場</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">アトリエ</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">習作</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">立体作品</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">群青の呼吸</span></div>
+      </div>
+      <span class="atari-tag">📷 アタリ: 全幅ビジュアル＋下部フィルム / 検索: artist studio gallery film strip</span>
     </div>
   </div>
 
@@ -131,12 +145,28 @@
     <div class="addr"><span class="pin">ABOUT-01</span></div>
     <div class="m-sec">
       <h2>ABOUT</h2><div class="en">作家について</div>
-      <div class="m-about img-right">
-        <div class="txt">
-          <h3>かたちにならない感情を、かたちにする。</h3>
-          <p>日々の観察と実験から生まれたモチーフを、油彩とミクストメディアで描いています。見る人それぞれの記憶に触れる一枚を目指しています。<span class="todo">(要検討: 受賞歴・個展の実績・在籍ギャラリーなど信頼の一文)</span></p>
+      <div class="m-about img-zigzag">
+        <div class="ab-row">
+          <div class="atari"><span class="ic">📷</span><span class="desc">アトリエで制作する作家のポートレート</span><span class="kw">検索: <b>artist portrait studio</b></span></div>
+          <div class="txt">
+            <h3>かたちにならない感情を、かたちにする。</h3>
+            <p>日々の観察と実験から生まれたモチーフを、油彩とミクストメディアで描いています。見る人それぞれの記憶に触れる一枚を目指しています。</p>
+          </div>
         </div>
-        <div class="atari"><span class="ic">📷</span><span class="desc">アトリエで制作する作家のポートレート</span><span class="kw">検索: <b>artist portrait studio</b></span></div>
+        <div class="ab-row">
+          <div class="atari"><span class="ic">📷</span><span class="desc">初個展の会場風景</span><span class="kw">検索: <b>solo exhibition gallery</b></span></div>
+          <div class="txt">
+            <h3>素材と向き合ってきた時間。</h3>
+            <p>学生時代の油彩から立体・インスタレーションへ。手を動かしながら考えるスタイルで、素材そのものの声を作品に取り込んできました。</p>
+          </div>
+        </div>
+        <div class="ab-row">
+          <div class="atari"><span class="ic">📷</span><span class="desc">近作の展示スナップ</span><span class="kw">検索: <b>contemporary art installation</b></span></div>
+          <div class="txt">
+            <h3>これからも、静かに問いつづける。</h3>
+            <p>見る人それぞれの記憶に触れる一枚を目指して。<span class="todo">(要検討: 受賞歴・個展の実績・在籍ギャラリーなど信頼の一文)</span></p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
