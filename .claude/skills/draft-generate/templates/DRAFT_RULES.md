@@ -665,7 +665,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 0 | `full` | 全面中央（`center` / `center` / `center`）・従来最頻 |
 | 1 | `split` | 左右分割（`space-between` / `center` / `left`） |
 | 2 | `band` | 下寄せ帯（`flex-end` / `flex-start` / `left`） |
-| 3 | `overlap`（KLK-037新・KLK-038調整） | せり出し横長画像＋白背景文言の重なり（`display:grid;grid-template-columns:1fr 2fr`＝**画像列を広め約2/3**・画像を右、白背景文言を左から `transform` で重ね）。**整列＝`flex-start` / `center` / `left`（既存3型と非重複＝3案 distinct 維持）**。モバイルは重なり解除・縦積み |
+| 3 | `overlap`（KLK-037新・KLK-038/039調整） | せり出し横長画像＋白背景文言の重なり（`display:grid;grid-template-columns:1fr 2fr`＝**画像列を広め約2/3**・画像を右、白背景文言を左から `transform` で重ね・**画像は角丸なし＝直角でシャープ（`border-radius:0`）**）。**整列＝`flex-start` / `center` / `left`（既存3型と非重複＝3案 distinct 維持）**。モバイルは重なり解除・縦積み |
 
 **ABOUT プール（`.m-about`・KLK-037）:**
 
