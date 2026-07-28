@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <!--
-  KLK-036 ゴールデン（GALLERY型プール§12.1.3・案A / letter=a）— 1col×below-hero→offset3→GALLERY(3,0,1)
-  案A=pat-slider(新)/案B=pat-grid/案C=pat-wide。ABOUTは§12.1.1 archetype固定(img-left/right/top)。
+  KLK-037 ゴールデン（HERO/ABOUT/GALLERY §12.1.3 プール・案A / letter=a）— 1col×below-hero→offset3→(3,0,1)
+  offset3→HERO/ABOUT/GALLERY 各 index(3,0,1)：案A=overlap/img-overlap/pat-slider・案B=full/img-left/pat-grid・案C=split/img-right/pat-wide。
   これはテスト検証用のプレースホルダ出力です。実在の顧客・案件ではありません（サンプル）。
   案件名: サンプルギャラリー型サイト / 業種: アート・ポートフォリオ / カラム: 1col（全案共通）/ nav: below-hero（全案共通）
-  セクション集合: ABOUT,GALLERY,CTA（全案共通）/ 並び順=canonical / archetype=stack-centered / GALLERY=pat-slider(index3) / ABOUT=img-left
+  セクション集合: ABOUT,GALLERY,CTA（全案共通）/ 並び順=canonical / archetype=stack-centered / HERO=overlap(index3) / ABOUT=img-overlap(index3) / GALLERY=pat-slider(index3)
   配色方向: 案A ナチュラル緑（指示書に忠実・sans・中央寄せ）
   実生成物は mockups/{日付}_{案件名}/index-a.html に保存されます（Git除外）。
 -->
@@ -29,11 +29,15 @@
   .m-nav ul { display: flex; gap: 16px; list-style: none; margin: 0; padding: 0; font-size: 12px; }
   .m-nav .cta { background: var(--m-accent); color: #fff; padding: 6px 14px; border-radius: 4px; font-size: 12px; }
 
-  /* HERO 型: full（全面中央・archetype=stack-centered・data-hero="full"） */
-  .m-hero { position: relative; min-height: 340px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #fff; padding: 40px 20px;
-    background: linear-gradient(rgba(20,36,30,.34), rgba(20,36,30,.34)), repeating-linear-gradient(45deg, var(--m-main), var(--m-main) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 28px); }
-  .m-hero .catch { font-size: 34px; font-weight: 700; letter-spacing: .06em; margin: 0 0 12px; text-shadow: 0 2px 8px rgba(0,0,0,.3); }
-  .m-hero .lead { font-size: 15px; max-width: 540px; margin: 0 0 20px; }
+  /* HERO 型: overlap（右せり出し横長画像＋左白背景文言の重なり・§12.1.3 index3・新型・data-hero="overlap"） */
+  .m-hero { position: relative; display: grid; grid-template-columns: 1fr 1fr; align-items: center;
+    justify-content: flex-start; text-align: left; min-height: 340px; padding: 0; color: var(--m-text); background: none; }
+  .m-hero .hero-img { grid-column: 2 / 3; grid-row: 1; align-self: stretch; min-height: 300px; }
+  .m-hero .hero-text { grid-column: 1 / 2; grid-row: 1; z-index: 1; justify-self: start; align-self: center;
+    background: rgba(255,255,255,.92); padding: 32px 36px; margin-left: 24px; max-width: 460px;
+    box-shadow: 0 8px 30px rgba(0,0,0,.12); transform: translateX(28%); }
+  .m-hero .catch { font-size: 32px; font-weight: 700; letter-spacing: .06em; margin: 0 0 12px; color: var(--m-main); }
+  .m-hero .lead { font-size: 15px; margin: 0 0 20px; }
   .m-hero .hero-cta { background: var(--m-accent); color: #fff; padding: 12px 30px; border-radius: 4px; font-size: 14px; }
   .atari-tag { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 10px; padding: 3px 8px; border-radius: 4px; }
 
@@ -48,9 +52,11 @@
   .atari .kw { font-size: 11px; color: #6B7280; }
   .atari .kw b { font-family: ui-monospace, monospace; color: var(--m-main); }
 
-  /* ABOUT 画像配置: img-left（左画像・右キャプション・§12.1.1 archetype 固定） */
-  .m-about.img-left { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: center; }
-  .m-about.img-left .atari { min-height: 190px; }
+  /* ABOUT 画像配置: img-overlap（左画像せり出し・右白背景文言の重なり・§12.1.3 index3・新型） */
+  .m-about.img-overlap { position: relative; display: grid; grid-template-columns: 1fr 1fr; align-items: center; }
+  .m-about.img-overlap .atari { grid-column: 1 / 2; grid-row: 1; min-height: 220px; align-self: stretch; }
+  .m-about.img-overlap .txt { grid-column: 2 / 3; grid-row: 1; z-index: 1; background: rgba(255,255,255,.94);
+    padding: 28px 32px; box-shadow: 0 8px 30px rgba(0,0,0,.12); transform: translateX(-28%); }
   .m-about .txt h3 { font-size: 18px; color: var(--m-main); margin: 0 0 10px; }
   .m-about .txt p { font-size: 13.5px; margin: 0; }
 
@@ -73,8 +79,12 @@
   @media (max-width: 640px) {
     .m-nav ul { display: none; }
     .m-nav::after { content: "\2630"; color: #fff; font-size: 20px; }
+    .m-hero { grid-template-columns: 1fr; }
+    .m-hero .hero-text { transform: none; margin: -40px 16px 0; }
+    .m-hero .hero-img { grid-column: 1; }
     .m-hero .catch { font-size: 24px; }
-    .m-about.img-left { grid-template-columns: 1fr; }
+    .m-about.img-overlap { grid-template-columns: 1fr; }
+    .m-about.img-overlap .txt { transform: none; margin: -40px 16px 0; }
     /* スライダーはモバイルでも横スクロール継続（幅を 70vw に） */
     .m-gallery.pat-slider { flex-wrap: nowrap; }
     .m-gallery.pat-slider .g-item { flex: 0 0 70vw; }
@@ -95,11 +105,13 @@
 
   <div class="sec reveal">
     <div class="addr"><span class="pin">MV-01</span></div>
-    <div class="m-hero" data-hero="full">
-      <h1 class="catch">余白に、物語を宿す。</h1>
-      <p class="lead">絵画・立体・インスタレーション。素材と対話しながら生まれた作品を、一枚ずつ静かにご紹介します。</p>
-      <span class="hero-cta">作品を見る ＞</span>
-      <span class="atari-tag">📷 アタリ: アトリエで制作中の作家の手元 / 検索: artist studio hands painting</span>
+    <div class="m-hero" data-hero="overlap">
+      <div class="hero-img atari"><span class="ic">📷</span><span class="desc">アトリエで制作中の作家の手元（横長ビジュアル）</span><span class="kw">検索: <b>artist studio hands painting</b></span></div>
+      <div class="hero-text">
+        <h1 class="catch">余白に、物語を宿す。</h1>
+        <p class="lead">絵画・立体・インスタレーション。素材と対話しながら生まれた作品を、一枚ずつ静かにご紹介します。</p>
+        <span class="hero-cta">作品を見る ＞</span>
+      </div>
     </div>
   </div>
 
@@ -116,7 +128,7 @@
     <div class="addr"><span class="pin">ABOUT-01</span></div>
     <div class="m-sec" style="background:#fff">
       <h2>ABOUT</h2><div class="en">作家について</div>
-      <div class="m-about img-left">
+      <div class="m-about img-overlap">
         <div class="atari"><span class="ic">📷</span><span class="desc">アトリエで制作する作家のポートレート</span><span class="kw">検索: <b>artist portrait studio</b></span></div>
         <div class="txt">
           <h3>かたちにならない感情を、かたちにする。</h3>

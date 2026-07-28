@@ -36,10 +36,10 @@ SKILL = open(os.path.join(ROOT, ".claude", "skills", "draft-generate", "SKILL.md
 
 NEW_COLS = {"1col", "2col-full-left", "2col-full-right", "2col-body-left", "2col-body-right", "3col"}
 ARCHETYPE_ENUM = {"stack-centered", "split-editorial", "banded-showcase"}
-HERO_ENUM = {"full", "split", "band"}
+HERO_ENUM = {"full", "split", "band", "overlap"}  # KLK-037: HERO は §12.1.3 プール(4型)。1col×top=offset0 は従来の(full,split,band)
 MENU_ENUM = {"pat-cards", "pat-list", "pat-zigzag"}
 GAL_ENUM = {"pat-grid", "pat-wide", "pat-mosaic", "pat-slider"}  # KLK-036: GALLERY は §12.1.3 プール(4型)。1col×top=offset0 は従来の(grid,wide,mosaic)
-ABOUT_ENUM = {"img-left", "img-right", "img-top"}
+ABOUT_ENUM = {"img-left", "img-right", "img-top", "img-overlap"}  # KLK-037: ABOUT は §12.1.3 プール(4型)
 GOLDENS = (("a", IDXA), ("b", IDXB), ("c", IDXC))
 
 results = []

@@ -502,22 +502,22 @@ KLK-021 の archetype は整列と配色しか振らず、本文の**組み立�
 | `split-editorial`（b） | ABOUT→GALLERY→MENU（入替） | `split`（左右分割） | `pat-list`（横並びリスト） | `pat-wide`（横帯ワイド） | `img-right` | 罫線 |
 | `banded-showcase`（c） | GALLERY先行 | `band`（下寄せ帯） | `pat-zigzag`（ジグザグ交互） | `pat-mosaic`（大小モザイク） | `img-top`（横長画像＋下キャプション） | 全幅帯（交互色） |
 
-> **※KLK-036: GALLERY の型は §12.1.3（GALLERY 独立プール・4型）で決定する（archetype 固定ではない）。**
-> 上表の GALLERY 列（pat-grid/pat-wide/pat-mosaic）は **offset0 の割り当てと一致する既定値**として残す（1col×top では従来どおり）。
-> HERO/MENU/ABOUT は本表のまま archetype 固定（後続チケットで §12.1.3 へ移譲予定）。並び順・区切り・整列は §12.1.1 のまま不変。
+> **※KLK-036/037: GALLERY・HERO・ABOUT の型は §12.1.3（各独立プール・4型）で決定する（archetype 固定ではない）。**
+> 上表の GALLERY/HERO/ABOUT 列は **offset0 の割り当てと一致する既定値**として残す（1col×top では従来どおり）。
+> **MENU のみ**本表のまま archetype 固定（後続チケットで §12.1.3 へ移譲予定）。並び順・区切りは §12.1.1 のまま不変。
+> HERO の整列シグネチャは §12.1.3 の型（full/split/band/overlap）に付随する（§12.1 不変条件4を維持）。
 
 **離散マーカー契約（生成物に焼き込み・機械検証フック）:**
 - ルート `.mock`: `data-columns`（**全案同一**）・`data-archetype`（相違）・**`data-section-order`**（本文セクションの DOM 順を
   カンマ連結・案間**相違**）・`data-nav-position`（§2.1）。
-- `.m-hero` に **`data-hero="full|split|band"`**（案間相違）＋ HERO 整列シグネチャも相違（§12.1 継承）。
-- `.m-menu` に **`pat-cards|pat-list|pat-zigzag`**、`.m-about` に **`img-left|img-right|img-top`** を付す（案間**相違**・
-  各修飾は**実際に異なる grid/flex 宣言**を伴う＝属性だけの飾りにしない）。
-  **`.m-gallery` の型は §12.1.3（GALLERY 独立プール `pat-grid|pat-wide|pat-mosaic|pat-slider`）で決定**する（KLK-036・archetype 固定から移譲）。
+- `.m-menu` に **`pat-cards|pat-list|pat-zigzag`** を付す（案間**相違**・各修飾は**実際に異なる grid/flex 宣言**を伴う＝飾りにしない）。
+  **`.m-hero` の型(`data-hero`)・`.m-gallery`・`.m-about` の型は §12.1.3（各独立プール・4型）で決定**する（KLK-036/037・archetype 固定から移譲）。
+  HERO は型に整列シグネチャ（justify/align/text-align）が付随し案間相違（§12.1 継承）。
 
 **不変条件（機械検証の正・check_klk023.py）:** 3案で ①`data-columns` 同一 ②本文セクション集合同一（並べ替えのみ・抜き差し
 しない）③`--m-main` 相違 ④`data-archetype` 相違 に加えて、⑤`data-section-order` ⑥`data-hero` ⑦MENU型 ⑧GALLERY型
-⑨ABOUT画像配置 が**それぞれ案間で相違**（＝複数の構造軸が動く）。**⑧GALLERY型は KLK-036 以降 §12.1.3 の表引きで決定**
-（archetype 固定ではないが offset0＝1col×top では従来と同一・案間 distinct は §12.1.3 の連続3窓が保証）。
+⑨ABOUT画像配置 が**それぞれ案間で相違**（＝複数の構造軸が動く）。**⑥HERO型・⑧GALLERY型・⑨ABOUT配置は KLK-036/037 以降 §12.1.3 の表引きで決定**
+（archetype 固定ではないが offset0＝1col×top では従来と同一・案間 distinct は §12.1.3 の連続3窓が保証。HERO は整列シグネチャも4型で全distinct）。
 
 - **ABOUT画像配置**は `img-left`（左画像右キャプション）/ `img-right`（右画像左キャプション）/ `img-top`（横長画像の下に
   キャプション）。パターン増・他セクション内部の型拡充は後続チケット。
@@ -644,9 +644,12 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 **オフセット表は §12.1.2(2) を共有**（重複定義しない＝ドリフト防止）。割り当てはセクションの型数 N_section に応じた
 巡回窓 `(offset+0, offset+1, offset+2) mod N_section` を**表で読む**（算術で導出しない・書き下した表を読むだけ）。
 
-**(1) GALLERY 型プール（4型・index0〜3・index0=最頻＝従来定番）:**
+**(1) セクション別型プール（GALLERY/HERO/ABOUT・各4型・index0=最頻/従来定番・KLK-036/037）:**
 
-容器 `.m-gallery` にプールマーカー1個。各マーカーは**実際に異なる grid/flex 宣言**を伴う（飾りにしない）。
+各セクション容器（`.m-gallery`／`.m-hero` の `data-hero`／`.m-about`）にプールマーカー1個。各マーカーは**実際に異なる grid/flex 宣言**を
+伴う（飾りにしない）。型数は各セクション独立（§12.1.2 の「3セクション一致（制約A）」とは別系統）。
+
+**GALLERY プール（`.m-gallery`）:**
 
 | index | マーカー | 見た目（実CSS差）／モバイル |
 |---|---|---|
@@ -655,7 +658,25 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 2 | `pat-mosaic` | 大小モザイク（`grid`＋`grid-column/row span` 強弱）。モバイル2列 |
 | 3 | `pat-slider`（KLK-036新） | 横スクロール/カルーセル（`display:flex;flex-wrap:nowrap;overflow-x:auto`＋各 `flex:0 0 <幅>`＋`scroll-snap-type`。矢印/スワイプ送り想定）。**モバイルも横スクロール継続** |
 
-**(2) GALLERY 割り当て表（offset → 案A/B/C の GALLERY index・巡回 `mod 4`・6行を全書き下し）:**
+**HERO プール（`.m-hero` の `data-hero`・KLK-037）— ★型ごとに整列シグネチャ(justify-content/align-items/text-align)が付随（§12.1 不変条件4）:**
+
+| index | マーカー | 見た目・整列シグネチャ |
+|---|---|---|
+| 0 | `full` | 全面中央（`center` / `center` / `center`）・従来最頻 |
+| 1 | `split` | 左右分割（`space-between` / `center` / `left`） |
+| 2 | `band` | 下寄せ帯（`flex-end` / `flex-start` / `left`） |
+| 3 | `overlap`（KLK-037新） | せり出し横長画像＋白背景文言の重なり（`display:grid;grid-template-columns:1fr 1fr`・画像を右、白背景文言を左から `transform` で重ね）。**整列＝`flex-start` / `center` / `left`（既存3型と非重複＝3案 distinct 維持）**。モバイルは重なり解除・縦積み |
+
+**ABOUT プール（`.m-about`・KLK-037）:**
+
+| index | マーカー | 見た目（実CSS差）／モバイル |
+|---|---|---|
+| 0 | `img-left` | 左画像・右文言（`grid-template-columns:1fr 1fr`）・従来最頻 |
+| 1 | `img-right` | 右画像・左文言 |
+| 2 | `img-top` | 横長画像＋下キャプション |
+| 3 | `img-overlap`（KLK-037新） | せり出し横長画像＋白背景文言の重なり（`display:grid;grid-template-columns:1fr 1fr`・画像を左、白背景文言を右から `transform` で重ね）。モバイルは重なり解除・縦積み |
+
+**(2) 割り当て表（4型プール共通＝GALLERY/HERO/ABOUT・offset → 案A/B/C の pool index・巡回 `mod 4`・6行を全書き下し）:**
 
 | offset | 案A（`a`） | 案B（`b`） | 案C（`c`） |
 |---|---|---|---|
@@ -666,28 +687,28 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 4 | 0 | 1 | 2 |
 | 5 | 1 | 2 | 3 |
 
-- **offset0→(0,1,2)=(pat-grid,pat-wide,pat-mosaic)** は §12.1.1 の archetype 既定（案A=pat-grid/案B=pat-wide/案C=pat-mosaic）と
-  **一致**＝1col×top（offset0）の既存生成物・golden は GALLERY マーカー不変。
+- **offset0→(0,1,2)** は各プールの index0/1/2＝§12.1.1 の archetype 既定と**一致**（GALLERY=(pat-grid,pat-wide,pat-mosaic)／
+  HERO=(full,split,band)／ABOUT=(img-left,img-right,img-top)）＝1col×top（offset0）の既存生成物・golden はマーカー不変。
 - 案A の index = `offset mod 4`。offset 集合 {0..5}（オフセット表 §12.1.2 共有・`3col×top`=5 含む）で index 集合 {0,1,2,3} を
-  網羅（`pat-slider`=index3 は offset3 の案A で到達）。各行は連続3窓（wrap込み）→ **3案 distinct**（N=4≥3）。
+  網羅（index3 の新型＝`pat-slider`/`overlap`/`img-overlap` は offset3 の案A で到達）。各行は連続3窓（wrap込み）→ **3案 distinct**（N=4≥3）。
 
-**(3) 生成手順（表を"読むだけ"）:** ① `data-columns`（正規化後）と `navPosition` を確定 → ② §12.1.2 の**オフセット表**で offset(0〜5) →
-③ 上の **GALLERY 割り当て表**で (idxA,idxB,idxC) → ④ 各案の `.m-gallery` に `GALLERYプール[index]` のマーカーを付け、対応 CSS を
-`<head>` に含める。archetype の並び順・区切り・整列は §12.1.1 のまま（本節は GALLERY の型だけを差し替える）。
+**(3) 生成手順（表を"読むだけ"・GALLERY/HERO/ABOUT 共通）:** ① `data-columns`（正規化後）と `navPosition` を確定 → ② §12.1.2 の
+**オフセット表**で offset(0〜5) → ③ 上の **割り当て表**で (idxA,idxB,idxC) → ④ 各案の該当容器（`.m-gallery`／`.m-hero` の `data-hero`／
+`.m-about`）に `該当プール[index]` のマーカーを付け、対応 CSS を `<head>` に含める。**HERO は型に整列シグネチャが付随**するので
+各案の `.m-hero` 基底に該当型の整列を書く（§12.1 不変条件4・overlap は flex-start/center/left）。archetype の並び順・区切りは §12.1.1 のまま。
 
-**(4) 後方互換・不変（additive）:** GALLERY が `sections` に無ければ no-op。offset0 は (pat-grid,pat-wide,pat-mosaic)＝
-既存生成物・klk021/023/034/034b golden と一致（HTML 無変更）。**HERO/MENU/ABOUT は本節の対象外**（§12.1.1 archetype 固定のまま・
-後続 KLK-037+ で §12.1.3 へ各自のプールで移譲）。
+**(4) 後方互換・不変（additive）:** 対象セクションが `sections` に無ければ no-op。offset0 は各プール (index0,1,2)＝
+既存生成物・klk021/023/034/034b golden と一致（HTML 無変更）。**MENU は本節の対象外**（§12.1.1 archetype 固定のまま・後続で §12.1.3 へ移譲予定）。
 
-**(5) 拡張（STEP B・データ追加だけ）:** GALLERY 型を N→N+1 は (a)プール1行追記 (b)CSS1つ (c)割り当て表の `mod` を N+1 に
-＋新 offset を出すオフセット表セルの確保（到達可能性）。**HERO/MENU/ABOUT の §12.1.3 化は、同機構にセクション別プールを足すだけ**
+**(5) 拡張（STEP B・データ追加だけ）:** 型を N→N+1 は (a)該当プールへ1行追記 (b)CSS1つ (c)割り当て表の `mod` を N+1 に
+＋新 offset を出すオフセット表セルの確保（到達可能性）。**MENU の §12.1.3 化・各プールの型量産は、同機構にセクション別プールを足す/伸ばすだけ**
 （型数は各セクション独立でよい＝§12.1.2 の制約A に縛られない）。
 
-**(6) §12.2 参考準拠との整合:** GALLERY の席替えは §12.1.3 プール基準（VOICE系 `expected_pool` と同型の index 比較）。
-§12.1.1 系の既定型表（§12.2 の DEFAULT 転記）からは **GALLERY を除外**し、HERO/MENU/ABOUT のみ §12.1.1 系席替えに残す。
+**(6) §12.2 参考準拠との整合:** GALLERY/HERO/ABOUT の席替えは §12.1.3 プール基準（VOICE系 `expected_pool` と同型の index 比較）。
+§12.1.1 系の既定型表（§12.2 の DEFAULT 転記）からは **GALLERY/HERO/ABOUT を除外**し、**MENU のみ** §12.1.1 系席替えに残す。
 
-- 代表出力（ゴールデン）: `tests/fixtures/klk036/index-a/b/c.html`（offset3 → 案A=`pat-slider`(3)/案B=`pat-grid`(0)/案C=`pat-wide`(1)）で
-  `pat-slider` 到達と実CSS差を固定。offset0 の (0,1,2) は既存 klk023/034 で担保。
+- 代表出力（ゴールデン）: `tests/fixtures/klk036/index-a/b/c.html`（offset3 → 案A=`pat-slider`/`overlap`/`img-overlap`(index3)／
+  案B=index0／案C=index1）で GALLERY/HERO/ABOUT の index3 新型の到達と実CSS差を固定。offset0 の (0,1,2) は既存 klk023/034 で担保。
 
 ### 12.2 参考準拠レイアウト（KLK-034・席替え規則・§12.1.1/§12.1.2 と直交・additive）
 
@@ -702,19 +723,17 @@ SCR-001 でカタログサムネイルを選んだ指示書では、**案Aを「
 2. 参考の値 v が無い（キー省略）・`"other"`・語彙外 → 何もしない（そのセクションは従来規則のまま）。
 3. **案A := v**（参考の型をそのまま採る）。
 4. **席替え**: 既定で v と同じ型を持つ案があれば、**その案は「案Aの既定型」を代わりに使う**。
-   - §12.1.1 系（HERO/MENU/ABOUT）: v を下の既定型表の案B/C列と比べ、一致した案 := 案Aの既定型。
-   - §12.1.2 系（VOICE/FLOW/STAFF）**および §12.1.3 系（GALLERY・KLK-036）**: v の pool index を表引き結果 (idxA,idxB,idxC) の
-     idxB/idxC と比べ、一致した案 := `pool[idxA]`（§12.1.3 GALLERY は §12.1.2 と同型の index 比較・GALLERY プールと mod4 割り当てを使う）。
+   - §12.1.1 系（**MENU のみ**）: v を下の既定型表の案B/C列と比べ、一致した案 := 案Aの既定型。
+   - §12.1.2 系（VOICE/FLOW/STAFF）**および §12.1.3 系（GALLERY/HERO/ABOUT・KLK-036/037）**: v の pool index を表引き結果 (idxA,idxB,idxC) の
+     idxB/idxC と比べ、一致した案 := `pool[idxA]`（§12.1.3 は §12.1.2 と同型の index 比較・各セクションのプールと mod4 割り当てを使う）。
    - どの案とも重複しなければ案B/C は従来のまま。→ いずれの場合も **3案の型は常に3値 distinct**
-     （§12.1.1⑥⑦⑨・§12.1.2・§12.1.3 の不変条件を維持）。
+     （§12.1.1⑤⑦・§12.1.2・§12.1.3 の不変条件を維持）。
 
-**§12.1.1 の既定型（席替えの参照表・§12.1.1 表の転記・HERO/MENU/ABOUT のみ。GALLERY は §12.1.3 プールで扱う＝本表から除外）:**
+**§12.1.1 の既定型（席替えの参照表・§12.1.1 表の転記・**MENU のみ**。GALLERY/HERO/ABOUT は §12.1.3 プールで扱う＝本表から除外）:**
 
 | KEY | 案A既定 | 案B既定 | 案C既定 |
 |---|---|---|---|
-| HERO | `full` | `split` | `band` |
 | MENU | `pat-cards` | `pat-list` | `pat-zigzag` |
-| ABOUT | `img-left` | `img-right` | `img-top` |
 
 **本節が触らないもの（スコープ外・不変）:** `data-columns`・`sections` 集合・並び順（`data-section-order`）・
 `data-archetype`（3案 distinct のまま）・番地一意性（§2/§14）・§4 文言・アニメ/印刷。HERO の整列シグネチャは
@@ -827,18 +846,18 @@ SCR-001 でカタログサムネイルを選んだ指示書では、**案Aを「
 **トリガー導線（`compare.html` の🔄再生成コントロール・§13 と対）:** ローカルブリッジ経由のワンクリック導線は §13 の
 「🔄 セクション再生成」コントロールを参照する。
 
-**VOICE/FLOW/STAFF のプールマーカー再付与（KLK-029・§12.1.2 と対）／GALLERY のプールマーカー再付与（KLK-036・§12.1.3 と対・additive）:**
+**VOICE/FLOW/STAFF のプールマーカー再付与（KLK-029・§12.1.2 と対）／GALLERY・HERO・ABOUT のプールマーカー再付与（KLK-036/037・§12.1.3 と対・additive）:**
 
-対象 `.sec` が **VOICE-01 / FLOW-01 / STAFF-01 / GALLERY-01** のときは、そのセクションが持つべき**プールマーカー**
-（`voice-*`/`flow-*`/`staff-*` は §12.1.2、`.m-gallery` の `pat-grid|pat-wide|pat-mosaic|pat-slider` は §12.1.3）を再付与してから
+対象 `.sec` が **VOICE-01 / FLOW-01 / STAFF-01 / GALLERY-01 / MV-01 / ABOUT-01** のときは、そのセクションが持つべき**プールマーカー**
+（`voice-*`/`flow-*`/`staff-*` は §12.1.2、`.m-gallery` の `pat-*`／`.m-hero` の `data-hero`／`.m-about` の `img-*` は §12.1.3）を再付与してから
 差し替える。マーカーは**対象HTMLだけで自己決定できる**（`instruction.json` 不要・決定的）:
 
 1. 対象HTMLのルート `.mock` から **`data-columns`** と **`data-nav-position`** の実値を読む（両方とも生成時に焼き込み済み・§8/§2.1）。
 2. §12.1.2 の**オフセット表**で (`data-columns` × `data-nav-position`) の1セルを読み offset を得る（§12.1.2/§12.1.3 共有）。
 3. 対象ファイルの **letter**（`index-{letter}.html` の a/b/c。単案 `index.html` は案A相当＝letter=a）から、
-   **VOICE/FLOW/STAFF は §12.1.2 の割り当て表**（mod 6）、**GALLERY は §12.1.3 の割り当て表**（mod 4）の offset 行で pool index を読む。
-4. その `pool[index]` のマーカーを容器 `.m-{sec}` に付け、対応 CSS ブロックが `<head>` に無ければ足す（他セクション・配色・
-   ルート属性は不変）。→ 元の生成と**同じ型**が決定的に再現される（表を読むだけ・算術なし）。
+   **VOICE/FLOW/STAFF は §12.1.2 の割り当て表**（mod 6）、**GALLERY/HERO/ABOUT は §12.1.3 の割り当て表**（mod 4）の offset 行で pool index を読む。
+4. その `pool[index]` のマーカーを容器 `.m-{sec}` に付け、対応 CSS ブロックが `<head>` に無ければ足す（HERO は型に付随する整列シグネチャも
+   合わせる・他セクション・配色・ルート属性は不変）。→ 元の生成と**同じ型**が決定的に再現される（表を読むだけ・算術なし）。
 
 **参考準拠の保持（KLK-034・§12.2 と対）:** 対象HTMLのルート `.mock` に **`data-ref-id` があるファイル（＝参考準拠の案A）**は、
 表引き・archetype 既定より**「対象セクションの現行マーカー」を優先**する: 差し替え前の対象 `.sec` 内の容器
