@@ -44,8 +44,9 @@ def _seg(start, end):
 
 
 def parse_gallery_pool():
-    # §12.1.3 (1) GALLERY 型プール表から `pat-...` マーカーを出現順（index順）に
-    seg = _seg("**(1) GALLERY 型プール", "**(2) GALLERY 割り当て表")
+    # §12.1.3 (1) GALLERY プール表から `pat-...` マーカーを出現順（index順）に
+    # KLK-037 で §12.1.3 (1) は「セクション別型プール（GALLERY/HERO/ABOUT）」に一般化・GALLERY プールは "**GALLERY プール" 節
+    seg = _seg("**GALLERY プール", "**HERO プール")
     seen = []
     for m in re.finditer(r'`(pat-[a-z-]+)`', seg):
         if m.group(1) not in seen:
@@ -54,7 +55,8 @@ def parse_gallery_pool():
 
 
 def parse_gallery_assign():
-    seg = _seg("**(2) GALLERY 割り当て表", "- **offset0")
+    # KLK-037 で「**(2) GALLERY 割り当て表」→「**(2) 割り当て表（4型プール共通）」に一般化
+    seg = _seg("**(2) 割り当て表", "- **offset0")
     asn = {}
     for m in re.finditer(r'^\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|', seg, re.M):
         o, a, b, c = (int(x) for x in m.groups())
@@ -222,20 +224,19 @@ g8_ok = g8_ok and distinct3([attr(K36[l], "data-archetype") for l in ("a", "b", 
 check("G8 klk036 健全性 (番地6種各1・print・アタリa・依存0・PH・1col/below-hero・archetype/GALLERY/main distinct)",
       g8_ok, "; ".join(g8_det) if g8_det else "3案とも健全・distinct")
 
-# G9 ABOUT は §12.1.1 のまま (archetype固定 img-left/right/top・案間distinct)＝GALLERY移譲がABOUTを壊さない
+# G9 ABOUT も §12.1.3 プールへ移譲後 (KLK-037): klk036=offset3 → (img-overlap,img-left,img-right)・案間distinct
 abt = [re.search(r'class="m-about (img-[a-z-]+)"', K36[l]) for l in ("a", "b", "c")]
 abt = [m.group(1) if m else None for m in abt]
-g9 = distinct3(abt) and set(abt) == {"img-left", "img-right", "img-top"}
-check("G9 ABOUT は §12.1.1 archetype固定のまま (img-left/right/top・案間distinct・GALLERY移譲の非破壊)",
+g9 = distinct3(abt) and tuple(abt) == ("img-overlap", "img-left", "img-right")
+check("G9 ABOUT §12.1.3 プール (KLK-037移譲後・klk036 offset3→img-overlap/img-left/img-right・案間distinct)",
       g9, "about=%s" % abt)
 
-# G10 規約文言: §12.1.3 見出し・pat-slider・SKILL 追記・§12.2/§14 の GALLERY 対応
+# G10 規約文言: §12.1.3 見出し・pat-slider・SKILL 追記・§12.2/§14 の §12.1.3 対応（KLK-037で GALLERY→GALLERY/HERO/ABOUT に一般化済み）
 g10_rules = ("#### 12.1.3" in RULES and "pat-slider" in RULES
-             and "GALLERY は §12.1.3" in RULES  # §12.1.1 表からの移譲注記
-             and "GALLERY は §12.1.3 プールで扱う＝本表から除外" in RULES)  # §12.2 席替え表からの除外
+             and "本表から除外" in RULES)  # §12.2 席替え表からの §12.1.3 移譲注記
 g10_skill = ("§12.1.3" in SKILL and "pat-slider" in SKILL)
-g10_regen = ("GALLERY-01" in RULES and "§12.1.3 の割り当て表" in RULES)  # §14 再付与に GALLERY
-check("G10 規約文言 (§12.1.3新設・pat-slider・§12.1.1移譲注記・§12.2除外・§14 GALLERY再付与・SKILL)",
+g10_regen = ("GALLERY-01" in RULES and "§12.1.3 の割り当て表" in RULES)  # §14 再付与に §12.1.3
+check("G10 規約文言 (§12.1.3新設・pat-slider・移譲注記・§12.2本表から除外・§14再付与・SKILL)",
       g10_rules and g10_skill and g10_regen,
       "RULES=%s SKILL=%s §14=%s" % (g10_rules, g10_skill, g10_regen))
 

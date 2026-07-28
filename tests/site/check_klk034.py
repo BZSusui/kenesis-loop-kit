@@ -37,17 +37,18 @@ import bridge  # noqa: E402  (validate_instruction の機能検証 T群に使用
 NEW_COLS = {"1col", "2col-full-left", "2col-full-right", "2col-body-left", "2col-body-right", "3col"}
 ARCHETYPE_ENUM = {"stack-centered", "split-editorial", "banded-showcase"}
 
-# §12.1.1 の既定型（席替えの参照表・DRAFT_RULES §12.2 のミラー・HERO/MENU/ABOUT のみ。
-# GALLERY は KLK-036 で §12.1.3 プールへ移譲したため本表から除外）
+# §12.1.1 の既定型（席替えの参照表・DRAFT_RULES §12.2 のミラー・MENU のみ。
+# GALLERY(KLK-036)・HERO/ABOUT(KLK-037) は §12.1.3 プールへ移譲したため本表から除外）
 DEFAULT_1211 = {
-    "HERO": ("full", "split", "band"),
     "MENU": ("pat-cards", "pat-list", "pat-zigzag"),
-    "ABOUT": ("img-left", "img-right", "img-top"),
 }
 
-# §12.1.3 GALLERY 独立プール（4型・index0-3）と割り当て（巡回 mod 4・オフセット表は §12.1.2 共有・KLK-036）
+# §12.1.3 セクション別独立プール（4型・index0-3）と割り当て（巡回 mod 4・オフセット表は §12.1.2 共有・KLK-036/037）
 GALLERY_POOL = ["pat-grid", "pat-wide", "pat-mosaic", "pat-slider"]
-GALLERY_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 0), 3: (3, 0, 1), 4: (0, 1, 2), 5: (1, 2, 3)}
+HERO_POOL = ["full", "split", "band", "overlap"]
+ABOUT_POOL = ["img-left", "img-right", "img-top", "img-overlap"]
+POOL_1213 = {"HERO": HERO_POOL, "GALLERY": GALLERY_POOL, "ABOUT": ABOUT_POOL}
+GALLERY_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 0), 3: (3, 0, 1), 4: (0, 1, 2), 5: (1, 2, 3)}  # 4型プール共通(mod4)
 
 # §12.1.2 型プール・オフセット表・割り当て表（check_klk029.py と同一ミラー）
 POOL = {
@@ -135,9 +136,9 @@ def expected_1211(key, ref_v):
     return tuple(exp)
 
 
-def expected_gallery(ref_v, gidxs):
-    """§12.2 席替え規則のミラー（§12.1.3 系 GALLERY・KLK-036）: 表引き結果 gidxs=(ia,ib,ic) に参考 v を適用。"""
-    pool = GALLERY_POOL
+def expected_1213(key, ref_v, gidxs):
+    """§12.2 席替え規則のミラー（§12.1.3 系 GALLERY/HERO/ABOUT・KLK-036/037）: 表引き gidxs=(ia,ib,ic) に参考 v を適用。"""
+    pool = POOL_1213[key]
     ia, ib, ic = gidxs
     if ref_v is None or ref_v == "other" or ref_v not in pool:
         return (pool[ia], pool[ib], pool[ic])
@@ -239,16 +240,16 @@ for g in G:
     for key in ("HERO", "MENU", "GALLERY", "ABOUT"):
         if key != "HERO" and key not in g.sections:
             continue  # sections に無いセクションは出ない（HERO は常設）
-        # GALLERY は §12.1.3 プール基準（KLK-036）・HERO/MENU/ABOUT は §12.1.1 系
-        if key == "GALLERY":
-            exp = expected_gallery(g.sl.get(key), g.gallery_idxs)
+        # GALLERY/HERO/ABOUT は §12.1.3 プール基準（KLK-036/037）・MENU のみ §12.1.1 系
+        if key in ("HERO", "GALLERY", "ABOUT"):
+            exp = expected_1213(key, g.sl.get(key), g.gallery_idxs)
         else:
             exp = expected_1211(key, g.sl.get(key))
         act = tuple(g.actual(key))
         ok = act == exp
         r2_ok = r2_ok and ok
         r2_det.append(f"{g.name}/{key}: 期待{exp} 実{act} {'OK' if ok else 'NG'}")
-check("R2 席替え (HERO/MENU/ABOUT=§12.1.1系・GALLERY=§12.1.3系 が §12.2 規則適用後の期待と一致)",
+check("R2 席替え (MENU=§12.1.1系・HERO/GALLERY/ABOUT=§12.1.3系 が §12.2 規則適用後の期待と一致)",
       r2_ok, "; ".join(d for d in r2_det if "NG" in d) or f"{len(r2_det)}軸すべて期待どおり")
 
 # R3 §12.1.2 系: VOICE/FLOW/STAFF の実マーカーが (表引き＋席替え) の期待と一致

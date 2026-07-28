@@ -70,12 +70,14 @@ pin 一致の1つの `.sec` ブロックを DRAFT_RULES に準拠して作り直
 - §5 配色: 手順2で対象HTMLから読んだ5変数を `var(--m-*)` で参照する。**新しい色値を導入しない**(直値の主要色散在を作らない)。
 - §7 アニメ: 対象ファイルの現状に合わせる(ON 案は `.reveal` を付ける・OFF 案は付けない)。
 - §14 部分再生成: 保持すべき不変・上書き方針・番地一意性・配色は対象HTMLから、を厳守する。
-- **VOICE/FLOW/STAFF のプールマーカー再付与(KLK-029・DRAFT_RULES §12.1.2/§14)**: 対象が `VOICE-01`/`FLOW-01`/`STAFF-01` の
-  ときは、そのセクションが持つべき型マーカー(`voice-*`/`flow-*`/`staff-*`)を**対象HTMLだけで自己決定**して再付与する(instruction.json
-  不要・決定的): ①対象HTMLのルート `.mock` から `data-columns` と `data-nav-position` の実値を読む → ②§12.1.2 のオフセット表で
-  offset を得る → ③対象ファイルの letter(`index-{letter}.html` の a/b/c、単案 `index.html` は letter=a) から割り当て表で pool index を
-  読む → ④その `pool[index]` のマーカーを容器 `.m-{sec}` に付け、対応 CSS ブロックが `<head>` に無ければ足す。元の生成と同じ型が
-  再現される(表を読むだけ・算術なし)。他5セクション・配色5変数・ルート属性は不変。
+- **プールマーカー再付与(KLK-029/036/037・DRAFT_RULES §12.1.2/§12.1.3/§14)**: 対象が `VOICE-01`/`FLOW-01`/`STAFF-01`(§12.1.2・mod6)
+  ／`GALLERY-01`/`MV-01`(HERO)/`ABOUT-01`(§12.1.3・mod4) のときは、そのセクションが持つべき型マーカー
+  (`voice-*`/`flow-*`/`staff-*`／`.m-gallery` の `pat-*`／`.m-hero` の `data-hero`／`.m-about` の `img-*`)を**対象HTMLだけで自己決定**して
+  再付与する(instruction.json 不要・決定的): ①対象HTMLのルート `.mock` から `data-columns` と `data-nav-position` の実値を読む →
+  ②§12.1.2 のオフセット表で offset を得る(§12.1.2/§12.1.3 共有) → ③対象ファイルの letter(`index-{letter}.html` の a/b/c、単案 `index.html`
+  は letter=a) から、VOICE/FLOW/STAFF は §12.1.2 割り当て表(mod6)、GALLERY/HERO/ABOUT は §12.1.3 割り当て表(mod4)で pool index を
+  読む → ④その `pool[index]` のマーカーを容器 `.m-{sec}` に付け(HERO は型に付随する整列シグネチャも合わせる)、対応 CSS が `<head>`
+  に無ければ足す。元の生成と同じ型が再現される(表を読むだけ・算術なし)。他セクション・配色5変数・ルート属性は不変。
 - **参考準拠の保持(KLK-034・DRAFT_RULES §12.2/§14)**: 対象HTMLのルート `.mock` に **`data-ref-id` があるファイル(=参考準拠の案A)**
   は、表引き・archetype 既定より**「対象セクションの現行マーカー」を優先**する: 差し替え前の対象 `.sec` 内の容器
   (`.m-hero` の `data-hero`/`.m-menu`・`.m-gallery`・`.m-about`・`.m-voice`・`.m-flow`・`.m-staff` の型マーカー)を読み取り、
