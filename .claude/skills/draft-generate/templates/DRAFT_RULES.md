@@ -665,7 +665,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 0 | `full` | 全面中央（`center` / `center` / `center`）・従来最頻 |
 | 1 | `split` | 左右分割（`space-between` / `center` / `left`） |
 | 2 | `band` | 下寄せ帯（`flex-end` / `flex-start` / `left`） |
-| 3 | `overlap`（KLK-037新） | せり出し横長画像＋白背景文言の重なり（`display:grid;grid-template-columns:1fr 1fr`・画像を右、白背景文言を左から `transform` で重ね）。**整列＝`flex-start` / `center` / `left`（既存3型と非重複＝3案 distinct 維持）**。モバイルは重なり解除・縦積み |
+| 3 | `overlap`（KLK-037新・KLK-038調整） | せり出し横長画像＋白背景文言の重なり（`display:grid;grid-template-columns:1fr 2fr`＝**画像列を広め約2/3**・画像を右、白背景文言を左から `transform` で重ね）。**整列＝`flex-start` / `center` / `left`（既存3型と非重複＝3案 distinct 維持）**。モバイルは重なり解除・縦積み |
 
 **ABOUT プール（`.m-about`・KLK-037）:**
 
@@ -674,7 +674,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 0 | `img-left` | 左画像・右文言（`grid-template-columns:1fr 1fr`）・従来最頻 |
 | 1 | `img-right` | 右画像・左文言 |
 | 2 | `img-top` | 横長画像＋下キャプション |
-| 3 | `img-overlap`（KLK-037新） | せり出し横長画像＋白背景文言の重なり（`display:grid;grid-template-columns:1fr 1fr`・画像を左、白背景文言を右から `transform` で重ね）。モバイルは重なり解除・縦積み |
+| 3 | `img-overlap`（KLK-037新・KLK-038調整） | せり出し横長画像＋白背景文言の重なり（`display:grid;grid-template-columns:1fr 1fr`・画像を左、白背景文言を右から `transform` で重ね）。**画像は文言背景に対し縦に余裕をとる（`min-height` を大きめ・上下に余白＝圧迫感を避けるモダン志向）**。モバイルは重なり解除・縦積み |
 
 **(2) 割り当て表（4型プール共通＝GALLERY/HERO/ABOUT・offset → 案A/B/C の pool index・巡回 `mod 4`・6行を全書き下し）:**
 

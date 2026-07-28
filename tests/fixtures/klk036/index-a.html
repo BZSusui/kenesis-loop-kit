@@ -30,8 +30,8 @@
   .m-nav .cta { background: var(--m-accent); color: #fff; padding: 6px 14px; border-radius: 4px; font-size: 12px; }
 
   /* HERO 型: overlap（右せり出し横長画像＋左白背景文言の重なり・§12.1.3 index3・新型・data-hero="overlap"） */
-  .m-hero { position: relative; display: grid; grid-template-columns: 1fr 1fr; align-items: center;
-    justify-content: flex-start; text-align: left; min-height: 340px; padding: 0; color: var(--m-text); background: none; }
+  .m-hero { position: relative; display: grid; grid-template-columns: 1fr 2fr; align-items: center;
+    justify-content: flex-start; text-align: left; min-height: 360px; padding: 0; color: var(--m-text); background: none; }
   .m-hero .hero-img { grid-column: 2 / 3; grid-row: 1; align-self: stretch; min-height: 300px; }
   .m-hero .hero-text { grid-column: 1 / 2; grid-row: 1; z-index: 1; justify-self: start; align-self: center;
     background: rgba(255,255,255,.92); padding: 32px 36px; margin-left: 24px; max-width: 460px;
@@ -54,7 +54,7 @@
 
   /* ABOUT 画像配置: img-overlap（左画像せり出し・右白背景文言の重なり・§12.1.3 index3・新型） */
   .m-about.img-overlap { position: relative; display: grid; grid-template-columns: 1fr 1fr; align-items: center; }
-  .m-about.img-overlap .atari { grid-column: 1 / 2; grid-row: 1; min-height: 220px; align-self: stretch; }
+  .m-about.img-overlap .atari { grid-column: 1 / 2; grid-row: 1; min-height: 440px; align-self: start; }
   .m-about.img-overlap .txt { grid-column: 2 / 3; grid-row: 1; z-index: 1; background: rgba(255,255,255,.94);
     padding: 28px 32px; box-shadow: 0 8px 30px rgba(0,0,0,.12); transform: translateX(-28%); }
   .m-about .txt h3 { font-size: 18px; color: var(--m-main); margin: 0 0 10px; }
