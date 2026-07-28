@@ -30,12 +30,14 @@
   .m-nav ul { display: flex; gap: 16px; list-style: none; margin: 0; padding: 0; font-size: 12px; }
   .m-nav .cta { background: var(--m-accent); color: #fff; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; }
 
-  /* HERO 型: panel-band（上部にパネル並び＋下部中央キャッチ・§12.1.3 index5・KLK-040 新型・data-hero="panel-band"） */
-  .m-hero { position: relative; display: grid; grid-template-rows: auto auto; justify-content: flex-end; align-items: center; text-align: center; min-height: 380px; padding: 0; color: #fff;
-    background: linear-gradient(rgba(58,45,40,.22), rgba(58,45,40,.46)), repeating-linear-gradient(45deg, var(--m-main), var(--m-main) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 28px); }
-  .m-hero .hero-panels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; padding: 16px 16px 0; }
-  .m-hero .hero-panels .atari { aspect-ratio: 4 / 3; min-height: 0; }
-  .m-hero .hero-text { width: 100%; padding: 22px 20px 32px; }
+  /* HERO 型: panel-band（全幅背景＋見出し＋下部に横一列フィルム風パネル群・§12.1.3 index5・KLK-040/041・data-hero="panel-band"）
+     整列シグネチャは (flex-end / center / center) を維持（§12.1 不変条件4・6型 distinct）。見た目は「見出し上・下部フィルム」に作り替え（KLK-041） */
+  .m-hero { position: relative; display: grid; grid-template-rows: 1fr auto; justify-content: flex-end; align-items: center; text-align: center; min-height: 480px; padding: 0; color: #fff;
+    background: linear-gradient(rgba(58,45,40,.28), rgba(58,45,40,.5)), repeating-linear-gradient(45deg, var(--m-main), var(--m-main) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 28px); }
+  .m-hero .hero-text { width: 100%; padding: 56px 20px 24px; }
+  /* 下部フィルム: 幅いっぱい・パネル多め・細かい・直角（フィルムのコマ風） */
+  .m-hero .hero-panels { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; width: 100%; padding: 0 10px 20px; }
+  .m-hero .hero-panels .atari { aspect-ratio: 3 / 4; min-height: 0; border-radius: 0; }
   .m-hero .catch { font-size: 34px; font-weight: 800; letter-spacing: .04em; margin: 0 0 10px; text-shadow: 0 2px 8px rgba(0,0,0,.3); }
   .m-hero .lead { font-size: 15px; max-width: 460px; margin: 0 auto 18px; }
   .m-hero .hero-cta { background: var(--m-accent); color: #fff; padding: 12px 30px; border-radius: 24px; font-size: 14px; font-weight: 700; }
@@ -79,7 +81,7 @@
     .m-nav ul { display: none; }
     .m-nav::after { content: "\2630"; color: #fff; font-size: 20px; }
     .m-hero .catch { font-size: 25px; }
-    .m-hero .hero-panels { grid-template-columns: repeat(2, 1fr); }
+    .m-hero .hero-panels { grid-template-columns: repeat(3, 1fr); }
     .m-about.img-zigzag .ab-row { grid-template-columns: 1fr; }
     .m-about.img-zigzag .ab-row:nth-child(even) .atari { order: 0; }
     .m-gallery.pat-wide { grid-template-columns: 1fr; }
@@ -100,18 +102,20 @@
   <div class="sec reveal">
     <div class="addr"><span class="pin">MV-01</span></div>
     <div class="m-hero" data-hero="panel-band">
-      <div class="hero-panels">
-        <div class="atari"><span class="ic">📷</span><span class="desc">代表作「みなも」</span></div>
-        <div class="atari"><span class="ic">📷</span><span class="desc">個展会場の様子</span></div>
-        <div class="atari"><span class="ic">📷</span><span class="desc">制作中のアトリエ</span></div>
-        <div class="atari"><span class="ic">📷</span><span class="desc">ドローイング習作</span></div>
-      </div>
       <div class="hero-text">
         <h1 class="catch">余白に、物語を宿す。</h1>
         <p class="lead">絵画・立体・インスタレーション。素材と対話しながら生まれた作品を、一枚ずつ静かにご紹介します。</p>
         <span class="hero-cta">作品を見る ＞</span>
       </div>
-      <span class="atari-tag">📷 アタリ: アトリエで制作中の作家の手元 / 検索: artist studio hands painting</span>
+      <div class="hero-panels">
+        <div class="atari"><span class="ic">📷</span><span class="desc">みなも</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">個展会場</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">アトリエ</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">習作</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">立体作品</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">群青の呼吸</span></div>
+      </div>
+      <span class="atari-tag">📷 アタリ: 全幅ビジュアル＋下部フィルム / 検索: artist studio gallery film strip</span>
     </div>
   </div>
 

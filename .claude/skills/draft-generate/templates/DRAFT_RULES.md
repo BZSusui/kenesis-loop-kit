@@ -667,7 +667,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 2 | `band` | 下寄せ帯（`flex-end` / `flex-start` / `left`） |
 | 3 | `overlap`（KLK-037新・KLK-038/039調整） | せり出し横長画像＋白背景文言の重なり（`display:grid;grid-template-columns:1fr 2fr`＝**画像列を広め約2/3**・画像を右、白背景文言を左から `transform` で重ね・**画像は角丸なし＝直角でシャープ（`border-radius:0`）**）。**整列＝`flex-start` / `center` / `left`（既存3型と非重複＝3案 distinct 維持）**。モバイルは重なり解除・縦積み |
 | 4 | `center-scroll`（KLK-040新） | 全面ビジュアル＋キャッチを上・スクロール誘導（↓）を下に（`display:flex;flex-direction:column`）。**整列＝`space-between` / `center` / `center`（上下分散・中央）**。モバイルは padding 縮小 |
-| 5 | `panel-band`（KLK-040新） | 上部に画像パネル並び（`display:grid;grid-template-columns:repeat(3〜4,1fr)`）＋下部中央キャッチ（下段 `.hero-text`）。**整列＝`flex-end` / `center` / `center`**。モバイルはパネル2列 |
+| 5 | `panel-band`（KLK-040新・KLK-041調整） | 全幅背景ビジュアル＋見出し（上〜中）＋**下部に横一列のフィルム風パネル群**（`display:grid;grid-template-columns:repeat(6,1fr);gap:4px;width:100%` の細かい多めコマ・`aspect-ratio:3/4`・`border-radius:0` で直角＝フィルムのコマ風・縦幅広め `min-height:480px`）。cat-0007/0019 の形。**整列＝`flex-end` / `center` / `center`**。モバイルはパネル3列 |
 
 **ABOUT プール（`.m-about`・KLK-037）:**
 
