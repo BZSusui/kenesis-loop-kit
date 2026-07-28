@@ -666,6 +666,8 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 1 | `split` | 左右分割（`space-between` / `center` / `left`） |
 | 2 | `band` | 下寄せ帯（`flex-end` / `flex-start` / `left`） |
 | 3 | `overlap`（KLK-037新・KLK-038/039調整） | せり出し横長画像＋白背景文言の重なり（`display:grid;grid-template-columns:1fr 2fr`＝**画像列を広め約2/3**・画像を右、白背景文言を左から `transform` で重ね・**画像は角丸なし＝直角でシャープ（`border-radius:0`）**）。**整列＝`flex-start` / `center` / `left`（既存3型と非重複＝3案 distinct 維持）**。モバイルは重なり解除・縦積み |
+| 4 | `center-scroll`（KLK-040新） | 全面ビジュアル＋キャッチを上・スクロール誘導（↓）を下に（`display:flex;flex-direction:column`）。**整列＝`space-between` / `center` / `center`（上下分散・中央）**。モバイルは padding 縮小 |
+| 5 | `panel-band`（KLK-040新） | 上部に画像パネル並び（`display:grid;grid-template-columns:repeat(3〜4,1fr)`）＋下部中央キャッチ（下段 `.hero-text`）。**整列＝`flex-end` / `center` / `center`**。モバイルはパネル2列 |
 
 **ABOUT プール（`.m-about`・KLK-037）:**
 
@@ -675,10 +677,16 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 1 | `img-right` | 右画像・左文言 |
 | 2 | `img-top` | 横長画像＋下キャプション |
 | 3 | `img-overlap`（KLK-037新・KLK-038調整） | せり出し横長画像＋白背景文言の重なり（`display:grid;grid-template-columns:1fr 1fr`・画像を左、白背景文言を右から `transform` で重ね）。**画像は文言背景に対し縦に余裕をとる（`min-height` を大きめ・上下に余白＝圧迫感を避けるモダン志向）**。モバイルは重なり解除・縦積み |
+| 4 | `img-circle`（KLK-040新） | 円形/型抜き画像（`border-radius:50%;aspect-ratio:1`）＋横にテキスト（`display:grid;grid-template-columns:1fr 1fr`）。モバイル1列 |
+| 5 | `img-zigzag`（KLK-040新） | 画像/文言を左右交互に複数段（`display:flex;flex-direction:column`＋各段 `grid-template-columns:1fr 1fr`＋偶数段 `order` 反転）＝ストーリー型。モバイル縦積み・order解除 |
 
-**(2) 割り当て表（4型プール共通＝GALLERY/HERO/ABOUT・offset → 案A/B/C の pool index・巡回 `mod 4`・6行を全書き下し）:**
+**(2) 割り当て表（型数別 mod・offset → 案A/B/C の pool index・オフセット表§12.1.2共有・KLK-040 で型数別に一般化）:**
 
-| offset | 案A（`a`） | 案B（`b`） | 案C（`c`） |
+型数 N のセクションは巡回窓 `(offset+0, offset+1, offset+2) mod N` を読む。offset0→(0,1,2) は全 N で共通（既存不変）。
+
+**GALLERY（4型・mod4）:**
+
+| offset | 案A | 案B | 案C |
 |---|---|---|---|
 | 0 | 0 | 1 | 2 |
 | 1 | 1 | 2 | 3 |
@@ -687,13 +695,25 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 4 | 0 | 1 | 2 |
 | 5 | 1 | 2 | 3 |
 
+**HERO/ABOUT（6型・mod6・KLK-040。§12.1.2 VOICE系の割り当て表と同値）:**
+
+| offset | 案A | 案B | 案C |
+|---|---|---|---|
+| 0 | 0 | 1 | 2 |
+| 1 | 1 | 2 | 3 |
+| 2 | 2 | 3 | 4 |
+| 3 | 3 | 4 | 5 |
+| 4 | 4 | 5 | 0 |
+| 5 | 5 | 0 | 1 |
+
 - **offset0→(0,1,2)** は各プールの index0/1/2＝§12.1.1 の archetype 既定と**一致**（GALLERY=(pat-grid,pat-wide,pat-mosaic)／
   HERO=(full,split,band)／ABOUT=(img-left,img-right,img-top)）＝1col×top（offset0）の既存生成物・golden はマーカー不変。
-- 案A の index = `offset mod 4`。offset 集合 {0..5}（オフセット表 §12.1.2 共有・`3col×top`=5 含む）で index 集合 {0,1,2,3} を
-  網羅（index3 の新型＝`pat-slider`/`overlap`/`img-overlap` は offset3 の案A で到達）。各行は連続3窓（wrap込み）→ **3案 distinct**（N=4≥3）。
+- 案A の index = `offset mod N`。offset 集合 {0..5}（オフセット表 §12.1.2 共有・`3col×top`=5 含む）で index 集合 {0..N-1} を
+  網羅（新型 index3〜5 は offset3〜5 の案Aで到達）。各行は連続3窓（wrap込み）→ **3案 distinct**（N≥3）。
+  到達可能性は golden **klk023(offset0→(0,1,2))∪klk036(offset3→HERO/ABOUTは(3,4,5)・GALLERYは(3,0,1))** で実証。
 
 **(3) 生成手順（表を"読むだけ"・GALLERY/HERO/ABOUT 共通）:** ① `data-columns`（正規化後）と `navPosition` を確定 → ② §12.1.2 の
-**オフセット表**で offset(0〜5) → ③ 上の **割り当て表**で (idxA,idxB,idxC) → ④ 各案の該当容器（`.m-gallery`／`.m-hero` の `data-hero`／
+**オフセット表**で offset(0〜5) → ③ 上の **該当セクションの割り当て表**（GALLERY=mod4／HERO・ABOUT=mod6）で (idxA,idxB,idxC) → ④ 各案の該当容器（`.m-gallery`／`.m-hero` の `data-hero`／
 `.m-about`）に `該当プール[index]` のマーカーを付け、対応 CSS を `<head>` に含める。**HERO は型に整列シグネチャが付随**するので
 各案の `.m-hero` 基底に該当型の整列を書く（§12.1 不変条件4・overlap は flex-start/center/left）。archetype の並び順・区切りは §12.1.1 のまま。
 
@@ -855,7 +875,7 @@ SCR-001 でカタログサムネイルを選んだ指示書では、**案Aを「
 1. 対象HTMLのルート `.mock` から **`data-columns`** と **`data-nav-position`** の実値を読む（両方とも生成時に焼き込み済み・§8/§2.1）。
 2. §12.1.2 の**オフセット表**で (`data-columns` × `data-nav-position`) の1セルを読み offset を得る（§12.1.2/§12.1.3 共有）。
 3. 対象ファイルの **letter**（`index-{letter}.html` の a/b/c。単案 `index.html` は案A相当＝letter=a）から、
-   **VOICE/FLOW/STAFF は §12.1.2 の割り当て表**（mod 6）、**GALLERY/HERO/ABOUT は §12.1.3 の割り当て表**（mod 4）の offset 行で pool index を読む。
+   **VOICE/FLOW/STAFF は §12.1.2 の割り当て表**（mod 6）、**GALLERY は §12.1.3 の割り当て表（mod 4）・HERO/ABOUT は §12.1.3 の割り当て表（mod 6）**の offset 行で pool index を読む。
 4. その `pool[index]` のマーカーを容器 `.m-{sec}` に付け、対応 CSS ブロックが `<head>` に無ければ足す（HERO は型に付随する整列シグネチャも
    合わせる・他セクション・配色・ルート属性は不変）。→ 元の生成と**同じ型**が決定的に再現される（表を読むだけ・算術なし）。
 

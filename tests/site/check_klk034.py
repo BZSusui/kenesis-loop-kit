@@ -45,10 +45,13 @@ DEFAULT_1211 = {
 
 # §12.1.3 セクション別独立プール（4型・index0-3）と割り当て（巡回 mod 4・オフセット表は §12.1.2 共有・KLK-036/037）
 GALLERY_POOL = ["pat-grid", "pat-wide", "pat-mosaic", "pat-slider"]
-HERO_POOL = ["full", "split", "band", "overlap"]
-ABOUT_POOL = ["img-left", "img-right", "img-top", "img-overlap"]
+HERO_POOL = ["full", "split", "band", "overlap", "center-scroll", "panel-band"]  # KLK-040: 6型
+ABOUT_POOL = ["img-left", "img-right", "img-top", "img-overlap", "img-circle", "img-zigzag"]  # KLK-040: 6型
 POOL_1213 = {"HERO": HERO_POOL, "GALLERY": GALLERY_POOL, "ABOUT": ABOUT_POOL}
-GALLERY_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 0), 3: (3, 0, 1), 4: (0, 1, 2), 5: (1, 2, 3)}  # 4型プール共通(mod4)
+# 割り当ては型数別 mod（KLK-040 で分離）。GALLERY=mod4・HERO/ABOUT=mod6（§12.1.2 と同値）
+GALLERY_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 0), 3: (3, 0, 1), 4: (0, 1, 2), 5: (1, 2, 3)}  # mod4
+POOL6_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（HERO/ABOUT）
+ASSIGN_1213 = {"HERO": POOL6_ASSIGN, "GALLERY": GALLERY_ASSIGN, "ABOUT": POOL6_ASSIGN}
 
 # §12.1.2 型プール・オフセット表・割り当て表（check_klk029.py と同一ミラー）
 POOL = {
@@ -194,7 +197,9 @@ class Golden:
         self.columns = self.INSTR["layout"]["columns"]
         self.nav = self.INSTR["layout"].get("navPosition", "top")
         self.idxs = ASSIGN[OFFSET[(self.columns, self.nav)]]
-        self.gallery_idxs = GALLERY_ASSIGN[OFFSET[(self.columns, self.nav)]]  # §12.1.3 GALLERY 用（mod4）
+        _off1213 = OFFSET[(self.columns, self.nav)]
+        self.gallery_idxs = GALLERY_ASSIGN[_off1213]  # §12.1.3 GALLERY 用（mod4）
+        self.pool6_idxs = POOL6_ASSIGN[_off1213]      # §12.1.3 HERO/ABOUT 用（mod6・KLK-040）
 
         self.DC = [attr(h, "data-columns") for _, h in self.goldens]
         self.AR = [attr(h, "data-archetype") for _, h in self.goldens]
@@ -240,9 +245,10 @@ for g in G:
     for key in ("HERO", "MENU", "GALLERY", "ABOUT"):
         if key != "HERO" and key not in g.sections:
             continue  # sections に無いセクションは出ない（HERO は常設）
-        # GALLERY/HERO/ABOUT は §12.1.3 プール基準（KLK-036/037）・MENU のみ §12.1.1 系
+        # GALLERY/HERO/ABOUT は §12.1.3 プール基準（KLK-036/037/040・型数別mod）・MENU のみ §12.1.1 系
         if key in ("HERO", "GALLERY", "ABOUT"):
-            exp = expected_1213(key, g.sl.get(key), g.gallery_idxs)
+            idxs = g.gallery_idxs if key == "GALLERY" else g.pool6_idxs  # GALLERY=mod4・HERO/ABOUT=mod6
+            exp = expected_1213(key, g.sl.get(key), idxs)
         else:
             exp = expected_1211(key, g.sl.get(key))
         act = tuple(g.actual(key))

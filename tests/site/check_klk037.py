@@ -25,7 +25,7 @@ RULES = open(os.path.join(ROOT, ".claude", "skills", "draft-generate", "template
 SKILL = open(os.path.join(ROOT, ".claude", "skills", "draft-generate", "SKILL.md"), encoding="utf-8").read()
 REGEN = open(os.path.join(ROOT, ".claude", "skills", "draft-regenerate", "SKILL.md"), encoding="utf-8").read()
 
-EXPECT_N = 4
+EXPECT_N = 6  # KLK-040: HERO/ABOUT を6型化
 results = []
 
 
@@ -51,13 +51,14 @@ def parse_pool(header_marker, end_marker, prefix_re):
 
 
 # HERO プール表: 「**HERO プール（...）...:**」〜「**ABOUT プール」。data-hero 値は full/split/band/overlap（バッククォート）
-HERO_POOL_RULES = parse_pool("**HERO プール", "**ABOUT プール", r"full|split|band|overlap")
+HERO_POOL_RULES = parse_pool("**HERO プール", "**ABOUT プール", r"full|split|band|overlap|center-scroll|panel-band")
 # ABOUT プール表: 「**ABOUT プール」〜「**(2) 割り当て表」。img-*
 ABOUT_POOL_RULES = parse_pool("**ABOUT プール", "**(2) 割り当て表", r"img-[a-z-]+")
 
 
 def parse_assign():
-    seg = _seg("**(2) 割り当て表", "- **offset0")
+    # KLK-040: 割り当ては型数別2表。HERO/ABOUT 用の mod6 表を読む。
+    seg = _seg("**HERO/ABOUT（6型", "- **offset0")
     asn = {}
     for m in re.finditer(r'^\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|', seg, re.M):
         o, a, b, c = (int(x) for x in m.groups())
@@ -91,7 +92,7 @@ def consts_from(path, names):
 
 
 C34 = consts_from(os.path.join(ROOT, "tests", "site", "check_klk034.py"),
-                  {"HERO_POOL", "ABOUT_POOL", "GALLERY_ASSIGN", "DEFAULT_1211"})
+                  {"HERO_POOL", "ABOUT_POOL", "GALLERY_ASSIGN", "POOL6_ASSIGN", "DEFAULT_1211"})
 
 
 # --- golden ユーティリティ ---
@@ -173,52 +174,54 @@ HERO_SIG = {
     "split": ("space-between", "center", "left"),
     "band": ("flex-end", "flex-start", "left"),
     "overlap": ("flex-start", "center", "left"),
+    "center-scroll": ("space-between", "center", "center"),
+    "panel-band": ("flex-end", "center", "center"),
 }
 
 
 # ===========================================================================
 # H1 本文パース: HERO プール4型・index3=overlap / ABOUT プール4型・index3=img-overlap
 # ===========================================================================
-h1 = (HERO_POOL_RULES == ["full", "split", "band", "overlap"]
-      and ABOUT_POOL_RULES == ["img-left", "img-right", "img-top", "img-overlap"])
-check("H1 §12.1.3 HERO/ABOUT プール (HERO=full/split/band/overlap・ABOUT=img-left/right/top/overlap)",
+h1 = (HERO_POOL_RULES == ["full", "split", "band", "overlap", "center-scroll", "panel-band"]
+      and ABOUT_POOL_RULES == ["img-left", "img-right", "img-top", "img-overlap", "img-circle", "img-zigzag"])
+check("H1 §12.1.3 HERO/ABOUT プール (各6型・HERO index4/5=center-scroll/panel-band・ABOUT index4/5=img-circle/img-zigzag)",
       h1, "HERO=%s ABOUT=%s" % (HERO_POOL_RULES, ABOUT_POOL_RULES))
 
-# H2 割り当て表 6行・巡回mod4・distinct（GALLERY と共通）
-h2 = (len(ASSIGN) == 6 and all(ASSIGN[o] == (o % 4, (o + 1) % 4, (o + 2) % 4) for o in ASSIGN)
+# H2 割り当て表 6行・巡回mod6（HERO/ABOUT・KLK-040）・distinct
+h2 = (len(ASSIGN) == 6 and all(ASSIGN[o] == (o % EXPECT_N, (o + 1) % EXPECT_N, (o + 2) % EXPECT_N) for o in ASSIGN)
       and all(len(set(ASSIGN[o])) == 3 for o in ASSIGN))
-check("H2 割り当て表 (4型共通・6行・巡回mod4・各行distinct)", h2, "assign=%s" % ASSIGN)
+check("H2 割り当て表 (HERO/ABOUT用・6行・巡回mod6・各行distinct)", h2, "assign=%s" % ASSIGN)
 
-# H3 到達可能性: 全offsetから index{0..3} 到達（overlap/img-overlap=index3含む）
+# H3 到達可能性: 全offsetから index{0..5} 到達（新型 index3/4/5 含む）
 reach = set()
 for off in OFFSET.values():
     reach |= set(ASSIGN[off])
-check("H3 到達可能性 (全offsetから index{0..3} 全到達＝overlap/img-overlap含む)",
+check("H3 到達可能性 (全offsetから index{0..5} 全到達＝overlap/center-scroll/panel-band 等含む)",
       reach >= set(range(EXPECT_N)), "到達=%s" % sorted(reach))
 
-# H4 ドリフト検出: 本文 §12.1.3 プール = check_klk034 の HERO_POOL/ABOUT_POOL・GALLERY_ASSIGN・DEFAULT_1211からHERO/ABOUT除外
+# H4 ドリフト検出: 本文 §12.1.3 プール = check_klk034 の HERO_POOL/ABOUT_POOL・mod6割り当て(POOL6_ASSIGN)・DEFAULT_1211からHERO/ABOUT除外
 d_hero = (HERO_POOL_RULES == list(C34.get("HERO_POOL", [])))
 d_about = (ABOUT_POOL_RULES == list(C34.get("ABOUT_POOL", [])))
-d_assign = (ASSIGN == C34.get("GALLERY_ASSIGN"))
+d_assign = (ASSIGN == C34.get("POOL6_ASSIGN"))
 d1211 = ("HERO" not in (C34.get("DEFAULT_1211") or {})) and ("ABOUT" not in (C34.get("DEFAULT_1211") or {}))
-check("H4 ドリフト検出 (本文HERO/ABOUTプール = check_klk034 定数・割り当て一致・DEFAULT_1211からHERO/ABOUT除外)",
+check("H4 ドリフト検出 (本文HERO/ABOUTプール = check_klk034 定数・mod6割り当て一致・DEFAULT_1211からHERO/ABOUT除外)",
       d_hero and d_about and d_assign and d1211,
       "HERO=%s ABOUT=%s assign=%s 1211除外=%s" % (d_hero, d_about, d_assign, d1211))
 
-# H5 klk036 表引き: offset3→(3,0,1)・HERO=(overlap,full,split)・ABOUT=(img-overlap,img-left,img-right)
+# H5 klk036 表引き: offset3→(3,4,5)・HERO=(overlap,center-scroll,panel-band)・ABOUT=(img-overlap,img-circle,img-zigzag)
 off36 = OFFSET[("1col", "below-hero")]
 idxs = ASSIGN[off36]
 exp_hero = tuple(HERO_POOL_RULES[i] for i in idxs)
 exp_about = tuple(ABOUT_POOL_RULES[i] for i in idxs)
 act_hero = tuple(attr(K36[l], "data-hero") for l in ("a", "b", "c"))
 act_about = tuple(about_marker(K36[l]) for l in ("a", "b", "c"))
-h5 = (off36 == 3 and idxs == (3, 0, 1) and act_hero == exp_hero and act_about == exp_about)
-check("H5 klk036 表引き (offset3→(3,0,1)・HERO=(overlap,full,split)・ABOUT=(img-overlap,img-left,img-right))",
+h5 = (off36 == 3 and idxs == (3, 4, 5) and act_hero == exp_hero and act_about == exp_about)
+check("H5 klk036 表引き (offset3→(3,4,5)・HERO=(overlap,center-scroll,panel-band)・ABOUT=(img-overlap,img-circle,img-zigzag))",
       h5, "HERO 期待%s 実%s / ABOUT 期待%s 実%s" % (exp_hero, act_hero, exp_about, act_about))
 
-# H6 【HERO固有】整列シグネチャが4型で全distinct（overlapが既存3型と非重複）＋klk036の各案が型に対応
+# H6 【HERO固有】整列シグネチャが6型で全distinct（新2型が既存4型と非重複）＋klk036の各案が型に対応
 sig_all = list(HERO_SIG.values())
-h6_pool_distinct = len(set(sig_all)) == 4
+h6_pool_distinct = len(set(sig_all)) == EXPECT_N
 h6_klk036 = True
 h6_det = []
 for l, t in zip(("a", "b", "c"), act_hero):
@@ -228,7 +231,7 @@ for l, t in zip(("a", "b", "c"), act_hero):
     h6_klk036 = h6_klk036 and ok
     h6_det.append("%s(%s):%s%s" % (l, t, sig, "" if ok else "≠%s" % (want,)))
 h6_klk036_distinct = distinct3([hero_sig(K36[l]) for l in ("a", "b", "c")])
-check("H6 HERO整列シグネチャ (4型で全distinct＝overlap非重複・klk036各案が型に対応・3案distinct)",
+check("H6 HERO整列シグネチャ (6型で全distinct＝新2型が既存と非重複・klk036各案が型に対応・3案distinct)",
       h6_pool_distinct and h6_klk036 and h6_klk036_distinct,
       "4型distinct=%s / klk036=%s / 3案distinct=%s" % (h6_pool_distinct, "; ".join(h6_det), h6_klk036_distinct))
 

@@ -55,8 +55,8 @@ def parse_gallery_pool():
 
 
 def parse_gallery_assign():
-    # KLK-037 で「**(2) GALLERY 割り当て表」→「**(2) 割り当て表（4型プール共通）」に一般化
-    seg = _seg("**(2) 割り当て表", "- **offset0")
+    # KLK-040 で (2) が型数別2表（GALLERY mod4 ＋ HERO/ABOUT mod6）に。GALLERY(mod4)表だけを読む。
+    seg = _seg("**GALLERY（4型", "**HERO/ABOUT（6型")
     asn = {}
     for m in re.finditer(r'^\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|', seg, re.M):
         o, a, b, c = (int(x) for x in m.groups())
@@ -224,11 +224,12 @@ g8_ok = g8_ok and distinct3([attr(K36[l], "data-archetype") for l in ("a", "b", 
 check("G8 klk036 健全性 (番地6種各1・print・アタリa・依存0・PH・1col/below-hero・archetype/GALLERY/main distinct)",
       g8_ok, "; ".join(g8_det) if g8_det else "3案とも健全・distinct")
 
-# G9 ABOUT も §12.1.3 プールへ移譲後 (KLK-037): klk036=offset3 → (img-overlap,img-left,img-right)・案間distinct
+# G9 ABOUT は §12.1.3 プールへ移譲済み（KLK-037/040）。ABOUT の型数・表引きの詳細は check_klk037 が担当（GALLERY版の本チェッカは
+#   ABOUT の具体値に依存しない＝mod4/mod6 の変更に非依存）。ここでは klk036 の ABOUT が案間distinct・img-* 語彙内であることのみ確認。
 abt = [re.search(r'class="m-about (img-[a-z-]+)"', K36[l]) for l in ("a", "b", "c")]
 abt = [m.group(1) if m else None for m in abt]
-g9 = distinct3(abt) and tuple(abt) == ("img-overlap", "img-left", "img-right")
-check("G9 ABOUT §12.1.3 プール (KLK-037移譲後・klk036 offset3→img-overlap/img-left/img-right・案間distinct)",
+g9 = distinct3(abt) and all(a and a.startswith("img-") for a in abt)
+check("G9 ABOUT §12.1.3 プール移譲済み (klk036 の ABOUT が案間distinct・img-*語彙。詳細な表引きは check_klk037)",
       g9, "about=%s" % abt)
 
 # G10 規約文言: §12.1.3 見出し・pat-slider・SKILL 追記・§12.2/§14 の §12.1.3 対応（KLK-037で GALLERY→GALLERY/HERO/ABOUT に一般化済み）
