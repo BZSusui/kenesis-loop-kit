@@ -263,10 +263,10 @@ for name, (eh, ea) in exp_map.items():
 check("H8 既存golden不変 (klk023/034/034b の HERO/ABOUT が offset0 の従来値・§12.1.3移譲で変わらない)",
       h8_ok, "; ".join(h8_det))
 
-# H9 規約文言: §12.1.3 に HERO/ABOUT プール・overlap・§12.2 から HERO/ABOUT 除外(MENUのみ)・§14 に MV-01/ABOUT-01・SKILL
+# H9 規約文言: §12.1.3 に HERO/ABOUT プール・overlap・§12.2 既定型表は空(KLK-044でMENUも§12.1.3へ)・§14 に MV-01/ABOUT-01・SKILL
 h9_rules = ("overlap" in RULES and "img-overlap" in RULES
             and "HERO プール" in RULES and "ABOUT プール" in RULES
-            and "MENU のみ" in RULES  # §12.2 既定型表が MENU のみ
+            and "MENU プール" in RULES  # KLK-044: MENU も §12.1.3 プールへ移譲
             and "MV-01" in RULES and "ABOUT-01" in RULES)  # §14 再付与対象
 h9_skill = ("overlap" in SKILL and "img-overlap" in SKILL)
 h9_regen = ("MV-01" in REGEN and "ABOUT-01" in REGEN and "§12.1.3" in REGEN)

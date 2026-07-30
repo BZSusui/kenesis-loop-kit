@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<!--
+  KLK-046 ゴールデン（MENU 6型化＋feature-large 新型・案B / letter=b）— 1col×below-hero→offset3
+  MENU が §12.1.3 プール（6型・mod6）へ拡張（KLK-046）。offset3→MENU 各 index(3,4,5)：案A=price-table(index3)・案B=tab-switch(index4)・案C=feature-large(index5・新)。
+  HERO/ABOUT 各 index(3,4,5)・GALLERY 各 index(3,0,1)（KLK-040/036 と同じ）：案B=center-scroll/img-circle/pat-grid。
+  これはテスト検証用のプレースホルダ出力です。実在の顧客・案件ではありません（サンプル）。
+  案件名: サンプルアトリエ料金プラン / 業種: アート・ポートフォリオ / カラム: 1col（全案共通）/ nav: below-hero（全案共通）
+  セクション集合: ABOUT,MENU,GALLERY,CTA（全案共通）/ 並び順=ABOUT,GALLERY,MENU,CTA / archetype=split-editorial / HERO=center-scroll(index4) / MENU=tab-switch(index4) / ABOUT=img-circle(index4) / GALLERY=pat-grid(index0)
+  配色方向: 案B 濃色紺・上質（ネイビー＋ゴールド・serif・左寄せ非対称）
+  実生成物は mockups/{日付}_{案件名}/index-b.html に保存されます（Git除外）。
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>サンプルアトリエ料金プラン | デザインラフ 案B</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Yu Mincho", "Hiragino Mincho ProN", serif; line-height: 1.8; }
+  .mock { --m-main: #2a2f45; --m-nav: #191d2e; --m-accent: #c6a15b; --m-bg: #f2f1ee; --m-text: #2b2b2b; background: var(--m-bg); color: var(--m-text); overflow: hidden; position: relative; }
+  .sec { position: relative; }
+  .addr { position: absolute; top: 8px; left: 8px; z-index: 5; display: inline-flex; gap: 6px; align-items: center; }
+  .addr .pin { background: rgba(17,24,39,.82); color: #fff; font-size: 10px; letter-spacing: .04em; padding: 2px 7px; border-radius: 4px; font-family: ui-monospace, monospace; }
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+  .m-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 22px; background: var(--m-nav); color: #fff; }
+  .m-nav .logo { font-size: 17px; font-weight: 700; letter-spacing: .1em; }
+  .m-nav ul { display: flex; gap: 16px; list-style: none; margin: 0; padding: 0; font-size: 12px; }
+  .m-nav .cta { background: var(--m-accent); color: #1a1a1a; padding: 6px 14px; border-radius: 2px; font-size: 12px; font-weight: 700; }
+
+  /* HERO 型: center-scroll（全面ビジュアル背景＋キャッチ上・スクロール誘導↓下の上下分散・§12.1.3 index4・KLK-040 新型・data-hero="center-scroll"） */
+  .m-hero { position: relative; display: flex; flex-direction: column; justify-content: space-between; align-items: center; text-align: center; min-height: 420px; padding: 48px 20px; color: #fff;
+    background: linear-gradient(rgba(15,18,30,.5), rgba(15,18,30,.42)), repeating-linear-gradient(45deg, var(--m-main), var(--m-main) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 28px); }
+  .m-hero .hero-main { display: flex; flex-direction: column; align-items: center; }
+  .m-hero .catch { font-size: 34px; font-weight: 700; letter-spacing: .06em; margin: 0 0 14px; text-shadow: 0 2px 8px rgba(0,0,0,.35); }
+  .m-hero .lead { font-size: 15px; max-width: 520px; margin: 0 0 22px; }
+  .m-hero .hero-cta { background: var(--m-accent); color: #1a1a1a; padding: 12px 30px; border-radius: 2px; font-size: 14px; font-weight: 700; }
+  .m-hero .scroll-cue { font-size: 12px; letter-spacing: .2em; line-height: 1.5; opacity: .85; font-family: ui-monospace, monospace; }
+  .atari-tag { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 10px; padding: 3px 8px; border-radius: 4px; font-family: "Hiragino Sans", sans-serif; }
+
+  .m-sec { padding: 40px 28px; max-width: 940px; margin: 0 auto; }
+  .m-sec h2 { text-align: left; font-size: 23px; letter-spacing: .06em; margin: 0 0 4px; color: var(--m-main); border-left: 3px solid var(--m-accent); padding-left: 12px; }
+  .m-sec .en { text-align: left; font-size: 11px; letter-spacing: .3em; color: var(--m-accent); margin: 0 0 22px 15px; font-family: ui-monospace, monospace; }
+  .todo { color: #B54; background: #FFF0F0; border: 1px dashed #E39; border-radius: 4px; padding: 1px 6px; font-size: 12.5px; font-family: "Hiragino Sans", sans-serif; }
+
+  .atari { background: linear-gradient(135deg, color-mix(in srgb, var(--m-main) 22%, #fff), color-mix(in srgb, var(--m-accent) 26%, #fff)); border: 1px dashed color-mix(in srgb, var(--m-main) 45%, #999); border-radius: 3px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: color-mix(in srgb, var(--m-main) 55%, #333); padding: 14px; gap: 4px; font-family: "Hiragino Sans", sans-serif; }
+  .atari .ic { font-size: 22px; }
+  .atari .desc { font-size: 12.5px; font-weight: 600; }
+  .atari .kw { font-size: 11px; color: #6B7280; }
+  .atari .kw b { font-family: ui-monospace, monospace; color: var(--m-main); }
+
+  /* ABOUT 画像配置: img-circle（円形画像＋文章の左右並び・§12.1.3 index4・KLK-040 新型） */
+  .m-about.img-circle { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: center; }
+  .m-about.img-circle .atari { border-radius: 50%; aspect-ratio: 1; min-height: 0; }
+  .m-about .txt h3 { font-size: 19px; color: var(--m-main); margin: 0 0 10px; }
+  .m-about .txt p { font-size: 13.5px; margin: 0; }
+
+  /* GALLERY 型: pat-grid（均等グリッド3列・§12.1.3 index0） */
+  .m-gallery.pat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .m-gallery.pat-grid .atari { aspect-ratio: 1; min-height: 0; padding: 8px; }
+  .m-gallery .atari .ic { font-size: 16px; }
+  .m-gallery .atari .desc { font-size: 10.5px; }
+
+  /* MENU 型: tab-switch（カテゴリタブ切替・§12.1.3 index4・KLK-045 新型・上部タブ行＋下部パネル・クリックで切替） */
+  .m-menu.tab-switch { display: flex; flex-direction: column; gap: 0; }
+  .m-menu.tab-switch .tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--m-main); }
+  .m-menu.tab-switch .tab { padding: 10px 22px; background: color-mix(in srgb, var(--m-main) 10%, #fff); border-radius: 4px 4px 0 0; font-size: 13px; font-weight: 700; color: var(--m-main); cursor: pointer; user-select: none; }
+  .m-menu.tab-switch .tab.active { background: var(--m-main); color: #fff; }
+  /* パネルは既定で非表示・active のみ表示（JS でクラス付替え・grid レイアウトは維持） */
+  .m-menu.tab-switch .panel { display: none; grid-template-columns: repeat(2, 1fr); gap: 14px; padding: 22px 0 0; }
+  .m-menu.tab-switch .panel.active { display: grid; }
+  .m-menu.tab-switch .panel .m-item { display: flex; gap: 12px; align-items: center; background: #fff; border-radius: 3px; box-shadow: 0 2px 8px rgba(0,0,0,.08); padding: 12px 14px; }
+  .m-menu.tab-switch .panel .m-item .atari { flex: 0 0 108px; aspect-ratio: 4 / 3; min-height: 0; }
+  .m-menu.tab-switch .panel .m-item .ct { flex: 1; }
+  .m-menu .ct h4 { margin: 0 0 4px; font-size: 15px; color: var(--m-main); }
+  .m-menu .ct .price { font-size: 13px; color: var(--m-accent); font-weight: 700; }
+  .m-menu .ct p { margin: 4px 0 0; font-size: 12px; color: #6B7280; }
+
+  .m-cta { background: var(--m-main); color: #fff; text-align: center; padding: 42px 22px; }
+  .m-cta h2 { font-size: 22px; margin: 0 0 8px; color: #fff; }
+  .m-cta p { margin: 0 0 18px; font-size: 13.5px; opacity: .92; }
+  .m-cta .cta-btn { display: inline-block; background: var(--m-accent); color: #1a1a1a; padding: 14px 40px; border-radius: 2px; font-size: 15px; font-weight: 700; }
+
+  .m-foot { background: var(--m-nav); color: #fff; text-align: center; padding: 30px 20px; }
+  .m-foot .fnav { font-size: 11px; opacity: .85; }
+
+  @media (max-width: 640px) {
+    .m-nav ul { display: none; }
+    .m-nav::after { content: "\2630"; color: #fff; font-size: 20px; }
+    .m-hero { padding: 32px 16px; }
+    .m-hero .catch { font-size: 25px; }
+    .m-about.img-circle { grid-template-columns: 1fr; }
+    .m-gallery.pat-grid { grid-template-columns: repeat(2, 1fr); }
+    .m-menu.tab-switch .tabs { overflow-x: auto; }
+    .m-menu.tab-switch .panel { grid-template-columns: 1fr; }
+    .m-sec { padding: 28px 16px; }
+  }
+  @media print {
+    .addr, .atari-tag, .anim-note { display: none !important; }
+    body { background: #fff; }
+    .mock { box-shadow: none; border-radius: 0; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mock" data-columns="1col" data-archetype="split-editorial" data-section-order="ABOUT,GALLERY,MENU,CTA" data-nav-position="below-hero">
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">MV-01</span></div>
+    <div class="m-hero" data-hero="center-scroll">
+      <div class="hero-main">
+        <h1 class="catch">余白に、物語を宿す。</h1>
+        <p class="lead">絵画・立体・インスタレーション。素材と対話しながら生まれた作品を、一枚ずつ静かにご紹介します。</p>
+        <span class="hero-cta">作品を見る ＞</span>
+      </div>
+      <div class="scroll-cue">↓<br>Scroll</div>
+      <span class="atari-tag">📷 アタリ: アトリエで制作中の作家の手元 / 検索: artist studio hands painting</span>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">NAV-01</span></div>
+    <div class="m-nav">
+      <span class="logo">SAMPLE ART STUDIO</span>
+      <ul><li>ABOUT</li><li>GALLERY</li><li>CONTACT</li></ul>
+      <span class="cta">お問い合わせ</span>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">ABOUT-01</span></div>
+    <div class="m-sec" style="background:#fff">
+      <h2>ABOUT</h2><div class="en">作家について</div>
+      <div class="m-about img-circle">
+        <div class="atari"><span class="ic">📷</span><span class="desc">アトリエで制作する作家のポートレート</span><span class="kw">検索: <b>artist portrait studio</b></span></div>
+        <div class="txt">
+          <h3>かたちにならない感情を、かたちにする。</h3>
+          <p>日々の観察と実験から生まれたモチーフを、油彩とミクストメディアで描いています。見る人それぞれの記憶に触れる一枚を目指しています。<span class="todo">(要検討: 受賞歴・個展の実績・在籍ギャラリーなど信頼の一文)</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">GALLERY-01</span></div>
+    <div class="m-sec">
+      <h2>GALLERY</h2><div class="en">作品ギャラリー</div>
+      <div class="m-gallery pat-grid">
+        <div class="atari"><span class="ic">📷</span><span class="desc">「みなも」油彩 F30</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">「余白の記憶」ミクストメディア</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">「群青の呼吸」油彩 F50</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">「土の手ざわり」立体作品</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">「朝のはじまり」ドローイング</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">「無題」インスタレーション記録</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">MENU-01</span></div>
+    <div class="m-sec" style="background:#fff">
+      <h2>PLAN</h2><div class="en">制作・額装の料金プラン</div>
+      <div class="m-menu tab-switch">
+        <div class="tabs">
+          <span class="tab active" data-tab="0">額装プラン</span>
+          <span class="tab" data-tab="1">制作依頼</span>
+          <span class="tab" data-tab="2">オプション</span>
+        </div>
+        <div class="panel active" data-panel="0">
+          <div class="m-item"><div class="atari"><span class="ic">📷</span><span class="desc">小作品額装</span></div><div class="ct"><h4>小作品額装</h4><div class="price">¥8,000〜</div><p>A4〜F6・マット付き</p></div></div>
+          <div class="m-item"><div class="atari"><span class="ic">📷</span><span class="desc">中作品額装</span></div><div class="ct"><h4>中作品額装</h4><div class="price">¥18,000〜</div><p>F10〜F30・化粧箱付き</p></div></div>
+          <div class="m-item"><div class="atari"><span class="ic">📷</span><span class="desc">大作品額装</span></div><div class="ct"><h4>大作品額装</h4><div class="price">¥32,000〜</div><p>F40〜・要見積り</p></div></div>
+          <div class="m-item"><div class="atari"><span class="ic">📷</span><span class="desc">マット交換</span></div><div class="ct"><h4>マット交換のみ</h4><div class="price">¥3,500〜</div><p>既存額の内枠交換</p></div></div>
+        </div>
+        <div class="panel" data-panel="1">
+          <div class="m-item"><div class="atari"><span class="ic">📷</span><span class="desc">コミッション制作</span></div><div class="ct"><h4>コミッション制作</h4><div class="price">¥120,000〜</div><p>打合せ〜原画納品</p></div></div>
+          <div class="m-item"><div class="atari"><span class="ic">📷</span><span class="desc">複製原画</span></div><div class="ct"><h4>複製原画（ジクレー）</h4><div class="price">¥24,000〜</div><p>エディション付き</p></div></div>
+          <div class="m-item"><div class="atari"><span class="ic">📷</span><span class="desc">ライブペイント</span></div><div class="ct"><h4>ライブペイント出演</h4><div class="price">要見積り</div><p>イベント・店舗装飾</p></div></div>
+        </div>
+        <div class="panel" data-panel="2">
+          <div class="m-item"><div class="atari"><span class="ic">📷</span><span class="desc">配送・設置</span></div><div class="ct"><h4>配送・設置</h4><div class="price">¥4,000〜</div><p>都内・近郊エリア</p></div></div>
+          <div class="m-item"><div class="atari"><span class="ic">📷</span><span class="desc">展示レンタル</span></div><div class="ct"><h4>作品レンタル</h4><div class="price">月額 ¥6,000〜</div><p>オフィス・店舗向け</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">CTA-01</span></div>
+    <div class="m-cta">
+      <h2>展示・制作のご相談を承ります</h2>
+      <p>個展情報・作品購入・コミッションワークのご依頼はこちらから。</p>
+      <span class="cta-btn">お問い合わせはこちら</span>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">FOOTER-01</span></div>
+    <div class="m-foot">
+      <div class="fnav">ABOUT ・ GALLERY ・ CONTACT<br>© SAMPLE ART STUDIO</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
+    var io = new IntersectionObserver(function (ens) { ens.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } }); }, { threshold: .12 });
+    els.forEach(function (e) { io.observe(e); });
+  })();
+  /* MENU tab-switch（§12.1.3 index4・KLK-045）: タブクリックで対応パネルを表示切替（外部依存なし） */
+  (function () {
+    var root = document.querySelector('.m-menu.tab-switch');
+    if (!root) return;
+    var tabs = root.querySelectorAll('.tab');
+    var panels = root.querySelectorAll('.panel');
+    tabs.forEach(function (t) {
+      t.addEventListener('click', function () {
+        var key = t.getAttribute('data-tab');
+        tabs.forEach(function (x) { x.classList.remove('active'); });
+        panels.forEach(function (p) { p.classList.toggle('active', p.getAttribute('data-panel') === key); });
+        t.classList.add('active');
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

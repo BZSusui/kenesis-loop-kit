@@ -37,21 +37,22 @@ import bridge  # noqa: E402  (validate_instruction の機能検証 T群に使用
 NEW_COLS = {"1col", "2col-full-left", "2col-full-right", "2col-body-left", "2col-body-right", "3col"}
 ARCHETYPE_ENUM = {"stack-centered", "split-editorial", "banded-showcase"}
 
-# §12.1.1 の既定型（席替えの参照表・DRAFT_RULES §12.2 のミラー・MENU のみ。
-# GALLERY(KLK-036)・HERO/ABOUT(KLK-037) は §12.1.3 プールへ移譲したため本表から除外）
-DEFAULT_1211 = {
-    "MENU": ("pat-cards", "pat-list", "pat-zigzag"),
-}
+# §12.1.1 の既定型（席替えの参照表・DRAFT_RULES §12.2 のミラー）。
+# KLK-036/037/044 で GALLERY/HERO/ABOUT/MENU をすべて §12.1.3 プールへ移譲したため本表は空
+# （archetype 固定で席替えするセクションは無くなった）。expected_1211 はもはや呼ばれない（後方互換のため定義のみ残す）。
+DEFAULT_1211 = {}
 
-# §12.1.3 セクション別独立プール（4型・index0-3）と割り当て（巡回 mod 4・オフセット表は §12.1.2 共有・KLK-036/037）
+# §12.1.3 セクション別独立プールと割り当て（オフセット表は §12.1.2 共有・KLK-036/037/040/044）
 GALLERY_POOL = ["pat-grid", "pat-wide", "pat-mosaic", "pat-slider"]
 HERO_POOL = ["full", "split", "band", "overlap", "center-scroll", "panel-band"]  # KLK-040: 6型
 ABOUT_POOL = ["img-left", "img-right", "img-top", "img-overlap", "img-circle", "img-zigzag"]  # KLK-040: 6型
-POOL_1213 = {"HERO": HERO_POOL, "GALLERY": GALLERY_POOL, "ABOUT": ABOUT_POOL}
-# 割り当ては型数別 mod（KLK-040 で分離）。GALLERY=mod4・HERO/ABOUT=mod6（§12.1.2 と同値）
+MENU_POOL = ["pat-cards", "pat-list", "pat-zigzag", "price-table", "tab-switch", "feature-large"]  # KLK-044/045/046: 6型・price-table/tab-switch/feature-large 新
+POOL_1213 = {"HERO": HERO_POOL, "GALLERY": GALLERY_POOL, "ABOUT": ABOUT_POOL, "MENU": MENU_POOL}
+# 割り当ては型数別 mod。GALLERY=mod4・MENU/HERO/ABOUT=mod6（§12.1.2 と同値）
 GALLERY_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 0), 3: (3, 0, 1), 4: (0, 1, 2), 5: (1, 2, 3)}  # mod4
 POOL6_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（HERO/ABOUT）
-ASSIGN_1213 = {"HERO": POOL6_ASSIGN, "GALLERY": GALLERY_ASSIGN, "ABOUT": POOL6_ASSIGN}
+MENU_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（KLK-046・POOL6_ASSIGN と同値）
+ASSIGN_1213 = {"HERO": POOL6_ASSIGN, "GALLERY": GALLERY_ASSIGN, "ABOUT": POOL6_ASSIGN, "MENU": MENU_ASSIGN}  # KLK-046: MENU=mod6
 
 # §12.1.2 型プール・オフセット表・割り当て表（check_klk029.py と同一ミラー）
 POOL = {
@@ -199,6 +200,7 @@ class Golden:
         self.idxs = ASSIGN[OFFSET[(self.columns, self.nav)]]
         _off1213 = OFFSET[(self.columns, self.nav)]
         self.gallery_idxs = GALLERY_ASSIGN[_off1213]  # §12.1.3 GALLERY 用（mod4）
+        self.menu_idxs = MENU_ASSIGN[_off1213]        # §12.1.3 MENU 用（mod5・KLK-045）
         self.pool6_idxs = POOL6_ASSIGN[_off1213]      # §12.1.3 HERO/ABOUT 用（mod6・KLK-040）
 
         self.DC = [attr(h, "data-columns") for _, h in self.goldens]
@@ -245,17 +247,14 @@ for g in G:
     for key in ("HERO", "MENU", "GALLERY", "ABOUT"):
         if key != "HERO" and key not in g.sections:
             continue  # sections に無いセクションは出ない（HERO は常設）
-        # GALLERY/HERO/ABOUT は §12.1.3 プール基準（KLK-036/037/040・型数別mod）・MENU のみ §12.1.1 系
-        if key in ("HERO", "GALLERY", "ABOUT"):
-            idxs = g.gallery_idxs if key == "GALLERY" else g.pool6_idxs  # GALLERY=mod4・HERO/ABOUT=mod6
-            exp = expected_1213(key, g.sl.get(key), idxs)
-        else:
-            exp = expected_1211(key, g.sl.get(key))
+        # KLK-044/045: HERO/GALLERY/ABOUT/MENU すべて §12.1.3 プール基準（型数別mod）。GALLERY=mod4・MENU=mod5・HERO/ABOUT=mod6
+        idxs = g.gallery_idxs if key == "GALLERY" else (g.menu_idxs if key == "MENU" else g.pool6_idxs)
+        exp = expected_1213(key, g.sl.get(key), idxs)
         act = tuple(g.actual(key))
         ok = act == exp
         r2_ok = r2_ok and ok
         r2_det.append(f"{g.name}/{key}: 期待{exp} 実{act} {'OK' if ok else 'NG'}")
-check("R2 席替え (MENU=§12.1.1系・HERO/GALLERY/ABOUT=§12.1.3系 が §12.2 規則適用後の期待と一致)",
+check("R2 席替え (HERO/GALLERY/ABOUT/MENU すべて §12.1.3系 が §12.2 規則適用後の期待と一致)",
       r2_ok, "; ".join(d for d in r2_det if "NG" in d) or f"{len(r2_det)}軸すべて期待どおり")
 
 # R3 §12.1.2 系: VOICE/FLOW/STAFF の実マーカーが (表引き＋席替え) の期待と一致
