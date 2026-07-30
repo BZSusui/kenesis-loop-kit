@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <!--
-  KLK-045 ゴールデン（MENU 5型化＋tab-switch 新型・案C / letter=c）— 1col×below-hero→offset3
-  MENU が §12.1.3 プール（5型・mod5）へ拡張（KLK-045）。offset3→MENU 各 index(3,4,0)：案A=price-table(index3)・案B=tab-switch(index4)・案C=pat-cards(index0)。
+  KLK-046 ゴールデン（MENU 6型化＋feature-large 新型・案C / letter=c）— 1col×below-hero→offset3
+  MENU が §12.1.3 プール（6型・mod6）へ拡張（KLK-046・自動振り分け上限6に到達）。offset3→MENU 各 index(3,4,5)：案A=price-table(index3)・案B=tab-switch(index4)・案C=feature-large(index5・新)。
   HERO/ABOUT 各 index(3,4,5)・GALLERY 各 index(3,0,1)（KLK-040/036 と同じ）：案C=panel-band/img-zigzag/pat-wide。
   これはテスト検証用のプレースホルダ出力です。実在の顧客・案件ではありません（サンプル）。
   案件名: サンプルアトリエ料金プラン / 業種: アート・ポートフォリオ / カラム: 1col（全案共通）/ nav: below-hero（全案共通）
-  セクション集合: ABOUT,MENU,GALLERY,CTA（全案共通）/ 並び順=GALLERY,MENU,ABOUT,CTA（GALLERY先行）/ archetype=banded-showcase / HERO=panel-band(index5) / MENU=pat-cards(index0) / ABOUT=img-zigzag(index5) / GALLERY=pat-wide(index1)
+  セクション集合: ABOUT,MENU,GALLERY,CTA（全案共通）/ 並び順=GALLERY,MENU,ABOUT,CTA（GALLERY先行）/ archetype=banded-showcase / HERO=panel-band(index5) / MENU=feature-large(index5) / ABOUT=img-zigzag(index5) / GALLERY=pat-wide(index1)
   配色方向: 案C 明色テラコッタ（sans・帯構成）
   実生成物は mockups/{日付}_{案件名}/index-c.html に保存されます（Git除外）。
 -->
@@ -69,13 +69,14 @@
   .m-gallery .atari .ic { font-size: 20px; }
   .m-gallery .atari .desc { font-size: 12px; }
 
-  /* MENU 型: pat-cards（カード群3列・§12.1.3 index0・従来最頻。画像は aspect-ratio 4/3・KLK-044 微調整を踏襲） */
-  .m-menu.pat-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .m-menu.pat-cards .m-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,.08); }
-  .m-menu.pat-cards .m-card .atari { aspect-ratio: 4 / 3; min-height: 0; border-radius: 0; border: none; border-bottom: 1px dashed #ccc; }
-  .m-menu.pat-cards .m-card .ct { padding: 14px; text-align: center; }
-  .m-menu .ct h4 { margin: 0 0 6px; font-size: 15px; color: var(--m-main); }
-  .m-menu .ct .price { font-size: 13px; color: var(--m-accent); font-weight: 800; }
+  /* MENU 型: feature-large（大画像＋詳細・§12.1.3 index5・KLK-046 新型・横長大画像＋右詳細パネル） */
+  .m-menu.feature-large { display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; align-items: center; background: #fff; border-radius: 14px; box-shadow: 0 4px 16px rgba(0,0,0,.08); overflow: hidden; }
+  .m-menu.feature-large .feat-img { aspect-ratio: 16 / 9; min-height: 0; border-radius: 0; }
+  .m-menu.feature-large .feat-detail { padding: 20px 24px 20px 0; }
+  .m-menu.feature-large .feat-detail h4 { margin: 0 0 6px; font-size: 20px; color: var(--m-main); }
+  .m-menu.feature-large .feat-detail .price { font-size: 16px; color: var(--m-accent); font-weight: 800; margin-bottom: 10px; }
+  .m-menu.feature-large .feat-detail p { margin: 0 0 12px; font-size: 13px; }
+  .m-menu.feature-large .feat-detail ul { margin: 0; padding-left: 18px; font-size: 12.5px; color: #6B7280; }
 
   .m-cta { background: var(--m-main); color: #fff; text-align: center; padding: 42px 22px; }
   .m-cta h2 { font-size: 22px; margin: 0 0 8px; color: #fff; }
@@ -93,7 +94,8 @@
     .m-about.img-zigzag .ab-row { grid-template-columns: 1fr; }
     .m-about.img-zigzag .ab-row:nth-child(even) .atari { order: 0; }
     .m-gallery.pat-wide { grid-template-columns: 1fr; }
-    .m-menu.pat-cards { grid-template-columns: 1fr; }
+    .m-menu.feature-large { grid-template-columns: 1fr; }
+    .m-menu.feature-large .feat-detail { padding: 0 20px 20px; }
     .m-sec { padding: 26px 16px; }
   }
   @media print {
@@ -153,11 +155,19 @@
   <div class="sec reveal">
     <div class="addr"><span class="pin">MENU-01</span></div>
     <div class="m-sec band">
-      <h2>PLAN</h2><div class="en">制作・額装の料金プラン</div>
-      <div class="m-menu pat-cards">
-        <div class="m-card"><div class="atari"><span class="ic">📷</span><span class="desc">小作品額装</span></div><div class="ct"><h4>小作品額装</h4><div class="price">¥8,000〜</div></div></div>
-        <div class="m-card"><div class="atari"><span class="ic">📷</span><span class="desc">中作品額装</span></div><div class="ct"><h4>中作品額装</h4><div class="price">¥18,000〜</div></div></div>
-        <div class="m-card"><div class="atari"><span class="ic">📷</span><span class="desc">コミッション制作</span></div><div class="ct"><h4>コミッション制作</h4><div class="price">¥120,000〜</div></div></div>
+      <h2>PLAN</h2><div class="en">一押し・看板プラン</div>
+      <div class="m-menu feature-large">
+        <div class="feat-img atari"><span class="ic">📷</span><span class="desc">アトリエ壁面を飾る大型コミッション作品（横長ビジュアル）</span><span class="kw">検索: <b>large commission painting interior</b></span></div>
+        <div class="feat-detail">
+          <h4>コミッション制作（一押し）</h4>
+          <div class="price">¥120,000〜</div>
+          <p>空間に合わせた完全オーダーの原画制作。打合せから設置まで一貫してサポートします。</p>
+          <ul>
+            <li>サイズ・画材・モチーフを相談しながら決定</li>
+            <li>制作過程を写真で共有</li>
+            <li>額装・配送・設置までワンストップ</li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>

@@ -46,13 +46,13 @@ DEFAULT_1211 = {}
 GALLERY_POOL = ["pat-grid", "pat-wide", "pat-mosaic", "pat-slider"]
 HERO_POOL = ["full", "split", "band", "overlap", "center-scroll", "panel-band"]  # KLK-040: 6型
 ABOUT_POOL = ["img-left", "img-right", "img-top", "img-overlap", "img-circle", "img-zigzag"]  # KLK-040: 6型
-MENU_POOL = ["pat-cards", "pat-list", "pat-zigzag", "price-table", "tab-switch"]  # KLK-044/045: 5型・price-table/tab-switch 新
+MENU_POOL = ["pat-cards", "pat-list", "pat-zigzag", "price-table", "tab-switch", "feature-large"]  # KLK-044/045/046: 6型・price-table/tab-switch/feature-large 新
 POOL_1213 = {"HERO": HERO_POOL, "GALLERY": GALLERY_POOL, "ABOUT": ABOUT_POOL, "MENU": MENU_POOL}
-# 割り当ては型数別 mod。GALLERY=mod4・MENU=mod5・HERO/ABOUT=mod6（§12.1.2 と同値）
+# 割り当ては型数別 mod。GALLERY=mod4・MENU/HERO/ABOUT=mod6（§12.1.2 と同値）
 GALLERY_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 0), 3: (3, 0, 1), 4: (0, 1, 2), 5: (1, 2, 3)}  # mod4
-MENU_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 0), 4: (4, 0, 1), 5: (0, 1, 2)}  # mod5（KLK-045）
 POOL6_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（HERO/ABOUT）
-ASSIGN_1213 = {"HERO": POOL6_ASSIGN, "GALLERY": GALLERY_ASSIGN, "ABOUT": POOL6_ASSIGN, "MENU": MENU_ASSIGN}  # KLK-045: MENU=mod5
+MENU_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（KLK-046・POOL6_ASSIGN と同値）
+ASSIGN_1213 = {"HERO": POOL6_ASSIGN, "GALLERY": GALLERY_ASSIGN, "ABOUT": POOL6_ASSIGN, "MENU": MENU_ASSIGN}  # KLK-046: MENU=mod6
 
 # §12.1.2 型プール・オフセット表・割り当て表（check_klk029.py と同一ミラー）
 POOL = {

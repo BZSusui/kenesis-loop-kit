@@ -2,13 +2,13 @@
 """
 KLK-044 acceptance-condition checker (static / no browser required).
 
-MENU のプール化（§12.1.3・§12.1.1 から移譲・新型 price-table[KLK-044]/tab-switch[KLK-045]・MENU 5型化・mod5）の
+MENU のプール化（§12.1.3・§12.1.1 から移譲・新型 price-table[044]/tab-switch[045]/feature-large[046]・MENU 6型化・mod6）の
 静的受け入れ条件を検証する。check_klk036.py（GALLERY版）/check_klk037.py（HERO/ABOUT版）が雛形。
 
-  縦串 生成規約   .claude/skills/draft-generate/templates/DRAFT_RULES.md（§12.1.3 の MENU プール表5型・MENU専用 mod5 割り当て表）
-  主 golden       tests/fixtures/klk044/{index-a/b/c}.html（1col×below-hero=offset3→MENU(3,4,0)・案A=price-table・案B=tab-switch・案C=pat-cards）
+  縦串 生成規約   .claude/skills/draft-generate/templates/DRAFT_RULES.md（§12.1.3 の MENU プール表6型・MENU専用 mod6 割り当て表）
+  主 golden       tests/fixtures/klk044/{index-a/b/c}.html（1col×below-hero=offset3→MENU(3,4,5)・案A=price-table・案B=tab-switch・案C=feature-large）
   既存 golden     tests/fixtures/klk023/034/034b（1col×top=offset0→MENU(0,1,2)＝pat-cards/list/zigzag 不変）
-  ドリフト検出    DRAFT_RULES §12.1.3 の MENU プール表・mod5割り当て ＝ check_klk034.py の MENU_POOL/POOL_1213/ASSIGN_1213/MENU_ASSIGN（ast 抽出）
+  ドリフト検出    DRAFT_RULES §12.1.3 の MENU プール表・mod6割り当て ＝ check_klk034.py の MENU_POOL/POOL_1213/ASSIGN_1213/MENU_ASSIGN（ast 抽出）
 
 Python標準のみ・exit 0/1・import せず ast。
 
@@ -24,7 +24,7 @@ RULES = open(os.path.join(ROOT, ".claude", "skills", "draft-generate", "template
 SKILL = open(os.path.join(ROOT, ".claude", "skills", "draft-generate", "SKILL.md"), encoding="utf-8").read()
 REGEN = open(os.path.join(ROOT, ".claude", "skills", "draft-regenerate", "SKILL.md"), encoding="utf-8").read()
 
-EXPECT_N = 5  # KLK-045: MENU を5型化（mod5・GALLERY mod4 とは別系統）
+EXPECT_N = 6  # KLK-046: MENU を6型化（mod6・自動振り分け上限6に到達・GALLERY mod4 とは別系統）
 results = []
 
 
@@ -40,10 +40,10 @@ def _seg(start, end):
 
 
 def parse_menu_pool():
-    # MENU プール表: 「**MENU プール（...）...:**」〜「**(2) 割り当て表」。pat-* / price-table / tab-switch（バッククォート）
+    # MENU プール表: 「**MENU プール（...）...:**」〜「**(2) 割り当て表」。pat-* / price-table / tab-switch / feature-large（バッククォート）
     seg = _seg("**MENU プール", "**(2) 割り当て表")
     seen = []
-    for m in re.finditer(r'`(pat-cards|pat-list|pat-zigzag|price-table|tab-switch)`', seg):
+    for m in re.finditer(r'`(pat-cards|pat-list|pat-zigzag|price-table|tab-switch|feature-large)`', seg):
         v = m.group(1)
         if v not in seen:
             seen.append(v)
@@ -51,8 +51,8 @@ def parse_menu_pool():
 
 
 def parse_menu_assign():
-    # MENU は専用の mod5 表（KLK-045・GALLERY mod4 とは別系統）。「**MENU（5型」〜「**(3) 生成手順」を読む。
-    seg = _seg("**MENU（5型", "**(3) 生成手順")
+    # MENU は専用の mod6 表（KLK-046・HERO/ABOUT mod6 と同値・GALLERY mod4 とは別系統）。「**MENU（6型」〜「**(3) 生成手順」を読む。
+    seg = _seg("**MENU（6型", "**(3) 生成手順")
     asn = {}
     for m in re.finditer(r'^\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|', seg, re.M):
         o, a, b, c = (int(x) for x in m.groups())
@@ -145,53 +145,55 @@ def distinct3(vals):
 
 
 K44 = {ltr: gread("klk044", "index-%s.html" % ltr) for ltr in ("a", "b", "c")}
-POOL_EXPECT = ["pat-cards", "pat-list", "pat-zigzag", "price-table", "tab-switch"]
+POOL_EXPECT = ["pat-cards", "pat-list", "pat-zigzag", "price-table", "tab-switch", "feature-large"]
 
 # ===========================================================================
-# P1 本文パース: MENU プール5型・index3=price-table・index4=tab-switch
+# P1 本文パース: MENU プール6型・index3=price-table・index4=tab-switch・index5=feature-large
 # ===========================================================================
 p1 = (MENU_POOL_RULES == POOL_EXPECT)
-check("P1 §12.1.3 MENU プール (5型・pat-cards/pat-list/pat-zigzag/price-table/tab-switch・index4=tab-switch)",
+check("P1 §12.1.3 MENU プール (6型・pat-cards/pat-list/pat-zigzag/price-table/tab-switch/feature-large・index5=feature-large)",
       p1, "MENU=%s" % MENU_POOL_RULES)
 
-# P2 割り当て表 6行・巡回mod5（MENU 専用表・KLK-045）・distinct
+# P2 割り当て表 6行・巡回mod6（MENU 専用表・KLK-046・HERO/ABOUT と同値）・distinct
 p2 = (len(ASSIGN) == 6 and all(ASSIGN[o] == (o % EXPECT_N, (o + 1) % EXPECT_N, (o + 2) % EXPECT_N) for o in ASSIGN)
       and all(len(set(ASSIGN[o])) == 3 for o in ASSIGN))
-check("P2 割り当て表 (MENU専用 mod5・6行・巡回mod5・各行distinct)", p2, "assign=%s" % ASSIGN)
+check("P2 割り当て表 (MENU専用 mod6・6行・巡回mod6・各行distinct)", p2, "assign=%s" % ASSIGN)
 
-# P3 到達可能性: 全offsetから index{0..4} 全到達（新型 index3=price-table・index4=tab-switch 含む）
+# P3 到達可能性: 全offsetから index{0..5} 全到達（新型 index3=price-table・index4=tab-switch・index5=feature-large 含む）
 reach = set()
 for off in OFFSET.values():
     reach |= set(ASSIGN[off])
-check("P3 到達可能性 (全offsetから index{0..4} 全到達＝price-table(index3)/tab-switch(index4) 含む)",
+check("P3 到達可能性 (全offsetから index{0..5} 全到達＝price-table(3)/tab-switch(4)/feature-large(5) 含む)",
       reach >= set(range(EXPECT_N)), "到達=%s" % sorted(reach))
 
-# P4 ドリフト検出: 本文MENUプール = check_klk034 の MENU_POOL・POOL_1213[MENU]=MENU_POOL・ASSIGN_1213[MENU]=MENU_ASSIGN(mod5)・DEFAULT_1211からMENU除外
+# P4 ドリフト検出: 本文MENUプール = check_klk034 の MENU_POOL・POOL_1213[MENU]=MENU_POOL・ASSIGN_1213[MENU]=MENU_ASSIGN(mod6)・DEFAULT_1211からMENU除外
 d_pool = (MENU_POOL_RULES == list(C34.get("MENU_POOL", [])) == POOL_EXPECT)
 d_pool1213 = (dict_name_ref("POOL_1213", "MENU") == "MENU_POOL")        # POOL_1213["MENU"] は MENU_POOL を指す
-d_assign_ref = (dict_name_ref("ASSIGN_1213", "MENU") == "MENU_ASSIGN")  # ASSIGN_1213["MENU"] は MENU_ASSIGN（mod5）
-d_assign_tbl = (C34.get("MENU_ASSIGN") == ASSIGN)                       # 本文 MENU mod5 表 = 定数
+d_assign_ref = (dict_name_ref("ASSIGN_1213", "MENU") == "MENU_ASSIGN")  # ASSIGN_1213["MENU"] は MENU_ASSIGN（mod6）
+d_assign_tbl = (C34.get("MENU_ASSIGN") == ASSIGN)                       # 本文 MENU mod6 表 = 定数
 d1211 = ("MENU" not in (C34.get("DEFAULT_1211") or {}))
-check("P4 ドリフト検出 (本文MENUプール = check_klk034 MENU_POOL・POOL_1213[MENU]=MENU_POOL・ASSIGN_1213[MENU]=MENU_ASSIGN(mod5)・DEFAULT_1211からMENU除外)",
+check("P4 ドリフト検出 (本文MENUプール = check_klk034 MENU_POOL・POOL_1213[MENU]=MENU_POOL・ASSIGN_1213[MENU]=MENU_ASSIGN(mod6)・DEFAULT_1211からMENU除外)",
       d_pool and d_pool1213 and d_assign_ref and d_assign_tbl and d1211,
-      "pool=%s POOL_1213[MENU]=%s ASSIGN_1213[MENU]=%s mod5表一致=%s 1211除外=%s"
+      "pool=%s POOL_1213[MENU]=%s ASSIGN_1213[MENU]=%s mod6表一致=%s 1211除外=%s"
       % (d_pool, d_pool1213, d_assign_ref, d_assign_tbl, d1211))
 
-# P5 klk044 表引き: offset3→(3,4,0)・MENU=(price-table,tab-switch,pat-cards)
+# P5 klk044 表引き: offset3→(3,4,5)・MENU=(price-table,tab-switch,feature-large)
 off44 = OFFSET[("1col", "below-hero")]
 idxs = ASSIGN[off44]
 exp_menu = tuple(MENU_POOL_RULES[i] for i in idxs)
 act_menu = tuple(menu_marker(K44[l]) for l in ("a", "b", "c"))
-p5 = (off44 == 3 and idxs == (3, 4, 0) and act_menu == exp_menu)
-check("P5 klk044 表引き (offset3→(3,4,0)・MENU=(price-table,tab-switch,pat-cards))",
+p5 = (off44 == 3 and idxs == (3, 4, 5) and act_menu == exp_menu)
+check("P5 klk044 表引き (offset3→(3,4,5)・MENU=(price-table,tab-switch,feature-large))",
       p5, "MENU 期待%s 実%s (offset=%s idxs=%s)" % (exp_menu, act_menu, off44, idxs))
 
-# P6 price-table/tab-switch の実CSS差（案A=表形式 grid・案B=tab-switch flex/grid）＋各案MENUマーカーが実CSSを伴う
+# P6 price-table/tab-switch/feature-large の実CSS差（案A=表形式 grid・案B=tab-switch flex/grid・案C=feature-large grid）＋各案MENUマーカーが実CSSを伴う
 p6_pt = css_layout_rule(K44["a"], "price-table") and ("grid-template-columns" in K44["a"])
 p6_tab = css_layout_rule(K44["b"], "tab-switch") and (menu_marker(K44["b"]) == "tab-switch")
+p6_feat = css_layout_rule(K44["c"], "feature-large") and (menu_marker(K44["c"]) == "feature-large")
 p6_all = all(css_layout_rule(K44[l], menu_marker(K44[l])) for l in ("a", "b", "c"))
-check("P6 price-table/tab-switch 実CSS差 (案A=price-table grid・案B=tab-switch flex/grid・全案MENUマーカーが実 grid/flex・飾りでない)",
-      p6_pt and p6_tab and p6_all, "price-table(grid)=%s tab-switch=%s 全案実CSS=%s" % (p6_pt, p6_tab, p6_all))
+check("P6 price-table/tab-switch/feature-large 実CSS差 (案A=price-table grid・案B=tab-switch・案C=feature-large grid・全案が実 grid/flex・飾りでない)",
+      p6_pt and p6_tab and p6_feat and p6_all,
+      "price-table=%s tab-switch=%s feature-large=%s 全案実CSS=%s" % (p6_pt, p6_tab, p6_feat, p6_all))
 
 # P7 既存golden不変（offset0）: klk023/034/034b の MENU が offset0→(pat-cards,pat-list,pat-zigzag) のまま
 p7_ok = True
@@ -210,13 +212,13 @@ p8_vocab = all(m in POOL_EXPECT for m in act_menu)
 check("P8 klk044 MENU 3案distinct・全マーカーが§12.1.3 MENUプール語彙(4型)内",
       p8_distinct and p8_vocab, "MENU=%s distinct=%s 語彙=%s" % (act_menu, p8_distinct, p8_vocab))
 
-# P9 規約文言: §12.1.3 に MENU プール5型・price-table・tab-switch・MENU mod5 表・§14 に MENU-01・SKILL
-p9_rules = ("MENU プール" in RULES and "price-table" in RULES and "tab-switch" in RULES
+# P9 規約文言: §12.1.3 に MENU プール6型・price-table・tab-switch・feature-large・MENU mod6 表・§14 に MENU-01・SKILL
+p9_rules = ("MENU プール" in RULES and "price-table" in RULES and "tab-switch" in RULES and "feature-large" in RULES
             and "MENU も §12.1.3" in RULES  # §12.2/§12.1.3(6) の移譲注記
-            and "MENU（5型" in RULES         # MENU 専用 mod5 割り当て表の見出し
+            and "MENU（6型" in RULES         # MENU 専用 mod6 割り当て表の見出し
             and "MENU-01" in RULES)          # §14 再付与対象
-p9_skill = ("tab-switch" in SKILL and "MENU（5型" in SKILL)
-check("P9 規約文言 (§12.1.3 MENUプール5型・price-table・tab-switch・MENU mod5表・§14 MENU-01・SKILL)",
+p9_skill = ("feature-large" in SKILL and "MENU（6型" in SKILL)
+check("P9 規約文言 (§12.1.3 MENUプール6型・price-table・tab-switch・feature-large・MENU mod6表・§14 MENU-01・SKILL)",
       p9_rules and p9_skill,
       "RULES=%s SKILL=%s" % (p9_rules, p9_skill))
 
@@ -239,7 +241,7 @@ check("P10 klk044 健全性 (番地7種各1・MENU 3案distinct・@media print�
 
 # Report
 print("=" * 78)
-print("KLK-044/045 static acceptance checks (MENU §12.1.3・price-table[044]＋tab-switch[045]・5型化 mod5)")
+print("KLK-044/045/046 static acceptance checks (MENU §12.1.3・price-table/tab-switch/feature-large・6型化 mod6)")
 print("対象: DRAFT_RULES §12.1.3 MENU / check_klk034 定数(ast) / fixtures klk044・klk023・klk034(b)")
 print("=" * 78)
 failed = 0
