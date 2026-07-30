@@ -82,17 +82,17 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
   `data-archetype="{値}"` を付ける。3値enum＝`stack-centered`（案A・中央寄せ標準）／`split-editorial`（案B・左寄せ非対称・
   serif上質）／`banded-showcase`（案C・帯構成ビジュアル先行・sans）。**列数（`data-columns`）とセクション集合（`sections`）は
   全案同一**にし、archetype ごとに**本文構造の束**を振る（§12.1.1）: **並び順**（ルート `data-section-order` に本文DOM順を焼き込み・
-  案A canonical／案B ABOUT→GALLERY→MENU／案C GALLERY先行）・**MENU型**（`.m-menu` に `pat-cards|pat-list|pat-zigzag`）。
-  MENU修飾は**実際に異なる grid/flex** を伴わせる（飾りにしない）。**HERO型・GALLERY型・ABOUT画像配置は §12.1.3（下記プール）で決定**する
-  （KLK-036/037・archetype 固定から分離）。**案間で `data-archetype`・`data-section-order`・`data-hero`・MENU/GALLERY/ABOUT の型が相違**すること
+  案A canonical／案B ABOUT→GALLERY→MENU／案C GALLERY先行）。**HERO型・GALLERY型・ABOUT画像配置・MENU型は §12.1.3（下記プール）で決定**する
+  （KLK-036/037/044・archetype 固定から分離）。**案間で `data-archetype`・`data-section-order`・`data-hero`・MENU/GALLERY/ABOUT の型が相違**すること
   （複数の構造軸が動く・`--m-main` 相違と同型の機械検証フック）。番地は並べ替えても各1回のまま（§2）。単案（`variants:1`）は既定 `stack-centered`。
-- **HERO/GALLERY/ABOUT の内部型プール（KLK-036/037/040・DRAFT_RULES §12.1.3）**: これらが `sections`（HERO=MV-01は常設）にあるときは、案ごとに
+- **HERO/GALLERY/ABOUT/MENU の内部型プール（KLK-036/037/040/044・DRAFT_RULES §12.1.3）**: これらが `sections`（HERO=MV-01は常設）にあるときは、案ごとに
   **各セクションのプールから型を選ぶ**（archetype とは別軸・型数はセクション別）。選択は**算術せず表を読むだけ**: ① `data-columns`（正規化後）と
-  `navPosition` を確定 → ② §12.1.2 の**オフセット表**（共有）で offset(0〜5) → ③ **§12.1.3 の該当セクション割り当て表**（GALLERY=mod4／HERO・ABOUT=mod6・offset 行→ (idxA,idxB,idxC)）
-  → ④ 各案の該当容器に `pool[index]` のマーカーを付け対応 CSS を含める。プールは
+  `navPosition` を確定 → ② §12.1.2 の**オフセット表**（共有）で offset(0〜5) → ③ **§12.1.3 の該当セクション割り当て表**（GALLERY・MENU=mod4／HERO・ABOUT=mod6・offset 行→ (idxA,idxB,idxC)）
+  → ④ 各案の該当容器に `pool[index]` のマーカーを付け対応 CSS を含める。マーカーは**実際に異なる grid/flex** を伴わせる（飾りにしない）。プールは
   **HERO（6型）**=`full`/`split`/`band`/`overlap`/`center-scroll`/`panel-band`（`.m-hero` の `data-hero`・型に整列シグネチャ(justify/align/text)が付随し案間相違＝6型で全distinct）、
   **GALLERY（4型）**=`pat-grid`/`pat-wide`/`pat-mosaic`/`pat-slider`（`.m-gallery`）、
-  **ABOUT（6型）**=`img-left`/`img-right`/`img-top`/`img-overlap`/`img-circle`/`img-zigzag`（`.m-about`）。overlap/img-overlap=重なり型・center-scroll/panel-band=大型MV・img-circle=円形・img-zigzag=左右交互複数段。
+  **ABOUT（6型）**=`img-left`/`img-right`/`img-top`/`img-overlap`/`img-circle`/`img-zigzag`（`.m-about`）、
+  **MENU（4型・KLK-044）**=`pat-cards`/`pat-list`/`pat-zigzag`/`price-table`（`.m-menu`・price-table=価格表/料金プラン型・表形式 grid）。overlap/img-overlap=重なり型・center-scroll/panel-band=大型MV・img-circle=円形・img-zigzag=左右交互複数段。
   **offset0（1col×top）は各プール (index0,1,2)＝従来の archetype 既定と一致**（後方互換）。同一指示書＝同一割り当て・3案 distinct（連続3窓 mod N）。未選択は no-op。単案は idxA。
 - **VOICE/FLOW/STAFF の内部型プール（KLK-029/035・DRAFT_RULES §12.1.2）**: これら3セクションが `sections` にあるときは、案ごとに
   **型プール（各6型）から型を選ぶ**（archetype とは別軸・§12.1.1 は不変・3セクションは常に同数）。選択は**算術せず表を読むだけ**で決める:
