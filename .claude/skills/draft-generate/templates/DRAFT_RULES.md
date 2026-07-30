@@ -689,7 +689,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 2 | `pat-zigzag` | ジグザグ交互（`flex-direction:column`＋各行 `display:flex`＋偶数行 `flex-direction:row-reverse`）。モバイル縦積み |
 | 3 | `price-table`（KLK-044新） | 価格表/料金プラン（`display:grid;grid-template-columns:<プラン列 内容列 料金列>` の表形式・見出し行＋料金行を並べる料金一覧）。モバイルは横スクロールまたは列縮小 |
 | 4 | `tab-switch`（KLK-045新） | タブ切替（`display:flex;flex-direction:column`＝上部にカテゴリタブ行＋下部に**タブごとのパネル** `grid-template-columns:repeat(2,1fr)`。ランチ/ディナー等の分類切替を想定・active タブを強調）。**クリックで切替（最小インライン JS・外部依存なし。各パネルは既定 `display:none`・active のみ `display:grid`。タブ数=パネル数で `data-tab`/`data-panel` を対応）**。パネル内アイテムの画像は**横長 `aspect-ratio:4/3`**。モバイルはタブ横スクロール・パネル1列 |
-| 5 | `feature-large`（KLK-046新） | 大画像＋詳細（`display:grid;grid-template-columns:1.2fr 1fr` の左に**横長の大きなフィーチャー画像**＋右に詳細パネル[名称・価格・説明文・補足リスト]。看板メニュー/一押しプランを大きく見せる型）。モバイルは縦積み1列 |
+| 5 | `feature-large`（KLK-046新） | 大画像＋詳細（`display:grid;grid-template-columns:1.2fr 1fr` の左に**横長の大きなフィーチャー画像**＋右に詳細パネル[名称・価格・説明文・補足リスト]。看板メニュー/一押しプランを**1件**大きく見せる型）。**1件ピックアップの性質上、直下に「MENU 一覧/その他を見る」への導線ボタン（`.feat-more`・下層の一覧ページ想定）を併置する**。モバイルは縦積み1列 |
 
 **(2) 割り当て表（型数別 mod・offset → 案A/B/C の pool index・オフセット表§12.1.2共有・KLK-040 で型数別に一般化）:**
 
