@@ -37,7 +37,7 @@ SKILL = open(os.path.join(ROOT, ".claude", "skills", "draft-generate", "SKILL.md
 NEW_COLS = {"1col", "2col-full-left", "2col-full-right", "2col-body-left", "2col-body-right", "3col"}
 ARCHETYPE_ENUM = {"stack-centered", "split-editorial", "banded-showcase"}
 HERO_ENUM = {"full", "split", "band", "overlap", "center-scroll", "panel-band"}  # KLK-037/040: HERO §12.1.3 プール(6型)。offset0=(full,split,band)
-MENU_ENUM = {"pat-cards", "pat-list", "pat-zigzag", "price-table"}  # KLK-044: MENU §12.1.3 プール(4型)。offset0=(cards,list,zigzag)
+MENU_ENUM = {"pat-cards", "pat-list", "pat-zigzag", "price-table", "tab-switch"}  # KLK-044/045: MENU §12.1.3 プール(5型)。offset0=(cards,list,zigzag)
 GAL_ENUM = {"pat-grid", "pat-wide", "pat-mosaic", "pat-slider"}  # KLK-036: GALLERY §12.1.3 プール(4型)。offset0=(grid,wide,mosaic)
 ABOUT_ENUM = {"img-left", "img-right", "img-top", "img-overlap", "img-circle", "img-zigzag"}  # KLK-037/040: ABOUT §12.1.3 プール(6型)
 GOLDENS = (("a", IDXA), ("b", IDXB), ("c", IDXC))

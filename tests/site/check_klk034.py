@@ -46,12 +46,13 @@ DEFAULT_1211 = {}
 GALLERY_POOL = ["pat-grid", "pat-wide", "pat-mosaic", "pat-slider"]
 HERO_POOL = ["full", "split", "band", "overlap", "center-scroll", "panel-band"]  # KLK-040: 6型
 ABOUT_POOL = ["img-left", "img-right", "img-top", "img-overlap", "img-circle", "img-zigzag"]  # KLK-040: 6型
-MENU_POOL = ["pat-cards", "pat-list", "pat-zigzag", "price-table"]  # KLK-044: 4型・price-table 新
+MENU_POOL = ["pat-cards", "pat-list", "pat-zigzag", "price-table", "tab-switch"]  # KLK-044/045: 5型・price-table/tab-switch 新
 POOL_1213 = {"HERO": HERO_POOL, "GALLERY": GALLERY_POOL, "ABOUT": ABOUT_POOL, "MENU": MENU_POOL}
-# 割り当ては型数別 mod。GALLERY/MENU=mod4・HERO/ABOUT=mod6（§12.1.2 と同値）
+# 割り当ては型数別 mod。GALLERY=mod4・MENU=mod5・HERO/ABOUT=mod6（§12.1.2 と同値）
 GALLERY_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 0), 3: (3, 0, 1), 4: (0, 1, 2), 5: (1, 2, 3)}  # mod4
+MENU_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 0), 4: (4, 0, 1), 5: (0, 1, 2)}  # mod5（KLK-045）
 POOL6_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（HERO/ABOUT）
-ASSIGN_1213 = {"HERO": POOL6_ASSIGN, "GALLERY": GALLERY_ASSIGN, "ABOUT": POOL6_ASSIGN, "MENU": GALLERY_ASSIGN}  # KLK-044: MENU=mod4
+ASSIGN_1213 = {"HERO": POOL6_ASSIGN, "GALLERY": GALLERY_ASSIGN, "ABOUT": POOL6_ASSIGN, "MENU": MENU_ASSIGN}  # KLK-045: MENU=mod5
 
 # §12.1.2 型プール・オフセット表・割り当て表（check_klk029.py と同一ミラー）
 POOL = {
@@ -198,7 +199,8 @@ class Golden:
         self.nav = self.INSTR["layout"].get("navPosition", "top")
         self.idxs = ASSIGN[OFFSET[(self.columns, self.nav)]]
         _off1213 = OFFSET[(self.columns, self.nav)]
-        self.gallery_idxs = GALLERY_ASSIGN[_off1213]  # §12.1.3 GALLERY/MENU 用（mod4・KLK-044）
+        self.gallery_idxs = GALLERY_ASSIGN[_off1213]  # §12.1.3 GALLERY 用（mod4）
+        self.menu_idxs = MENU_ASSIGN[_off1213]        # §12.1.3 MENU 用（mod5・KLK-045）
         self.pool6_idxs = POOL6_ASSIGN[_off1213]      # §12.1.3 HERO/ABOUT 用（mod6・KLK-040）
 
         self.DC = [attr(h, "data-columns") for _, h in self.goldens]
@@ -245,8 +247,8 @@ for g in G:
     for key in ("HERO", "MENU", "GALLERY", "ABOUT"):
         if key != "HERO" and key not in g.sections:
             continue  # sections に無いセクションは出ない（HERO は常設）
-        # KLK-044: HERO/GALLERY/ABOUT/MENU すべて §12.1.3 プール基準（型数別mod）。GALLERY/MENU=mod4・HERO/ABOUT=mod6
-        idxs = g.gallery_idxs if key in ("GALLERY", "MENU") else g.pool6_idxs
+        # KLK-044/045: HERO/GALLERY/ABOUT/MENU すべて §12.1.3 プール基準（型数別mod）。GALLERY=mod4・MENU=mod5・HERO/ABOUT=mod6
+        idxs = g.gallery_idxs if key == "GALLERY" else (g.menu_idxs if key == "MENU" else g.pool6_idxs)
         exp = expected_1213(key, g.sl.get(key), idxs)
         act = tuple(g.actual(key))
         ok = act == exp

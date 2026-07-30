@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <!--
-  KLK-044 ゴールデン（MENU §12.1.3 プール移譲＋price-table 新型・案B / letter=b）— 1col×below-hero→offset3
-  MENU が §12.1.3 プール（4型・mod4）へ移譲（KLK-044）。offset3→MENU 各 index(3,0,1)：案A=price-table(index3)・案B=pat-cards(index0)・案C=pat-list(index1)。
+  KLK-045 ゴールデン（MENU 5型化＋tab-switch 新型・案B / letter=b）— 1col×below-hero→offset3
+  MENU が §12.1.3 プール（5型・mod5）へ拡張（KLK-045）。offset3→MENU 各 index(3,4,0)：案A=price-table(index3)・案B=tab-switch(index4・新)・案C=pat-cards(index0)。
   HERO/ABOUT 各 index(3,4,5)・GALLERY 各 index(3,0,1)（KLK-040/036 と同じ）：案B=center-scroll/img-circle/pat-grid。
   これはテスト検証用のプレースホルダ出力です。実在の顧客・案件ではありません（サンプル）。
   案件名: サンプルアトリエ料金プラン / 業種: アート・ポートフォリオ / カラム: 1col（全案共通）/ nav: below-hero（全案共通）
-  セクション集合: ABOUT,MENU,GALLERY,CTA（全案共通）/ 並び順=ABOUT,GALLERY,MENU,CTA / archetype=split-editorial / HERO=center-scroll(index4) / MENU=pat-cards(index0) / ABOUT=img-circle(index4) / GALLERY=pat-grid(index0)
+  セクション集合: ABOUT,MENU,GALLERY,CTA（全案共通）/ 並び順=ABOUT,GALLERY,MENU,CTA / archetype=split-editorial / HERO=center-scroll(index4) / MENU=tab-switch(index4) / ABOUT=img-circle(index4) / GALLERY=pat-grid(index0)
   配色方向: 案B 濃色紺・上質（ネイビー＋ゴールド・serif・左寄せ非対称）
   実生成物は mockups/{日付}_{案件名}/index-b.html に保存されます（Git除外）。
 -->
@@ -63,13 +63,18 @@
   .m-gallery .atari .ic { font-size: 16px; }
   .m-gallery .atari .desc { font-size: 10.5px; }
 
-  /* MENU 型: pat-cards（カード群3列・§12.1.3 index0・従来最頻） */
-  .m-menu.pat-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .m-menu.pat-cards .m-card { background: #fff; border-radius: 3px; overflow: hidden; box-shadow: 0 3px 12px rgba(0,0,0,.08); }
-  .m-menu.pat-cards .m-card .atari { aspect-ratio: 4 / 3; min-height: 0; border-radius: 0; border: none; border-bottom: 1px dashed #ccc; }
-  .m-menu.pat-cards .m-card .ct { padding: 14px; text-align: center; }
-  .m-menu .ct h4 { margin: 0 0 6px; font-size: 15px; color: var(--m-main); }
+  /* MENU 型: tab-switch（カテゴリタブ切替・§12.1.3 index4・KLK-045 新型・上部タブ行＋下部パネル） */
+  .m-menu.tab-switch { display: flex; flex-direction: column; gap: 0; }
+  .m-menu.tab-switch .tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--m-main); }
+  .m-menu.tab-switch .tab { padding: 10px 22px; background: color-mix(in srgb, var(--m-main) 10%, #fff); border-radius: 4px 4px 0 0; font-size: 13px; font-weight: 700; color: var(--m-main); }
+  .m-menu.tab-switch .tab.active { background: var(--m-main); color: #fff; }
+  .m-menu.tab-switch .panel { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; padding: 22px 0 0; }
+  .m-menu.tab-switch .panel .m-item { display: flex; gap: 12px; align-items: center; background: #fff; border-radius: 3px; box-shadow: 0 2px 8px rgba(0,0,0,.08); padding: 12px 14px; }
+  .m-menu.tab-switch .panel .m-item .atari { flex: 0 0 84px; min-height: 60px; }
+  .m-menu.tab-switch .panel .m-item .ct { flex: 1; }
+  .m-menu .ct h4 { margin: 0 0 4px; font-size: 15px; color: var(--m-main); }
   .m-menu .ct .price { font-size: 13px; color: var(--m-accent); font-weight: 700; }
+  .m-menu .ct p { margin: 4px 0 0; font-size: 12px; color: #6B7280; }
 
   .m-cta { background: var(--m-main); color: #fff; text-align: center; padding: 42px 22px; }
   .m-cta h2 { font-size: 22px; margin: 0 0 8px; color: #fff; }
@@ -86,7 +91,8 @@
     .m-hero .catch { font-size: 25px; }
     .m-about.img-circle { grid-template-columns: 1fr; }
     .m-gallery.pat-grid { grid-template-columns: repeat(2, 1fr); }
-    .m-menu.pat-cards { grid-template-columns: 1fr; }
+    .m-menu.tab-switch .tabs { overflow-x: auto; }
+    .m-menu.tab-switch .panel { grid-template-columns: 1fr; }
     .m-sec { padding: 28px 16px; }
   }
   @media print {
@@ -156,10 +162,18 @@
     <div class="addr"><span class="pin">MENU-01</span></div>
     <div class="m-sec" style="background:#fff">
       <h2>PLAN</h2><div class="en">制作・額装の料金プラン</div>
-      <div class="m-menu pat-cards">
-        <div class="m-card"><div class="atari"><span class="ic">📷</span><span class="desc">小作品額装</span></div><div class="ct"><h4>小作品額装</h4><div class="price">¥8,000〜</div></div></div>
-        <div class="m-card"><div class="atari"><span class="ic">📷</span><span class="desc">中作品額装</span></div><div class="ct"><h4>中作品額装</h4><div class="price">¥18,000〜</div></div></div>
-        <div class="m-card"><div class="atari"><span class="ic">📷</span><span class="desc">コミッション制作</span></div><div class="ct"><h4>コミッション制作</h4><div class="price">¥120,000〜</div></div></div>
+      <div class="m-menu tab-switch">
+        <div class="tabs">
+          <span class="tab active">額装プラン</span>
+          <span class="tab">制作依頼</span>
+          <span class="tab">オプション</span>
+        </div>
+        <div class="panel">
+          <div class="m-item"><div class="atari"><span class="ic">📷</span><span class="desc">小作品額装</span></div><div class="ct"><h4>小作品額装</h4><div class="price">¥8,000〜</div><p>A4〜F6・マット付き</p></div></div>
+          <div class="m-item"><div class="atari"><span class="ic">📷</span><span class="desc">中作品額装</span></div><div class="ct"><h4>中作品額装</h4><div class="price">¥18,000〜</div><p>F10〜F30・化粧箱付き</p></div></div>
+          <div class="m-item"><div class="atari"><span class="ic">📷</span><span class="desc">大作品額装</span></div><div class="ct"><h4>大作品額装</h4><div class="price">¥32,000〜</div><p>F40〜・要見積り</p></div></div>
+          <div class="m-item"><div class="atari"><span class="ic">📷</span><span class="desc">マット交換</span></div><div class="ct"><h4>マット交換のみ</h4><div class="price">¥3,500〜</div><p>既存額の内枠交換</p></div></div>
+        </div>
       </div>
     </div>
   </div>

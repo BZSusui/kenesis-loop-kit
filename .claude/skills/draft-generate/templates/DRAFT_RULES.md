@@ -680,7 +680,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 4 | `img-circle`（KLK-040新） | 円形/型抜き画像（`border-radius:50%;aspect-ratio:1`）＋横にテキスト（`display:grid;grid-template-columns:1fr 1fr`）。モバイル1列 |
 | 5 | `img-zigzag`（KLK-040新） | 画像/文言を左右交互に複数段（`display:flex;flex-direction:column`＋各段 `grid-template-columns:1fr 1fr`＋偶数段 `order` 反転）＝ストーリー型。モバイル縦積み・order解除 |
 
-**MENU プール（`.m-menu`・KLK-044・4型・mod4。§12.1.1 archetype 固定から移譲）:**
+**MENU プール（`.m-menu`・KLK-044/045・5型・mod5。§12.1.1 archetype 固定から移譲）:**
 
 | index | マーカー | 見た目（実CSS差）／モバイル |
 |---|---|---|
@@ -688,12 +688,13 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 1 | `pat-list` | 横並びリスト（`display:flex;flex-direction:column`＋各行 `display:flex` の左アタリ＋右テキスト）。モバイルも縦 |
 | 2 | `pat-zigzag` | ジグザグ交互（`flex-direction:column`＋各行 `display:flex`＋偶数行 `flex-direction:row-reverse`）。モバイル縦積み |
 | 3 | `price-table`（KLK-044新） | 価格表/料金プラン（`display:grid;grid-template-columns:<プラン列 内容列 料金列>` の表形式・見出し行＋料金行を並べる料金一覧）。モバイルは横スクロールまたは列縮小 |
+| 4 | `tab-switch`（KLK-045新） | タブ切替（`display:flex;flex-direction:column`＝上部にカテゴリタブ行＋下部にアクティブタブのパネル `grid-template-columns:repeat(2,1fr)`。ランチ/ディナー等の分類切替を想定・active タブを強調）。モバイルはタブ横スクロール・パネル1列 |
 
 **(2) 割り当て表（型数別 mod・offset → 案A/B/C の pool index・オフセット表§12.1.2共有・KLK-040 で型数別に一般化）:**
 
 型数 N のセクションは巡回窓 `(offset+0, offset+1, offset+2) mod N` を読む。offset0→(0,1,2) は全 N で共通（既存不変）。
 
-**GALLERY（4型・mod4）:** ※**MENU も同一の4型・mod4 表を用いる**（KLK-044・GALLERY と同じ割り当て）。
+**GALLERY（4型・mod4）:**
 
 | offset | 案A | 案B | 案C |
 |---|---|---|---|
@@ -718,21 +719,32 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 - **offset0→(0,1,2)** は各プールの index0/1/2＝§12.1.1 の archetype 既定と**一致**（GALLERY=(pat-grid,pat-wide,pat-mosaic)／
   HERO=(full,split,band)／ABOUT=(img-left,img-right,img-top)／MENU=(pat-cards,pat-list,pat-zigzag)）＝1col×top（offset0）の既存生成物・golden はマーカー不変。
 - 案A の index = `offset mod N`。offset 集合 {0..5}（オフセット表 §12.1.2 共有・`3col×top`=5 含む）で index 集合 {0..N-1} を
-  網羅（新型 index3〜5 は offset3〜5 の案Aで到達。MENU=4型は offset3 の案Aで `price-table`(index3) に到達）。各行は連続3窓（wrap込み）→ **3案 distinct**（N≥3）。
-  到達可能性は golden **klk023(offset0→(0,1,2))∪klk036(offset3→HERO/ABOUTは(3,4,5)・GALLERYは(3,0,1))∪klk044(offset3→MENUは(3,0,1)＝price-table/pat-cards/pat-list)** で実証。
+  網羅（新型 index3〜5 は offset3〜5 の案Aで到達。MENU=5型は offset3 の案Aで `price-table`(index3)・offset4 の案Aで `tab-switch`(index4) に到達）。各行は連続3窓（wrap込み）→ **3案 distinct**（N≥3）。
+  到達可能性は golden **klk023(offset0→(0,1,2))∪klk036(offset3→HERO/ABOUTは(3,4,5)・GALLERYは(3,0,1))∪klk044(offset3→MENUは mod5 で(3,4,0)＝price-table/tab-switch/pat-cards)** で実証。
+
+**MENU（5型・mod5・KLK-045。GALLERY の mod4 とは別系統）:**
+
+| offset | 案A | 案B | 案C |
+|---|---|---|---|
+| 0 | 0 | 1 | 2 |
+| 1 | 1 | 2 | 3 |
+| 2 | 2 | 3 | 4 |
+| 3 | 3 | 4 | 0 |
+| 4 | 4 | 0 | 1 |
+| 5 | 0 | 1 | 2 |
 
 **(3) 生成手順（表を"読むだけ"・GALLERY/HERO/ABOUT/MENU 共通）:** ① `data-columns`（正規化後）と `navPosition` を確定 → ② §12.1.2 の
-**オフセット表**で offset(0〜5) → ③ 上の **該当セクションの割り当て表**（GALLERY・MENU=mod4／HERO・ABOUT=mod6）で (idxA,idxB,idxC) → ④ 各案の該当容器（`.m-gallery`／`.m-hero` の `data-hero`／
+**オフセット表**で offset(0〜5) → ③ 上の **該当セクションの割り当て表**（GALLERY=mod4／MENU=mod5／HERO・ABOUT=mod6）で (idxA,idxB,idxC) → ④ 各案の該当容器（`.m-gallery`／`.m-hero` の `data-hero`／
 `.m-about`／`.m-menu`）に `該当プール[index]` のマーカーを付け、対応 CSS を `<head>` に含める。**HERO は型に整列シグネチャが付随**するので
 各案の `.m-hero` 基底に該当型の整列を書く（§12.1 不変条件4・overlap は flex-start/center/left）。archetype の並び順・区切りは §12.1.1 のまま。
 
 **(4) 後方互換・不変（additive）:** 対象セクションが `sections` に無ければ no-op。offset0 は各プール (index0,1,2)＝
-既存生成物・klk021/023/034/034b golden と一致（HTML 無変更）。**MENU も本節の対象（KLK-044・mod4）**。offset0 の MENU=(pat-cards,pat-list,pat-zigzag) は
+既存生成物・klk021/023/034/034b golden と一致（HTML 無変更）。**MENU も本節の対象（KLK-044/045・mod5）**。offset0 の MENU=(pat-cards,pat-list,pat-zigzag) は
 §12.1.1 の archetype 既定と一致し、既存 klk023/034/034b golden（すべて offset0）はマーカー不変。
 
 **(5) 拡張（STEP B・データ追加だけ）:** 型を N→N+1 は (a)該当プールへ1行追記 (b)CSS1つ (c)割り当て表の `mod` を N+1 に
 ＋新 offset を出すオフセット表セルの確保（到達可能性）。**各プールの型量産は、同機構にセクション別プールを足す/伸ばすだけ**
-（型数は各セクション独立でよい＝§12.1.2 の制約A に縛られない。MENU は KLK-044 で §12.1.3 化済み・4型→将来6型は同手順で伸長）。
+（型数は各セクション独立でよい＝§12.1.2 の制約A に縛られない。MENU は KLK-044 で §12.1.3 化・KLK-045 で5型mod5へ伸長・将来6型mod6も同手順）。
 
 **(6) §12.2 参考準拠との整合:** GALLERY/HERO/ABOUT/MENU の席替えは §12.1.3 プール基準（VOICE系 `expected_pool` と同型の index 比較）。
 KLK-044 で **MENU も §12.1.3 へ移譲**したため、§12.2 の §12.1.1 系既定型表（DEFAULT 転記）は**空（archetype 固定のセクションは無い）**。全セクションが §12.1.3 プール基準で席替えする。
@@ -754,7 +766,7 @@ SCR-001 でカタログサムネイルを選んだ指示書では、**案Aを「
 3. **案A := v**（参考の型をそのまま採る）。
 4. **席替え**: 既定で v と同じ型を持つ案があれば、**その案は「案Aの既定型」を代わりに使う**。
    - §12.1.2 系（VOICE/FLOW/STAFF）**および §12.1.3 系（GALLERY/HERO/ABOUT/MENU・KLK-036/037/044）**: v の pool index を表引き結果 (idxA,idxB,idxC) の
-     idxB/idxC と比べ、一致した案 := `pool[idxA]`（§12.1.3 は §12.1.2 と同型の index 比較・各セクションのプールと mod 割り当て[GALLERY・MENU=mod4／HERO・ABOUT=mod6]を使う）。
+     idxB/idxC と比べ、一致した案 := `pool[idxA]`（§12.1.3 は §12.1.2 と同型の index 比較・各セクションのプールと mod 割り当て[GALLERY=mod4／MENU=mod5／HERO・ABOUT=mod6]を使う）。
    - **§12.1.1 archetype 固定のセクションは無くなった（KLK-044 で MENU も §12.1.3 へ移譲）**。下記の §12.1.1 系既定型表は空。
    - どの案とも重複しなければ案B/C は従来のまま。→ いずれの場合も **3案の型は常に3値 distinct**
      （§12.1.1⑤⑦・§12.1.2・§12.1.3 の不変条件を維持）。
@@ -886,7 +898,7 @@ SCR-001 でカタログサムネイルを選んだ指示書では、**案Aを「
 1. 対象HTMLのルート `.mock` から **`data-columns`** と **`data-nav-position`** の実値を読む（両方とも生成時に焼き込み済み・§8/§2.1）。
 2. §12.1.2 の**オフセット表**で (`data-columns` × `data-nav-position`) の1セルを読み offset を得る（§12.1.2/§12.1.3 共有）。
 3. 対象ファイルの **letter**（`index-{letter}.html` の a/b/c。単案 `index.html` は案A相当＝letter=a）から、
-   **VOICE/FLOW/STAFF は §12.1.2 の割り当て表**（mod 6）、**GALLERY・MENU は §12.1.3 の割り当て表（mod 4）・HERO/ABOUT は §12.1.3 の割り当て表（mod 6）**の offset 行で pool index を読む。
+   **VOICE/FLOW/STAFF は §12.1.2 の割り当て表**（mod 6）、**GALLERY は §12.1.3 の割り当て表（mod 4）・MENU は mod 5・HERO/ABOUT は mod 6**の offset 行で pool index を読む。
 4. その `pool[index]` のマーカーを容器 `.m-{sec}` に付け、対応 CSS ブロックが `<head>` に無ければ足す（HERO は型に付随する整列シグネチャも
    合わせる・他セクション・配色・ルート属性は不変）。→ 元の生成と**同じ型**が決定的に再現される（表を読むだけ・算術なし）。
 
