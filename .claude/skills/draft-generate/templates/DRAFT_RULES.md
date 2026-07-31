@@ -657,7 +657,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 1 | `pat-wide` | 横帯ワイド（1列の大判横長を積む）。モバイル1列 |
 | 2 | `pat-mosaic` | 大小モザイク（`grid`＋`grid-column/row span` 強弱）。モバイル2列 |
 | 3 | `pat-slider`（KLK-036新） | 横スクロール/カルーセル（`display:flex;flex-wrap:nowrap;overflow-x:auto`＋各 `flex:0 0 <幅>`＋`scroll-snap-type`。矢印/スワイプ送り想定）。**モバイルも横スクロール継続** |
-| 4 | `pat-masonry`（KLK-047新） | 段組みマソンリー（Pinterest 風・高さ不揃いタイルを敷き詰め。`display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:<小>` ＋各タイル `grid-row:span N` を変えて大小自由）。cat-0037/0039/0049 系。モバイル2列 |
+| 4 | `pat-masonry`（KLK-047新） | 大小混在タイルを**長方形にきれいに敷き詰めるベントー型**（縦長・横長・大の混在を隙間なく矩形に収める。`display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:<列幅の約0.75倍＝タイルが約4:3の横長に見える基準>;grid-auto-flow:row dense` ＋各タイルに `grid-column:span N`／`grid-row:span N`＝横長/大2×2・縦長1×2・小1×1 の組合せで矩形充填。横長タイルは**縦:横≒3:4**）。cat-0001/cat-0037 系。モバイル2列 |
 | 5 | `pat-tab-grid`（KLK-047新） | カテゴリタブ切替＋タイルグリッド（`display:flex;flex-direction:column`＝上部にカテゴリタブ行＋下部にタブごとのパネル `grid-template-columns:repeat(3,1fr)` の**3列×2行程度のサムネタイル**。商品/作品が多いサイト向け）。**クリックで切替（最小インライン JS・外部依存なし。各パネル既定 `display:none`・active のみ `display:grid`・`data-tab`/`data-panel` 対応・MENU tab-switch と同型）**。モバイルはタブ横スクロール・パネル2列 |
 
 **HERO プール（`.m-hero` の `data-hero`・KLK-037）— ★型ごとに整列シグネチャ(justify-content/align-items/text-align)が付随（§12.1 不変条件4）:**
