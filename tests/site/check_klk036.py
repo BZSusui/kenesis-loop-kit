@@ -24,7 +24,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 RULES = open(os.path.join(ROOT, ".claude", "skills", "draft-generate", "templates", "DRAFT_RULES.md"), encoding="utf-8").read()
 SKILL = open(os.path.join(ROOT, ".claude", "skills", "draft-generate", "SKILL.md"), encoding="utf-8").read()
 
-EXPECT_N = 4  # GALLERY プールの型数
+EXPECT_N = 6  # GALLERY プールの型数（KLK-047 で 4→6）
 NEW_MARKER = "pat-slider"
 
 results = []
@@ -55,8 +55,8 @@ def parse_gallery_pool():
 
 
 def parse_gallery_assign():
-    # KLK-040 で (2) が型数別2表（GALLERY mod4 ＋ HERO/ABOUT mod6）に。GALLERY(mod4)表だけを読む。
-    seg = _seg("**GALLERY（4型", "**HERO/ABOUT（6型")
+    # KLK-047 で GALLERY も6型化＝GALLERY(mod6)表を読む。ヘッダは「**GALLERY（6型」。
+    seg = _seg("**GALLERY（6型", "**HERO/ABOUT（6型")
     asn = {}
     for m in re.finditer(r'^\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|', seg, re.M):
         o, a, b, c = (int(x) for x in m.groups())
@@ -149,25 +149,25 @@ K36_COMPARE = gread("klk036", "compare.html")
 
 
 # ===========================================================================
-# G1 本文パース: GALLERY プール4型・index3=pat-slider・順序
+# G1 本文パース: GALLERY プール6型・index3=pat-slider・index4=pat-masonry・index5=pat-tab-grid・順序
 # ===========================================================================
-g1 = (len(G_POOL) == EXPECT_N and G_POOL[0] == "pat-grid" and G_POOL[3] == NEW_MARKER)
-check("G1 §12.1.3 GALLERY プール (4型・index0=pat-grid・index3=pat-slider)", g1, "pool=%s" % G_POOL)
+g1 = (len(G_POOL) == EXPECT_N and G_POOL == ["pat-grid", "pat-wide", "pat-mosaic", "pat-slider", "pat-masonry", "pat-tab-grid"])
+check("G1 §12.1.3 GALLERY プール (6型・index0=pat-grid・index3=pat-slider・index4=pat-masonry・index5=pat-tab-grid)", g1, "pool=%s" % G_POOL)
 
-# G2 割り当て表: 6行・巡回 mod4・各行3値distinct
+# G2 割り当て表: 6行・巡回 mod6・各行3値distinct
 g2_rows = (len(G_ASSIGN) == 6)
-g2_cyc = all(G_ASSIGN[o] == (o % 4, (o + 1) % 4, (o + 2) % 4) for o in G_ASSIGN)
+g2_cyc = all(G_ASSIGN[o] == (o % EXPECT_N, (o + 1) % EXPECT_N, (o + 2) % EXPECT_N) for o in G_ASSIGN)
 g2_dist = all(len(set(G_ASSIGN[o])) == 3 for o in G_ASSIGN)
-check("G2 GALLERY 割り当て表 (6行・巡回(o,o+1,o+2)mod4・各行3値distinct)",
+check("G2 GALLERY 割り当て表 (6行・巡回(o,o+1,o+2)mod6・各行3値distinct)",
       g2_rows and g2_cyc and g2_dist, "assign=%s" % G_ASSIGN)
 
-# G3 到達可能性: オフセット表の値集合から全 index{0..3} に到達（案A index=offset%4）
+# G3 到達可能性: オフセット表の値集合から全 index{0..5} に到達（案A index=offset%6）
 reach = set()
 for (col, nav), off in OFFSET.items():
     reach.add(G_ASSIGN[off][0])
     reach.add(G_ASSIGN[off][1])
     reach.add(G_ASSIGN[off][2])
-check("G3 到達可能性 (オフセット表の全offsetから GALLERY index{0..3} 全到達＝pat-slider含む)",
+check("G3 到達可能性 (オフセット表の全offsetから GALLERY index{0..5} 全到達＝pat-masonry/pat-tab-grid含む)",
       reach >= set(range(EXPECT_N)), "到達index=%s" % sorted(reach))
 
 # G4 ドリフト検出: 本文 §12.1.3 の GALLERY プール/割り当て ＝ check_klk034 の GALLERY_POOL/GALLERY_ASSIGN
@@ -178,21 +178,22 @@ check("G4 ドリフト検出 (本文§12.1.3 = check_klk034 GALLERY_POOL/ASSIGN�
       d_pool and d_assign and d_no_gallery_in_1211,
       "pool一致=%s assign一致=%s 1211からGALLERY除外=%s" % (d_pool, d_assign, d_no_gallery_in_1211))
 
-# G5 klk036 表引き: 1col×below-hero=offset3→(3,0,1)＝案A=pat-slider/案B=pat-grid/案C=pat-wide
+# G5 klk036 表引き: 1col×below-hero=offset3→mod6(3,4,5)＝案A=pat-slider/案B=pat-masonry/案C=pat-tab-grid
 off36 = OFFSET[("1col", "below-hero")]
 idxs36 = G_ASSIGN[off36]
 exp36 = tuple(G_POOL[i] for i in idxs36)
 act36 = tuple(gallery_marker(K36[l]) for l in ("a", "b", "c"))
-g5 = (off36 == 3 and idxs36 == (3, 0, 1) and act36 == exp36)
-check("G5 klk036 表引き (1col×below-hero→offset3→(3,0,1)・案A=pat-slider/案B=pat-grid/案C=pat-wide)",
+g5 = (off36 == 3 and idxs36 == (3, 4, 5) and act36 == exp36)
+check("G5 klk036 表引き (1col×below-hero→offset3→(3,4,5)・案A=pat-slider/案B=pat-masonry/案C=pat-tab-grid)",
       g5, "offset=%d idxs=%s 期待%s 実%s" % (off36, idxs36, exp36, act36))
 
-# G6 pat-slider の実CSS差 (flex-wrap:nowrap;overflow-x:auto 系の横スクロール) が案A に存在
-g6 = css_layout_rule(K36["a"], "pat-slider") and \
-    ("flex-wrap" in K36["a"] and "overflow-x" in K36["a"])
-check("G6 pat-slider 実CSS差 (横スクロール flex-wrap:nowrap/overflow-x:auto を伴う・飾りでない)",
-      g6, "css_layout_rule=%s flex-wrap/overflow-x=%s" % (
-          css_layout_rule(K36["a"], "pat-slider"), "flex-wrap" in K36["a"] and "overflow-x" in K36["a"]))
+# G6 各新型の実CSS差: 案A=pat-slider(横スクロール)・案B=pat-masonry(grid+row span)・案C=pat-tab-grid(タブ+grid)が飾りでない
+g6_slider = css_layout_rule(K36["a"], "pat-slider") and ("flex-wrap" in K36["a"] and "overflow-x" in K36["a"])
+g6_masonry = css_layout_rule(K36["b"], "pat-masonry") and ("grid-auto-rows" in K36["b"] or "grid-row" in K36["b"])
+g6_tabgrid = css_layout_rule(K36["c"], "pat-tab-grid") and (gallery_marker(K36["c"]) == "pat-tab-grid")
+check("G6 新型の実CSS差 (pat-slider=横スクロール・pat-masonry=grid+row span・pat-tab-grid=タブ+grid・飾りでない)",
+      g6_slider and g6_masonry and g6_tabgrid,
+      "slider=%s masonry=%s tab-grid=%s" % (g6_slider, g6_masonry, g6_tabgrid))
 
 # G7 既存 golden 不変 (klk023/034/034b の 1col×top=offset0→GALLERY=(pat-grid,pat-wide,pat-mosaic))
 g7_ok = True

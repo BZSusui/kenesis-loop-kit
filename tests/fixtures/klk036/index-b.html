@@ -2,10 +2,10 @@
 <!--
   KLK-040 ゴールデン（HERO/ABOUT/GALLERY §12.1.3 プール・案B / letter=b）— 1col×below-hero→offset3
   KLK-040 で HERO/ABOUT が6型化（mod6）・GALLERY は4型のまま（mod4）。offset3→HERO/ABOUT 各 index(3,4,5)・GALLERY 各 index(3,0,1)：
-  案A=overlap/img-overlap/pat-slider・案B=center-scroll/img-circle/pat-grid・案C=panel-band/img-zigzag/pat-wide。
+  案A=overlap/img-overlap/pat-slider・案B=center-scroll/img-circle/pat-masonry・案C=panel-band/img-zigzag/pat-tab-grid（GALLERY 6型化 KLK-047）。
   これはテスト検証用のプレースホルダ出力です。実在の顧客・案件ではありません（サンプル）。
   案件名: サンプルギャラリー型サイト / 業種: アート・ポートフォリオ / カラム: 1col（全案共通）/ nav: below-hero（全案共通）
-  セクション集合: ABOUT,GALLERY,CTA（全案共通）/ 並び順=ABOUT,GALLERY,CTA / archetype=split-editorial / HERO=center-scroll(index4) / ABOUT=img-circle(index4) / GALLERY=pat-grid(index0)
+  セクション集合: ABOUT,GALLERY,CTA（全案共通）/ 並び順=ABOUT,GALLERY,CTA / archetype=split-editorial / HERO=center-scroll(index4) / ABOUT=img-circle(index4) / GALLERY=pat-masonry(index4)
   配色方向: 案B 濃色紺・上質（ネイビー＋ゴールド・serif・左寄せ非対称）
   実生成物は mockups/{日付}_{案件名}/index-b.html に保存されます（Git除外）。
 -->
@@ -57,9 +57,16 @@
   .m-about .txt h3 { font-size: 19px; color: var(--m-main); margin: 0 0 10px; }
   .m-about .txt p { font-size: 13.5px; margin: 0; }
 
-  /* GALLERY 型: pat-grid（均等グリッド3列・§12.1.3 index0） */
-  .m-gallery.pat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  .m-gallery.pat-grid .atari { aspect-ratio: 1; min-height: 0; padding: 8px; }
+  /* GALLERY 型: pat-masonry（大小混在タイルを長方形にきれいに敷き詰めるベントー型・§12.1.3 index4・KLK-047新。
+     縦長・横長・大の混在＝grid-column/grid-row span＋auto-flow dense で隙間なく矩形に収める。cat-0001/cat-0037 系） */
+  .m-gallery.pat-masonry { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 150px; grid-auto-flow: row dense; gap: 10px; }
+  .m-gallery.pat-masonry .atari { min-height: 0; }
+  .m-gallery.pat-masonry .atari:nth-child(1) { grid-column: span 2; grid-row: span 2; } /* 大（横長 約4:3） */
+  .m-gallery.pat-masonry .atari:nth-child(2) { grid-column: span 1; grid-row: span 1; } /* 小（約4:3） */
+  .m-gallery.pat-masonry .atari:nth-child(3) { grid-column: span 1; grid-row: span 2; } /* 縦長 */
+  .m-gallery.pat-masonry .atari:nth-child(4) { grid-column: span 1; grid-row: span 1; } /* 小（約4:3） */
+  .m-gallery.pat-masonry .atari:nth-child(5) { grid-column: span 2; grid-row: span 2; } /* 横長（約4:3） */
+  .m-gallery.pat-masonry .atari:nth-child(6) { grid-column: span 2; grid-row: span 2; } /* 横長（約4:3） */
   .m-gallery .atari .ic { font-size: 16px; }
   .m-gallery .atari .desc { font-size: 10.5px; }
 
@@ -77,7 +84,7 @@
     .m-hero { padding: 32px 16px; }
     .m-hero .catch { font-size: 25px; }
     .m-about.img-circle { grid-template-columns: 1fr; }
-    .m-gallery.pat-grid { grid-template-columns: repeat(2, 1fr); }
+    .m-gallery.pat-masonry { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 120px; }
     .m-sec { padding: 28px 16px; }
   }
   @media print {
@@ -132,7 +139,7 @@
     <div class="addr"><span class="pin">GALLERY-01</span></div>
     <div class="m-sec">
       <h2>GALLERY</h2><div class="en">作品ギャラリー</div>
-      <div class="m-gallery pat-grid">
+      <div class="m-gallery pat-masonry">
         <div class="atari"><span class="ic">📷</span><span class="desc">「みなも」油彩 F30</span></div>
         <div class="atari"><span class="ic">📷</span><span class="desc">「余白の記憶」ミクストメディア</span></div>
         <div class="atari"><span class="ic">📷</span><span class="desc">「群青の呼吸」油彩 F50</span></div>

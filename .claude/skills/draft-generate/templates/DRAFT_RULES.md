@@ -657,6 +657,8 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 1 | `pat-wide` | 横帯ワイド（1列の大判横長を積む）。モバイル1列 |
 | 2 | `pat-mosaic` | 大小モザイク（`grid`＋`grid-column/row span` 強弱）。モバイル2列 |
 | 3 | `pat-slider`（KLK-036新） | 横スクロール/カルーセル（`display:flex;flex-wrap:nowrap;overflow-x:auto`＋各 `flex:0 0 <幅>`＋`scroll-snap-type`。矢印/スワイプ送り想定）。**モバイルも横スクロール継続** |
+| 4 | `pat-masonry`（KLK-047新） | 大小混在タイルを**長方形にきれいに敷き詰めるベントー型**（縦長・横長・大の混在を隙間なく矩形に収める。`display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:<列幅の約0.75倍＝タイルが約4:3の横長に見える基準>;grid-auto-flow:row dense` ＋各タイルに `grid-column:span N`／`grid-row:span N`＝横長/大2×2・縦長1×2・小1×1 の組合せで矩形充填。横長タイルは**縦:横≒3:4**）。cat-0001/cat-0037 系。モバイル2列 |
+| 5 | `pat-tab-grid`（KLK-047新） | カテゴリタブ切替＋タイルグリッド（`display:flex;flex-direction:column`＝上部にカテゴリタブ行＋下部にタブごとのパネル `grid-template-columns:repeat(3,1fr)` の**3列×2行程度のサムネタイル**。商品/作品が多いサイト向け）。**クリックで切替（最小インライン JS・外部依存なし。各パネル既定 `display:none`・active のみ `display:grid`・`data-tab`/`data-panel` 対応・MENU tab-switch と同型）**。モバイルはタブ横スクロール・パネル2列 |
 
 **HERO プール（`.m-hero` の `data-hero`・KLK-037）— ★型ごとに整列シグネチャ(justify-content/align-items/text-align)が付随（§12.1 不変条件4）:**
 
@@ -695,16 +697,16 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 
 型数 N のセクションは巡回窓 `(offset+0, offset+1, offset+2) mod N` を読む。offset0→(0,1,2) は全 N で共通（既存不変）。
 
-**GALLERY（4型・mod4）:**
+**GALLERY（6型・mod6・KLK-047。HERO/ABOUT/MENU の mod6 と同値）:**
 
 | offset | 案A | 案B | 案C |
 |---|---|---|---|
 | 0 | 0 | 1 | 2 |
 | 1 | 1 | 2 | 3 |
-| 2 | 2 | 3 | 0 |
-| 3 | 3 | 0 | 1 |
-| 4 | 0 | 1 | 2 |
-| 5 | 1 | 2 | 3 |
+| 2 | 2 | 3 | 4 |
+| 3 | 3 | 4 | 5 |
+| 4 | 4 | 5 | 0 |
+| 5 | 5 | 0 | 1 |
 
 **HERO/ABOUT（6型・mod6・KLK-040。§12.1.2 VOICE系の割り当て表と同値）:**
 
@@ -721,7 +723,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
   HERO=(full,split,band)／ABOUT=(img-left,img-right,img-top)／MENU=(pat-cards,pat-list,pat-zigzag)）＝1col×top（offset0）の既存生成物・golden はマーカー不変。
 - 案A の index = `offset mod N`。offset 集合 {0..5}（オフセット表 §12.1.2 共有・`3col×top`=5 含む）で index 集合 {0..N-1} を
   網羅（新型 index3〜5 は offset3〜5 の案Aで到達。MENU=6型は offset3 の案Aで `price-table`(index3)・offset4 で `tab-switch`(index4)・offset5 で `feature-large`(index5) に到達）。各行は連続3窓（wrap込み）→ **3案 distinct**（N≥3）。
-  到達可能性は golden **klk023(offset0→(0,1,2))∪klk036(offset3→HERO/ABOUTは(3,4,5)・GALLERYは(3,0,1))∪klk044(offset3→MENUは mod6 で(3,4,5)＝price-table/tab-switch/feature-large)** で実証。
+  到達可能性は golden **klk023(offset0→(0,1,2))∪klk036(offset3→HERO/ABOUT/GALLERYは mod6 で(3,4,5))∪klk044(offset3→MENU/GALLERYは mod6 で(3,4,5)＝MENU:price-table/tab-switch/feature-large・GALLERY:pat-slider/pat-masonry/pat-tab-grid)** で実証。
 
 **MENU（6型・mod6・KLK-046。HERO/ABOUT の mod6 と同値・GALLERY の mod4 とは別系統）:**
 
@@ -735,7 +737,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 5 | 5 | 0 | 1 |
 
 **(3) 生成手順（表を"読むだけ"・GALLERY/HERO/ABOUT/MENU 共通）:** ① `data-columns`（正規化後）と `navPosition` を確定 → ② §12.1.2 の
-**オフセット表**で offset(0〜5) → ③ 上の **該当セクションの割り当て表**（GALLERY=mod4／MENU・HERO・ABOUT=mod6）で (idxA,idxB,idxC) → ④ 各案の該当容器（`.m-gallery`／`.m-hero` の `data-hero`／
+**オフセット表**で offset(0〜5) → ③ 上の **該当セクションの割り当て表**（GALLERY/MENU/HERO/ABOUT すべて6型・mod6）で (idxA,idxB,idxC) → ④ 各案の該当容器（`.m-gallery`／`.m-hero` の `data-hero`／
 `.m-about`／`.m-menu`）に `該当プール[index]` のマーカーを付け、対応 CSS を `<head>` に含める。**HERO は型に整列シグネチャが付随**するので
 各案の `.m-hero` 基底に該当型の整列を書く（§12.1 不変条件4・overlap は flex-start/center/left）。archetype の並び順・区切りは §12.1.1 のまま。
 
@@ -767,7 +769,7 @@ SCR-001 でカタログサムネイルを選んだ指示書では、**案Aを「
 3. **案A := v**（参考の型をそのまま採る）。
 4. **席替え**: 既定で v と同じ型を持つ案があれば、**その案は「案Aの既定型」を代わりに使う**。
    - §12.1.2 系（VOICE/FLOW/STAFF）**および §12.1.3 系（GALLERY/HERO/ABOUT/MENU・KLK-036/037/044）**: v の pool index を表引き結果 (idxA,idxB,idxC) の
-     idxB/idxC と比べ、一致した案 := `pool[idxA]`（§12.1.3 は §12.1.2 と同型の index 比較・各セクションのプールと mod 割り当て[GALLERY=mod4／MENU・HERO・ABOUT=mod6]を使う）。
+     idxB/idxC と比べ、一致した案 := `pool[idxA]`（§12.1.3 は §12.1.2 と同型の index 比較・各セクションのプールと mod 割り当て[GALLERY/MENU/HERO/ABOUT すべて mod6]を使う）。
    - **§12.1.1 archetype 固定のセクションは無くなった（KLK-044 で MENU も §12.1.3 へ移譲）**。下記の §12.1.1 系既定型表は空。
    - どの案とも重複しなければ案B/C は従来のまま。→ いずれの場合も **3案の型は常に3値 distinct**
      （§12.1.1⑤⑦・§12.1.2・§12.1.3 の不変条件を維持）。
@@ -899,7 +901,7 @@ SCR-001 でカタログサムネイルを選んだ指示書では、**案Aを「
 1. 対象HTMLのルート `.mock` から **`data-columns`** と **`data-nav-position`** の実値を読む（両方とも生成時に焼き込み済み・§8/§2.1）。
 2. §12.1.2 の**オフセット表**で (`data-columns` × `data-nav-position`) の1セルを読み offset を得る（§12.1.2/§12.1.3 共有）。
 3. 対象ファイルの **letter**（`index-{letter}.html` の a/b/c。単案 `index.html` は案A相当＝letter=a）から、
-   **VOICE/FLOW/STAFF は §12.1.2 の割り当て表**（mod 6）、**GALLERY は §12.1.3 の割り当て表（mod 4）・MENU/HERO/ABOUT は mod 6**の offset 行で pool index を読む。
+   **VOICE/FLOW/STAFF は §12.1.2 の割り当て表**（mod 6）、**GALLERY/MENU/HERO/ABOUT は §12.1.3 の割り当て表（すべて mod 6）**の offset 行で pool index を読む。
 4. その `pool[index]` のマーカーを容器 `.m-{sec}` に付け、対応 CSS ブロックが `<head>` に無ければ足す（HERO は型に付随する整列シグネチャも
    合わせる・他セクション・配色・ルート属性は不変）。→ 元の生成と**同じ型**が決定的に再現される（表を読むだけ・算術なし）。
 

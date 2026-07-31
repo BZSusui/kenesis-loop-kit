@@ -43,13 +43,13 @@ ARCHETYPE_ENUM = {"stack-centered", "split-editorial", "banded-showcase"}
 DEFAULT_1211 = {}
 
 # §12.1.3 セクション別独立プールと割り当て（オフセット表は §12.1.2 共有・KLK-036/037/040/044）
-GALLERY_POOL = ["pat-grid", "pat-wide", "pat-mosaic", "pat-slider"]
+GALLERY_POOL = ["pat-grid", "pat-wide", "pat-mosaic", "pat-slider", "pat-masonry", "pat-tab-grid"]  # KLK-047: 6型
 HERO_POOL = ["full", "split", "band", "overlap", "center-scroll", "panel-band"]  # KLK-040: 6型
 ABOUT_POOL = ["img-left", "img-right", "img-top", "img-overlap", "img-circle", "img-zigzag"]  # KLK-040: 6型
 MENU_POOL = ["pat-cards", "pat-list", "pat-zigzag", "price-table", "tab-switch", "feature-large"]  # KLK-044/045/046: 6型・price-table/tab-switch/feature-large 新
 POOL_1213 = {"HERO": HERO_POOL, "GALLERY": GALLERY_POOL, "ABOUT": ABOUT_POOL, "MENU": MENU_POOL}
-# 割り当ては型数別 mod。GALLERY=mod4・MENU/HERO/ABOUT=mod6（§12.1.2 と同値）
-GALLERY_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 0), 3: (3, 0, 1), 4: (0, 1, 2), 5: (1, 2, 3)}  # mod4
+# 割り当ては型数別 mod。KLK-047 で GALLERY も6型化＝GALLERY/MENU/HERO/ABOUT すべて mod6（§12.1.2 と同値）
+GALLERY_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（KLK-047）
 POOL6_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（HERO/ABOUT）
 MENU_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（KLK-046・POOL6_ASSIGN と同値）
 ASSIGN_1213 = {"HERO": POOL6_ASSIGN, "GALLERY": GALLERY_ASSIGN, "ABOUT": POOL6_ASSIGN, "MENU": MENU_ASSIGN}  # KLK-046: MENU=mod6
