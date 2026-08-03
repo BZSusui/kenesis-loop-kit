@@ -52,7 +52,7 @@ def parse_menu_pool():
 
 def parse_menu_assign():
     # MENU は専用の mod6 表（KLK-046・HERO/ABOUT mod6 と同値・GALLERY mod4 とは別系統）。「**MENU（6型」〜「**(3) 生成手順」を読む。
-    seg = _seg("**MENU（6型", "**SNS（3型")  # KLK-049: MENU(mod6)表のみ（SNS(mod3)表の手前で止める）
+    seg = _seg("**MENU（6型", "**SNS（6型")  # KLK-049/050: MENU(mod6)表のみ（SNS 表の手前で止める）
     asn = {}
     for m in re.finditer(r'^\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|', seg, re.M):
         o, a, b, c = (int(x) for x in m.groups())

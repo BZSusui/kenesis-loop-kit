@@ -1,0 +1,14 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": { "project": "サンプルカフェ", "createdAt": "2026-08-03T12:00:00.000Z", "source": "SCR-001" },
+  "industry": { "preset": "飲食店・カフェ・食関連", "custom": "", "resolved": "飲食店・カフェ・食関連" },
+  "layout": { "columns": "1col", "navPosition": "below-hero" },
+  "sections": ["SNS"],
+  "sectionOptions": { "SNS": { "moreLink": { "label": "投稿をもっと見る" } } },
+  "taste": "ナチュラル・温かみ",
+  "colors": { "mode": "explicit", "main": "#6b4f3a", "sub": "#3a2c20", "accent": "#cc8a4a", "bg": "#f8f4ee", "autofill": [] },
+  "references": { "thumbnails": [], "sampleUrls": [] },
+  "atari": "standard",
+  "output": { "variants": 3, "mobile": { "enabled": false, "widthPx": 375 }, "animation": true }
+}
