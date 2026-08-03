@@ -724,8 +724,8 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 1 | `sns-slider` | 横スクロールの投稿フィード（`display:flex;flex-wrap:nowrap;overflow-x:auto`＋各 `flex:0 0 <幅>`＋`scroll-snap-type`）。GALLERY pat-slider 流用。**モバイルも横スクロール継続** |
 | 2 | `sns-cards`（共通カード） | **画像＋キャプション（日付/属性）＋本文30字程度**を**横並び3〜4件**（`display:grid;grid-template-columns:repeat(3,1fr)` の `.sns-card`＝角丸/円形アタリ＋`.cap`＋短文）。お客様の声/ビフォーアフター/SNS投稿で使える**共通カードパターン**（VOICE `voice-cards` と視覚同系＝両セクションで使える）。§4.3 `.sec-more`（もっと見る）と併用可。モバイル1列 |
 | 3 | `sns-masonry`（KLK-050新） | 大小混在タイルを長方形に敷き詰めるベントー型（縦長横長を隙間なく矩形に・`display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:<基準>;grid-auto-flow:row dense`＋各タイル `grid-column/row:span N`）。cat-0001 系・Instagram 埋込でよく見る。GALLERY `pat-masonry` 同機構。モバイル2列 |
-| 4 | `sns-reels`（KLK-050新） | 縦長リール/ストーリーズ帯（`display:flex;flex-wrap:nowrap;overflow-x:auto`＋各 `.sns-reel` の `flex:0 0 <幅>`・アタリは**縦長 `aspect-ratio:9/16`**）。近年のリール普及に対応。**モバイルも横スクロール継続** |
-| 5 | `sns-feed`（KLK-050新） | 公式埋込ウィジェット風の**投稿カード縦1列**（`display:flex;flex-direction:column`＋`.sns-post`＝ヘッダ[丸アバター＋ハンドル]＋正方アタリ＋キャプション＋いいね/コメント風アイコン行）。実埋め込みに最も近い見立て（実埋め込みはしない）。中央寄せ・最大幅 480px 程度。モバイル1列 |
+| 4 | `sns-reels`（KLK-050新・KLK-050調整） | リール/ストーリーズ帯（`display:flex;flex-wrap:nowrap;overflow-x:auto`＋各 `.sns-reel` の `flex:0 0 <幅>`・アタリは**正方 `aspect-ratio:1`**・`🎬` でリール/動画を示す）。近年のリール普及に対応。**モバイルも横スクロール継続** |
+| 5 | `sns-feed`（KLK-050新・KLK-050調整） | 公式埋込ウィジェット風の**投稿カードを横並び3〜4件**（`display:grid;grid-template-columns:repeat(3,1fr)`＋`.sns-post`＝ヘッダ[丸アバター＋ハンドル]＋正方アタリ＋キャプション＋いいね/コメント風アイコン行）。実埋め込みに最も近い見立て（実埋め込みはしない）。モバイル1列 |
 
 **(2) 割り当て表（型数別 mod・offset → 案A/B/C の pool index・オフセット表§12.1.2共有・KLK-040 で型数別に一般化）:**
 

@@ -45,7 +45,7 @@
   .atari .desc { font-size: 11px; font-weight: 700; }
 
   /* SNS 型: sns-feed（埋込ウィジェット風の投稿カード縦1列・§12.1.3 index5・KLK-050新。実埋め込みはしない見立て） */
-  .m-sns.sns-feed { display: flex; flex-direction: column; gap: 16px; max-width: 480px; margin: 0 auto; }
+  .m-sns.sns-feed { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
   .m-sns.sns-feed .sns-post { background: #fff; border: 1px solid #e8e4de; border-radius: 10px; overflow: hidden; }
   .m-sns.sns-feed .sns-post .head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; }
   .m-sns.sns-feed .sns-post .avatar { width: 30px; height: 30px; border-radius: 50%; background: color-mix(in srgb, var(--m-main) 35%, #fff); flex: 0 0 auto; }
@@ -66,6 +66,7 @@
     .m-nav::after { content: "\2630"; color: #fff; font-size: 20px; }
     .m-hero .catch { font-size: 25px; }
     .m-hero .hero-panels { grid-template-columns: repeat(3, 1fr); }
+    .m-sns.sns-feed { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
     .m-sec { padding: 26px 16px; }
   }
   @media print {
@@ -124,6 +125,12 @@
           <div class="head"><span class="avatar"></span><span class="handle">@sample_cafe</span></div>
           <div class="atari"><span class="ic">📷</span><span class="desc">新作スイーツ</span></div>
           <div class="body">新作の焼きモンブランが登場しました🌰</div>
+          <div class="acts">♡　💬　🔖</div>
+        </div>
+        <div class="sns-post">
+          <div class="head"><span class="avatar"></span><span class="handle">@sample_cafe</span></div>
+          <div class="atari"><span class="ic">📷</span><span class="desc">テラス席</span></div>
+          <div class="body">天気の良い日はテラス席が気持ちいいです🌿</div>
           <div class="acts">♡　💬　🔖</div>
         </div>
       </div>

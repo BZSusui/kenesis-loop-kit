@@ -45,8 +45,11 @@
 
   /* SNS 型: sns-reels（縦長9:16リール/ストーリーズ帯・横スクロール・§12.1.3 index4・KLK-050新） */
   .m-sns.sns-reels { display: flex; flex-direction: row; flex-wrap: nowrap; overflow-x: auto; gap: 12px; scroll-snap-type: x mandatory; padding-bottom: 8px; }
-  .m-sns.sns-reels .sns-reel { flex: 0 0 150px; scroll-snap-align: start; }
-  .m-sns.sns-reels .sns-reel .atari { aspect-ratio: 9 / 16; min-height: 0; border-radius: 8px; }
+  .m-sns.sns-reels .sns-reel { flex: 0 0 180px; scroll-snap-align: start; }
+  .m-sns.sns-reels .sns-reel .atari { aspect-ratio: 1; min-height: 0; border-radius: 8px; }
+  /* リール帯の SNS 見出しは中央寄せでバランス（列幅拡大に合わせ・KLK-050 調整） */
+  .m-sns-head-c h2 { text-align: center; border-left: none; padding-left: 0; }
+  .m-sns-head-c .en { text-align: center; margin-left: 0; }
 
   /* 詳細誘導ボタン共通規約（§4.3・KLK-048） */
   .sec-more { text-align: center; margin-top: 40px; }
@@ -100,7 +103,7 @@
 
   <div class="sec reveal">
     <div class="addr"><span class="pin">SNS-01</span></div>
-    <div class="m-sec">
+    <div class="m-sec m-sns-head-c">
       <h2>SNS</h2><div class="en">Reels</div>
       <div class="m-sns sns-reels">
         <div class="sns-reel"><div class="atari"><span class="ic">🎬</span><span class="desc">ラテアート</span></div></div>
@@ -108,8 +111,11 @@
         <div class="sns-reel"><div class="atari"><span class="ic">🎬</span><span class="desc">新作スイーツ</span></div></div>
         <div class="sns-reel"><div class="atari"><span class="ic">🎬</span><span class="desc">店内ツアー</span></div></div>
         <div class="sns-reel"><div class="atari"><span class="ic">🎬</span><span class="desc">焙煎の様子</span></div></div>
+        <div class="sns-reel"><div class="atari"><span class="ic">🎬</span><span class="desc">モーニング</span></div></div>
+        <div class="sns-reel"><div class="atari"><span class="ic">🎬</span><span class="desc">テイクアウト</span></div></div>
+        <div class="sns-reel"><div class="atari"><span class="ic">🎬</span><span class="desc">季節の一杯</span></div></div>
       </div>
-      <div class="sec-more"><a class="sec-more-btn" href="#">リールをもっと見る ＞</a></div>
+      <div class="sec-more"><a class="sec-more-btn" href="#">more views</a></div>
     </div>
   </div>
 

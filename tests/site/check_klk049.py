@@ -226,8 +226,8 @@ exp3 = tuple(SNS_POOL_RULES[i] for i in idxs3)
 act3 = tuple(sns_marker(K50[l]) for l in ("a", "b", "c"))
 s11_map = (off3 == 3 and idxs3 == (3, 4, 5) and act3 == exp3)
 s11_masonry = css_layout_rule(K50["a"], "sns-masonry") and ("grid-auto-rows" in K50["a"] or "grid-row" in K50["a"])
-s11_reels = css_layout_rule(K50["b"], "sns-reels") and ("overflow-x" in K50["b"]) and ("9 / 16" in K50["b"] or "9/16" in K50["b"])
-s11_feed = css_layout_rule(K50["c"], "sns-feed") and ('class="sns-post"' in K50["c"])
+s11_reels = css_layout_rule(K50["b"], "sns-reels") and ("overflow-x" in K50["b"])  # KLK-050調整: 正方サムネの横スクロール帯（9:16→正方）
+s11_feed = css_layout_rule(K50["c"], "sns-feed") and ('class="sns-post"' in K50["c"]) and ("grid-template-columns" in K50["c"])  # 横並びグリッド
 s11_health = all(all_pins(K50[l]) >= {"SNS-01"} and not re.search(r'(src|href)="https?:', K50[l]) and "<iframe" not in K50[l] for l in ("a", "b", "c"))
 check("S11 klk050 offset3 表引き (offset3→(3,4,5)=sns-masonry/sns-reels/sns-feed＋新型 実CSS差・実埋め込みなし)",
       s11_map and s11_masonry and s11_reels and s11_feed and s11_health,
