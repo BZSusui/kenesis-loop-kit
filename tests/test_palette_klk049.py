@@ -35,6 +35,11 @@ class TestKLK049FixturesTracked(unittest.TestCase):
         "tests/fixtures/klk049/index-c.html",
         "tests/fixtures/klk049/compare.html",
         "tests/fixtures/klk049/instruction.json",
+        "tests/fixtures/klk050/index-a.html",
+        "tests/fixtures/klk050/index-b.html",
+        "tests/fixtures/klk050/index-c.html",
+        "tests/fixtures/klk050/compare.html",
+        "tests/fixtures/klk050/instruction.json",
     ]
 
     def test_fixtures_not_ignored(self):

@@ -93,7 +93,7 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
   **GALLERY（6型）**=`pat-grid`/`pat-wide`/`pat-mosaic`/`pat-slider`/`pat-masonry`/`pat-tab-grid`（`.m-gallery`・pat-masonry=段組み高さ不揃い／pat-tab-grid=カテゴリタブ＋3列タイルグリッド・クリック切替）、
   **ABOUT（6型）**=`img-left`/`img-right`/`img-top`/`img-overlap`/`img-circle`/`img-zigzag`（`.m-about`）、
   **MENU（6型・KLK-044/045/046）**=`pat-cards`/`pat-list`/`pat-zigzag`/`price-table`/`tab-switch`/`feature-large`（`.m-menu`・price-table=価格表/料金プラン型・表形式 grid／tab-switch=カテゴリタブ切替型・タブ行＋パネル／feature-large=大画像＋詳細型・横長大画像＋詳細パネル）、
-  **SNS（3型・mod3・KLK-049）**=`sns-grid`/`sns-slider`/`sns-cards`（`.m-sns`・sns-grid=正方サムネ格子／sns-slider=横スクロールフィード／sns-cards=画像+キャプ+本文30字の横並び共通カード・VOICE voice-cards と同系・実埋め込み禁止アタリ色面）。overlap/img-overlap=重なり型・center-scroll/panel-band=大型MV・img-circle=円形・img-zigzag=左右交互複数段。
+  **SNS（6型・mod6・KLK-049/050）**=`sns-grid`/`sns-slider`/`sns-cards`/`sns-masonry`/`sns-reels`/`sns-feed`（`.m-sns`・sns-grid=正方サムネ格子／sns-slider=横スクロールフィード／sns-cards=画像+キャプ+本文30字の横並び共通カード(VOICE同系)／sns-masonry=大小混在ベントー／sns-reels=縦長9:16リール帯／sns-feed=埋込風投稿カード縦列・実埋め込み禁止アタリ色面）。overlap/img-overlap=重なり型・center-scroll/panel-band=大型MV・img-circle=円形・img-zigzag=左右交互複数段。
   **offset0（1col×top）は各プール (index0,1,2)＝従来の archetype 既定と一致**（後方互換）。同一指示書＝同一割り当て・3案 distinct（連続3窓 mod N）。未選択は no-op。単案は idxA。
 - **VOICE/FLOW/STAFF の内部型プール（KLK-029/035・DRAFT_RULES §12.1.2）**: これら3セクションが `sections` にあるときは、案ごとに
   **型プール（各6型）から型を選ぶ**（archetype とは別軸・§12.1.1 は不変・3セクションは常に同数）。選択は**算術せず表を読むだけ**で決める:

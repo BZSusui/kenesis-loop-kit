@@ -29,8 +29,8 @@ SKILL = open(os.path.join(ROOT, ".claude", "skills", "draft-generate", "SKILL.md
 sys.path.insert(0, os.path.join(ROOT, "draft-gen"))
 import bridge  # noqa: E402
 
-EXPECT_N = 3  # SNS プールの型数
-POOL_EXPECT = ["sns-grid", "sns-slider", "sns-cards"]
+EXPECT_N = 6  # SNS プールの型数（KLK-050 で 3→6）
+POOL_EXPECT = ["sns-grid", "sns-slider", "sns-cards", "sns-masonry", "sns-reels", "sns-feed"]
 results = []
 
 
@@ -54,7 +54,7 @@ def parse_sns_pool():
 
 
 def parse_sns_assign():
-    seg = _seg("**SNS（3型", "**(3) 生成手順")
+    seg = _seg("**SNS（6型", "**(3) 生成手順")
     asn = {}
     for m in re.finditer(r'^\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|', seg, re.M):
         o, a, b, c = (int(x) for x in m.groups())
@@ -134,23 +134,24 @@ def distinct3(vals):
 
 
 K = {l: gread("klk049", "index-%s.html" % l) for l in ("a", "b", "c")}
+K50 = {l: gread("klk050", "index-%s.html" % l) for l in ("a", "b", "c")}  # offset3 golden（新型 3,4,5 実演）
 INSTR = json.load(open(os.path.join(ROOT, "tests", "fixtures", "klk049", "instruction.json"), encoding="utf-8"))
 
-# S1 §12.1.3 SNS プール（3型）＋§2.1 SNS 行が §12.1.3 に言及
-s1 = (SNS_POOL_RULES == POOL_EXPECT and "SNS プール" in RULES and "§12.1.3 プール（3型" in RULES)
-check("S1 §12.1.3 SNS プール (3型・sns-grid/sns-slider/sns-cards・§2.1 SNS 行が §12.1.3 プール言及)",
+# S1 §12.1.3 SNS プール（6型）＋§2.1 SNS 行が §12.1.3 に言及
+s1 = (SNS_POOL_RULES == POOL_EXPECT and "SNS プール" in RULES and "§12.1.3 プール（6型" in RULES)
+check("S1 §12.1.3 SNS プール (6型・grid/slider/cards/masonry/reels/feed・§2.1 SNS 行が §12.1.3 プール言及)",
       s1, "pool=%s" % SNS_POOL_RULES)
 
-# S2 SNS 割り当て表 6行・巡回mod3・distinct
+# S2 SNS 割り当て表 6行・巡回mod6・distinct
 s2 = (len(ASSIGN) == 6 and all(ASSIGN[o] == (o % EXPECT_N, (o + 1) % EXPECT_N, (o + 2) % EXPECT_N) for o in ASSIGN)
       and all(len(set(ASSIGN[o])) == 3 for o in ASSIGN))
-check("S2 SNS 割り当て表 (6行・巡回mod3・各行distinct)", s2, "assign=%s" % ASSIGN)
+check("S2 SNS 割り当て表 (6行・巡回mod6・各行distinct)", s2, "assign=%s" % ASSIGN)
 
-# S3 到達可能性 index{0..2}
+# S3 到達可能性 index{0..5}
 reach = set()
 for off in OFFSET.values():
     reach |= set(ASSIGN[off])
-check("S3 到達可能性 (全offsetから SNS index{0..2} 全到達)", reach >= set(range(EXPECT_N)), "到達=%s" % sorted(reach))
+check("S3 到達可能性 (全offsetから SNS index{0..5} 全到達＝新型 masonry/reels/feed 含む)", reach >= set(range(EXPECT_N)), "到達=%s" % sorted(reach))
 
 # S4 ドリフト検出: 本文 = check_klk034 SNS_POOL/SNS_ASSIGN・POOL_1213/ASSIGN_1213 の SNS 参照
 d_pool = (SNS_POOL_RULES == list(C34.get("SNS_POOL", [])) == POOL_EXPECT)
@@ -214,13 +215,27 @@ check("S9 bridge.validate_instruction (klk049 instruction 通過・SNS.moreLink 
           bridge.validate_instruction(base_ext)[0], not bridge.validate_instruction(bad)[0]))
 
 # S10 規約文言: SKILL に SNS プール・§14 に SNS-01
-s10 = ("SNS（3型" in SKILL and ".m-sns" in SKILL and "SNS-01" in RULES)
+s10 = ("SNS（6型" in SKILL and ".m-sns" in SKILL and "SNS-01" in RULES)
 check("S10 規約文言 (SKILL 手順3 に SNS プール・§14 に SNS-01 再付与)", s10,
       "SKILL SNS=%s §14 SNS-01=%s" % ("SNS（3型" in SKILL, "SNS-01" in RULES))
 
+# S11 klk050（offset3）表引き: offset3→(3,4,5)＝案A=sns-masonry/案B=sns-reels/案C=sns-feed＋新型 実CSS差
+off3 = OFFSET[("1col", "below-hero")]
+idxs3 = ASSIGN[off3]
+exp3 = tuple(SNS_POOL_RULES[i] for i in idxs3)
+act3 = tuple(sns_marker(K50[l]) for l in ("a", "b", "c"))
+s11_map = (off3 == 3 and idxs3 == (3, 4, 5) and act3 == exp3)
+s11_masonry = css_layout_rule(K50["a"], "sns-masonry") and ("grid-auto-rows" in K50["a"] or "grid-row" in K50["a"])
+s11_reels = css_layout_rule(K50["b"], "sns-reels") and ("overflow-x" in K50["b"])  # KLK-050調整: 正方サムネの横スクロール帯（9:16→正方）
+s11_feed = css_layout_rule(K50["c"], "sns-feed") and ('class="sns-post"' in K50["c"]) and ("grid-template-columns" in K50["c"])  # 横並びグリッド
+s11_health = all(all_pins(K50[l]) >= {"SNS-01"} and not re.search(r'(src|href)="https?:', K50[l]) and "<iframe" not in K50[l] for l in ("a", "b", "c"))
+check("S11 klk050 offset3 表引き (offset3→(3,4,5)=sns-masonry/sns-reels/sns-feed＋新型 実CSS差・実埋め込みなし)",
+      s11_map and s11_masonry and s11_reels and s11_feed and s11_health,
+      "SNS 期待%s 実%s / masonry=%s reels=%s feed=%s 健全=%s" % (exp3, act3, s11_masonry, s11_reels, s11_feed, s11_health))
+
 # Report
 print("=" * 78)
-print("KLK-049 static acceptance checks (SNS §12.1.3 プール化・3型・mod3・共通カード)")
+print("KLK-049/050 static acceptance checks (SNS §12.1.3 プール化・6型・mod6・共通カード)")
 print("対象: DRAFT_RULES §12.1.3 SNS / SKILL / bridge / fixtures klk049")
 print("=" * 78)
 failed = 0

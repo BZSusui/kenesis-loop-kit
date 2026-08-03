@@ -94,7 +94,7 @@
 | 8 | VOICE | `VOICE-01` | VOICE | お客様の声カード（アタリ＋コメント） |
 | 9 | STAFF | `STAFF-01` | STAFF | 人物カード（アタリ＋肩書） |
 | 10 | FAQ | `FAQ-01` | FAQ | Q&A 積み上げ（抜粋→誘導文） |
-| 11 | SNS | `SNS-01` | SNS | フィード/投稿の**アタリ面**（**実埋め込み禁止**・外部URL 0・NFR-005）。内部型は §12.1.3 プール（3型・KLK-049） |
+| 11 | SNS | `SNS-01` | SNS | フィード/投稿の**アタリ面**（**実埋め込み禁止**・外部URL 0・NFR-005）。内部型は §12.1.3 プール（6型・KLK-049/050） |
 | 12 | ACCESS | `ACCESS-01` | ACCESS | 地図の**アタリ面**（実地図禁止）＋住所・営業時間 |
 | 13 | CTA | `CTA-01` | （誘導） | 見出し＋ひとこと＋ボタン（**目的で文言可変**・下記） |
 | 14 | CONTACT | `CONTACT-01` | CONTACT | お問い合わせ誘導（ボタン/リンク） |
@@ -716,13 +716,16 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 4 | `tab-switch`（KLK-045新） | タブ切替（`display:flex;flex-direction:column`＝上部にカテゴリタブ行＋下部に**タブごとのパネル** `grid-template-columns:repeat(2,1fr)`。ランチ/ディナー等の分類切替を想定・active タブを強調）。**クリックで切替（最小インライン JS・外部依存なし。各パネルは既定 `display:none`・active のみ `display:grid`。タブ数=パネル数で `data-tab`/`data-panel` を対応）**。パネル内アイテムの画像は**横長 `aspect-ratio:4/3`**。モバイルはタブ横スクロール・パネル1列 |
 | 5 | `feature-large`（KLK-046新） | 大画像＋詳細（`display:grid;grid-template-columns:1.2fr 1fr` の左に**横長の大きなフィーチャー画像**＋右に詳細パネル[名称・価格・説明文・補足リスト]。看板メニュー/一押しプランを**1件**大きく見せる型）。**1件ピックアップの性質上、直下に「MENU 一覧/その他を見る」への導線ボタン（§4.3 共通 `.sec-more`／`.sec-more-btn`・十分な上余白 margin-top≈40px・下層の一覧ページ想定）を常設する**。モバイルは縦積み1列 |
 
-**SNS プール（`.m-sns`・KLK-049・3型・mod3。実埋め込み禁止・外部URL0・各型ともアタリ色面で構成）:**
+**SNS プール（`.m-sns`・KLK-049/050・6型・mod6。実埋め込み禁止・外部URL0・各型ともアタリ色面で構成）:**
 
 | index | マーカー | 見た目（実CSS差）／モバイル |
 |---|---|---|
 | 0 | `sns-grid` | Instagram フィード風の**正方サムネ格子**（`display:grid;grid-template-columns:repeat(4,1fr)` の正方タイル `aspect-ratio:1`）。cat-0015 上部フィード系。モバイル3列 |
 | 1 | `sns-slider` | 横スクロールの投稿フィード（`display:flex;flex-wrap:nowrap;overflow-x:auto`＋各 `flex:0 0 <幅>`＋`scroll-snap-type`）。GALLERY pat-slider 流用。**モバイルも横スクロール継続** |
 | 2 | `sns-cards`（共通カード） | **画像＋キャプション（日付/属性）＋本文30字程度**を**横並び3〜4件**（`display:grid;grid-template-columns:repeat(3,1fr)` の `.sns-card`＝角丸/円形アタリ＋`.cap`＋短文）。お客様の声/ビフォーアフター/SNS投稿で使える**共通カードパターン**（VOICE `voice-cards` と視覚同系＝両セクションで使える）。§4.3 `.sec-more`（もっと見る）と併用可。モバイル1列 |
+| 3 | `sns-masonry`（KLK-050新） | 大小混在タイルを長方形に敷き詰めるベントー型（縦長横長を隙間なく矩形に・`display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:<基準>;grid-auto-flow:row dense`＋各タイル `grid-column/row:span N`）。cat-0001 系・Instagram 埋込でよく見る。GALLERY `pat-masonry` 同機構。モバイル2列 |
+| 4 | `sns-reels`（KLK-050新・KLK-050調整） | リール/ストーリーズ帯（`display:flex;flex-wrap:nowrap;overflow-x:auto`＋各 `.sns-reel` の `flex:0 0 <幅>`・アタリは**正方 `aspect-ratio:1`**・`🎬` でリール/動画を示す）。近年のリール普及に対応。**モバイルも横スクロール継続** |
+| 5 | `sns-feed`（KLK-050新・KLK-050調整） | 公式埋込ウィジェット風の**投稿カードを横並び3〜4件**（`display:grid;grid-template-columns:repeat(3,1fr)`＋`.sns-post`＝ヘッダ[丸アバター＋ハンドル]＋正方アタリ＋キャプション＋いいね/コメント風アイコン行）。実埋め込みに最も近い見立て（実埋め込みはしない）。モバイル1列 |
 
 **(2) 割り当て表（型数別 mod・offset → 案A/B/C の pool index・オフセット表§12.1.2共有・KLK-040 で型数別に一般化）:**
 
@@ -767,19 +770,19 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 4 | 4 | 5 | 0 |
 | 5 | 5 | 0 | 1 |
 
-**SNS（3型・mod3・KLK-049。3型なので巡回窓 `(offset+0,+1,+2) mod3`）:**
+**SNS（6型・mod6・KLK-050。HERO/ABOUT/GALLERY/MENU の mod6 と同値）:**
 
 | offset | 案A | 案B | 案C |
 |---|---|---|---|
 | 0 | 0 | 1 | 2 |
-| 1 | 1 | 2 | 0 |
-| 2 | 2 | 0 | 1 |
-| 3 | 0 | 1 | 2 |
-| 4 | 1 | 2 | 0 |
-| 5 | 2 | 0 | 1 |
+| 1 | 1 | 2 | 3 |
+| 2 | 2 | 3 | 4 |
+| 3 | 3 | 4 | 5 |
+| 4 | 4 | 5 | 0 |
+| 5 | 5 | 0 | 1 |
 
 **(3) 生成手順（表を"読むだけ"・GALLERY/HERO/ABOUT/MENU/SNS 共通）:** ① `data-columns`（正規化後）と `navPosition` を確定 → ② §12.1.2 の
-**オフセット表**で offset(0〜5) → ③ 上の **該当セクションの割り当て表**（GALLERY/MENU/HERO/ABOUT=6型mod6／SNS=3型mod3）で (idxA,idxB,idxC) → ④ 各案の該当容器（`.m-gallery`／`.m-hero` の `data-hero`／
+**オフセット表**で offset(0〜5) → ③ 上の **該当セクションの割り当て表**（GALLERY/MENU/HERO/ABOUT/SNS すべて6型・mod6）で (idxA,idxB,idxC) → ④ 各案の該当容器（`.m-gallery`／`.m-hero` の `data-hero`／
 `.m-about`／`.m-menu`／`.m-sns`）に `該当プール[index]` のマーカーを付け、対応 CSS を `<head>` に含める。**HERO は型に整列シグネチャが付随**するので
 各案の `.m-hero` 基底に該当型の整列を書く（§12.1 不変条件4・overlap は flex-start/center/left）。archetype の並び順・区切りは §12.1.1 のまま。
 
@@ -811,7 +814,7 @@ SCR-001 でカタログサムネイルを選んだ指示書では、**案Aを「
 3. **案A := v**（参考の型をそのまま採る）。
 4. **席替え**: 既定で v と同じ型を持つ案があれば、**その案は「案Aの既定型」を代わりに使う**。
    - §12.1.2 系（VOICE/FLOW/STAFF）**および §12.1.3 系（GALLERY/HERO/ABOUT/MENU/SNS・KLK-036/037/044/049）**: v の pool index を表引き結果 (idxA,idxB,idxC) の
-     idxB/idxC と比べ、一致した案 := `pool[idxA]`（§12.1.3 は §12.1.2 と同型の index 比較・各セクションのプールと mod 割り当て[GALLERY/MENU/HERO/ABOUT=mod6／SNS=mod3]を使う）。
+     idxB/idxC と比べ、一致した案 := `pool[idxA]`（§12.1.3 は §12.1.2 と同型の index 比較・各セクションのプールと mod 割り当て[GALLERY/MENU/HERO/ABOUT/SNS すべて mod6]を使う）。
    - **§12.1.1 archetype 固定のセクションは無くなった（KLK-044 で MENU も §12.1.3 へ移譲）**。下記の §12.1.1 系既定型表は空。
    - どの案とも重複しなければ案B/C は従来のまま。→ いずれの場合も **3案の型は常に3値 distinct**
      （§12.1.1⑤⑦・§12.1.2・§12.1.3 の不変条件を維持）。
@@ -943,7 +946,7 @@ SCR-001 でカタログサムネイルを選んだ指示書では、**案Aを「
 1. 対象HTMLのルート `.mock` から **`data-columns`** と **`data-nav-position`** の実値を読む（両方とも生成時に焼き込み済み・§8/§2.1）。
 2. §12.1.2 の**オフセット表**で (`data-columns` × `data-nav-position`) の1セルを読み offset を得る（§12.1.2/§12.1.3 共有）。
 3. 対象ファイルの **letter**（`index-{letter}.html` の a/b/c。単案 `index.html` は案A相当＝letter=a）から、
-   **VOICE/FLOW/STAFF は §12.1.2 の割り当て表**（mod 6）、**GALLERY/MENU/HERO/ABOUT は §12.1.3 の割り当て表（mod 6）・SNS は mod 3**の offset 行で pool index を読む。
+   **VOICE/FLOW/STAFF は §12.1.2 の割り当て表**（mod 6）、**GALLERY/MENU/HERO/ABOUT/SNS は §12.1.3 の割り当て表（すべて mod 6）**の offset 行で pool index を読む。
 4. その `pool[index]` のマーカーを容器 `.m-{sec}` に付け、対応 CSS ブロックが `<head>` に無ければ足す（HERO は型に付随する整列シグネチャも
    合わせる・他セクション・配色・ルート属性は不変）。→ 元の生成と**同じ型**が決定的に再現される（表を読むだけ・算術なし）。
 
