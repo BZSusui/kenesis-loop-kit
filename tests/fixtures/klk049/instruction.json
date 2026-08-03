@@ -1,0 +1,17 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": { "project": "サンプルエステサロン", "createdAt": "2026-08-03T10:00:00.000Z", "source": "SCR-001" },
+  "industry": { "preset": "美容室・エステ・化粧品", "custom": "", "resolved": "美容室・エステ・化粧品" },
+  "layout": { "columns": "1col", "navPosition": "top" },
+  "sections": ["ABOUT", "SNS", "CTA"],
+  "sectionOptions": {
+    "CTA": { "purpose": "contact", "label": "ご予約・お問い合わせ" },
+    "SNS": { "moreLink": { "label": "投稿をもっと見る" } }
+  },
+  "taste": "洗練・上品",
+  "colors": { "mode": "explicit", "main": "#7c6a58", "sub": "#4a3f33", "accent": "#c6a15b", "bg": "#f7f4ef", "autofill": [] },
+  "references": { "thumbnails": [], "sampleUrls": [] },
+  "atari": "standard",
+  "output": { "variants": 3, "mobile": { "enabled": false, "widthPx": 375 }, "animation": true }
+}

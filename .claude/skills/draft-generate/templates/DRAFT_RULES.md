@@ -94,7 +94,7 @@
 | 8 | VOICE | `VOICE-01` | VOICE | お客様の声カード（アタリ＋コメント） |
 | 9 | STAFF | `STAFF-01` | STAFF | 人物カード（アタリ＋肩書） |
 | 10 | FAQ | `FAQ-01` | FAQ | Q&A 積み上げ（抜粋→誘導文） |
-| 11 | SNS | `SNS-01` | SNS | 埋め込み**枠**のアタリ面（**実埋め込み禁止**・外部URL 0・NFR-005） |
+| 11 | SNS | `SNS-01` | SNS | フィード/投稿の**アタリ面**（**実埋め込み禁止**・外部URL 0・NFR-005）。内部型は §12.1.3 プール（3型・KLK-049） |
 | 12 | ACCESS | `ACCESS-01` | ACCESS | 地図の**アタリ面**（実地図禁止）＋住所・営業時間 |
 | 13 | CTA | `CTA-01` | （誘導） | 見出し＋ひとこと＋ボタン（**目的で文言可変**・下記） |
 | 14 | CONTACT | `CONTACT-01` | CONTACT | お問い合わせ誘導（ボタン/リンク） |
@@ -667,7 +667,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 **オフセット表は §12.1.2(2) を共有**（重複定義しない＝ドリフト防止）。割り当てはセクションの型数 N_section に応じた
 巡回窓 `(offset+0, offset+1, offset+2) mod N_section` を**表で読む**（算術で導出しない・書き下した表を読むだけ）。
 
-**(1) セクション別型プール（GALLERY/HERO/ABOUT/MENU・index0=最頻/従来定番・KLK-036/037/044）:**
+**(1) セクション別型プール（GALLERY/HERO/ABOUT/MENU/SNS・index0=最頻/従来定番・KLK-036/037/044/049）:**
 
 各セクション容器（`.m-gallery`／`.m-hero` の `data-hero`／`.m-about`／`.m-menu`）にプールマーカー1個。各マーカーは**実際に異なる grid/flex 宣言**を
 伴う（飾りにしない）。型数は各セクション独立（§12.1.2 の「3セクション一致（制約A）」とは別系統・GALLERY/MENU=4型・HERO/ABOUT=6型）。
@@ -716,6 +716,14 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 4 | `tab-switch`（KLK-045新） | タブ切替（`display:flex;flex-direction:column`＝上部にカテゴリタブ行＋下部に**タブごとのパネル** `grid-template-columns:repeat(2,1fr)`。ランチ/ディナー等の分類切替を想定・active タブを強調）。**クリックで切替（最小インライン JS・外部依存なし。各パネルは既定 `display:none`・active のみ `display:grid`。タブ数=パネル数で `data-tab`/`data-panel` を対応）**。パネル内アイテムの画像は**横長 `aspect-ratio:4/3`**。モバイルはタブ横スクロール・パネル1列 |
 | 5 | `feature-large`（KLK-046新） | 大画像＋詳細（`display:grid;grid-template-columns:1.2fr 1fr` の左に**横長の大きなフィーチャー画像**＋右に詳細パネル[名称・価格・説明文・補足リスト]。看板メニュー/一押しプランを**1件**大きく見せる型）。**1件ピックアップの性質上、直下に「MENU 一覧/その他を見る」への導線ボタン（§4.3 共通 `.sec-more`／`.sec-more-btn`・十分な上余白 margin-top≈40px・下層の一覧ページ想定）を常設する**。モバイルは縦積み1列 |
 
+**SNS プール（`.m-sns`・KLK-049・3型・mod3。実埋め込み禁止・外部URL0・各型ともアタリ色面で構成）:**
+
+| index | マーカー | 見た目（実CSS差）／モバイル |
+|---|---|---|
+| 0 | `sns-grid` | Instagram フィード風の**正方サムネ格子**（`display:grid;grid-template-columns:repeat(4,1fr)` の正方タイル `aspect-ratio:1`）。cat-0015 上部フィード系。モバイル3列 |
+| 1 | `sns-slider` | 横スクロールの投稿フィード（`display:flex;flex-wrap:nowrap;overflow-x:auto`＋各 `flex:0 0 <幅>`＋`scroll-snap-type`）。GALLERY pat-slider 流用。**モバイルも横スクロール継続** |
+| 2 | `sns-cards`（共通カード） | **画像＋キャプション（日付/属性）＋本文30字程度**を**横並び3〜4件**（`display:grid;grid-template-columns:repeat(3,1fr)` の `.sns-card`＝角丸/円形アタリ＋`.cap`＋短文）。お客様の声/ビフォーアフター/SNS投稿で使える**共通カードパターン**（VOICE `voice-cards` と視覚同系＝両セクションで使える）。§4.3 `.sec-more`（もっと見る）と併用可。モバイル1列 |
+
 **(2) 割り当て表（型数別 mod・offset → 案A/B/C の pool index・オフセット表§12.1.2共有・KLK-040 で型数別に一般化）:**
 
 型数 N のセクションは巡回窓 `(offset+0, offset+1, offset+2) mod N` を読む。offset0→(0,1,2) は全 N で共通（既存不変）。
@@ -759,9 +767,20 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 4 | 4 | 5 | 0 |
 | 5 | 5 | 0 | 1 |
 
-**(3) 生成手順（表を"読むだけ"・GALLERY/HERO/ABOUT/MENU 共通）:** ① `data-columns`（正規化後）と `navPosition` を確定 → ② §12.1.2 の
-**オフセット表**で offset(0〜5) → ③ 上の **該当セクションの割り当て表**（GALLERY/MENU/HERO/ABOUT すべて6型・mod6）で (idxA,idxB,idxC) → ④ 各案の該当容器（`.m-gallery`／`.m-hero` の `data-hero`／
-`.m-about`／`.m-menu`）に `該当プール[index]` のマーカーを付け、対応 CSS を `<head>` に含める。**HERO は型に整列シグネチャが付随**するので
+**SNS（3型・mod3・KLK-049。3型なので巡回窓 `(offset+0,+1,+2) mod3`）:**
+
+| offset | 案A | 案B | 案C |
+|---|---|---|---|
+| 0 | 0 | 1 | 2 |
+| 1 | 1 | 2 | 0 |
+| 2 | 2 | 0 | 1 |
+| 3 | 0 | 1 | 2 |
+| 4 | 1 | 2 | 0 |
+| 5 | 2 | 0 | 1 |
+
+**(3) 生成手順（表を"読むだけ"・GALLERY/HERO/ABOUT/MENU/SNS 共通）:** ① `data-columns`（正規化後）と `navPosition` を確定 → ② §12.1.2 の
+**オフセット表**で offset(0〜5) → ③ 上の **該当セクションの割り当て表**（GALLERY/MENU/HERO/ABOUT=6型mod6／SNS=3型mod3）で (idxA,idxB,idxC) → ④ 各案の該当容器（`.m-gallery`／`.m-hero` の `data-hero`／
+`.m-about`／`.m-menu`／`.m-sns`）に `該当プール[index]` のマーカーを付け、対応 CSS を `<head>` に含める。**HERO は型に整列シグネチャが付随**するので
 各案の `.m-hero` 基底に該当型の整列を書く（§12.1 不変条件4・overlap は flex-start/center/left）。archetype の並び順・区切りは §12.1.1 のまま。
 
 **(4) 後方互換・不変（additive）:** 対象セクションが `sections` に無ければ no-op。offset0 は各プール (index0,1,2)＝
@@ -772,7 +791,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 ＋新 offset を出すオフセット表セルの確保（到達可能性）。**各プールの型量産は、同機構にセクション別プールを足す/伸ばすだけ**
 （型数は各セクション独立でよい＝§12.1.2 の制約A に縛られない。MENU は KLK-044→045→046 で §12.1.3 化→5型→**6型mod6**へ伸長＝自動振り分け上限6に到達）。
 
-**(6) §12.2 参考準拠との整合:** GALLERY/HERO/ABOUT/MENU の席替えは §12.1.3 プール基準（VOICE系 `expected_pool` と同型の index 比較）。
+**(6) §12.2 参考準拠との整合:** GALLERY/HERO/ABOUT/MENU/SNS の席替えは §12.1.3 プール基準（VOICE系 `expected_pool` と同型の index 比較）。
 KLK-044 で **MENU も §12.1.3 へ移譲**したため、§12.2 の §12.1.1 系既定型表（DEFAULT 転記）は**空（archetype 固定のセクションは無い）**。全セクションが §12.1.3 プール基準で席替えする。
 
 - 代表出力（ゴールデン）: `tests/fixtures/klk036/index-a/b/c.html`（offset3 → 案A=`pat-slider`/`overlap`/`img-overlap`(index3)／
@@ -791,8 +810,8 @@ SCR-001 でカタログサムネイルを選んだ指示書では、**案Aを「
 2. 参考の値 v が無い（キー省略）・`"other"`・語彙外 → 何もしない（そのセクションは従来規則のまま）。
 3. **案A := v**（参考の型をそのまま採る）。
 4. **席替え**: 既定で v と同じ型を持つ案があれば、**その案は「案Aの既定型」を代わりに使う**。
-   - §12.1.2 系（VOICE/FLOW/STAFF）**および §12.1.3 系（GALLERY/HERO/ABOUT/MENU・KLK-036/037/044）**: v の pool index を表引き結果 (idxA,idxB,idxC) の
-     idxB/idxC と比べ、一致した案 := `pool[idxA]`（§12.1.3 は §12.1.2 と同型の index 比較・各セクションのプールと mod 割り当て[GALLERY/MENU/HERO/ABOUT すべて mod6]を使う）。
+   - §12.1.2 系（VOICE/FLOW/STAFF）**および §12.1.3 系（GALLERY/HERO/ABOUT/MENU/SNS・KLK-036/037/044/049）**: v の pool index を表引き結果 (idxA,idxB,idxC) の
+     idxB/idxC と比べ、一致した案 := `pool[idxA]`（§12.1.3 は §12.1.2 と同型の index 比較・各セクションのプールと mod 割り当て[GALLERY/MENU/HERO/ABOUT=mod6／SNS=mod3]を使う）。
    - **§12.1.1 archetype 固定のセクションは無くなった（KLK-044 で MENU も §12.1.3 へ移譲）**。下記の §12.1.1 系既定型表は空。
    - どの案とも重複しなければ案B/C は従来のまま。→ いずれの場合も **3案の型は常に3値 distinct**
      （§12.1.1⑤⑦・§12.1.2・§12.1.3 の不変条件を維持）。
@@ -917,14 +936,14 @@ SCR-001 でカタログサムネイルを選んだ指示書では、**案Aを「
 
 **VOICE/FLOW/STAFF のプールマーカー再付与（KLK-029・§12.1.2 と対）／GALLERY・HERO・ABOUT のプールマーカー再付与（KLK-036/037・§12.1.3 と対・additive）:**
 
-対象 `.sec` が **VOICE-01 / FLOW-01 / STAFF-01 / GALLERY-01 / MV-01 / ABOUT-01 / MENU-01** のときは、そのセクションが持つべき**プールマーカー**
+対象 `.sec` が **VOICE-01 / FLOW-01 / STAFF-01 / GALLERY-01 / MV-01 / ABOUT-01 / MENU-01 / SNS-01** のときは、そのセクションが持つべき**プールマーカー**
 （`voice-*`/`flow-*`/`staff-*` は §12.1.2、`.m-gallery` の `pat-*`／`.m-hero` の `data-hero`／`.m-about` の `img-*`／`.m-menu` の `pat-*|price-table` は §12.1.3）を再付与してから
 差し替える。マーカーは**対象HTMLだけで自己決定できる**（`instruction.json` 不要・決定的）:
 
 1. 対象HTMLのルート `.mock` から **`data-columns`** と **`data-nav-position`** の実値を読む（両方とも生成時に焼き込み済み・§8/§2.1）。
 2. §12.1.2 の**オフセット表**で (`data-columns` × `data-nav-position`) の1セルを読み offset を得る（§12.1.2/§12.1.3 共有）。
 3. 対象ファイルの **letter**（`index-{letter}.html` の a/b/c。単案 `index.html` は案A相当＝letter=a）から、
-   **VOICE/FLOW/STAFF は §12.1.2 の割り当て表**（mod 6）、**GALLERY/MENU/HERO/ABOUT は §12.1.3 の割り当て表（すべて mod 6）**の offset 行で pool index を読む。
+   **VOICE/FLOW/STAFF は §12.1.2 の割り当て表**（mod 6）、**GALLERY/MENU/HERO/ABOUT は §12.1.3 の割り当て表（mod 6）・SNS は mod 3**の offset 行で pool index を読む。
 4. その `pool[index]` のマーカーを容器 `.m-{sec}` に付け、対応 CSS ブロックが `<head>` に無ければ足す（HERO は型に付随する整列シグネチャも
    合わせる・他セクション・配色・ルート属性は不変）。→ 元の生成と**同じ型**が決定的に再現される（表を読むだけ・算術なし）。
 
