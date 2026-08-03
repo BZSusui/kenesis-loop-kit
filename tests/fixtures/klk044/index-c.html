@@ -83,8 +83,9 @@
   .m-menu.feature-large .feat-detail p { margin: 0 0 12px; font-size: 13px; }
   .m-menu.feature-large .feat-detail ul { margin: 0; padding-left: 18px; font-size: 12.5px; color: #6B7280; }
   /* feature-large は1件ピックアップ型のため、下層の MENU 一覧への導線を併置 */
-  .feat-more { text-align: center; margin-top: 18px; }
-  .feat-more .feat-more-btn { display: inline-block; border: 1.5px solid var(--m-main); color: var(--m-main); background: #fff; padding: 11px 30px; border-radius: 24px; font-size: 13px; font-weight: 700; }
+  /* 詳細誘導ボタン共通規約（§4.3・KLK-048）: 中央・上余白広め（シャドウ付き表/カードとの窮屈さ回避） */
+  .sec-more { text-align: center; margin-top: 40px; }
+  .sec-more .sec-more-btn { display: inline-block; border: 1.5px solid var(--m-main); color: var(--m-main); background: #fff; padding: 11px 30px; border-radius: 24px; font-size: 13px; font-weight: 700; }
 
   .m-cta { background: var(--m-main); color: #fff; text-align: center; padding: 42px 22px; }
   .m-cta h2 { font-size: 22px; margin: 0 0 8px; color: #fff; }
@@ -178,6 +179,7 @@
           <div class="atari"><span class="ic">📷</span><span class="desc">手のスケッチ ペン</span></div>
         </div>
       </div>
+      <div class="sec-more"><a class="sec-more-btn" href="#">ギャラリー一覧を見る ＞</a></div>
     </div>
   </div>
 
@@ -198,7 +200,7 @@
           </ul>
         </div>
       </div>
-      <div class="feat-more"><span class="feat-more-btn">その他のMENU・料金一覧を見る ＞</span></div>
+      <div class="sec-more"><a class="sec-more-btn" href="#">その他のMENU・料金一覧を見る ＞</a></div>
     </div>
   </div>
 

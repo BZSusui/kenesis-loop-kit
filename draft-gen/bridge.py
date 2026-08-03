@@ -182,6 +182,25 @@ def validate_instruction(obj):
                             or any(ord(ch) < 32 and ch != "\n" for ch in lead):
                         errors.append(
                             "sectionOptions.{0}.lead が不正です(200字以内・改行以外の制御文字不可・空不可)".format(key))
+                # KLK-048 §4.3: 詳細誘導ボタン(opt-in)。moreLink={label(必須,40字,1行), href?(相対/#のみ・外部URL/危険スキーム不可)}。
+                more_link = opt.get("moreLink")
+                if more_link is not None:
+                    if not isinstance(more_link, dict):
+                        errors.append("sectionOptions.{0}.moreLink がオブジェクトではありません".format(key))
+                    else:
+                        ml_label = more_link.get("label")
+                        if not isinstance(ml_label, str) or not ml_label.strip() \
+                                or len(ml_label) > 40 \
+                                or any(ord(ch) < 32 for ch in ml_label):
+                            errors.append(
+                                "sectionOptions.{0}.moreLink.label が不正です(40字以内・1行・制御文字不可・空不可)".format(key))
+                        ml_href = more_link.get("href")
+                        if ml_href is not None:
+                            if not isinstance(ml_href, str) \
+                                    or any(ord(ch) < 32 for ch in ml_href) \
+                                    or re.match(r'^\s*(?:https?:|//|javascript:|data:|vbscript:)', ml_href, re.I):
+                                errors.append(
+                                    "sectionOptions.{0}.moreLink.href が不正です(相対パスまたは # のみ・外部URL/危険スキーム不可)".format(key))
 
     # KLK-024 §4.1: 指定コピー(MVキャッチ/リード)。「存在するときのみ」厳格検証する(無指定=後方互換・
     # 従来 instruction は分岐に入らない・mvPhoto と同型)。改行(\n)のみ許可し他の制御文字は拒否。
