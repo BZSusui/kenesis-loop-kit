@@ -212,6 +212,29 @@
   同一オブジェクトに同居する）。`sections` に無い KEY への指定は無視する。
 - 部分再生成（§14）で対象セクションを作り直す場合も、`instruction.json` の該当 `sectionOptions` を尊重する。
 
+### 4.3 詳細ページ誘導ボタン（KLK-048・`sectionOptions.{KEY}.moreLink`・opt-in・共通 `.sec-more`）
+
+実サイトは1ページ完結でなく、各セクションから**下層の詳細/一覧ページへ誘導**する構成が一般的。これを表す
+**オプトインの共通ボタン**を additive に足す。**既定OFF**（指定の無いセクション・既存生成物は不変）。
+
+- **トリガー**: `sectionOptions.{KEY}.moreLink = { "label": "…", "href"?: "…" }`。KEY が本文セクション
+  （NAV/MV/FOOTER を除く・§2.1 の語彙）で、その `moreLink` があるとき、当該 `.sec` の**内容末尾**に誘導ボタンを出す。
+  無指定のセクションには出さない（opt-in・従来出力は不変）。
+- **マークアップ（共通規約）**: セクション内容の直後に
+  `<div class="sec-more"><a class="sec-more-btn" href="{href}">{label} ＞</a></div>`。
+  - **`.sec-more`**: 中央寄せ・**十分な上余白**（`text-align:center; margin-top:40px`＝約2.4em。シャドウ付きカード/表との
+    窮屈さを避けるため広めに取る）。
+  - **`.sec-more-btn`**: アウトライン pill（`display:inline-block; border:1.5px solid var(--m-main); color:var(--m-main);
+    background:#fff; padding:11px 30px; border-radius:24px; font-size:13px; font-weight:700`）。
+- **href**: 省略時は下層ページ想定のプレースホルダ `#`（または相対パス）。**外部 http(s) URL は禁止**（§1 外部依存ゼロ）。
+- **label**: 制御文字除去・過長（40字目安）切り詰め・HTMLエスケープ（§4.1/§4.2 と同じ注入対策）。
+- **MENU `feature-large`（§12.1.3・KLK-046）の常設ボタンはこの `.sec-more` を使う**（1件ピックアップ型の性質上、
+  一覧導線を常設。`moreLink` 未指定でも label 既定「一覧を見る」で出す＝型に内包）。他型は opt-in のときのみ。
+- **複数案共通**: `variants≥2` でも全案同じ（§12。配色・レイアウト型は案別のまま）。`.sec-more-btn` の枠色は各案の
+  `--m-main` を使うので配色は案ごとに追従する。
+- **後方互換**: `moreLink` が無い sectionOptions は従来どおり（CTA の `purpose`/`label`・`heading`/`lead` と独立に併用可）。
+  部分再生成（§14）でも該当 `sectionOptions.moreLink` を尊重する。
+
 ---
 
 ## 5. 配色マッピングと autofill 補完（U5）
@@ -691,7 +714,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 2 | `pat-zigzag` | ジグザグ交互（`flex-direction:column`＋各行 `display:flex`＋偶数行 `flex-direction:row-reverse`）。モバイル縦積み |
 | 3 | `price-table`（KLK-044新） | 価格表/料金プラン（`display:grid;grid-template-columns:<プラン列 内容列 料金列>` の表形式・見出し行＋料金行を並べる料金一覧）。モバイルは横スクロールまたは列縮小 |
 | 4 | `tab-switch`（KLK-045新） | タブ切替（`display:flex;flex-direction:column`＝上部にカテゴリタブ行＋下部に**タブごとのパネル** `grid-template-columns:repeat(2,1fr)`。ランチ/ディナー等の分類切替を想定・active タブを強調）。**クリックで切替（最小インライン JS・外部依存なし。各パネルは既定 `display:none`・active のみ `display:grid`。タブ数=パネル数で `data-tab`/`data-panel` を対応）**。パネル内アイテムの画像は**横長 `aspect-ratio:4/3`**。モバイルはタブ横スクロール・パネル1列 |
-| 5 | `feature-large`（KLK-046新） | 大画像＋詳細（`display:grid;grid-template-columns:1.2fr 1fr` の左に**横長の大きなフィーチャー画像**＋右に詳細パネル[名称・価格・説明文・補足リスト]。看板メニュー/一押しプランを**1件**大きく見せる型）。**1件ピックアップの性質上、直下に「MENU 一覧/その他を見る」への導線ボタン（`.feat-more`・下層の一覧ページ想定）を併置する**。モバイルは縦積み1列 |
+| 5 | `feature-large`（KLK-046新） | 大画像＋詳細（`display:grid;grid-template-columns:1.2fr 1fr` の左に**横長の大きなフィーチャー画像**＋右に詳細パネル[名称・価格・説明文・補足リスト]。看板メニュー/一押しプランを**1件**大きく見せる型）。**1件ピックアップの性質上、直下に「MENU 一覧/その他を見る」への導線ボタン（§4.3 共通 `.sec-more`／`.sec-more-btn`・十分な上余白 margin-top≈40px・下層の一覧ページ想定）を常設する**。モバイルは縦積み1列 |
 
 **(2) 割り当て表（型数別 mod・offset → 案A/B/C の pool index・オフセット表§12.1.2共有・KLK-040 で型数別に一般化）:**
 

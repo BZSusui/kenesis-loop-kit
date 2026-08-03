@@ -13,7 +13,10 @@
   },
   "layout": { "columns": "1col", "navPosition": "below-hero" },
   "sections": ["ABOUT", "MENU", "GALLERY", "CTA"],
-  "sectionOptions": { "CTA": { "purpose": "contact", "label": "お問い合わせはこちら" } },
+  "sectionOptions": {
+    "CTA": { "purpose": "contact", "label": "お問い合わせはこちら" },
+    "GALLERY": { "moreLink": { "label": "ギャラリー一覧を見る" } }
+  },
   "taste": "かっこいい・洗練",
   "colors": {
     "mode": "explicit",

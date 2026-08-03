@@ -132,6 +132,9 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
   **セクション文言も同様（KLK-027・§4.2）**: `sectionOptions.{KEY}.heading` は該当セクションの見出し（h2）に
   そのまま、`sectionOptions.{KEY}.lead` は見出し直下の `<p class="sec-lead">`（`\n`→`<br>`）として反映する。
   無指定セクションは `.sec-lead` を出さずAI提案のまま。CTA の purpose/label とは独立に併用できる。
+  **詳細誘導ボタン（KLK-048・§4.3）**: `sectionOptions.{KEY}.moreLink`（`{label, href?}`）があるセクション（本文のみ・NAV/MV/FOOTER除く）は、
+  内容末尾に共通 `<div class="sec-more"><a class="sec-more-btn" href="{href省略時#}">{label} ＞</a></div>` を出す（`.sec-more` は中央・上余白広め margin-top≈40px）。
+  **無指定は出さない（opt-in）**・外部URL禁止・label はエスケープ。MENU `feature-large` は §4.3 のとおり `.sec-more` を常設（moreLink 無くても既定ラベルで出す）。
 - **印刷CSS / 出現アニメ / レスポンシブ**: DRAFT_RULES §6〜§8 のとおり（`@media print` で補助非表示・`IntersectionObserver`・
   `@media (max-width:640px)`・モバイルファーストで `.m-aside` を本文の後ろに畳む §8）。
 - **成否の把握（一部失敗・U-G）**: 各案の生成が成立したかを案ごとに把握する。成功した案のみ letter を成功順に a→b→c で
