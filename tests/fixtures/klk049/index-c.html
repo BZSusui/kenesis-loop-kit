@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<!--
+  KLK-049 ゴールデン（SNS §12.1.3 プール・案C / letter=c）— 1col×top→offset0→(0,1,2)
+  offset0→SNS 各 index(0,1,2)：案A=sns-grid・案B=sns-slider・案C=sns-cards。HERO=band(index2) / ABOUT=img-top(index2) / SNS=sns-cards(index2)。
+  sns-cards＝共通カード（画像＋キャプション＋本文30字を横並び3件・お客様の声/ビフォーアフター/SNS投稿で共通・VOICE voice-cards と同系）。§4.3 .sec-more と併用。
+  これはテスト検証用のプレースホルダ出力です。実在の顧客・案件ではありません（サンプル）。
+  案件名: サンプルエステサロン / 業種: 美容室・エステ・化粧品 / カラム: 1col / nav: top / archetype=banded-showcase / 配色: 案C 明色ローズ（ポップ）
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>サンプルエステサロン | デザインラフ 案C</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Hiragino Sans", "Yu Gothic", system-ui, sans-serif; line-height: 1.7; }
+  .mock { --m-main: #c96f8a; --m-nav: #4a3a40; --m-accent: #e0a24e; --m-bg: #fdf6f4; --m-text: #3f363a; background: var(--m-bg); color: var(--m-text); overflow: hidden; position: relative; }
+  .sec { position: relative; }
+  .addr { position: absolute; top: 8px; left: 8px; z-index: 5; display: inline-flex; gap: 6px; align-items: center; }
+  .addr .pin { background: rgba(17,24,39,.82); color: #fff; font-size: 10px; letter-spacing: .04em; padding: 2px 7px; border-radius: 4px; font-family: ui-monospace, monospace; }
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+  .m-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 22px; background: var(--m-nav); color: #fff; }
+  .m-nav .logo { font-size: 17px; font-weight: 800; letter-spacing: .04em; }
+  .m-nav ul { display: flex; gap: 16px; list-style: none; margin: 0; padding: 0; font-size: 12px; }
+  .m-nav .cta { background: var(--m-accent); color: #fff; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+
+  /* HERO 型: band（下寄せ帯・整列 flex-end/flex-start/left・index2） */
+  .m-hero { display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; text-align: left; min-height: 380px; padding: 40px; color: #fff;
+    background: linear-gradient(rgba(60,42,50,.2), rgba(60,42,50,.55)), repeating-linear-gradient(45deg, var(--m-main), var(--m-main) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 28px); }
+  .m-hero .catch { font-size: 32px; font-weight: 800; letter-spacing: .04em; margin: 0 0 10px; text-shadow: 0 2px 8px rgba(0,0,0,.3); }
+  .m-hero .lead { font-size: 15px; max-width: 460px; margin: 0 0 18px; }
+  .m-hero .hero-cta { background: var(--m-accent); color: #fff; padding: 12px 30px; border-radius: 24px; font-size: 14px; font-weight: 700; }
+  .atari-tag { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 10px; padding: 3px 8px; border-radius: 4px; }
+
+  .m-sec { padding: 40px 22px; max-width: 940px; margin: 0 auto; border-radius: 14px; }
+  .m-sec.band { background: color-mix(in srgb, var(--m-main) 8%, #fff); }
+  .m-sec h2 { text-align: left; font-size: 22px; letter-spacing: .04em; margin: 0 0 4px; color: var(--m-main); display: inline-block; border-bottom: 3px solid var(--m-accent); padding-bottom: 4px; }
+  .m-sec .en { text-align: left; font-size: 11px; letter-spacing: .3em; color: var(--m-accent); margin: 6px 0 22px; font-family: ui-monospace, monospace; }
+  .todo { color: #B54; background: #FFF0F0; border: 1px dashed #E39; border-radius: 4px; padding: 1px 6px; font-size: 12.5px; }
+
+  .atari { background: linear-gradient(135deg, color-mix(in srgb, var(--m-main) 22%, #fff), color-mix(in srgb, var(--m-accent) 26%, #fff)); border: 1px dashed color-mix(in srgb, var(--m-main) 45%, #999); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: color-mix(in srgb, var(--m-main) 55%, #333); padding: 12px; gap: 4px; }
+  .atari .ic { font-size: 20px; }
+  .atari .desc { font-size: 12px; font-weight: 700; }
+  .atari .kw { font-size: 11px; color: #6B7280; }
+  .atari .kw b { font-family: ui-monospace, monospace; color: var(--m-main); }
+
+  /* ABOUT 画像配置: img-top（横長画像＋下キャプション・index2） */
+  .m-about.img-top { display: flex; flex-direction: column; gap: 18px; }
+  .m-about.img-top .atari { aspect-ratio: 16 / 9; min-height: 0; }
+  .m-about .txt h3 { font-size: 18px; color: var(--m-main); margin: 0 0 10px; }
+  .m-about .txt p { font-size: 13.5px; margin: 0; }
+
+  /* SNS 型: sns-cards（共通カード＝画像＋キャプション＋本文30字を横並び3件・§12.1.3 index2・KLK-049。VOICE voice-cards と同系） */
+  .m-sns.sns-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .m-sns.sns-cards .sns-card { background: #fff; border-radius: 12px; box-shadow: 0 3px 12px rgba(0,0,0,.08); padding: 16px; }
+  .m-sns.sns-cards .sns-card .atari { aspect-ratio: 1; min-height: 0; border-radius: 8px; margin-bottom: 10px; }
+  .m-sns.sns-cards .sns-card .cap { font-size: 11px; color: var(--m-accent); font-weight: 700; letter-spacing: .04em; }
+  .m-sns.sns-cards .sns-card p { font-size: 12.5px; margin: 4px 0 0; }
+  .m-sns .atari .ic { font-size: 20px; }
+  .m-sns .atari .desc { font-size: 11px; }
+
+  /* 詳細誘導ボタン共通規約（§4.3・KLK-048） */
+  .sec-more { text-align: center; margin-top: 40px; }
+  .sec-more .sec-more-btn { display: inline-block; border: 1.5px solid var(--m-main); color: var(--m-main); background: #fff; padding: 11px 30px; border-radius: 24px; font-size: 13px; font-weight: 700; }
+
+  .m-cta { background: var(--m-main); color: #fff; text-align: center; padding: 42px 22px; }
+  .m-cta h2 { font-size: 22px; margin: 0 0 8px; color: #fff; }
+  .m-cta p { margin: 0 0 18px; font-size: 13.5px; opacity: .92; }
+  .m-cta .cta-btn { display: inline-block; background: var(--m-accent); color: #fff; padding: 14px 40px; border-radius: 24px; font-size: 15px; font-weight: 700; }
+
+  .m-foot { background: var(--m-nav); color: #fff; text-align: center; padding: 30px 20px; }
+  .m-foot .fnav { font-size: 11px; opacity: .85; }
+
+  @media (max-width: 640px) {
+    .m-nav ul { display: none; }
+    .m-nav::after { content: "\2630"; color: #fff; font-size: 20px; }
+    .m-hero .catch { font-size: 25px; }
+    .m-sns.sns-cards { grid-template-columns: 1fr; }
+    .m-sec { padding: 26px 16px; }
+  }
+  @media print {
+    .addr, .atari-tag, .anim-note { display: none !important; }
+    body { background: #fff; }
+    .mock { box-shadow: none; border-radius: 0; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mock" data-columns="1col" data-archetype="banded-showcase" data-section-order="ABOUT,SNS,CTA" data-nav-position="top">
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">NAV-01</span></div>
+    <div class="m-nav">
+      <span class="logo">SAMPLE ESTHE SALON</span>
+      <ul><li>ABOUT</li><li>SNS</li><li>CONTACT</li></ul>
+      <span class="cta">ご予約</span>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">MV-01</span></div>
+    <div class="m-hero" data-hero="band">
+      <h1 class="catch">素肌から、自信を。</h1>
+      <p class="lead">丁寧なカウンセリングと確かな技術で、あなたの「なりたい」に寄り添うエステサロンです。</p>
+      <span class="hero-cta">ご予約はこちら ＞</span>
+      <span class="atari-tag">📷 アタリ: 施術シーンの全幅ビジュアル / 検索: esthetic salon interior</span>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">ABOUT-01</span></div>
+    <div class="m-sec band">
+      <h2>ABOUT</h2><div class="en">サロンについて</div>
+      <div class="m-about img-top">
+        <div class="atari"><span class="ic">📷</span><span class="desc">明るい施術ルームの横長写真</span><span class="kw">検索: <b>esthetic room bright</b></span></div>
+        <div class="txt">
+          <h3>一人ひとりの肌と向き合う</h3>
+          <p>肌質・お悩み・ライフスタイルをうかがい、無理のないプランをご提案します。<span class="todo">(要検討: 使用機器・在籍年数など信頼の一文)</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">SNS-01</span></div>
+    <div class="m-sec">
+      <h2>SNS</h2><div class="en">お客様の声・Instagram</div>
+      <div class="m-sns sns-cards">
+        <div class="sns-card"><div class="atari"><span class="ic">📷</span><span class="desc">投稿①</span></div><div class="cap">2026.07.20 ・ 30代 女性</div><p>肌の調子が整い、化粧のりが良くなりました。</p></div>
+        <div class="sns-card"><div class="atari"><span class="ic">📷</span><span class="desc">投稿②</span></div><div class="cap">2026.07.14 ・ 40代 女性</div><p>丁寧なカウンセリングで安心して通えます。</p></div>
+        <div class="sns-card"><div class="atari"><span class="ic">📷</span><span class="desc">投稿③</span></div><div class="cap">2026.07.02 ・ 20代 女性</div><p>店内が清潔でリラックスできました。</p></div>
+      </div>
+      <div class="sec-more"><a class="sec-more-btn" href="#">投稿をもっと見る ＞</a></div>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">CTA-01</span></div>
+    <div class="m-cta">
+      <h2>ご予約・お問い合わせ</h2>
+      <p>初回カウンセリングは無料です。お気軽にご相談ください。</p>
+      <span class="cta-btn">ご予約・お問い合わせ</span>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">FOOTER-01</span></div>
+    <div class="m-foot">
+      <div class="fnav">ABOUT ・ SNS ・ CONTACT<br>© SAMPLE ESTHE SALON</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
+    var io = new IntersectionObserver(function (ens) { ens.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } }); }, { threshold: .12 });
+    els.forEach(function (e) { io.observe(e); });
+  })();
+</script>
+
+</body>
+</html>
