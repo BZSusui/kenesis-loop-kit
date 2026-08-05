@@ -45,7 +45,7 @@ def _seg(start, end):
 
 
 def parse_sns_pool():
-    seg = _seg("**SNS プール", "**(2) 割り当て表")
+    seg = _seg("**SNS プール", "**NEWS プール")  # KLK-051: NEWS プール表が後続に入るため end を NEWS 手前へ
     seen = []
     for m in re.finditer(r'`(sns-[a-z-]+)`', seg):
         if m.group(1) not in seen:
@@ -54,7 +54,7 @@ def parse_sns_pool():
 
 
 def parse_sns_assign():
-    seg = _seg("**SNS（6型", "**(3) 生成手順")
+    seg = _seg("**SNS（6型", "**NEWS（6型")  # KLK-051: NEWS 割り当て表が後続に入るため end を NEWS 手前へ
     asn = {}
     for m in re.finditer(r'^\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|', seg, re.M):
         o, a, b, c = (int(x) for x in m.groups())

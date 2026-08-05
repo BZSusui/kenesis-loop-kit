@@ -48,13 +48,15 @@ HERO_POOL = ["full", "split", "band", "overlap", "center-scroll", "panel-band"] 
 ABOUT_POOL = ["img-left", "img-right", "img-top", "img-overlap", "img-circle", "img-zigzag"]  # KLK-040: 6型
 MENU_POOL = ["pat-cards", "pat-list", "pat-zigzag", "price-table", "tab-switch", "feature-large"]  # KLK-044/045/046: 6型・price-table/tab-switch/feature-large 新
 SNS_POOL = ["sns-grid", "sns-slider", "sns-cards", "sns-masonry", "sns-reels", "sns-feed"]  # KLK-049/050: 6型（sns-cards=共通カード）
-POOL_1213 = {"HERO": HERO_POOL, "GALLERY": GALLERY_POOL, "ABOUT": ABOUT_POOL, "MENU": MENU_POOL, "SNS": SNS_POOL}
+NEWS_POOL = ["news-list", "news-cards", "news-media", "news-timeline", "news-table", "news-accordion"]  # KLK-051: 6型（news-list=従来default相当・FAQ/PRICE 流用の共通カード/行）
+POOL_1213 = {"HERO": HERO_POOL, "GALLERY": GALLERY_POOL, "ABOUT": ABOUT_POOL, "MENU": MENU_POOL, "SNS": SNS_POOL, "NEWS": NEWS_POOL}
 # 割り当ては型数別 mod。KLK-047 で GALLERY も6型化＝GALLERY/MENU/HERO/ABOUT すべて mod6（§12.1.2 と同値）・SNS は mod3（KLK-049）
 GALLERY_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（KLK-047）
 POOL6_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（HERO/ABOUT）
 MENU_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（KLK-046・POOL6_ASSIGN と同値）
 SNS_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（KLK-050・POOL6_ASSIGN と同値）
-ASSIGN_1213 = {"HERO": POOL6_ASSIGN, "GALLERY": GALLERY_ASSIGN, "ABOUT": POOL6_ASSIGN, "MENU": MENU_ASSIGN, "SNS": SNS_ASSIGN}  # KLK-049: SNS=mod3
+NEWS_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（KLK-051・POOL6_ASSIGN と同値）
+ASSIGN_1213 = {"HERO": POOL6_ASSIGN, "GALLERY": GALLERY_ASSIGN, "ABOUT": POOL6_ASSIGN, "MENU": MENU_ASSIGN, "SNS": SNS_ASSIGN, "NEWS": NEWS_ASSIGN}  # KLK-051: NEWS=mod6
 
 # §12.1.2 型プール・オフセット表・割り当て表（check_klk029.py と同一ミラー）
 POOL = {
