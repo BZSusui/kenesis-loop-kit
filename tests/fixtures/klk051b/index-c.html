@@ -53,6 +53,12 @@
   .m-news .acc summary::after { content: "＋"; color: var(--m-accent); font-size: 16px; }
   .m-news .acc[open] summary::after { content: "−"; }
   .m-news .acc .abody { padding: 0 16px 16px; font-size: 13px; color: #555; }
+  .m-news .acc .abody p { margin: 0 0 10px; line-height: 1.8; }
+  .m-news .acc .abody p:last-child { margin-bottom: 0; }
+  /* 展開本文に画像を入れる場合: 文言の下・横幅600px程度（アタリ色面） */
+  .m-news .acc .abody .news-fig { margin: 14px 0 0; max-width: 600px; }
+  .m-news .acc .abody .news-fig .atari { aspect-ratio: 16 / 9; color: color-mix(in srgb, var(--m-main) 55%, #333); font-size: 12px; padding: 12px; border-radius: 6px; gap: 4px; }
+  .m-news .acc .abody .news-fig figcaption { font-size: 11px; color: #6B7280; margin-top: 6px; }
 
   .m-cta { background: var(--m-main); color: #fff; text-align: center; padding: 42px 22px; }
   .m-cta h2 { font-size: 22px; margin: 0 0 8px; color: #fff; }
@@ -112,15 +118,25 @@
       <div class="m-news news-accordion">
         <details class="acc" open>
           <summary><span>夏季休診のお知らせ（8/12〜8/15）</span><span class="date">2026.07.20</span></summary>
-          <div class="abody">誠に勝手ながら上記期間を休診とさせていただきます。ご不便をおかけしますが何卒ご了承ください。</div>
+          <div class="abody">
+            <p>誠に勝手ながら、下記期間を夏季休診とさせていただきます。ご不便をおかけいたしますが、何卒ご了承くださいますようお願い申し上げます。</p>
+            <p>休診期間: 2026年8月12日（水）〜 8月15日（土）<br>8月17日（月）より通常どおり診療いたします。</p>
+            <p>お薬の処方をご希望の方は、休診前にお早めのご来院をお願いいたします。<span class="todo">(要検討: 緊急時の連絡先)</span></p>
+          </div>
         </details>
-        <details class="acc">
-          <summary><span>オンライン予約システムを導入しました</span><span class="date">2026.07.05</span></summary>
-          <div class="abody">24時間いつでもWebからご予約いただけるようになりました。</div>
+        <details class="acc" open>
+          <summary><span>新しい診療フロアの写真を公開しました</span><span class="date">2026.07.05</span></summary>
+          <div class="abody">
+            <p>リニューアルした2階の診療フロアの様子をご紹介します。明るく落ち着いた内装で、より快適にお過ごしいただける空間になりました。</p>
+            <figure class="news-fig">
+              <div class="atari"><span class="ic">📷</span><span class="desc">新しい診療フロアの写真（横幅600px程度）</span><span class="kw">検索: <b>clinic new floor interior</b></span></div>
+              <figcaption>※ 画像は本文の下・横幅600px程度で挿入します（ここはアタリ表示）。</figcaption>
+            </figure>
+          </div>
         </details>
         <details class="acc">
           <summary><span>土曜午後の診療時間を延長します</span><span class="date">2026.06.18</span></summary>
-          <div class="abody">お仕事帰りにも通いやすくなりました。<span class="todo">(要検討: 詳細時間)</span></div>
+          <div class="abody"><p>お仕事帰りにも通いやすくなりました。<span class="todo">(要検討: 詳細時間)</span></p></div>
         </details>
       </div>
     </div>
