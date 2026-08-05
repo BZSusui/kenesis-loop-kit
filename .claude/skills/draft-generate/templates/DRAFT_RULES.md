@@ -84,7 +84,7 @@
 
 | 順 | KEY | 番地 | 見出し例 | 中身（外部依存ゼロのアタリ＋仮文言） |
 |---|---|---|---|---|
-| 1 | NEWS | `NEWS-01` | お知らせ | 日付つきリスト（仮文言） |
+| 1 | NEWS | `NEWS-01` | お知らせ | 日付つきリスト等のお知らせ（仮文言）。内部型は §12.1.3 プール（6型・KLK-051・list/cards/media/timeline/table/accordion） |
 | 2 | ABOUT | `ABOUT-01` | CONCEPT | アタリ＋紹介文（§3 a方式） |
 | 3 | MENU | `MENU-01` | MENU / SERVICE | カード群（アタリ＋名称＋価格） |
 | 4 | PRICE | `PRICE-01` | PRICE | プラン比較の表（仮） |
@@ -667,7 +667,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 **オフセット表は §12.1.2(2) を共有**（重複定義しない＝ドリフト防止）。割り当てはセクションの型数 N_section に応じた
 巡回窓 `(offset+0, offset+1, offset+2) mod N_section` を**表で読む**（算術で導出しない・書き下した表を読むだけ）。
 
-**(1) セクション別型プール（GALLERY/HERO/ABOUT/MENU/SNS・index0=最頻/従来定番・KLK-036/037/044/049）:**
+**(1) セクション別型プール（GALLERY/HERO/ABOUT/MENU/SNS/NEWS・index0=最頻/従来定番・KLK-036/037/044/049/051）:**
 
 各セクション容器（`.m-gallery`／`.m-hero` の `data-hero`／`.m-about`／`.m-menu`）にプールマーカー1個。各マーカーは**実際に異なる grid/flex 宣言**を
 伴う（飾りにしない）。型数は各セクション独立（§12.1.2 の「3セクション一致（制約A）」とは別系統・GALLERY/MENU=4型・HERO/ABOUT=6型）。
@@ -727,6 +727,17 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 4 | `sns-reels`（KLK-050新・KLK-050調整） | リール/ストーリーズ帯（`display:flex;flex-wrap:nowrap;overflow-x:auto`＋各 `.sns-reel` の `flex:0 0 <幅>`・アタリは**正方 `aspect-ratio:1`**・`🎬` でリール/動画を示す）。近年のリール普及に対応。**モバイルも横スクロール継続** |
 | 5 | `sns-feed`（KLK-050新・KLK-050調整） | 公式埋込ウィジェット風の**投稿カードを横並び3〜4件**（`display:grid;grid-template-columns:repeat(3,1fr)`＋`.sns-post`＝ヘッダ[丸アバター＋ハンドル]＋正方アタリ＋キャプション＋いいね/コメント風アイコン行）。実埋め込みに最も近い見立て（実埋め込みはしない）。モバイル1列 |
 
+**NEWS プール（`.m-news`・KLK-051・6型・mod6。「1カード/行を繰り返す」共通項で FAQ/PRICE へ流用可・各型ともアタリ色面＋仮文言で構成）:**
+
+| index | マーカー | 見た目（実CSS差）／モバイル |
+|---|---|---|
+| 0 | `news-list` | 日付＋カテゴリバッジ＋見出しの行を縦積み（`display:flex;flex-direction:column`＋各行 `border-bottom` の1行リスト）。従来 default 相当・最頻。cat-0017/cat-0039 Schedule 系。モバイルも縦 |
+| 1 | `news-cards`（KLK-051新） | サムネ＋日付＋見出し＋抜粋の**3列カード**（`display:grid;grid-template-columns:repeat(3,1fr)` の `.news-card`＝上アタリ＋日付＋見出し＋短い抜粋）。新着記事/ブログ風。**PRICE のプランカードに流用可**。cat-0039 Nominated 系。モバイル1列 |
+| 2 | `news-media`（KLK-051新） | 画像左＋日付/見出し/抜粋右の**横長メディア行を縦積み**（`display:flex;flex-direction:column`＋各行 `display:grid;grid-template-columns:200px 1fr`＝左アタリ＋右テキスト）。記事一覧/特集風。モバイルは縦積み |
+| 3 | `news-timeline`（KLK-051新） | **縦の時系列**（`display:flex;flex-direction:column`＝左に日付・縦線・ドット＋右に内容。各行 `grid-template-columns:110px 1fr`・左境界に縦ライン）。沿革/更新履歴向け。cat-0039 Schedule 系。モバイルは線を左端へ寄せ縦積み |
+| 4 | `news-table`（KLK-051新） | **日付｜カテゴリ｜見出しの表形式**（`display:grid;grid-template-columns:110px 120px 1fr` の罫線付き行を積む・見出し行＋データ行）。企業IR/お知らせ一覧風。**PRICE の料金表に流用可**。モバイルは横スクロールまたは列縮小 |
+| 5 | `news-accordion`（KLK-051新） | 見出しクリックで本文を開閉（`display:flex;flex-direction:column`＋各項目 `<details><summary>`＝ネイティブ開閉・**最小・外部依存/JSなし**）。**FAQ の Q&A 開閉に流用可**。cat-0039 Awards 系。モバイルも縦 |
+
 **(2) 割り当て表（型数別 mod・offset → 案A/B/C の pool index・オフセット表§12.1.2共有・KLK-040 で型数別に一般化）:**
 
 型数 N のセクションは巡回窓 `(offset+0, offset+1, offset+2) mod N` を読む。offset0→(0,1,2) は全 N で共通（既存不変）。
@@ -781,9 +792,20 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 4 | 4 | 5 | 0 |
 | 5 | 5 | 0 | 1 |
 
-**(3) 生成手順（表を"読むだけ"・GALLERY/HERO/ABOUT/MENU/SNS 共通）:** ① `data-columns`（正規化後）と `navPosition` を確定 → ② §12.1.2 の
-**オフセット表**で offset(0〜5) → ③ 上の **該当セクションの割り当て表**（GALLERY/MENU/HERO/ABOUT/SNS すべて6型・mod6）で (idxA,idxB,idxC) → ④ 各案の該当容器（`.m-gallery`／`.m-hero` の `data-hero`／
-`.m-about`／`.m-menu`／`.m-sns`）に `該当プール[index]` のマーカーを付け、対応 CSS を `<head>` に含める。**HERO は型に整列シグネチャが付随**するので
+**NEWS（6型・mod6・KLK-051。HERO/ABOUT/GALLERY/MENU/SNS の mod6 と同値）:**
+
+| offset | 案A | 案B | 案C |
+|---|---|---|---|
+| 0 | 0 | 1 | 2 |
+| 1 | 1 | 2 | 3 |
+| 2 | 2 | 3 | 4 |
+| 3 | 3 | 4 | 5 |
+| 4 | 4 | 5 | 0 |
+| 5 | 5 | 0 | 1 |
+
+**(3) 生成手順（表を"読むだけ"・GALLERY/HERO/ABOUT/MENU/SNS/NEWS 共通）:** ① `data-columns`（正規化後）と `navPosition` を確定 → ② §12.1.2 の
+**オフセット表**で offset(0〜5) → ③ 上の **該当セクションの割り当て表**（GALLERY/MENU/HERO/ABOUT/SNS/NEWS すべて6型・mod6）で (idxA,idxB,idxC) → ④ 各案の該当容器（`.m-gallery`／`.m-hero` の `data-hero`／
+`.m-about`／`.m-menu`／`.m-sns`／`.m-news`）に `該当プール[index]` のマーカーを付け、対応 CSS を `<head>` に含める。**HERO は型に整列シグネチャが付随**するので
 各案の `.m-hero` 基底に該当型の整列を書く（§12.1 不変条件4・overlap は flex-start/center/left）。archetype の並び順・区切りは §12.1.1 のまま。
 
 **(4) 後方互換・不変（additive）:** 対象セクションが `sections` に無ければ no-op。offset0 は各プール (index0,1,2)＝
