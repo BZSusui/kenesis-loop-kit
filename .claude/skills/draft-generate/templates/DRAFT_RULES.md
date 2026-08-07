@@ -87,7 +87,7 @@
 | 1 | NEWS | `NEWS-01` | お知らせ | 日付つきリスト等のお知らせ（仮文言）。内部型は §12.1.3 プール（6型・KLK-051・list/cards/media/timeline/table/accordion） |
 | 2 | ABOUT | `ABOUT-01` | CONCEPT | アタリ＋紹介文（§3 a方式） |
 | 3 | MENU | `MENU-01` | MENU / SERVICE | カード群（アタリ＋名称＋価格） |
-| 4 | PRICE | `PRICE-01` | PRICE | プラン比較の表（仮） |
+| 4 | PRICE | `PRICE-01` | PRICE | プラン比較の表等（仮文言）。内部型は §12.1.3 プール（6型・KLK-052・table/cards/featured/list/toggle/matrix） |
 | 5 | GALLERY | `GALLERY-01` | GALLERY | アタリのグリッド |
 | 6 | SEARCH | `SEARCH-01` | SEARCH | 条件検索フォーム面（**静的**・入力欄は飾り・送信なし） |
 | 7 | FLOW | `FLOW-01` | FLOW | ステップ ①→②→③ |
@@ -667,7 +667,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 **オフセット表は §12.1.2(2) を共有**（重複定義しない＝ドリフト防止）。割り当てはセクションの型数 N_section に応じた
 巡回窓 `(offset+0, offset+1, offset+2) mod N_section` を**表で読む**（算術で導出しない・書き下した表を読むだけ）。
 
-**(1) セクション別型プール（GALLERY/HERO/ABOUT/MENU/SNS/NEWS・index0=最頻/従来定番・KLK-036/037/044/049/051）:**
+**(1) セクション別型プール（GALLERY/HERO/ABOUT/MENU/SNS/NEWS/PRICE・index0=最頻/従来定番・KLK-036/037/044/049/051/052）:**
 
 各セクション容器（`.m-gallery`／`.m-hero` の `data-hero`／`.m-about`／`.m-menu`）にプールマーカー1個。各マーカーは**実際に異なる grid/flex 宣言**を
 伴う（飾りにしない）。型数は各セクション独立（§12.1.2 の「3セクション一致（制約A）」とは別系統・GALLERY/MENU=4型・HERO/ABOUT=6型）。
@@ -738,6 +738,17 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 4 | `news-table`（KLK-051新） | **日付｜カテゴリ｜見出しの表形式**（`display:grid;grid-template-columns:110px 120px 1fr` の罫線付き行を積む・見出し行＋データ行）。企業IR/お知らせ一覧風。**PRICE の料金表に流用可**。モバイルは横スクロールまたは列縮小 |
 | 5 | `news-accordion`（KLK-051新） | 見出しクリックで本文を開閉（`display:flex;flex-direction:column`＋各項目 `<details><summary>`＝ネイティブ開閉・**最小・外部依存/JSなし**）。**FAQ の Q&A 開閉に流用可**。cat-0039 Awards 系。モバイルも縦 |
 
+**PRICE プール（`.m-price`・KLK-052・6型・mod6。NEWS/MENU の「表・カード・リスト・タブ切替・強調」を積極流用・各型ともアタリ色面＋仮文言）:**
+
+| index | マーカー | 見た目（実CSS差）／モバイル |
+|---|---|---|
+| 0 | `price-table` | 項目｜内容｜料金の**表形式**（`display:grid;grid-template-columns:<項目 内容 料金>` の罫線付き行を積む。見出し行＋データ行）。現行 default「プラン比較の表」相当・最頻。NEWS news-table／MENU 価格表型と同機構。cat-0038 料金表/cat-0051 系。モバイルは横スクロールまたは列縮小 |
+| 1 | `price-cards` | プラン比較の**3列カード**（`display:grid;grid-template-columns:repeat(3,1fr)` の `.price-card`＝プラン名＋価格＋含まれる項目リスト＋申込ボタン。松竹梅）。NEWS news-cards／MENU pat-cards 流用。cat-0033 撮影PLAN/cat-0001 コース3カード/cat-0038 A/B/C。モバイル1列 |
+| 2 | `price-featured`（KLK-052新） | 3プランのうち**中央を一段大きく強調**（`display:grid;grid-template-columns:1fr 1.3fr 1fr;align-items:center` で中央カードを拡大＋「おすすめ/人気No.1」バッジ）。看板プランを目立たせる型。MENU feature-large の強調思想＋cards。cat-0038 Bプラン「人気No.1」。モバイルは縦積み（強調カードを先頭） |
+| 3 | `price-list` | 「**項目 …… ¥価格**」の**シンプルな縦リスト**（`display:flex;flex-direction:column`＋各行 `display:flex;justify-content:space-between` の左項目・右価格）。NEWS news-list／MENU pat-list 流用。cat-0038 各種プラン/cat-0014 お品書き。モバイルも縦 |
+| 4 | `price-toggle`（KLK-052新） | 月額/年額・A/B 等を**タブで切替**（`display:flex;flex-direction:column`＝上部タブ行＋下部に**タブごとの料金パネル** `grid-template-columns:repeat(3,1fr)` 等）。**クリックで切替（最小インライン JS・外部依存なし。各パネル既定 `display:none`・active のみ表示・`data-tab`/`data-panel` 対応・MENU tab-switch と同型）**。cat-0038 料金表A/B。モバイルはタブ横スクロール・パネル1列 |
+| 5 | `price-matrix`（KLK-052新） | **プラン×機能の比較マトリクス**（`display:grid;grid-template-columns:<機能列＋プラン列×N>` の◯×/数値セル。横にプラン・縦に項目・ヘッダ行＋機能行）。詳細比較向け（SaaS/サービスの定番）。news-table を列方向に拡張。モバイルは横スクロール |
+
 **(2) 割り当て表（型数別 mod・offset → 案A/B/C の pool index・オフセット表§12.1.2共有・KLK-040 で型数別に一般化）:**
 
 型数 N のセクションは巡回窓 `(offset+0, offset+1, offset+2) mod N` を読む。offset0→(0,1,2) は全 N で共通（既存不変）。
@@ -803,9 +814,20 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 4 | 4 | 5 | 0 |
 | 5 | 5 | 0 | 1 |
 
-**(3) 生成手順（表を"読むだけ"・GALLERY/HERO/ABOUT/MENU/SNS/NEWS 共通）:** ① `data-columns`（正規化後）と `navPosition` を確定 → ② §12.1.2 の
-**オフセット表**で offset(0〜5) → ③ 上の **該当セクションの割り当て表**（GALLERY/MENU/HERO/ABOUT/SNS/NEWS すべて6型・mod6）で (idxA,idxB,idxC) → ④ 各案の該当容器（`.m-gallery`／`.m-hero` の `data-hero`／
-`.m-about`／`.m-menu`／`.m-sns`／`.m-news`）に `該当プール[index]` のマーカーを付け、対応 CSS を `<head>` に含める。**HERO は型に整列シグネチャが付随**するので
+**PRICE（6型・mod6・KLK-052。HERO/ABOUT/GALLERY/MENU/SNS/NEWS の mod6 と同値）:**
+
+| offset | 案A | 案B | 案C |
+|---|---|---|---|
+| 0 | 0 | 1 | 2 |
+| 1 | 1 | 2 | 3 |
+| 2 | 2 | 3 | 4 |
+| 3 | 3 | 4 | 5 |
+| 4 | 4 | 5 | 0 |
+| 5 | 5 | 0 | 1 |
+
+**(3) 生成手順（表を"読むだけ"・GALLERY/HERO/ABOUT/MENU/SNS/NEWS/PRICE 共通）:** ① `data-columns`（正規化後）と `navPosition` を確定 → ② §12.1.2 の
+**オフセット表**で offset(0〜5) → ③ 上の **該当セクションの割り当て表**（GALLERY/MENU/HERO/ABOUT/SNS/NEWS/PRICE すべて6型・mod6）で (idxA,idxB,idxC) → ④ 各案の該当容器（`.m-gallery`／`.m-hero` の `data-hero`／
+`.m-about`／`.m-menu`／`.m-sns`／`.m-news`／`.m-price`）に `該当プール[index]` のマーカーを付け、対応 CSS を `<head>` に含める。**HERO は型に整列シグネチャが付随**するので
 各案の `.m-hero` 基底に該当型の整列を書く（§12.1 不変条件4・overlap は flex-start/center/left）。archetype の並び順・区切りは §12.1.1 のまま。
 
 **(4) 後方互換・不変（additive）:** 対象セクションが `sections` に無ければ no-op。offset0 は各プール (index0,1,2)＝

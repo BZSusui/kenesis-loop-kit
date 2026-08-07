@@ -45,7 +45,7 @@ def _seg(start, end):
 
 
 def parse_news_pool():
-    seg = _seg("**NEWS プール", "**(2) 割り当て表")
+    seg = _seg("**NEWS プール", "**PRICE プール")  # KLK-052: PRICE プール表が後続に入るため end を PRICE 手前へ
     seen = []
     for m in re.finditer(r'`(news-[a-z-]+)`', seg):
         if m.group(1) not in seen:
@@ -54,7 +54,7 @@ def parse_news_pool():
 
 
 def parse_news_assign():
-    seg = _seg("**NEWS（6型", "**(3) 生成手順")
+    seg = _seg("**NEWS（6型", "**PRICE（6型")  # KLK-052: PRICE 割り当て表が後続に入るため end を PRICE 手前へ
     asn = {}
     for m in re.finditer(r'^\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|', seg, re.M):
         o, a, b, c = (int(x) for x in m.groups())
