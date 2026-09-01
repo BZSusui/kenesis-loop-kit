@@ -1,0 +1,16 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": { "project": "サンプルスクール", "createdAt": "2026-08-17T15:30:00.000Z", "source": "SCR-001", "note": "CTA マルチボタン整列デモ: 案A=4ボタンgrid2／案B=1ボタンsingle／案C=2ボタン長文stack。§4.4・KLK-058" },
+  "industry": { "preset": "スクール", "custom": "", "resolved": "スクール" },
+  "layout": { "columns": "1col", "navPosition": "top" },
+  "sections": ["CTA"],
+  "sectionOptions": {
+    "CTA": { "buttons": [ { "label": "資料請求", "purpose": "document" }, { "label": "無料体験", "purpose": "signup" }, { "label": "説明会予約", "purpose": "reserve" }, { "label": "お問い合わせ", "purpose": "contact" } ] }
+  },
+  "taste": "親しみ・前向き",
+  "colors": { "mode": "explicit", "main": "#2c5f8a", "sub": "#22475f", "accent": "#c6a15b", "bg": "#f5f7f8", "autofill": [] },
+  "references": { "thumbnails": [], "sampleUrls": [] },
+  "atari": "standard",
+  "output": { "variants": 3, "mobile": { "enabled": false, "widthPx": 375 }, "animation": true }
+}

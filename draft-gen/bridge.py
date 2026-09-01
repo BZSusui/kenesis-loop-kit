@@ -166,6 +166,28 @@ def validate_instruction(obj):
                         if not isinstance(label, str) or len(label) > 40 \
                                 or any(ord(ch) < 32 for ch in label):
                             errors.append("sectionOptions.CTA.label が不正です(40字以内・制御文字不可)")
+                    # KLK-058 §4.4: CTA マルチボタン。buttons=1〜4個の配列。各要素 {label(必須,40字), purpose?(6種) または href?(相対/#のみ)}。
+                    buttons = opt.get("buttons")
+                    if buttons is not None:
+                        if not isinstance(buttons, list) or not (1 <= len(buttons) <= 4):
+                            errors.append("sectionOptions.CTA.buttons は1〜4個の配列である必要があります")
+                        else:
+                            for b in buttons:
+                                if not isinstance(b, dict):
+                                    errors.append("sectionOptions.CTA.buttons の要素はオブジェクトである必要があります")
+                                    continue
+                                b_label = b.get("label")
+                                if not isinstance(b_label, str) or not b_label.strip() \
+                                        or len(b_label) > 40 or any(ord(ch) < 32 for ch in b_label):
+                                    errors.append("sectionOptions.CTA.buttons[].label が不正です(必須・40字以内・制御文字不可)")
+                                b_purpose = b.get("purpose")
+                                if b_purpose is not None and b_purpose not in CTA_PURPOSES:
+                                    errors.append("sectionOptions.CTA.buttons[].purpose が未対応の値です")
+                                b_href = b.get("href")
+                                if b_href is not None:
+                                    if not isinstance(b_href, str) or any(ord(ch) < 32 for ch in b_href) \
+                                            or re.match(r'^\s*(?:https?:|//|javascript:|data:|vbscript:)', b_href, re.I):
+                                        errors.append("sectionOptions.CTA.buttons[].href が不正です(相対/# のみ・外部URL/危険スキーム不可)")
                 # KLK-027 §4.2: 見出し/リードは全セクション共通の任意キー(存在時のみ検証・CTA とも併用可)。
                 # heading は1行(制御文字不可)・lead は改行(\n)のみ許可。
                 heading = opt.get("heading")

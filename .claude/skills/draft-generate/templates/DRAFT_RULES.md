@@ -96,7 +96,7 @@
 | 10 | FAQ | `FAQ-01` | FAQ | Q&A 積み上げ等（抜粋→誘導文）。内部型は §12.1.3 プール（6型・KLK-053・list/accordion/two-col/cards/category-tabs/search） |
 | 11 | SNS | `SNS-01` | SNS | フィード/投稿の**アタリ面**（**実埋め込み禁止**・外部URL 0・NFR-005）。内部型は §12.1.3 プール（6型・KLK-049/050） |
 | 12 | ACCESS | `ACCESS-01` | ACCESS | 地図の**アタリ面**（実地図禁止）＋住所・営業時間。内部型は §12.1.3 プール（6型・KLK-054・side/top/overlay/hours/cards/steps・全型に地図アタリ内包） |
-| 13 | CTA | `CTA-01` | （誘導） | 見出し＋ひとこと＋ボタン（**目的で文言可変**・下記） |
+| 13 | CTA | `CTA-01` | （誘導） | 見出し＋ひとこと＋ボタン（**目的で文言可変**・下記）。ボタンは1〜4個＋文字数で自動整列（§4.4・KLK-058） |
 | 14 | CONTACT | `CONTACT-01` | CONTACT | お問い合わせ誘導（ボタン/リンク）。内部型は §12.1.3 プール（6型・KLK-055・cta/form/split/methods/banner/steps・フォームは静的アタリ） |
 
 - **並び順**: v1 は上の canonical 順のうち**選ばれた分だけ**。案ごとの並び替え・型振りは KLK-023。
@@ -234,6 +234,22 @@
   `--m-main` を使うので配色は案ごとに追従する。
 - **後方互換**: `moreLink` が無い sectionOptions は従来どおり（CTA の `purpose`/`label`・`heading`/`lead` と独立に併用可）。
   部分再生成（§14）でも該当 `sectionOptions.moreLink` を尊重する。
+
+### 4.4 CTA マルチボタンと自動整列（KLK-058・`sectionOptions.CTA.buttons`・1〜4個・文字数で整列）
+
+CTA はレイアウト差異が小さいため §12.1.3 の6型プールは設けず、**ボタン数（1〜4）と文字数による整列**を可変点とする。基本構成（見出し＋説明文＋ボタン群）は不変。
+
+- **データ（後方互換）**: `sectionOptions.CTA.buttons` ＝ **1〜4個の配列**。各要素 `{ label（必須・40字・1行）, purpose?（§2.1 の6種）または href?（相対/#のみ・外部URL/危険スキーム不可） }`。**`buttons` が無ければ従来どおり単一ボタン**（`purpose`/`label`）。bridge が検証する（`buttons` 1〜4・各 label 40字・purpose enum・href 相対）。
+- **整列の決定（生成時に各 label の文字数で決める・算術は単純比較のみ・静的/JSなし）**: ボタン群を `<div class="cta-btns {marker}">` で包み、各ボタンは `<a class="cta-btn" href="#">`（長文ボタンには `wide` を付す）。CSS grid で実装。
+  - **`single`**（1個）: 中央1つ。
+  - **`row`**（横並び）: 2個通常・3個で全て短く同程度・4個で全て短い。`grid-auto-flow:column`。
+  - **`stack`**（縦2段）: 2個で両方長文。`grid-template-columns:1fr`。
+  - **`two-plus-one`**（3個で1つだけ明らかに長文）: `grid-template-columns:1fr 1fr`＝上に短い2個、**長文1個に `wide`（`grid-column:1/-1`）を付け全幅**（＝短2列と同じ横幅で下段）。
+  - **`grid2`**（4個の既定）: `grid-template-columns:1fr 1fr` の2×2。
+- **「長文」判定**: あるラベルの文字数が **他ボタンの最長の約1.4倍以上**（相対）＝「明らかに長文」。補助として絶対閾値（全角**約12字以上＝長／約8字以下＝短**）も用いる。しきい値は目視で調整可。
+- **モバイル**: `row`/`grid2`/`two-plus-one` とも1列縦積みへ。**ボタンは静的アタリ**（実送信・`<form action>`・外部URL・iframe なし・href は相対/#・NFR-005）。
+- **配色/複数案**: `.cta-btn` は `--m-accent`、CTA 帯は `--m-main` を使い案ごとに追従。`variants≥2` でも buttons 構成は全案同じ（配色のみ案別）。
+- 代表出力（ゴールデン）: `tests/fixtures/klk058/`（row(2)/row(3)/two-plus-one）／`tests/fixtures/klk058b/`（grid2(4)/single(1)/stack(2長文)）。
 
 ---
 
