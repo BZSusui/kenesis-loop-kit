@@ -1,0 +1,16 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": { "project": "サンプルカフェ", "createdAt": "2026-08-17T11:30:00.000Z", "source": "SCR-001" },
+  "industry": { "preset": "カフェ・飲食店", "custom": "", "resolved": "カフェ・飲食店" },
+  "layout": { "columns": "1col", "navPosition": "below-hero" },
+  "sections": ["ACCESS", "CTA"],
+  "sectionOptions": {
+    "CTA": { "purpose": "reserve", "label": "ご予約・お問い合わせ" }
+  },
+  "taste": "あたたか・落ち着き",
+  "colors": { "mode": "explicit", "main": "#2c5f8a", "sub": "#22475f", "accent": "#c6a15b", "bg": "#f5f7f8", "autofill": [] },
+  "references": { "thumbnails": [], "sampleUrls": [] },
+  "atari": "standard",
+  "output": { "variants": 3, "mobile": { "enabled": false, "widthPx": 375 }, "animation": true }
+}

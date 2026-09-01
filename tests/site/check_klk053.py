@@ -45,7 +45,7 @@ def _seg(start, end):
 
 
 def parse_faq_pool():
-    seg = _seg("**FAQ プール", "**(2) 割り当て表")
+    seg = _seg("**FAQ プール", "**ACCESS プール")  # KLK-054: ACCESS プール表が後続に入るため end を ACCESS 手前へ
     seen = []
     for m in re.finditer(r'`(faq-[a-z-]+)`', seg):
         if m.group(1) not in seen:
@@ -54,7 +54,7 @@ def parse_faq_pool():
 
 
 def parse_faq_assign():
-    seg = _seg("**FAQ（6型", "**(3) 生成手順")
+    seg = _seg("**FAQ（6型", "**ACCESS（6型")  # KLK-054: ACCESS 割り当て表が後続に入るため end を ACCESS 手前へ
     asn = {}
     for m in re.finditer(r'^\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|', seg, re.M):
         o, a, b, c = (int(x) for x in m.groups())
