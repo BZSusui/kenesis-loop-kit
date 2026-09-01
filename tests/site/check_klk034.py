@@ -54,6 +54,7 @@ FAQ_POOL = ["faq-list", "faq-accordion", "faq-two-col", "faq-cards", "faq-catego
 ACCESS_POOL = ["map-side", "map-top", "map-overlay", "map-hours", "map-cards", "map-steps"]  # KLK-054: 6型（全型に地図アタリ内包・map-side=従来default相当・ABOUT/overlap/table/cards/flow 流用）
 CONTACT_POOL = ["contact-cta", "contact-form", "contact-split", "contact-methods", "contact-banner", "contact-steps"]  # KLK-055: 6型（フォームは静的アタリ・contact-cta=従来default相当・band/grid/cards/flow 流用）
 SEARCH_POOL = ["search-bar", "search-keywords", "search-filters", "search-sidebar", "search-header", "search-hero"]  # KLK-056: 6型（入力は静的アタリ・search-bar=従来default相当・①コンテンツ4＋②小型窓[header/HERO]2。旧 search-footer は search-hero へ差し替え）
+HERO_SEARCH_TYPES = ["full", "center-scroll", "overlap", "panel-band"]  # KLK-057: HERO 埋め込み検索窓の対応4型（§12.1.3(7)・SEARCH選択時に .hero-search を .m-hero へ埋め込み・split/band は非対応）
 POOL_1213 = {"HERO": HERO_POOL, "GALLERY": GALLERY_POOL, "ABOUT": ABOUT_POOL, "MENU": MENU_POOL, "SNS": SNS_POOL, "NEWS": NEWS_POOL, "PRICE": PRICE_POOL, "FAQ": FAQ_POOL, "ACCESS": ACCESS_POOL, "CONTACT": CONTACT_POOL, "SEARCH": SEARCH_POOL}
 # 割り当ては型数別 mod。KLK-047 で GALLERY も6型化＝GALLERY/MENU/HERO/ABOUT すべて mod6（§12.1.2 と同値）・SNS は mod3（KLK-049）
 GALLERY_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（KLK-047）

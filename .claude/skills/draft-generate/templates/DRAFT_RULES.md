@@ -89,7 +89,7 @@
 | 3 | MENU | `MENU-01` | MENU / SERVICE | カード群（アタリ＋名称＋価格） |
 | 4 | PRICE | `PRICE-01` | PRICE | プラン比較の表等（仮文言）。内部型は §12.1.3 プール（6型・KLK-052・table/cards/featured/list/toggle/matrix） |
 | 5 | GALLERY | `GALLERY-01` | GALLERY | アタリのグリッド |
-| 6 | SEARCH | `SEARCH-01` | SEARCH | 条件検索フォーム面（**静的**・入力欄は飾り・送信なし）。内部型は §12.1.3 プール（6型・KLK-056・bar/keywords/filters/sidebar/header/hero） |
+| 6 | SEARCH | `SEARCH-01` | SEARCH | 条件検索フォーム面（**静的**・入力欄は飾り・送信なし）。内部型は §12.1.3 プール（6型・KLK-056・bar/keywords/filters/sidebar/header/hero）。**SEARCH 選択時は §12.1.3(7) で HERO（対応型）または NAV-01（バー型）内へ検索窓を実埋め込みし本セクションは一本化（KLK-057）** |
 | 7 | FLOW | `FLOW-01` | FLOW | ステップ ①→②→③ |
 | 8 | VOICE | `VOICE-01` | VOICE | お客様の声カード（アタリ＋コメント） |
 | 9 | STAFF | `STAFF-01` | STAFF | 人物カード（アタリ＋肩書） |
@@ -931,6 +931,20 @@ KLK-044 で **MENU も §12.1.3 へ移譲**したため、§12.2 の §12.1.1 �
 
 - 代表出力（ゴールデン）: `tests/fixtures/klk036/index-a/b/c.html`（offset3 → 案A=`pat-slider`/`overlap`/`img-overlap`(index3)／
   案B=index0／案C=index1）で GALLERY/HERO/ABOUT の index3 新型の到達と実CSS差を固定。**MENU は `tests/fixtures/klk044/`（offset3 → 案A=`price-table`(index3)／案B=`pat-cards`／案C=`pat-list`）で実証**。offset0 の (0,1,2) は既存 klk023/034 で担保。
+
+**(7) HERO / NAV 埋め込み検索窓（KLK-057・SEARCH 連動・方式B 条件レンダリング・additive）:**
+
+SEARCH を選んだとき、独立した SEARCH セクションではなく **HERO（メインビジュアル）または NAV（グローバルナビ）内に検索窓を実埋め込み**する。
+
+- **検索窓の配置優先（重複させない・SEARCH ∈ sections のとき）**:
+  1. **HERO 対応型** `full` / `center-scroll` / `overlap` / `panel-band` → **HERO 内に埋め込み**（prominent）。`.m-hero` 内に **`.hero-search`**（`.hs-input` 入力アタリ＋`.hs-btn` 🔍ボタン）を出力し `.m-hero` に **`data-hero-search="on"`**。
+  2. HERO が非対応（`split` / `band` 等）→ **NAV-01 内に埋め込み**（バー型ナビは総じて適用可）。`.m-nav` 内・CTA/カートボタンの左隣に **`.nav-search`**（`.ns-input`＋`.ns-btn`）を出力し `.m-nav` に **`data-nav-search="on"`**。
+  3. HERO/NAV いずれにも置けない特殊ケースのみ → 独立 `SEARCH-01` セクション（§12.1.3 SEARCH プール・KLK-056）。※SEARCH プール（KLK-056）はコンテンツとして検索を大きく見せたい場合の**明示指定**用として引き続き有効。
+  いずれの埋め込みでも、**独立 `SEARCH-01` セクションは出力しない**（一本化）。
+- **未選択（非生成）**: `sections` に SEARCH が無ければ `.hero-search`・`.nav-search` とも**出力しない**（コメントアウトではなく非生成。NAV/HERO は従来どおり）。
+- 検索窓は**静的アタリ**（実送信・`<form action>`・外部URL・iframe なし・NFR-005）。`.hero-search` は白いピル（入力＋🔍ボタン）を各型の自然な位置（full/center-scroll＝キャッチ下中央・overlap＝白背景文言内・panel-band＝見出し下）、`.nav-search` はナビ右側・CTA の左隣にコンパクトに置く。
+- **出力に仕組みの説明文を含めない**: 「非生成」「フォールバック」等の**デモ/内部挙動の説明はキャプションに出さない**（本文は業種に合った自然な文言のみ。プレースホルダである旨の最小注記は §3 アタリ方針に準ずる）。
+- 代表出力（ゴールデン）: `tests/fixtures/klk057/`（HERO 埋め込みON: full/center-scroll/overlap）／`tests/fixtures/klk057b/`（panel-band HERO 埋め込み／SEARCH 未選択で非生成／split で NAV-01 埋め込み）。
 
 ### 12.2 参考準拠レイアウト（KLK-034・席替え規則・§12.1.1/§12.1.2 と直交・additive）
 
