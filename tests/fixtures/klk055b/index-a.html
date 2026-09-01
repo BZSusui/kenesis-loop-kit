@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<!--
+  KLK-055 副ゴールデン（CONTACT §12.1.3 プール・案A / letter=a）— 1col×below-hero→offset3→(3,4,5)
+  offset3→CONTACT 各 index(3,4,5)：案A=contact-methods・案B=contact-banner・案C=contact-steps（新型3種の実CSS差を実演）。
+  HERO は offset3 の index3＝overlap。nav は below-hero。フォームは .c-field（アタリ・実送信なし・外部URL/iframe なし・NFR-005）。
+  これはテスト検証用のプレースホルダ出力です。実在の顧客・案件ではありません（サンプル）。
+  案件名: サンプル工務店 / カラム: 1col / nav: below-hero / archetype=stack-centered / CONTACT=contact-methods(index3)
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>サンプル工務店 | デザインラフ 案A（offset3）</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Hiragino Sans", "Yu Gothic", system-ui, sans-serif; line-height: 1.7; }
+  .mock { --m-main: #2c5f8a; --m-nav: #22475f; --m-accent: #c6a15b; --m-bg: #f5f7f8; --m-text: #33383d; background: var(--m-bg); color: var(--m-text); overflow: hidden; position: relative; }
+  .sec { position: relative; }
+  .addr { position: absolute; top: 8px; left: 8px; z-index: 5; display: inline-flex; gap: 6px; align-items: center; }
+  .addr .pin { background: rgba(17,24,39,.82); color: #fff; font-size: 10px; letter-spacing: .04em; padding: 2px 7px; border-radius: 4px; font-family: ui-monospace, monospace; }
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+  .m-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 22px; background: var(--m-nav); color: #fff; }
+  .m-nav .logo { font-size: 17px; font-weight: 700; letter-spacing: .08em; }
+  .m-nav ul { display: flex; gap: 16px; list-style: none; margin: 0; padding: 0; font-size: 12px; }
+  .m-nav .cta { background: var(--m-accent); color: #fff; padding: 6px 14px; border-radius: 4px; font-size: 12px; }
+
+  /* HERO 型: overlap（せり出し横長画像＋白背景文言の重なり・整列 flex-start/center/left・index3。白背景≈全体の45%） */
+  .m-hero { display: grid; grid-template-columns: 1fr 1.2fr; justify-content: flex-start; align-items: center; text-align: left; min-height: 360px; background: var(--m-bg); position: relative; }
+  .m-hero .hbg { grid-column: 2; grid-row: 1; min-height: 340px; border-radius: 0;
+    background: linear-gradient(rgba(34,71,95,.25), rgba(34,71,95,.25)), repeating-linear-gradient(45deg, var(--m-main), var(--m-main) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 28px); }
+  .m-hero .htxt { grid-column: 1; grid-row: 1; background: #fff; padding: 26px 24px; box-shadow: 0 8px 30px rgba(0,0,0,.14); transform: translateX(30px); z-index: 2; }
+  .m-hero .catch { font-size: 26px; font-weight: 700; letter-spacing: .06em; margin: 0 0 12px; color: var(--m-main); }
+  .m-hero .lead { font-size: 13.5px; margin: 0 0 18px; }
+  .m-hero .hero-cta { display: inline-block; background: var(--m-accent); color: #fff; padding: 11px 24px; border-radius: 4px; font-size: 13.5px; }
+  .atari-tag { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 10px; padding: 3px 8px; border-radius: 4px; }
+
+  .m-sec { padding: 40px 24px; max-width: 940px; margin: 0 auto; }
+  .m-sec h2 { text-align: center; font-size: 22px; letter-spacing: .1em; margin: 0 0 4px; color: var(--m-main); }
+  .m-sec .en { text-align: center; font-size: 11px; letter-spacing: .3em; color: var(--m-accent); margin-bottom: 22px; font-family: ui-monospace, monospace; }
+  .todo { color: #B54; background: #FFF0F0; border: 1px dashed #E39; border-radius: 4px; padding: 1px 6px; font-size: 12.5px; }
+
+  /* CONTACT 型: contact-methods（連絡手段を3〜4カード・§12.1.3 index3・KLK-055。選択式導線） */
+  .m-contact.contact-methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .m-contact .contact-card { border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; padding: 24px 16px; text-align: center; }
+  .m-contact .contact-card .ic { font-size: 28px; }
+  .m-contact .contact-card h3 { font-size: 14px; color: var(--m-main); margin: 10px 0 6px; }
+  .m-contact .contact-card p { font-size: 12px; color: #555; margin: 0 0 12px; }
+  .m-contact .contact-card .cm-btn { display: inline-block; background: var(--m-accent); color: #fff; padding: 9px 22px; border-radius: 4px; font-size: 12.5px; font-weight: 700; }
+
+  .m-foot { background: var(--m-nav); color: #fff; text-align: center; padding: 30px 20px; }
+  .m-foot .fnav { font-size: 11px; opacity: .85; }
+
+  @media (max-width: 640px) {
+    .m-nav ul { display: none; }
+    .m-nav::after { content: "\2630"; color: #fff; font-size: 20px; }
+    .m-hero { grid-template-columns: 1fr; }
+    .m-hero .hbg, .m-hero .htxt { grid-column: 1; grid-row: auto; transform: none; }
+    .m-contact.contact-methods { grid-template-columns: 1fr; }
+    .m-sec { padding: 28px 16px; }
+  }
+  @media print {
+    .addr, .atari-tag, .anim-note { display: none !important; }
+    body { background: #fff; }
+    .mock { box-shadow: none; border-radius: 0; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mock" data-columns="1col" data-archetype="stack-centered" data-section-order="CONTACT" data-nav-position="below-hero">
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">MV-01</span></div>
+    <div class="m-hero" data-hero="overlap">
+      <div class="hbg"></div>
+      <div class="htxt">
+        <h1 class="catch">住まいづくりを、まっすぐに。</h1>
+        <p class="lead">地域に根ざした確かな施工。<br>ご相談・お見積りは無料です。</p>
+        <span class="hero-cta">無料相談・お見積り ＞</span>
+      </div>
+      <span class="atari-tag">📷 アタリ: 施工事例のせり出し横長ビジュアル / 検索: house construction</span>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">NAV-01</span></div>
+    <div class="m-nav">
+      <span class="logo">SAMPLE KOMUTEN</span>
+      <ul><li>施工事例</li><li>会社概要</li><li>お問い合わせ</li></ul>
+      <span class="cta">無料相談</span>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">CONTACT-01</span></div>
+    <div class="m-sec" style="background:#fff; margin:40px auto">
+      <h2>お問い合わせ方法</h2><div class="en">CONTACT</div>
+      <div class="m-contact contact-methods">
+        <div class="contact-card"><div class="ic">📞</div><h3>お電話</h3><p>00-0000-0000<br>9:00〜18:00（日祝休）</p><span class="cm-btn">電話をかける</span></div>
+        <div class="contact-card"><div class="ic">✉️</div><h3>メール</h3><p>24時間受付<br>翌営業日までにご返信</p><span class="cm-btn">メールする</span></div>
+        <div class="contact-card"><div class="ic">💬</div><h3>LINE</h3><p>友だち追加で<br>気軽に相談 <span class="todo">(要検討)</span></p><span class="cm-btn">LINEで相談</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">FOOTER-01</span></div>
+    <div class="m-foot">
+      <div class="fnav">施工事例 ・ 会社概要 ・ お問い合わせ<br>© SAMPLE KOMUTEN</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
+    var io = new IntersectionObserver(function (ens) { ens.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } }); }, { threshold: .12 });
+    els.forEach(function (e) { io.observe(e); });
+  })();
+</script>
+
+</body>
+</html>

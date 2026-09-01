@@ -1,0 +1,16 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": { "project": "サンプル工務店", "createdAt": "2026-08-17T12:00:00.000Z", "source": "SCR-001" },
+  "industry": { "preset": "工務店・住宅", "custom": "", "resolved": "工務店・住宅" },
+  "layout": { "columns": "1col", "navPosition": "top" },
+  "sections": ["CONTACT"],
+  "sectionOptions": {
+    "CONTACT": { "moreLink": { "label": "アクセス・地図を見る" } }
+  },
+  "taste": "誠実・信頼",
+  "colors": { "mode": "explicit", "main": "#2c5f8a", "sub": "#22475f", "accent": "#c6a15b", "bg": "#f5f7f8", "autofill": [] },
+  "references": { "thumbnails": [], "sampleUrls": [] },
+  "atari": "standard",
+  "output": { "variants": 3, "mobile": { "enabled": false, "widthPx": 375 }, "animation": true }
+}
