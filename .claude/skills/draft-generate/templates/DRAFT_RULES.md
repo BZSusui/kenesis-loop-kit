@@ -95,7 +95,7 @@
 | 9 | STAFF | `STAFF-01` | STAFF | 人物カード（アタリ＋肩書） |
 | 10 | FAQ | `FAQ-01` | FAQ | Q&A 積み上げ等（抜粋→誘導文）。内部型は §12.1.3 プール（6型・KLK-053・list/accordion/two-col/cards/category-tabs/search） |
 | 11 | SNS | `SNS-01` | SNS | フィード/投稿の**アタリ面**（**実埋め込み禁止**・外部URL 0・NFR-005）。内部型は §12.1.3 プール（6型・KLK-049/050） |
-| 12 | ACCESS | `ACCESS-01` | ACCESS | 地図の**アタリ面**（実地図禁止）＋住所・営業時間 |
+| 12 | ACCESS | `ACCESS-01` | ACCESS | 地図の**アタリ面**（実地図禁止）＋住所・営業時間。内部型は §12.1.3 プール（6型・KLK-054・side/top/overlay/hours/cards/steps・全型に地図アタリ内包） |
 | 13 | CTA | `CTA-01` | （誘導） | 見出し＋ひとこと＋ボタン（**目的で文言可変**・下記） |
 | 14 | CONTACT | `CONTACT-01` | CONTACT | お問い合わせ誘導（ボタン/リンク） |
 
@@ -667,7 +667,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 **オフセット表は §12.1.2(2) を共有**（重複定義しない＝ドリフト防止）。割り当てはセクションの型数 N_section に応じた
 巡回窓 `(offset+0, offset+1, offset+2) mod N_section` を**表で読む**（算術で導出しない・書き下した表を読むだけ）。
 
-**(1) セクション別型プール（GALLERY/HERO/ABOUT/MENU/SNS/NEWS/PRICE/FAQ・index0=最頻/従来定番・KLK-036/037/044/049/051/052/053）:**
+**(1) セクション別型プール（GALLERY/HERO/ABOUT/MENU/SNS/NEWS/PRICE/FAQ/ACCESS・index0=最頻/従来定番・KLK-036/037/044/049/051/052/053/054）:**
 
 各セクション容器（`.m-gallery`／`.m-hero` の `data-hero`／`.m-about`／`.m-menu`）にプールマーカー1個。各マーカーは**実際に異なる grid/flex 宣言**を
 伴う（飾りにしない）。型数は各セクション独立（§12.1.2 の「3セクション一致（制約A）」とは別系統・GALLERY/MENU=4型・HERO/ABOUT=6型）。
@@ -760,6 +760,17 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 4 | `faq-category-tabs`（KLK-053新） | **カテゴリタブ切替**＋各タブにQ&A（`display:flex;flex-direction:column`＝上部タブ行＋下部にタブごとのQ&Aパネル）。**クリックで切替（CSS-only・隠しラジオ＋兄弟結合子・各パネル既定 `display:none`・active のみ表示・外部依存なし。MENU tab-switch／PRICE price-toggle と同型）**。FAQ が多くカテゴリ分けする SaaS/サポート向け。モバイルはタブ横スクロール |
 | 5 | `faq-search`（KLK-053新） | **検索ボックス（静的アタリ・飾り・送信なし）**＋その下にアコーディオンQ&A（`display:flex;flex-direction:column`＝上部に `.faq-searchbar`[入力欄アタリ]＋下部に `<details>` 群）。ヘルプセンター型。**入力欄は飾りで送信・外部依存なし（SEARCH 同様・NFR-005）**。モバイルも縦 |
 
+**ACCESS プール（`.m-access`・KLK-054・6型・mod6。全型に地図アタリ `.map-atari`[イラスト地図/Google Map 埋め込みを想定したプレースホルダ・実地図/実埋め込みなし・外部URL0・NFR-005]を内包・住所/営業時間は仮文言）:**
+
+| index | マーカー | 見た目（実CSS差・地図の扱い）／モバイル |
+|---|---|---|
+| 0 | `map-side` | 地図アタリ＋住所/営業時間の**2カラム**（`display:grid;grid-template-columns:1fr 1fr`＝片側 `.map-atari`・反対側に住所・TEL・営業時間）。現行 default「地図＋住所・営業時間」相当・最頻。ABOUT img-left と同機構。モバイル1列（地図→情報） |
+| 1 | `map-top` | **横長の大きな地図アタリを上**＋下に住所・アクセス情報（`display:flex;flex-direction:column`＝上 `.map-atari`[全幅・`aspect-ratio` 横長]＋下に中央寄せ情報）。cat-0002 下部の全幅地図系。モバイルも縦 |
+| 2 | `map-overlay`（KLK-054新） | **全幅の地図アタリの上に情報カードを重ねる**（`display:grid`＝`.map-atari` を全面に敷き、住所カードを `transform`/`align-self` で重ねる）。モダン・不動産/店舗系。cat-0042 系。モバイルは重なり解除・縦積み |
+| 3 | `map-hours`（KLK-054新） | 地図アタリ＋**営業/診療時間テーブル（曜日×時間）**（`display:grid;grid-template-columns:<地図列 情報列>`＋情報側に `.hours-table`＝曜日ヘッダ×時間帯行の grid 表）。クリニック/店舗向け。PRICE price-table／NEWS news-table と同機構。cat-0002 診療時間表。モバイルは縦積み・表は横スクロール |
+| 4 | `map-cards`（KLK-054新） | **複数店舗を小地図アタリ付きカードで並べる**（`display:grid;grid-template-columns:repeat(3,1fr)` の `.access-card`＝上に小 `.map-atari`＋下に店舗名・住所・TEL）。多店舗/グループ展開。NEWS news-cards／MENU pat-cards 流用。cat-0018 系。モバイル1列 |
+| 5 | `map-steps`（KLK-054新） | 地図アタリ＋**駅からの道順ステップ ①→②→③**（`display:flex;flex-direction:column`＝上 `.map-atari`＋下に `.route-steps`[各ステップ番号＋説明を横並び/縦並び]）。アクセス手順の図解・道案内。FLOW flow-row/flow-timeline と同機構。モバイルは縦積み |
+
 **(2) 割り当て表（型数別 mod・offset → 案A/B/C の pool index・オフセット表§12.1.2共有・KLK-040 で型数別に一般化）:**
 
 型数 N のセクションは巡回窓 `(offset+0, offset+1, offset+2) mod N` を読む。offset0→(0,1,2) は全 N で共通（既存不変）。
@@ -847,9 +858,20 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 4 | 4 | 5 | 0 |
 | 5 | 5 | 0 | 1 |
 
-**(3) 生成手順（表を"読むだけ"・GALLERY/HERO/ABOUT/MENU/SNS/NEWS/PRICE/FAQ 共通）:** ① `data-columns`（正規化後）と `navPosition` を確定 → ② §12.1.2 の
-**オフセット表**で offset(0〜5) → ③ 上の **該当セクションの割り当て表**（GALLERY/MENU/HERO/ABOUT/SNS/NEWS/PRICE/FAQ すべて6型・mod6）で (idxA,idxB,idxC) → ④ 各案の該当容器（`.m-gallery`／`.m-hero` の `data-hero`／
-`.m-about`／`.m-menu`／`.m-sns`／`.m-news`／`.m-price`／`.m-faq`）に `該当プール[index]` のマーカーを付け、対応 CSS を `<head>` に含める。**HERO は型に整列シグネチャが付随**するので
+**ACCESS（6型・mod6・KLK-054。HERO/ABOUT/GALLERY/MENU/SNS/NEWS/PRICE/FAQ の mod6 と同値）:**
+
+| offset | 案A | 案B | 案C |
+|---|---|---|---|
+| 0 | 0 | 1 | 2 |
+| 1 | 1 | 2 | 3 |
+| 2 | 2 | 3 | 4 |
+| 3 | 3 | 4 | 5 |
+| 4 | 4 | 5 | 0 |
+| 5 | 5 | 0 | 1 |
+
+**(3) 生成手順（表を"読むだけ"・GALLERY/HERO/ABOUT/MENU/SNS/NEWS/PRICE/FAQ/ACCESS 共通）:** ① `data-columns`（正規化後）と `navPosition` を確定 → ② §12.1.2 の
+**オフセット表**で offset(0〜5) → ③ 上の **該当セクションの割り当て表**（GALLERY/MENU/HERO/ABOUT/SNS/NEWS/PRICE/FAQ/ACCESS すべて6型・mod6）で (idxA,idxB,idxC) → ④ 各案の該当容器（`.m-gallery`／`.m-hero` の `data-hero`／
+`.m-about`／`.m-menu`／`.m-sns`／`.m-news`／`.m-price`／`.m-faq`／`.m-access`）に `該当プール[index]` のマーカーを付け、対応 CSS を `<head>` に含める。**ACCESS は全型に地図アタリ `.map-atari` を内包**（実地図/実埋め込みなし）。**HERO は型に整列シグネチャが付随**するので
 各案の `.m-hero` 基底に該当型の整列を書く（§12.1 不変条件4・overlap は flex-start/center/left）。archetype の並び順・区切りは §12.1.1 のまま。
 
 **(4) 後方互換・不変（additive）:** 対象セクションが `sections` に無ければ no-op。offset0 は各プール (index0,1,2)＝
