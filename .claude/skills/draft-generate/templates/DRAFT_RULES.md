@@ -89,7 +89,7 @@
 | 3 | MENU | `MENU-01` | MENU / SERVICE | カード群（アタリ＋名称＋価格） |
 | 4 | PRICE | `PRICE-01` | PRICE | プラン比較の表等（仮文言）。内部型は §12.1.3 プール（6型・KLK-052・table/cards/featured/list/toggle/matrix） |
 | 5 | GALLERY | `GALLERY-01` | GALLERY | アタリのグリッド |
-| 6 | SEARCH | `SEARCH-01` | SEARCH | 条件検索フォーム面（**静的**・入力欄は飾り・送信なし） |
+| 6 | SEARCH | `SEARCH-01` | SEARCH | 条件検索フォーム面（**静的**・入力欄は飾り・送信なし）。内部型は §12.1.3 プール（6型・KLK-056・bar/keywords/filters/sidebar/header/hero） |
 | 7 | FLOW | `FLOW-01` | FLOW | ステップ ①→②→③ |
 | 8 | VOICE | `VOICE-01` | VOICE | お客様の声カード（アタリ＋コメント） |
 | 9 | STAFF | `STAFF-01` | STAFF | 人物カード（アタリ＋肩書） |
@@ -667,7 +667,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 **オフセット表は §12.1.2(2) を共有**（重複定義しない＝ドリフト防止）。割り当てはセクションの型数 N_section に応じた
 巡回窓 `(offset+0, offset+1, offset+2) mod N_section` を**表で読む**（算術で導出しない・書き下した表を読むだけ）。
 
-**(1) セクション別型プール（GALLERY/HERO/ABOUT/MENU/SNS/NEWS/PRICE/FAQ/ACCESS/CONTACT・index0=最頻/従来定番・KLK-036/037/044/049/051/052/053/054/055）:**
+**(1) セクション別型プール（GALLERY/HERO/ABOUT/MENU/SNS/NEWS/PRICE/FAQ/ACCESS/CONTACT/SEARCH・index0=最頻/従来定番・KLK-036/037/044/049/051/052/053/054/055/056）:**
 
 各セクション容器（`.m-gallery`／`.m-hero` の `data-hero`／`.m-about`／`.m-menu`）にプールマーカー1個。各マーカーは**実際に異なる grid/flex 宣言**を
 伴う（飾りにしない）。型数は各セクション独立（§12.1.2 の「3セクション一致（制約A）」とは別系統・GALLERY/MENU=4型・HERO/ABOUT=6型）。
@@ -782,6 +782,17 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 4 | `contact-banner`（KLK-055新） | **全幅の色帯に大見出し＋電話番号＋ボタン**（`display:flex;flex-direction:column;align-items:center` の全幅バンド・フォームなし・強い誘導）。電話重視の店舗向け。HERO band/overlay 流用。cat-0028 系。モバイルも縦 |
 | 5 | `contact-steps`（KLK-055新） | **お問い合わせ→ご返信→ご相談の流れステップ**（`display:flex;flex-direction:column`＝`.route-steps` 相当の ①→②→③＋下にフォーム/ボタン）。FLOW flow-row/flow-timeline 流用。cat-0020 ご相談の流れ。モバイルは縦積み |
 
+**SEARCH プール（`.m-search`・KLK-056・6型・mod6。**入力欄は静的アタリ**[飾り・実送信なし・`<form action>`/外部URL/iframe なし・NFR-005]・①コンテンツ展開型4＋②小型窓[配置別]2 の混在）:**
+
+| index | マーカー | 見た目（実CSS差）／モバイル |
+|---|---|---|
+| 0 | `search-bar` | **中央の大きな検索バー**（`display:flex;flex-direction:column;align-items:center`＝入力欄アタリ＋🔍検索ボタン＋ひとこと）。現行 default「条件検索フォーム面」相当・最頻。①コンテンツ。モバイルも縦 |
+| 1 | `search-keywords`（KLK-056新） | **キーワードをボタン化してパネル状に並べる**（`display:flex;flex-wrap:wrap` の `.kw-chip` 群＝タグ/チップをクリック選択風）。ムードジェネレーター的な入口。①コンテンツ。モバイルも wrap |
+| 2 | `search-filters`（KLK-056新・KLK-056調整） | **カテゴリ/エリア/価格などの絞り込みフォーム**（`display:grid;grid-template-columns:repeat(3〜4,1fr)` の各項目が **`<details><summary>` のクリック展開ドロップダウン**＝クリックで選択肢リストが開く・最小/外部依存なし＋検索ボタン）。EC/不動産/求人。①コンテンツ。モバイル1列 |
+| 3 | `search-sidebar`（KLK-056新） | **左に絞り込みナビ＋右に結果カードグリッド**の2カラム（`display:grid;grid-template-columns:220px 1fr`＝左 `.filter-nav`＋右 `.result-grid` の `repeat(3,1fr)`）。EC定番。ABOUT grid＋news-cards 流用。cat-0011 系。①コンテンツ。モバイル1列 |
+| 4 | `search-header`（KLK-056新・KLK-056調整） | **ヘッダー（グローバルナビ）内の小型検索窓**（`display:flex;flex-direction:row;align-items:center` のナビバー＝ロゴ＋メニュー＋**検索窓（入力欄アタリ＋🔍ボタン）をナビ右側「カート」ボタンの左隣に配置**）。ナビ内検索の定番位置。②小型窓(header 想定・入力+ボタン固定)。モバイルは縦 |
+| 5 | `search-hero`（KLK-056新・KLK-056調整。旧 search-footer から差し替え） | **メインビジュアル内に検索窓を配置**（`display:flex;flex-direction:column;align-items:center` の全幅ビジュアル帯＝背景アタリ＋中央にキャッチ＋大きめ検索バー[入力欄アタリ＋🔍ボタン]＋人気キーワード）。旅行/不動産/求人/EC で超定番のヒーロー検索。②小型窓(HERO 内配置)。モバイルも縦 |
+
 **(2) 割り当て表（型数別 mod・offset → 案A/B/C の pool index・オフセット表§12.1.2共有・KLK-040 で型数別に一般化）:**
 
 型数 N のセクションは巡回窓 `(offset+0, offset+1, offset+2) mod N` を読む。offset0→(0,1,2) は全 N で共通（既存不変）。
@@ -891,9 +902,20 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 4 | 4 | 5 | 0 |
 | 5 | 5 | 0 | 1 |
 
-**(3) 生成手順（表を"読むだけ"・GALLERY/HERO/ABOUT/MENU/SNS/NEWS/PRICE/FAQ/ACCESS/CONTACT 共通）:** ① `data-columns`（正規化後）と `navPosition` を確定 → ② §12.1.2 の
-**オフセット表**で offset(0〜5) → ③ 上の **該当セクションの割り当て表**（GALLERY/MENU/HERO/ABOUT/SNS/NEWS/PRICE/FAQ/ACCESS/CONTACT すべて6型・mod6）で (idxA,idxB,idxC) → ④ 各案の該当容器（`.m-gallery`／`.m-hero` の `data-hero`／
-`.m-about`／`.m-menu`／`.m-sns`／`.m-news`／`.m-price`／`.m-faq`／`.m-access`／`.m-contact`）に `該当プール[index]` のマーカーを付け、対応 CSS を `<head>` に含める。**ACCESS は全型に地図アタリ `.map-atari` を内包**（実地図/実埋め込みなし）。**CONTACT のフォームは静的アタリ `.c-field`**（実送信/`<form action>`/外部URL なし）。**HERO は型に整列シグネチャが付随**するので
+**SEARCH（6型・mod6・KLK-056。HERO/ABOUT/GALLERY/MENU/SNS/NEWS/PRICE/FAQ/ACCESS/CONTACT の mod6 と同値）:**
+
+| offset | 案A | 案B | 案C |
+|---|---|---|---|
+| 0 | 0 | 1 | 2 |
+| 1 | 1 | 2 | 3 |
+| 2 | 2 | 3 | 4 |
+| 3 | 3 | 4 | 5 |
+| 4 | 4 | 5 | 0 |
+| 5 | 5 | 0 | 1 |
+
+**(3) 生成手順（表を"読むだけ"・GALLERY/HERO/ABOUT/MENU/SNS/NEWS/PRICE/FAQ/ACCESS/CONTACT/SEARCH 共通）:** ① `data-columns`（正規化後）と `navPosition` を確定 → ② §12.1.2 の
+**オフセット表**で offset(0〜5) → ③ 上の **該当セクションの割り当て表**（GALLERY/MENU/HERO/ABOUT/SNS/NEWS/PRICE/FAQ/ACCESS/CONTACT/SEARCH すべて6型・mod6）で (idxA,idxB,idxC) → ④ 各案の該当容器（`.m-gallery`／`.m-hero` の `data-hero`／
+`.m-about`／`.m-menu`／`.m-sns`／`.m-news`／`.m-price`／`.m-faq`／`.m-access`／`.m-contact`／`.m-search`）に `該当プール[index]` のマーカーを付け、対応 CSS を `<head>` に含める。**ACCESS は全型に地図アタリ `.map-atari` を内包**（実地図/実埋め込みなし）。**CONTACT のフォームは静的アタリ `.c-field`**、**SEARCH の入力欄も静的アタリ**（実送信/`<form action>`/外部URL なし）。**HERO は型に整列シグネチャが付随**するので
 各案の `.m-hero` 基底に該当型の整列を書く（§12.1 不変条件4・overlap は flex-start/center/left）。archetype の並び順・区切りは §12.1.1 のまま。
 
 **(4) 後方互換・不変（additive）:** 対象セクションが `sections` に無ければ no-op。offset0 は各プール (index0,1,2)＝

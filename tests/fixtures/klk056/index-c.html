@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<!--
+  KLK-056 ゴールデン（SEARCH §12.1.3 プール・案C / letter=c）— 1col×top→offset0→(0,1,2)
+  offset0→SEARCH index2＝search-filters（カテゴリ/エリア/価格の絞り込みフォーム横並び＋検索ボタン）。HERO は offset0 の index2＝band。
+  入力/選択は静的アタリ（飾り・実送信なし・<form action>/外部URL/iframe なし・NFR-005）。
+  これはテスト検証用のプレースホルダ出力です。実在の顧客・案件ではありません（サンプル）。
+  案件名: サンプルストア / カラム: 1col / nav: top / archetype=banded-showcase / SEARCH=search-filters(index2)
+  SEARCH moreLink（すべての商品を見る）＝§4.3 .sec-more 併置。
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>サンプルストア | デザインラフ 案C</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Hiragino Sans", "Yu Gothic", system-ui, sans-serif; line-height: 1.7; }
+  .mock { --m-main: #3f8fae; --m-nav: #2c6a83; --m-accent: #e08a3c; --m-bg: #f4fafc; --m-text: #33383d; background: var(--m-bg); color: var(--m-text); overflow: hidden; position: relative; }
+  .sec { position: relative; }
+  .addr { position: absolute; top: 8px; left: 8px; z-index: 5; display: inline-flex; gap: 6px; align-items: center; }
+  .addr .pin { background: rgba(17,24,39,.82); color: #fff; font-size: 10px; letter-spacing: .04em; padding: 2px 7px; border-radius: 4px; font-family: ui-monospace, monospace; }
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+  .m-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 22px; background: var(--m-nav); color: #fff; }
+  .m-nav .logo { font-size: 17px; font-weight: 700; letter-spacing: .08em; }
+  .m-nav ul { display: flex; gap: 16px; list-style: none; margin: 0; padding: 0; font-size: 12px; }
+  .m-nav .cta { background: var(--m-accent); color: #fff; padding: 6px 14px; border-radius: 4px; font-size: 12px; }
+
+  /* HERO 型: band（下寄せ帯・整列 flex-end/flex-start/left・index2） */
+  .m-hero { display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; text-align: left; min-height: 360px; padding: 40px 40px; color: #fff;
+    background: linear-gradient(rgba(44,106,131,.35), rgba(44,106,131,.55)), repeating-linear-gradient(45deg, var(--m-main), var(--m-main) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 14px, color-mix(in srgb, var(--m-main) 88%, #000) 28px); }
+  .m-hero .catch { font-size: 28px; font-weight: 700; letter-spacing: .06em; margin: 0 0 12px; text-shadow: 0 2px 8px rgba(0,0,0,.3); }
+  .m-hero .lead { font-size: 14px; max-width: 520px; margin: 0 0 20px; }
+  .m-hero .hero-cta { background: var(--m-accent); color: #fff; padding: 12px 26px; border-radius: 4px; font-size: 14px; }
+  .atari-tag { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 10px; padding: 3px 8px; border-radius: 4px; }
+
+  .m-sec { padding: 40px 24px; max-width: 940px; margin: 0 auto; }
+  .m-sec h2 { text-align: center; font-size: 22px; letter-spacing: .1em; margin: 0 0 4px; color: var(--m-main); }
+  .m-sec .en { text-align: center; font-size: 11px; letter-spacing: .3em; color: var(--m-accent); margin-bottom: 22px; font-family: ui-monospace, monospace; }
+  .todo { color: #B54; background: #FFF0F0; border: 1px dashed #E39; border-radius: 4px; padding: 1px 6px; font-size: 12.5px; }
+
+  /* SEARCH 型: search-filters（絞り込みフォーム横並び・§12.1.3 index2・KLK-056。各項目は <details> クリック展開ドロップダウン・選択は飾り） */
+  .m-search.search-filters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-items: start; }
+  .m-search .f-field { border: 1px solid #d3d9df; border-radius: 6px; background: #fbfcfd; overflow: hidden; }
+  .m-search .f-field summary { list-style: none; cursor: pointer; padding: 10px 12px; font-size: 12.5px; color: #6b7280; display: flex; justify-content: space-between; align-items: center; }
+  .m-search .f-field summary::-webkit-details-marker { display: none; }
+  .m-search .f-field summary::after { content: "\25BE"; color: var(--m-main); }
+  .m-search .f-field[open] summary::after { content: "\25B4"; }
+  .m-search .f-field summary .f-label { font-weight: 700; color: var(--m-main); }
+  .m-search .f-field .f-options { list-style: none; margin: 0; padding: 4px 0 6px; border-top: 1px solid #eceff2; }
+  .m-search .f-field .f-options li { padding: 7px 14px; font-size: 12px; color: #555; }
+  .m-search .f-field .f-options li.on { color: var(--m-main); font-weight: 700; }
+  .m-search .f-submit { grid-column: 1 / -1; text-align: center; margin-top: 8px; }
+  .m-search .f-submit .s-btn { display: inline-block; background: var(--m-main); color: #fff; padding: 12px 44px; border-radius: 4px; font-size: 14px; font-weight: 700; }
+  .m-search .f-note { grid-column: 1 / -1; text-align: center; font-size: 11px; color: #9aa3ad; }
+
+  /* 詳細誘導ボタン共通規約（§4.3・KLK-048） */
+  .sec-more { text-align: center; margin-top: 40px; }
+  .sec-more .sec-more-btn { display: inline-block; border: 1.5px solid var(--m-main); color: var(--m-main); background: #fff; padding: 11px 30px; border-radius: 24px; font-size: 13px; font-weight: 700; }
+
+  .m-foot { background: var(--m-nav); color: #fff; text-align: center; padding: 30px 20px; }
+  .m-foot .fnav { font-size: 11px; opacity: .85; }
+
+  @media (max-width: 640px) {
+    .m-nav ul { display: none; }
+    .m-nav::after { content: "\2630"; color: #fff; font-size: 20px; }
+    .m-hero .catch { font-size: 24px; }
+    .m-search.search-filters { grid-template-columns: 1fr; }
+    .m-sec { padding: 28px 16px; }
+  }
+  @media print {
+    .addr, .atari-tag, .anim-note { display: none !important; }
+    body { background: #fff; }
+    .mock { box-shadow: none; border-radius: 0; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mock" data-columns="1col" data-archetype="banded-showcase" data-section-order="SEARCH" data-nav-position="top">
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">NAV-01</span></div>
+    <div class="m-nav">
+      <span class="logo">SAMPLE STORE</span>
+      <ul><li>新着</li><li>カテゴリ</li><li>特集</li></ul>
+      <span class="cta">カート</span>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">MV-01</span></div>
+    <div class="m-hero" data-hero="band">
+      <h1 class="catch">暮らしに、ちょうどいいを。</h1>
+      <p class="lead">毎日をすこし豊かにする雑貨をセレクト。条件から絞り込めます。</p>
+      <span class="hero-cta">新着アイテムを見る ＞</span>
+      <span class="atari-tag">📷 アタリ: 商品の下寄せ帯ビジュアル / 検索: lifestyle goods</span>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">SEARCH-01</span></div>
+    <div class="m-sec" style="background:#fff; margin:40px auto">
+      <h2>条件で絞り込む</h2><div class="en">SEARCH</div>
+      <div class="m-search search-filters">
+        <details class="f-field" open><summary><span class="f-label">カテゴリ</span></summary><ul class="f-options"><li class="on">すべて</li><li>キッチン</li><li>インテリア</li><li>ステーショナリー</li><li>ギフト</li></ul></details>
+        <details class="f-field"><summary><span class="f-label">用途・シーン</span></summary><ul class="f-options"><li class="on">指定なし</li><li>普段使い</li><li>来客用</li><li>プレゼント</li></ul></details>
+        <details class="f-field"><summary><span class="f-label">価格帯</span></summary><ul class="f-options"><li class="on">指定なし</li><li>〜1,000円</li><li>1,000〜3,000円</li><li>3,000円〜</li></ul></details>
+        <details class="f-field"><summary><span class="f-label">並び順</span></summary><ul class="f-options"><li class="on">おすすめ順</li><li>新着順</li><li>価格が安い順</li></ul></details>
+        <div class="f-submit"><span class="s-btn">この条件で検索</span></div>
+        <p class="f-note">※ 各項目をクリックすると選択肢が開きます。デザイン確認用のアタリです（実際には絞り込みません） <span class="todo">(要検討: 項目)</span></p>
+      </div>
+      <div class="sec-more"><a class="sec-more-btn" href="#">すべての商品を見る ＞</a></div>
+    </div>
+  </div>
+
+  <div class="sec reveal">
+    <div class="addr"><span class="pin">FOOTER-01</span></div>
+    <div class="m-foot">
+      <div class="fnav">新着 ・ カテゴリ ・ 特集<br>© SAMPLE STORE</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
+    var io = new IntersectionObserver(function (ens) { ens.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } }); }, { threshold: .12 });
+    els.forEach(function (e) { io.observe(e); });
+  })();
+</script>
+
+</body>
+</html>

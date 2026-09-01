@@ -47,7 +47,7 @@ def _seg(start, end):
 
 
 def parse_contact_pool():
-    seg = _seg("**CONTACT プール", "**(2) 割り当て表")
+    seg = _seg("**CONTACT プール", "**SEARCH プール")  # KLK-056: SEARCH プール表が後続に入るため end を SEARCH 手前へ
     seen = []
     for m in re.finditer(r'`(contact-[a-z-]+)`', seg):
         if m.group(1) not in seen:
@@ -56,7 +56,7 @@ def parse_contact_pool():
 
 
 def parse_contact_assign():
-    seg = _seg("**CONTACT（6型", "**(3) 生成手順")
+    seg = _seg("**CONTACT（6型", "**SEARCH（6型")  # KLK-056: SEARCH 割り当て表が後続に入るため end を SEARCH 手前へ
     asn = {}
     for m in re.finditer(r'^\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|', seg, re.M):
         o, a, b, c = (int(x) for x in m.groups())
