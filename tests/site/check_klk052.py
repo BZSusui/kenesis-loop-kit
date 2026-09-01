@@ -45,7 +45,7 @@ def _seg(start, end):
 
 
 def parse_price_pool():
-    seg = _seg("**PRICE プール", "**(2) 割り当て表")
+    seg = _seg("**PRICE プール", "**FAQ プール")  # KLK-053: FAQ プール表が後続に入るため end を FAQ 手前へ
     seen = []
     for m in re.finditer(r'`(price-[a-z-]+)`', seg):
         if m.group(1) not in seen:
@@ -54,7 +54,7 @@ def parse_price_pool():
 
 
 def parse_price_assign():
-    seg = _seg("**PRICE（6型", "**(3) 生成手順")
+    seg = _seg("**PRICE（6型", "**FAQ（6型")  # KLK-053: FAQ 割り当て表が後続に入るため end を FAQ 手前へ
     asn = {}
     for m in re.finditer(r'^\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|', seg, re.M):
         o, a, b, c = (int(x) for x in m.groups())
