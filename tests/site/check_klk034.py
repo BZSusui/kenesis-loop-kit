@@ -53,7 +53,8 @@ PRICE_POOL = ["price-table", "price-cards", "price-featured", "price-list", "pri
 FAQ_POOL = ["faq-list", "faq-accordion", "faq-two-col", "faq-cards", "faq-category-tabs", "faq-search"]  # KLK-053: 6型（faq-list=従来default相当・news-accordion/cards/list・tab-switch 流用）
 ACCESS_POOL = ["map-side", "map-top", "map-overlay", "map-hours", "map-cards", "map-steps"]  # KLK-054: 6型（全型に地図アタリ内包・map-side=従来default相当・ABOUT/overlap/table/cards/flow 流用）
 CONTACT_POOL = ["contact-cta", "contact-form", "contact-split", "contact-methods", "contact-banner", "contact-steps"]  # KLK-055: 6型（フォームは静的アタリ・contact-cta=従来default相当・band/grid/cards/flow 流用）
-POOL_1213 = {"HERO": HERO_POOL, "GALLERY": GALLERY_POOL, "ABOUT": ABOUT_POOL, "MENU": MENU_POOL, "SNS": SNS_POOL, "NEWS": NEWS_POOL, "PRICE": PRICE_POOL, "FAQ": FAQ_POOL, "ACCESS": ACCESS_POOL, "CONTACT": CONTACT_POOL}
+SEARCH_POOL = ["search-bar", "search-keywords", "search-filters", "search-sidebar", "search-header", "search-hero"]  # KLK-056: 6型（入力は静的アタリ・search-bar=従来default相当・①コンテンツ4＋②小型窓[header/HERO]2。旧 search-footer は search-hero へ差し替え）
+POOL_1213 = {"HERO": HERO_POOL, "GALLERY": GALLERY_POOL, "ABOUT": ABOUT_POOL, "MENU": MENU_POOL, "SNS": SNS_POOL, "NEWS": NEWS_POOL, "PRICE": PRICE_POOL, "FAQ": FAQ_POOL, "ACCESS": ACCESS_POOL, "CONTACT": CONTACT_POOL, "SEARCH": SEARCH_POOL}
 # 割り当ては型数別 mod。KLK-047 で GALLERY も6型化＝GALLERY/MENU/HERO/ABOUT すべて mod6（§12.1.2 と同値）・SNS は mod3（KLK-049）
 GALLERY_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（KLK-047）
 POOL6_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（HERO/ABOUT）
@@ -64,7 +65,8 @@ PRICE_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5
 FAQ_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（KLK-053・POOL6_ASSIGN と同値）
 ACCESS_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（KLK-054・POOL6_ASSIGN と同値）
 CONTACT_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（KLK-055・POOL6_ASSIGN と同値）
-ASSIGN_1213 = {"HERO": POOL6_ASSIGN, "GALLERY": GALLERY_ASSIGN, "ABOUT": POOL6_ASSIGN, "MENU": MENU_ASSIGN, "SNS": SNS_ASSIGN, "NEWS": NEWS_ASSIGN, "PRICE": PRICE_ASSIGN, "FAQ": FAQ_ASSIGN, "ACCESS": ACCESS_ASSIGN, "CONTACT": CONTACT_ASSIGN}  # KLK-055: CONTACT=mod6
+SEARCH_ASSIGN = {0: (0, 1, 2), 1: (1, 2, 3), 2: (2, 3, 4), 3: (3, 4, 5), 4: (4, 5, 0), 5: (5, 0, 1)}  # mod6（KLK-056・POOL6_ASSIGN と同値）
+ASSIGN_1213 = {"HERO": POOL6_ASSIGN, "GALLERY": GALLERY_ASSIGN, "ABOUT": POOL6_ASSIGN, "MENU": MENU_ASSIGN, "SNS": SNS_ASSIGN, "NEWS": NEWS_ASSIGN, "PRICE": PRICE_ASSIGN, "FAQ": FAQ_ASSIGN, "ACCESS": ACCESS_ASSIGN, "CONTACT": CONTACT_ASSIGN, "SEARCH": SEARCH_ASSIGN}  # KLK-056: SEARCH=mod6
 
 # §12.1.2 型プール・オフセット表・割り当て表（check_klk029.py と同一ミラー）
 POOL = {
