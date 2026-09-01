@@ -47,7 +47,7 @@ def _seg(start, end):
 
 
 def parse_access_pool():
-    seg = _seg("**ACCESS プール", "**(2) 割り当て表")
+    seg = _seg("**ACCESS プール", "**CONTACT プール")  # KLK-055: CONTACT プール表が後続に入るため end を CONTACT 手前へ
     seen = []
     for m in re.finditer(r'`(map-[a-z-]+)`', seg):
         if m.group(1) not in seen:
@@ -56,7 +56,7 @@ def parse_access_pool():
 
 
 def parse_access_assign():
-    seg = _seg("**ACCESS（6型", "**(3) 生成手順")
+    seg = _seg("**ACCESS（6型", "**CONTACT（6型")  # KLK-055: CONTACT 割り当て表が後続に入るため end を CONTACT 手前へ
     asn = {}
     for m in re.finditer(r'^\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|', seg, re.M):
         o, a, b, c = (int(x) for x in m.groups())
