@@ -67,7 +67,8 @@ echo
 mkdir -p "$DEST" || { echo "【エラー】出力先を作成できませんでした。" >&2; exit 1; }
 
 # ---- 必須（動作に要るもの） -------------------------------------------------
-for d in draft-gen palette .claude agents docs; do
+# KLK-071: samples/ は「まず開いてもらう見本」。ダミー案件名の生成物のみで機密は無い（既定で含める）
+for d in draft-gen palette .claude agents docs samples; do
   [ -d "$d" ] && cp -R "$d" "$DEST/" && echo "  含めた: $d/"
 done
 for f in README.md CLAUDE.md CHANGELOG.md LICENSE; do

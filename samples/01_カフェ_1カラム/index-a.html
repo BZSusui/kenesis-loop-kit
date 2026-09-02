@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>サンプルカフェ — デザインラフ 案A</title>
+<style>
+  :root{ --m-main:#6b7f4e; --m-nav:#4a5936; --m-accent:#c98a3c; --m-bg:#faf8f3; --m-text:#3a3a33; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ background:#e7e3da; color:var(--m-text); line-height:1.75;
+        font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif;
+        -webkit-font-smoothing:antialiased; }
+  .mock{ max-width:1080px; margin:24px auto; background:var(--m-bg);
+         box-shadow:0 10px 46px rgba(0,0,0,.14); overflow:hidden; }
+  .sec{ position:relative; padding:66px 48px; }
+  .addr{ position:absolute; top:8px; left:8px; z-index:30; }
+  .pin{ display:inline-block; background:#1b1b1b; color:#fff; font-size:11px; font-weight:700;
+        padding:3px 8px; border-radius:4px; letter-spacing:.06em; font-family:ui-monospace,monospace; }
+  .en{ display:block; font-size:12px; letter-spacing:.28em; color:var(--m-accent);
+       font-weight:700; margin-bottom:8px; text-align:center; }
+  h2{ font-size:27px; color:var(--m-main); text-align:center; margin-bottom:34px; letter-spacing:.03em; }
+  .todo{ color:#b23; background:#fff3f0; border:1px dashed #e0a; border-radius:4px;
+         padding:1px 6px; font-size:.86em; }
+
+  /* atari a方式 */
+  .atari{ position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:8px; text-align:center; padding:18px; min-height:158px; border-radius:8px;
+    border:1.5px dashed color-mix(in srgb, var(--m-main) 42%, #fff);
+    background:linear-gradient(135deg, color-mix(in srgb, var(--m-main) 20%, var(--m-bg)),
+                                       color-mix(in srgb, var(--m-accent) 20%, var(--m-bg)));
+    color:color-mix(in srgb, var(--m-main) 78%, #000); }
+  .atari .ic{ font-size:26px; opacity:.85; }
+  .atari .desc{ font-size:13px; font-weight:700; }
+  .atari .kw{ font-size:11px; opacity:.72; }
+
+  /* NAV */
+  .m-nav{ display:flex; align-items:center; justify-content:space-between;
+          background:var(--m-nav); color:#fff; padding:16px 30px; }
+  .m-nav .logo{ font-size:19px; font-weight:800; letter-spacing:.05em; }
+  .m-nav ul{ display:flex; gap:24px; list-style:none; font-size:13px; }
+  .m-nav a{ color:#fff; text-decoration:none; opacity:.9; }
+  .m-nav .nav-cta{ background:var(--m-accent); color:#fff; padding:8px 18px; border-radius:22px;
+                   font-size:13px; font-weight:700; text-decoration:none; }
+  .m-navbar{ padding:0; }
+
+  /* HERO — full: center / center / center */
+  .m-hero{ position:relative; min-height:440px; display:flex; overflow:hidden; padding:56px 48px;
+    background:linear-gradient(135deg, color-mix(in srgb, var(--m-main) 34%, var(--m-bg)),
+                                       color-mix(in srgb, var(--m-accent) 26%, var(--m-bg))); }
+  .m-hero[data-hero="full"]{ justify-content:center; align-items:center; text-align:center; }
+  .hero-inner{ max-width:620px; position:relative; z-index:2; }
+  .hero-en{ display:inline-block; font-size:12px; letter-spacing:.34em; color:var(--m-nav);
+            font-weight:700; margin-bottom:14px; }
+  .catch{ font-size:40px; line-height:1.4; color:var(--m-nav); font-weight:800; letter-spacing:.02em; }
+  .lead{ font-size:15px; margin:20px 0 26px; color:color-mix(in srgb, var(--m-text) 88%, #000); }
+  .hero-cta{ display:inline-block; background:var(--m-main); color:#fff; text-decoration:none;
+             padding:13px 34px; border-radius:26px; font-weight:700; font-size:14px; }
+  .atari-tag{ position:absolute; right:12px; bottom:12px; z-index:2; font-size:11px;
+    background:rgba(27,27,27,.72); color:#fff; padding:5px 10px; border-radius:5px; }
+
+  /* ABOUT — img-left */
+  .m-about{ display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:center; }
+  .m-about .about-txt p{ margin-bottom:16px; font-size:14.5px; }
+  .m-about .about-txt .big{ font-size:20px; color:var(--m-main); font-weight:700; margin-bottom:18px; line-height:1.6; }
+  .m-about .atari{ min-height:280px; }
+
+  /* MENU — pat-cards */
+  .m-menu{ display:grid; grid-template-columns:repeat(3,1fr); gap:26px; }
+  .m-card{ background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 4px 18px rgba(0,0,0,.07); }
+  .m-card .atari{ border-radius:0; border:none; border-bottom:1px dashed color-mix(in srgb,var(--m-main) 30%,#fff); min-height:150px; }
+  .m-card .body{ padding:18px 18px 22px; }
+  .m-card .row{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  .m-card .name{ font-weight:700; font-size:15px; color:var(--m-nav); }
+  .m-card .price{ font-weight:800; color:var(--m-accent); font-size:15px; white-space:nowrap; }
+  .m-card .note{ font-size:12.5px; color:#777; margin-top:8px; }
+
+  /* GALLERY — pat-grid */
+  .m-gallery{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+
+  /* ACCESS — map-side */
+  .m-access{ display:grid; grid-template-columns:1fr 1fr; gap:36px; align-items:stretch; }
+  .map-atari{ position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:8px; text-align:center; min-height:280px; border-radius:8px; padding:18px;
+    border:1.5px dashed color-mix(in srgb, var(--m-main) 42%, #fff);
+    background:repeating-linear-gradient(45deg, color-mix(in srgb,var(--m-main) 12%,var(--m-bg)) 0 14px,
+      color-mix(in srgb,var(--m-accent) 12%,var(--m-bg)) 14px 28px);
+    color:color-mix(in srgb, var(--m-main) 78%, #000); }
+  .map-atari .ic{ font-size:30px; }
+  .map-atari .desc{ font-size:13px; font-weight:700; }
+  .access-info dl{ display:grid; grid-template-columns:96px 1fr; gap:12px 14px; font-size:14px; align-content:center; height:100%; }
+  .access-info dt{ font-weight:700; color:var(--m-main); }
+  .access-info dd{ color:var(--m-text); }
+
+  /* CONTACT — contact-cta */
+  .m-contact{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:18px;
+    padding:20px; }
+  .m-contact .ct-lead{ max-width:560px; font-size:14.5px; }
+  .m-contact .ct-btn{ display:inline-block; background:var(--m-accent); color:#fff; text-decoration:none;
+    padding:15px 44px; border-radius:28px; font-weight:700; font-size:15px; }
+
+  /* FOOTER */
+  .m-foot{ background:var(--m-nav); color:#fff; }
+  .m-foot .f-inner{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:24px; align-items:center; }
+  .m-foot .f-logo{ font-size:18px; font-weight:800; }
+  .m-foot ul{ display:flex; gap:20px; list-style:none; font-size:13px; flex-wrap:wrap; }
+  .m-foot a{ color:#fff; text-decoration:none; opacity:.88; }
+  .m-foot .copy{ width:100%; text-align:center; font-size:12px; opacity:.7; margin-top:22px;
+    border-top:1px solid rgba(255,255,255,.18); padding-top:18px; }
+
+  /* reveal animation */
+  .reveal{ opacity:0; transform:translateY(16px); transition:opacity .6s ease, transform .6s ease; }
+  .reveal.in{ opacity:1; transform:none; }
+  @media (prefers-reduced-motion:reduce){ .reveal{ opacity:1; transform:none; transition:none; } }
+
+  /* responsive */
+  @media (max-width:640px){
+    .sec{ padding:48px 20px; }
+    .catch{ font-size:29px; }
+    .m-nav{ flex-wrap:wrap; gap:12px; }
+    .m-nav ul{ display:none; }
+    .m-nav .logo::after{ content:" ☰"; }
+    .m-about{ grid-template-columns:1fr; }
+    .m-menu{ grid-template-columns:1fr; }
+    .m-gallery{ grid-template-columns:repeat(2,1fr); }
+    .m-access{ grid-template-columns:1fr; }
+  }
+
+  @media print{
+    .addr, .atari-tag, .anim-note{ display:none !important; }
+    body{ background:#fff; }
+    .mock{ box-shadow:none; }
+    .reveal{ opacity:1 !important; transform:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="mock" data-columns="1col" data-archetype="stack-centered"
+     data-section-order="ABOUT,MENU,GALLERY,ACCESS,CONTACT" data-nav-position="top">
+
+  <!-- NAV -->
+  <div class="sec m-navbar">
+    <div class="addr"><span class="pin">NAV-01</span></div>
+    <nav class="m-nav">
+      <span class="logo">サンプルカフェ</span>
+      <ul>
+        <li><a href="#about">CONCEPT</a></li>
+        <li><a href="#menu">MENU</a></li>
+        <li><a href="#gallery">GALLERY</a></li>
+        <li><a href="#access">ACCESS</a></li>
+        <li><a href="#contact">CONTACT</a></li>
+      </ul>
+      <a class="nav-cta" href="#contact">ご予約・お問い合わせ</a>
+    </nav>
+  </div>
+
+  <!-- MV -->
+  <div class="sec" style="padding:0;">
+    <div class="addr"><span class="pin">MV-01</span></div>
+    <div class="m-hero" data-hero="full">
+      <div class="hero-inner">
+        <span class="hero-en">NATURAL CAFE &amp; ROASTERY</span>
+        <h1 class="catch">木漏れ日と、<br>一杯のコーヒーと。</h1>
+        <p class="lead">季節の移ろいを感じながら、こころほどけるひとときを。自家焙煎の香りと、やさしい手づくりの味を、木のぬくもりに包まれて。</p>
+        <a class="hero-cta" href="#menu">メニューを見る</a>
+      </div>
+      <span class="atari-tag">📷 店内・木漏れ日の差すカフェ空間 ／ 検索: <b>cozy cafe interior natural light</b></span>
+    </div>
+  </div>
+
+  <!-- ABOUT -->
+  <div class="sec reveal" id="about">
+    <div class="addr"><span class="pin">ABOUT-01</span></div>
+    <span class="en">CONCEPT</span>
+    <h2>暮らしに寄り添う、小さなカフェ</h2>
+    <div class="m-about about img-left">
+      <div class="atari">
+        <span class="ic">📷</span>
+        <span class="desc">淹れたてのコーヒーと手づくりの焼き菓子</span>
+        <span class="kw">検索: <b>hand drip coffee homemade pastry</b></span>
+      </div>
+      <div class="about-txt">
+        <p class="big">日々の暮らしに、そっと寄り添う一杯を。</p>
+        <p>サンプルカフェは、自家焙煎のコーヒーと、季節の素材でつくる手づくりのおやつを楽しめる小さなカフェです。豆はひとつひとつていねいに焙煎し、一杯ずつハンドドリップでお淹れします。</p>
+        <p>木のぬくもりに包まれた店内で、本を読んだり、おしゃべりをしたり。あなたの「いつもの場所」になれたら、と願っています。<span class="todo">(要検討: 開業年・こだわりの設備などを記入)</span></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENU -->
+  <div class="sec reveal" id="menu" style="background:color-mix(in srgb,var(--m-main) 5%,var(--m-bg));">
+    <div class="addr"><span class="pin">MENU-01</span></div>
+    <span class="en">MENU</span>
+    <h2>メニュー</h2>
+    <div class="m-menu menu pat-cards">
+      <div class="m-card"><div class="atari"><span class="ic">☕</span><span class="desc">本日のブレンドコーヒー</span><span class="kw">検索: <b>black coffee cup</b></span></div>
+        <div class="body"><div class="row"><span class="name">本日のブレンドコーヒー</span><span class="price">¥520</span></div><p class="note">自家焙煎の豆を、一杯ずつていねいにハンドドリップで。</p></div></div>
+      <div class="m-card"><div class="atari"><span class="ic">☕</span><span class="desc">カフェラテ</span><span class="kw">検索: <b>cafe latte art</b></span></div>
+        <div class="body"><div class="row"><span class="name">カフェラテ</span><span class="price">¥580</span></div><p class="note">なめらかなミルクとエスプレッソのやさしいバランス。</p></div></div>
+      <div class="m-card"><div class="atari"><span class="ic">🍰</span><span class="desc">季節のフルーツタルト</span><span class="kw">検索: <b>seasonal fruit tart</b></span></div>
+        <div class="body"><div class="row"><span class="name">季節のフルーツタルト</span><span class="price">¥680</span></div><p class="note">旬の果物をたっぷりのせた、いちおしの一皿。</p></div></div>
+      <div class="m-card"><div class="atari"><span class="ic">🥐</span><span class="desc">自家製スコーンプレート</span></div>
+        <div class="body"><div class="row"><span class="name">自家製スコーンプレート</span><span class="price">¥750</span></div><p class="note">焼きたてスコーンに、自家製ジャムとクリームを添えて。</p></div></div>
+      <div class="m-card"><div class="atari"><span class="ic">🥗</span><span class="desc">日替わりキッシュランチ</span><span class="kw">検索: <b>quiche lunch plate</b></span></div>
+        <div class="body"><div class="row"><span class="name">キッシュランチセット</span><span class="price">¥1,180</span></div><p class="note">日替わりキッシュ・スープ・サラダの満足セット。</p></div></div>
+      <div class="m-card"><div class="atari"><span class="ic">🥣</span><span class="desc">グラノーラボウル</span></div>
+        <div class="body"><div class="row"><span class="name">グラノーラボウル</span><span class="price">¥880</span></div><p class="note">自家製グラノーラと季節のフルーツ、ヨーグルトを添えて。</p></div></div>
+    </div>
+  </div>
+
+  <!-- GALLERY -->
+  <div class="sec reveal" id="gallery">
+    <div class="addr"><span class="pin">GALLERY-01</span></div>
+    <span class="en">GALLERY</span>
+    <h2>店内の様子</h2>
+    <div class="m-gallery gallery pat-grid">
+      <div class="atari"><span class="ic">📷</span><span class="desc">季節の料理の盛り付け</span></div>
+      <div class="atari"><span class="ic">📷</span><span class="desc">淹れたてのコーヒー</span><span class="kw">検索: <b>pour over coffee</b></span></div>
+      <div class="atari"><span class="ic">📷</span><span class="desc">木のカウンター席</span></div>
+      <div class="atari"><span class="ic">📷</span><span class="desc">焼きたての焼き菓子</span><span class="kw">検索: <b>baked sweets display</b></span></div>
+      <div class="atari"><span class="ic">📷</span><span class="desc">陽の差すテラス席</span></div>
+      <div class="atari"><span class="ic">📷</span><span class="desc">季節の店内ディスプレイ</span></div>
+    </div>
+  </div>
+
+  <!-- ACCESS -->
+  <div class="sec reveal" id="access" style="background:color-mix(in srgb,var(--m-main) 5%,var(--m-bg));">
+    <div class="addr"><span class="pin">ACCESS-01</span></div>
+    <span class="en">ACCESS</span>
+    <h2>アクセス</h2>
+    <div class="m-access access map-side">
+      <div class="map-atari">
+        <span class="ic">🗺</span>
+        <span class="desc">地図が入ります</span>
+        <span class="kw">イラストマップ／Google Map 埋め込み想定（実地図はここには入りません）</span>
+      </div>
+      <div class="access-info">
+        <dl>
+          <dt>店名</dt><dd>サンプルカフェ</dd>
+          <dt>住所</dt><dd><span class="todo">(要検討: 店舗の住所を記入)</span></dd>
+          <dt>TEL</dt><dd><span class="todo">(要検討: 電話番号を記入)</span></dd>
+          <dt>営業時間</dt><dd>9:00 – 18:00（ラストオーダー 17:30）</dd>
+          <dt>定休日</dt><dd><span class="todo">(要検討: 定休日を記入)</span></dd>
+          <dt>アクセス</dt><dd><span class="todo">(要検討: 最寄駅・徒歩分数を記入)</span></dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTACT -->
+  <div class="sec reveal" id="contact">
+    <div class="addr"><span class="pin">CONTACT-01</span></div>
+    <span class="en">CONTACT</span>
+    <h2>お問い合わせ</h2>
+    <div class="m-contact contact contact-cta">
+      <p class="ct-lead">ご予約・貸切のご相談、メニューについてのお問い合わせなど、お気軽にご連絡ください。スタッフがていねいにご案内いたします。</p>
+      <a class="ct-btn" href="#">お問い合わせはこちら</a>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="sec m-foot">
+    <div class="addr"><span class="pin">FOOTER-01</span></div>
+    <div class="f-inner">
+      <span class="f-logo">サンプルカフェ</span>
+      <ul>
+        <li><a href="#about">CONCEPT</a></li>
+        <li><a href="#menu">MENU</a></li>
+        <li><a href="#gallery">GALLERY</a></li>
+        <li><a href="#access">ACCESS</a></li>
+        <li><a href="#contact">CONTACT</a></li>
+      </ul>
+    </div>
+    <div class="copy">© サンプルカフェ — このページはデザインラフ（見本）です。実在の店舗ではありません。</div>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) {
+      els.forEach(function (e) { e.classList.add('in'); });
+      return;
+    }
+    var io = new IntersectionObserver(function (ens) {
+      ens.forEach(function (x) {
+        if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); }
+      });
+    }, { threshold: .12 });
+    els.forEach(function (e) { io.observe(e); });
+  })();
+</script>
+</body>
+</html>

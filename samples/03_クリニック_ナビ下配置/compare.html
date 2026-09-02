@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>サンプル歯科クリニック｜デザインラフ 3案比較</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;color:#233;background:#eef2f3;}
+  a{color:inherit;}
+  input[name=variant],input[name=vw]{position:absolute;opacity:0;pointer-events:none;}
+
+  .toolchrome{background:#fff;border-bottom:1px solid #dde5e7;padding:16px 24px;}
+  .proj-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;}
+  .proj-head .pj{font-size:18px;font-weight:800;color:#1f5560;}
+  .proj-head .meta{font-size:12px;color:#889;}
+  .settings-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  .settings-chips .chip{font-size:11.5px;background:#eef6f7;color:#2c6e77;border:1px solid #d6e6e8;border-radius:14px;padding:3px 11px;}
+
+  .variant-bar{background:#fff;border-bottom:1px solid #dde5e7;padding:12px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+  .seg{display:flex;gap:6px;}
+  .seg label{cursor:pointer;font-size:13px;font-weight:700;color:#678;border:1.5px solid #cdd8da;border-radius:20px;padding:6px 18px;background:#fff;}
+  #ra:checked ~ .variant-bar .seg label[for=ra],
+  #rb:checked ~ .variant-bar .seg label[for=rb],
+  #rc:checked ~ .variant-bar .seg label[for=rc]{background:#1f5560;color:#fff;border-color:#1f5560;}
+
+  .vwseg{display:flex;gap:6px;margin-left:auto;}
+  .vwseg label{cursor:pointer;font-size:12px;font-weight:600;color:#678;border:1.5px solid #cdd8da;border-radius:8px;padding:5px 12px;background:#fff;}
+  #vwfull:checked ~ .variant-bar .vwseg label[for=vwfull],
+  #vw768:checked ~ .variant-bar .vwseg label[for=vw768],
+  #vw375:checked ~ .variant-bar .vwseg label[for=vw375]{background:#3e9aa6;color:#fff;border-color:#3e9aa6;}
+
+  .thumbstrip{display:flex;gap:14px;padding:14px 24px;background:#f6f9fa;border-bottom:1px solid #dde5e7;flex-wrap:wrap;}
+  .vthumb{width:120px;cursor:pointer;}
+  .vthumb .sw{height:66px;border-radius:8px;border:2px solid transparent;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+  .vthumb .sw .bar{height:16px;}
+  .vthumb .sw .bd{flex:1;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;}
+  .vthumb.va .sw .bar{background:#2c6e77;} .vthumb.va .sw .bd{background:#3e9aa6;}
+  .vthumb.vb .sw .bar{background:#14343c;} .vthumb.vb .sw .bd{background:#1f5560;}
+  .vthumb.vc .sw .bar{background:#1f7d80;} .vthumb.vc .sw .bd{background:#37b3b0;}
+  #ra:checked ~ .thumbstrip .vthumb.va .sw,
+  #rb:checked ~ .thumbstrip .vthumb.vb .sw,
+  #rc:checked ~ .thumbstrip .vthumb.vc .sw{border-color:#e08a5a;}
+  .vthumb .cap{font-size:11px;text-align:center;margin-top:6px;color:#556;}
+  .vthumb .cap .full{color:#2c6e77;font-weight:700;}
+
+  .toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 24px;background:#fff;border-bottom:1px solid #dde5e7;}
+  .toolbar .print-hint{font-size:12px;color:#788;}
+  .regen{display:flex;align-items:center;gap:8px;margin-left:auto;}
+  .regen select,.regen button{font-size:12.5px;padding:6px 10px;border-radius:8px;border:1.5px solid #cdd8da;background:#fff;font-family:inherit;}
+  .regen button{background:#3e9aa6;color:#fff;border-color:#3e9aa6;font-weight:700;cursor:pointer;}
+  .regen button:disabled{background:#c7d2d4;border-color:#c7d2d4;cursor:not-allowed;}
+  .regen .rg-msg{font-size:11px;color:#a66;max-width:280px;}
+
+  .canvas{padding:22px;}
+  .pane{display:none;background:#dbe4e6;border-radius:12px;padding:16px;}
+  .pane iframe{width:100%;height:1400px;border:0;background:#fff;border-radius:8px;display:block;margin:0 auto;box-shadow:0 6px 24px rgba(0,0,0,.12);}
+  #ra:checked ~ .canvas #paneA,
+  #rb:checked ~ .canvas #paneB,
+  #rc:checked ~ .canvas #paneC{display:block;}
+  #vw768:checked ~ .canvas .pane iframe{width:768px;}
+  #vw375:checked ~ .canvas .pane iframe{width:375px;}
+
+  @media print{
+    .toolchrome,.variant-bar,.thumbstrip,.toolbar,.vwseg{display:none !important;}
+    .pane iframe{box-shadow:none;}
+  }
+</style>
+</head>
+<body data-folder="samples/03_クリニック_ナビ下配置">
+
+  <input type="radio" name="variant" id="ra" checked>
+  <input type="radio" name="variant" id="rb">
+  <input type="radio" name="variant" id="rc">
+  <input type="radio" name="vw" id="vwfull" checked>
+  <input type="radio" name="vw" id="vw768">
+  <input type="radio" name="vw" id="vw375">
+
+  <div class="toolchrome">
+    <div class="proj-head">
+      <span class="pj">サンプル歯科クリニック</span>
+      <span class="meta">生成日 2026-09-02 ／ 3案 ／ デザインラフ（実在の医院ではありません）</span>
+    </div>
+    <div class="settings-chips">
+      <span class="chip">業種: クリニック・病院・介護リハビリ</span>
+      <span class="chip">カラム: 1col</span>
+      <span class="chip">ナビ位置: ヒーロー下</span>
+      <span class="chip">テイスト: 清潔・安心</span>
+      <span class="chip">主色: #3e9aa6</span>
+      <span class="chip">アタリ: a方式（色面）</span>
+    </div>
+  </div>
+
+  <div class="variant-bar">
+    <div class="seg">
+      <label for="ra">案A ベース</label>
+      <label for="rb">案B 濃色・上質</label>
+      <label for="rc">案C 明色・ポップ</label>
+    </div>
+    <div class="vwseg">
+      <label for="vwfull">全幅</label>
+      <label for="vw768">768px</label>
+      <label for="vw375">375px</label>
+    </div>
+  </div>
+
+  <div class="thumbstrip">
+    <div class="vthumb va">
+      <label for="ra"><div class="sw"><div class="bar"></div><div class="bd">案A</div></div></label>
+      <div class="cap">案A ／ <a class="full" href="index-a.html" target="_blank">原寸 ↗</a></div>
+    </div>
+    <div class="vthumb vb">
+      <label for="rb"><div class="sw"><div class="bar"></div><div class="bd">案B</div></div></label>
+      <div class="cap">案B ／ <a class="full" href="index-b.html" target="_blank">原寸 ↗</a></div>
+    </div>
+    <div class="vthumb vc">
+      <label for="rc"><div class="sw"><div class="bar"></div><div class="bd">案C</div></div></label>
+      <div class="cap">案C ／ <a class="full" href="index-c.html" target="_blank">原寸 ↗</a></div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <span class="print-hint">🖨 高品質なPDFは、各案の「原寸 ↗」で開いた画面から印刷（PDFで保存）してください。</span>
+    <div class="regen">
+      <label for="regen-addr" style="font-size:12px;color:#678;">🔄 セクション再生成</label>
+      <select id="regen-addr">
+        <option value="NAV-01">NAV-01</option>
+        <option value="MV-01">MV-01</option>
+        <option value="ABOUT-01">ABOUT-01</option>
+        <option value="MENU-01">MENU-01</option>
+        <option value="GALLERY-01">GALLERY-01</option>
+        <option value="FOOTER-01">FOOTER-01</option>
+      </select>
+      <button id="regen-btn" disabled>このセクションを再生成</button>
+      <span class="rg-msg" id="regen-msg"></span>
+    </div>
+  </div>
+
+  <div class="canvas">
+    <div class="pane" id="paneA"><iframe src="index-a.html" title="案A プレビュー"></iframe></div>
+    <div class="pane" id="paneB"><iframe src="index-b.html" title="案B プレビュー"></iframe></div>
+    <div class="pane" id="paneC"><iframe src="index-c.html" title="案C プレビュー"></iframe></div>
+  </div>
+
+<script>
+  (function(){
+    var btn=document.getElementById('regen-btn');
+    var sel=document.getElementById('regen-addr');
+    var msg=document.getElementById('regen-msg');
+    var folder=document.body.getAttribute('data-folder');
+    var BASE='http://127.0.0.1:8765';
+
+    function currentLetter(){
+      var c=document.querySelector('input[name=variant]:checked');
+      return c ? c.id.replace('r','') : 'a';
+    }
+    function setMsg(t){ msg.textContent=t; }
+
+    // health-gate（約800ms）
+    var ctrl=new AbortController();
+    var to=setTimeout(function(){ctrl.abort();},800);
+    fetch(BASE+'/health',{signal:ctrl.signal}).then(function(r){
+      clearTimeout(to);
+      if(!r.ok) throw 0;
+      btn.disabled=false;
+      setMsg('');
+    }).catch(function(){
+      clearTimeout(to);
+      btn.disabled=true;
+      setMsg('ローカルブリッジ未起動。python3 draft-gen/bridge.py を起動するか、Claude Code で /draft-regenerate でも再生成できます。');
+    });
+
+    btn.addEventListener('click',function(){
+      var letter=currentLetter();
+      var addr=sel.value;
+      setMsg('再生成をリクエスト中…');
+      btn.disabled=true;
+      fetch(BASE+'/regenerate',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({folder:folder,letter:letter,addr:addr})})
+        .then(function(r){return r.json();})
+        .then(function(d){
+          if(!d.jobId){ throw 0; }
+          poll(d.jobId);
+        }).catch(function(){ setMsg('再生成リクエストに失敗しました。'); btn.disabled=false; });
+    });
+
+    function poll(jobId){
+      var tries=0;
+      var iv=setInterval(function(){
+        tries++;
+        fetch(BASE+'/status/'+encodeURIComponent(jobId)).then(function(r){return r.json();})
+          .then(function(s){
+            if(s.state==='done'){ clearInterval(iv); setMsg('完了しました。プレビューを再読み込みします。'); btn.disabled=false; setTimeout(function(){location.reload();},600); }
+            else if(s.state==='error'){ clearInterval(iv); setMsg('再生成中にエラーが発生しました。'); btn.disabled=false; }
+            else { setMsg('再生成中…'); }
+          }).catch(function(){ clearInterval(iv); setMsg('状態の取得に失敗しました。'); btn.disabled=false; });
+        if(tries>60){ clearInterval(iv); setMsg('タイムアウトしました。'); btn.disabled=false; }
+      },1000);
+    }
+  })();
+</script>
+</body>
+</html>

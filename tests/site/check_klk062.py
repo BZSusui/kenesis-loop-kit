@@ -99,11 +99,14 @@ check(
     len(var_radios) >= 2 and bool(var_css),
     "variant ラジオ=%s / #ra:checked ~ .canvas #paneA=%s" % (var_radios, bool(var_css)),
 )
+# KLK-071: 空白ゆれに強くする。実際の生成物は "@media (max-width:640px)" とスペース無しで書くため、
+# 文字列一致で固定すると golden を実物で置き換えたときに「実物は正しいのに落ちる」ことになる。
+_RESPONSIVE = re.compile(r"@media\s*\(\s*max-width\s*:\s*640px\s*\)")
 check(
-    "W8 iframe 先の golden がレスポンシブ（@media (max-width: 640px) を持つ）",
-    "@media (max-width: 640px)" in IDX_A and "@media (max-width: 640px)" in IDX_B,
+    "W8 iframe 先の golden がレスポンシブ（max-width:640px のメディアクエリ・空白ゆれ許容）",
+    bool(_RESPONSIVE.search(IDX_A)) and bool(_RESPONSIVE.search(IDX_B)),
     "index-a=%s / index-b=%s"
-    % ("@media (max-width: 640px)" in IDX_A, "@media (max-width: 640px)" in IDX_B),
+    % (bool(_RESPONSIVE.search(IDX_A)), bool(_RESPONSIVE.search(IDX_B))),
 )
 
 # ---------------------------------------------------------------------------

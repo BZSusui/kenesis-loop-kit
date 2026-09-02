@@ -1,0 +1,45 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": {
+    "project": "サンプル法律事務所",
+    "createdAt": "2026-09-02T10:00:00.000Z",
+    "source": "SCR-001",
+    "note": "配布サンプル02: 本文のみ2カラム（サイドバー左）。士業向けの堅実な構成。実在の事務所ではありません。"
+  },
+  "industry": {
+    "preset": "士業事務所（法律/会計/コンサルティング他）",
+    "custom": "",
+    "resolved": "士業事務所（法律/会計/コンサルティング他）"
+  },
+  "layout": {
+    "columns": "2col-body-left",
+    "navPosition": "top"
+  },
+  "sections": [
+    "ABOUT",
+    "VOICE",
+    "FAQ",
+    "NEWS",
+    "CONTACT"
+  ],
+  "sectionOptions": {},
+  "taste": "誠実・信頼",
+  "colors": {
+    "main": "#2a3c6b",
+    "sub": "#1d2a4d",
+    "accent": "#b08d4f",
+    "bg": "#f6f7fa",
+    "mode": "explicit",
+    "autofill": []
+  },
+  "references": {
+    "thumbnails": [],
+    "sampleUrls": []
+  },
+  "atari": "standard",
+  "output": {
+    "variants": 3,
+    "animation": true
+  }
+}

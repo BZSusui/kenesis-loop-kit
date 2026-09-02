@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>サンプルカフェ — デザインラフ 3案比較</title>
+<style>
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ background:#33352f; color:#e9e7df; line-height:1.6;
+        font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Noto Sans JP",sans-serif; }
+  a{ color:inherit; }
+
+  /* hidden radios (case switch — CSS only) */
+  input[name="variant"], input[name="vw"]{ position:absolute; opacity:0; pointer-events:none; }
+
+  .wrap{ max-width:1180px; margin:0 auto; padding:20px 18px 60px; }
+
+  .toolchrome{ background:#3d3f38; border-radius:12px; padding:20px 24px; margin-bottom:16px; }
+  .proj-head{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
+  .proj-head .name{ font-size:22px; font-weight:800; color:#fff; }
+  .proj-head .meta{ font-size:12.5px; opacity:.7; }
+  .proj-head .badge{ background:#c98a3c; color:#fff; font-size:12px; font-weight:700;
+                     padding:3px 12px; border-radius:20px; }
+  .settings-chips{ display:flex; gap:8px; flex-wrap:wrap; }
+  .chip{ background:#4a4d44; font-size:12px; padding:5px 12px; border-radius:16px; }
+  .chip b{ color:#d7b884; }
+
+  .variant-bar{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; margin-bottom:14px; }
+  .seg{ display:flex; gap:6px; background:#3d3f38; padding:5px; border-radius:24px; }
+  .seg label{ padding:8px 20px; border-radius:20px; font-size:13px; font-weight:700; cursor:pointer;
+              opacity:.72; }
+  #ra:checked ~ .wrap .seg label[for="ra"],
+  #rb:checked ~ .wrap .seg label[for="rb"],
+  #rc:checked ~ .wrap .seg label[for="rc"]{ background:#6b7f4e; color:#fff; opacity:1; }
+
+  .vwseg{ display:flex; gap:4px; background:#3d3f38; padding:5px; border-radius:20px; margin-left:auto; }
+  .vwseg label{ padding:7px 15px; border-radius:16px; font-size:12px; font-weight:700; cursor:pointer; opacity:.7; }
+  #vwfull:checked ~ .wrap .vwseg label[for="vwfull"],
+  #vw768:checked ~ .wrap .vwseg label[for="vw768"],
+  #vw375:checked ~ .wrap .vwseg label[for="vw375"]{ background:#5a6e42; color:#fff; opacity:1; }
+
+  .thumbstrip{ display:flex; gap:12px; flex-wrap:wrap; width:100%; }
+  .vthumb{ width:150px; border-radius:10px; overflow:hidden; background:#3d3f38; border:2px solid transparent; }
+  #ra:checked ~ .wrap .vthumb.va,
+  #rb:checked ~ .wrap .vthumb.vb,
+  #rc:checked ~ .wrap .vthumb.vc{ border-color:#c98a3c; }
+  .vthumb .mini{ height:82px; display:flex; flex-direction:column; }
+  .vthumb .mini .bar{ height:16px; }
+  .vthumb .mini .hero{ flex:1; }
+  .vthumb.va .mini .bar{ background:#4a5936; } .vthumb.va .mini .hero{ background:linear-gradient(135deg,#6b7f4e,#c98a3c); }
+  .vthumb.vb .mini .bar{ background:#232e1a; } .vthumb.vb .mini .hero{ background:linear-gradient(135deg,#384a2c,#c6a15b); }
+  .vthumb.vc .mini .bar{ background:#5f7d3a; } .vthumb.vc .mini .hero{ background:linear-gradient(160deg,#8fae5a,#e8a33d); }
+  .vthumb .cap{ display:flex; justify-content:space-between; align-items:center; padding:7px 10px; font-size:12px; }
+  .vthumb .cap .full{ font-size:11px; color:#d7b884; text-decoration:none; }
+
+  .toolbar{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+  .printlink{ display:none; background:#6b7f4e; color:#fff; text-decoration:none; font-size:13px;
+              font-weight:700; padding:10px 20px; border-radius:22px; }
+  #ra:checked ~ .wrap .printlink.pa,
+  #rb:checked ~ .wrap .printlink.pb,
+  #rc:checked ~ .wrap .printlink.pc{ display:inline-block; }
+
+  .regen{ display:flex; gap:8px; align-items:center; background:#3d3f38; padding:8px 12px; border-radius:22px;
+          font-size:12.5px; }
+  .regen select, .regen button{ font-family:inherit; font-size:12.5px; padding:6px 10px; border-radius:8px;
+          border:1px solid #565a4f; background:#2c2e28; color:#e9e7df; }
+  .regen button{ cursor:pointer; font-weight:700; }
+  .regen button:disabled{ opacity:.45; cursor:not-allowed; }
+  .regen .rmsg{ opacity:.7; max-width:340px; }
+
+  .canvas{ position:relative; }
+  .pane{ display:none; background:#26271f; border-radius:12px; padding:16px; text-align:center; }
+  #ra:checked ~ .wrap .canvas #paneA,
+  #rb:checked ~ .wrap .canvas #paneB,
+  #rc:checked ~ .wrap .canvas #paneC{ display:block; }
+  .pane iframe{ width:100%; height:1400px; border:none; background:#fff; border-radius:6px;
+                display:block; margin:0 auto; box-shadow:0 6px 26px rgba(0,0,0,.35); }
+  #vw768:checked ~ .wrap .canvas .pane iframe{ width:768px; }
+  #vw375:checked ~ .wrap .canvas .pane iframe{ width:375px; }
+
+  @media print{
+    body{ background:#fff; color:#000; }
+    .toolchrome, .variant-bar, .toolbar, .vwseg{ display:none !important; }
+    .pane{ display:block !important; background:none; padding:0; }
+  }
+</style>
+</head>
+<body>
+
+  <input type="radio" name="variant" id="ra" checked>
+  <input type="radio" name="variant" id="rb">
+  <input type="radio" name="variant" id="rc">
+  <input type="radio" name="vw" id="vwfull" checked>
+  <input type="radio" name="vw" id="vw768">
+  <input type="radio" name="vw" id="vw375">
+
+  <div class="wrap" data-folder="samples/01_カフェ_1カラム">
+
+    <!-- toolchrome -->
+    <div class="toolchrome">
+      <div class="proj-head">
+        <span class="name">サンプルカフェ</span>
+        <span class="badge">3案</span>
+        <span class="meta">デザインラフ 比較ビュー ／ 生成日 2026-09-02</span>
+      </div>
+      <div class="settings-chips">
+        <span class="chip">業種：<b>飲食店・カフェ・食関連</b></span>
+        <span class="chip">カラム：<b>1col（縦積み）</b></span>
+        <span class="chip">テイスト：<b>ナチュラル・あたたかい</b></span>
+        <span class="chip">主配色：<b>#6b7f4e</b></span>
+        <span class="chip">アタリ：<b>色面（standard）</b></span>
+      </div>
+    </div>
+
+    <!-- variant bar -->
+    <div class="variant-bar">
+      <div class="seg">
+        <label for="ra">案A</label>
+        <label for="rb">案B</label>
+        <label for="rc">案C</label>
+      </div>
+      <div class="vwseg">
+        <label for="vwfull">全幅</label>
+        <label for="vw768">768px</label>
+        <label for="vw375">375px</label>
+      </div>
+      <div class="thumbstrip">
+        <div class="vthumb va">
+          <div class="mini"><div class="bar"></div><div class="hero"></div></div>
+          <div class="cap"><span>案A・忠実</span><a class="full" href="index-a.html" target="_blank">原寸 ↗</a></div>
+        </div>
+        <div class="vthumb vb">
+          <div class="mini"><div class="bar"></div><div class="hero"></div></div>
+          <div class="cap"><span>案B・濃色高級</span><a class="full" href="index-b.html" target="_blank">原寸 ↗</a></div>
+        </div>
+        <div class="vthumb vc">
+          <div class="mini"><div class="bar"></div><div class="hero"></div></div>
+          <div class="cap"><span>案C・明色ポップ</span><a class="full" href="index-c.html" target="_blank">原寸 ↗</a></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- toolbar -->
+    <div class="toolbar">
+      <a class="printlink pa" href="index-a.html" target="_blank">🖨 印刷 / PDFで保存（案A 原寸）</a>
+      <a class="printlink pb" href="index-b.html" target="_blank">🖨 印刷 / PDFで保存（案B 原寸）</a>
+      <a class="printlink pc" href="index-c.html" target="_blank">🖨 印刷 / PDFで保存（案C 原寸）</a>
+      <div class="regen">
+        <span>🔄 セクション再生成</span>
+        <select id="regenAddr">
+          <option value="NAV-01">NAV-01</option>
+          <option value="MV-01">MV-01</option>
+          <option value="ABOUT-01">ABOUT-01</option>
+          <option value="MENU-01">MENU-01</option>
+          <option value="GALLERY-01">GALLERY-01</option>
+          <option value="FOOTER-01">FOOTER-01</option>
+        </select>
+        <button id="regenBtn" type="button" disabled>このセクションを再生成</button>
+        <span class="rmsg" id="regenMsg">ローカルブリッジを確認中…</span>
+      </div>
+    </div>
+
+    <!-- canvas -->
+    <div class="canvas">
+      <div class="pane" id="paneA"><iframe src="index-a.html" title="案A プレビュー"></iframe></div>
+      <div class="pane" id="paneB"><iframe src="index-b.html" title="案B プレビュー"></iframe></div>
+      <div class="pane" id="paneC"><iframe src="index-c.html" title="案C プレビュー"></iframe></div>
+    </div>
+
+  </div>
+
+<script>
+  (function () {
+    var wrap = document.querySelector('.wrap');
+    var folder = wrap.getAttribute('data-folder');
+    var btn = document.getElementById('regenBtn');
+    var msg = document.getElementById('regenMsg');
+    var sel = document.getElementById('regenAddr');
+
+    function checkedLetter(){
+      var r = document.querySelector('input[name="variant"]:checked');
+      return r ? ({ ra:'a', rb:'b', rc:'c' })[r.id] : 'a';
+    }
+
+    // health check (AbortController ~800ms). Fail -> disable + manual guidance.
+    var ctrl = new AbortController();
+    var t = setTimeout(function(){ ctrl.abort(); }, 800);
+    fetch('http://127.0.0.1:8765/health', { signal: ctrl.signal })
+      .then(function(r){ return r.ok ? r : Promise.reject(); })
+      .then(function(){
+        clearTimeout(t);
+        btn.disabled = false;
+        msg.textContent = 'ローカルブリッジに接続しました。番地を選んで再生成できます。';
+      })
+      .catch(function(){
+        clearTimeout(t);
+        btn.disabled = true;
+        msg.textContent = 'ローカルブリッジ未起動。python3 draft-gen/bridge.py を起動するか、Claude Code で /draft-regenerate ' + folder + ' ' + checkedLetter() + ' ' + sel.value + ' でも再生成できます。';
+      });
+
+    btn.addEventListener('click', function(){
+      var letter = checkedLetter();
+      var addr = sel.value;
+      msg.textContent = '再生成を依頼中…（案' + letter.toUpperCase() + ' / ' + addr + '）';
+      fetch('http://127.0.0.1:8765/regenerate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folder: folder, letter: letter, addr: addr })
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var jobId = d.jobId;
+        msg.textContent = '受付ました（jobId: ' + jobId + '）。完了までお待ちください。';
+        var poll = setInterval(function(){
+          fetch('http://127.0.0.1:8765/status/' + jobId)
+            .then(function(r){ return r.json(); })
+            .then(function(s){
+              if (s.state === 'done'){ clearInterval(poll); msg.textContent = '再生成が完了しました。プレビューを再読み込みします。'; }
+              else if (s.state === 'error'){ clearInterval(poll); msg.textContent = '再生成でエラーが発生しました。'; }
+            })
+            .catch(function(){ clearInterval(poll); });
+        }, 1000);
+      })
+      .catch(function(){ msg.textContent = '再生成の依頼に失敗しました。ローカルブリッジの状態を確認してください。'; });
+    });
+  })();
+</script>
+</body>
+</html>
