@@ -364,19 +364,23 @@
         <label>一覧から選ぶ</label>
         <select id="industrySelect">
           <option value="">選択してください</option>
-          <option value="美容・サロン(美容室 / ネイル / エステ)">美容・サロン(美容室 / ネイル / エステ)</option>
-          <option value="士業(税理士 / 弁護士 / 社労士)">士業(税理士 / 弁護士 / 社労士)</option>
-          <option value="住宅・不動産・建築">住宅・不動産・建築</option>
-          <option value="飲食店・カフェ">飲食店・カフェ</option>
-          <option value="医療・クリニック・福祉">医療・クリニック・福祉</option>
-          <option value="コーポレート(IT・製造・サービス)">コーポレート(IT・製造・サービス)</option>
-          <option value="採用・求人">採用・求人</option>
-          <option value="EC・物販・通販">EC・物販・通販</option>
-          <option value="ファッション・アパレル">ファッション・アパレル</option>
-          <option value="教育・スクール(学校 / 塾 / 習い事)">教育・スクール(学校 / 塾 / 習い事)</option>
-          <option value="旅行・観光・宿泊(ホテル / 旅館)">旅行・観光・宿泊(ホテル / 旅館)</option>
-          <option value="ブライダル・イベント">ブライダル・イベント</option>
-          <option value="アート・クリエイティブ(作品 / ポートフォリオ)">アート・クリエイティブ(作品 / ポートフォリオ)</option>
+          <option value="飲食店・カフェ・食関連">飲食店・カフェ・食関連</option>
+          <option value="美容室・エステ・化粧品">美容室・エステ・化粧品</option>
+          <option value="ファッション">ファッション</option>
+          <option value="スクール・教室">スクール・教室</option>
+          <option value="不動産・建築">不動産・建築</option>
+          <option value="ホテル・旅館・レジャー">ホテル・旅館・レジャー</option>
+          <option value="士業事務所（法律/会計/コンサルティング他）">士業事務所（法律/会計/コンサルティング他）</option>
+          <option value="コーポレート／BtoB">コーポレート／BtoB</option>
+          <option value="EC・物販">EC・物販</option>
+          <option value="フィットネス・ジム・スポーツ">フィットネス・ジム・スポーツ</option>
+          <option value="イベント・キャンペーンLP">イベント・キャンペーンLP</option>
+          <option value="ジュエリー・時計・貴金属">ジュエリー・時計・貴金属</option>
+          <option value="クリニック・病院・介護リハビリ">クリニック・病院・介護リハビリ</option>
+          <option value="農業・ファーム">農業・ファーム</option>
+          <option value="求人・採用">求人・採用</option>
+          <option value="アート・ポートフォリオ">アート・ポートフォリオ</option>
+          <option value="その他・団体/NPO">その他・団体/NPO</option>
         </select>
       </div>
       <div class="col">
@@ -384,7 +388,7 @@
         <input type="text" id="industryCustom" placeholder="例：オーガニックカフェ">
       </div>
     </div>
-    <p class="note-oq">※自由入力があれば一覧選択がなくても生成できます（自由入力が優先されます）。仮リストは後日確定予定（OQ-003）。</p>
+    <p class="note-oq">※自由入力があれば一覧選択がなくても生成できます（自由入力が優先されます）。一覧は実績カタログの業種区分（17区分）と共通です。</p>
   </section>
 
   <!-- ③ カラム構成 -->
@@ -506,19 +510,19 @@
       <span class="reqid">1つ選択 / REQ-101</span></div>
     <p class="hint">仕上がりの方向性を1つだけ選びます（選ぶと生成結果がブレにくくなります）。</p>
     <div class="chips" id="tasteChips">
-      <span class="chip"><input type="radio" name="taste" id="t1" data-label="シンプル・ミニマル"><label for="t1">シンプル・ミニマル</label></span>
-      <span class="chip"><input type="radio" name="taste" id="t2" data-label="高級感・上質"><label for="t2">高級感・上質</label></span>
-      <span class="chip"><input type="radio" name="taste" id="t3" data-label="ポップ・カジュアル"><label for="t3">ポップ・カジュアル</label></span>
-      <span class="chip"><input type="radio" name="taste" id="t4" data-label="和風・和モダン"><label for="t4">和風・和モダン</label></span>
-      <span class="chip"><input type="radio" name="taste" id="t5" data-label="ナチュラル・やさしい"><label for="t5">ナチュラル・やさしい</label></span>
-      <span class="chip"><input type="radio" name="taste" id="t6" data-label="先進的・シャープ"><label for="t6">先進的・シャープ</label></span>
-      <span class="chip"><input type="radio" name="taste" id="t7" data-label="かっこいい・スタイリッシュ"><label for="t7">かっこいい・スタイリッシュ</label></span>
-      <span class="chip"><input type="radio" name="taste" id="t8" data-label="かわいい・ガーリー"><label for="t8">かわいい・ガーリー</label></span>
-      <span class="chip"><input type="radio" name="taste" id="t9" data-label="レトロ・ヴィンテージ"><label for="t9">レトロ・ヴィンテージ</label></span>
-      <span class="chip"><input type="radio" name="taste" id="t10" data-label="ダーク・重厚(黒基調)"><label for="t10">ダーク・重厚(黒基調)</label></span>
-      <span class="chip"><input type="radio" name="taste" id="t11" data-label="アート・個性的"><label for="t11">アート・個性的</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t1" data-label="シンプル・ミニマル" data-taste="シンプル"><label for="t1">シンプル・ミニマル</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t2" data-label="高級感・上質" data-taste="高級感"><label for="t2">高級感・上質</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t3" data-label="ポップ・カジュアル" data-taste="ポップ"><label for="t3">ポップ・カジュアル</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t4" data-label="和風・和モダン" data-taste="和風"><label for="t4">和風・和モダン</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t5" data-label="ナチュラル・やさしい" data-taste="ナチュラル"><label for="t5">ナチュラル・やさしい</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t6" data-label="先進的・シャープ" data-taste="かっこいい"><label for="t6">先進的・シャープ</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t7" data-label="かっこいい・スタイリッシュ" data-taste="かっこいい"><label for="t7">かっこいい・スタイリッシュ</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t8" data-label="かわいい・ガーリー" data-taste="かわいい"><label for="t8">かわいい・ガーリー</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t9" data-label="レトロ・ヴィンテージ" data-taste="レトロ"><label for="t9">レトロ・ヴィンテージ</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t10" data-label="ダーク・重厚(黒基調)" data-taste="ダーク"><label for="t10">ダーク・重厚(黒基調)</label></span>
+      <span class="chip"><input type="radio" name="taste" id="t11" data-label="アート・個性的" data-taste="アート"><label for="t11">アート・個性的</label></span>
     </div>
-    <p class="note-oq">※現状はよく選ばれる11種を仮置き（OQ-002）。</p>
+    <p class="note-oq">※選んだテイストは生成の文言・雰囲気のヒントになります。実績カタログの絞り込みには、各テイストに対応する共通区分（10種）が使われます。</p>
   </section>
 
   <!-- ⑤ 配色 -->
@@ -1333,41 +1337,42 @@ function currentIndustry() {
   return custom || document.getElementById('industrySelect').value || '';
 }
 
-// 業種ラベル → 照合キー（先頭トークン: 最初の '(' より前）。
-function industryKey(label) {
-  return String(label || '').split('(')[0].trim();
+// 一覧選択か自由入力か（自由入力が優先される＝currentIndustry と同じ判定・REQ-001）。
+function isCustomIndustry() {
+  return document.getElementById('industryCustom').value.trim().length > 0;
 }
 
-// entry.industry と業種キーの双方向前方一致（三重タクソノミ不一致の吸収・§4.3）。
-function matchesIndustry(entry, key) {
+// entry.industry と業種キーの照合（KLK-059）。
+// 一覧選択は canonical（CATALOG_RULES §3 の17区分）ゆえ完全一致。
+// 自由入力は canonical に無い任意文字列なので、従来どおり双方向前方一致で拾う。
+function matchesIndustry(entry, key, isCustom) {
   if (!key) return true;
   var a = entry.industry || '';
+  if (!isCustom) return a === key;
   return a.indexOf(key) === 0 || key.indexOf(a) === 0;
 }
 
-// 現在のテイスト選択ラベル（未選択は null）。
-function currentTaste() {
+// 現在のテイストの canonical 値（未選択は null）。カタログ照合専用（KLK-059・CATALOG_RULES §3 の10種）。
+// 表示ラベル（data-label）と分離することで、生成ヒントの表現力を保ったまま絞り込みを完全一致にできる。
+function currentTasteCanonical() {
   var el = document.querySelector('input[name=taste]:checked');
-  return el ? el.dataset.label : null;
+  return el ? el.dataset.taste : null;
 }
 
 // #thumbFilter と業種/テイストに基づき対象を絞り、renderThumbs する。
 function applyThumbFilter() {
   var mode = document.getElementById('thumbFilter').value;
-  var key = industryKey(currentIndustry());
-  var taste = currentTaste();
+  var key = currentIndustry();
+  var isCustom = isCustomIndustry();
+  var tasteCanon = currentTasteCanonical();
   var note = '';
   var list;
   if (mode === 'すべての実績') {
     list = catalogEntries.slice();
   } else if (mode === '同じテイストのみ') {
-    // テイストは SCR-001 ラベルの先頭トークンで前方一致（例「高級感・上質」→ industry「高級感」）。
-    var tkey = taste ? industryKey(taste) : '';
-    list = tkey
-      ? catalogEntries.filter(function (e) {
-          var t = e.taste || '';
-          return t.indexOf(tkey) === 0 || tkey.indexOf(t) === 0;
-        })
+    // KLK-059: canonical（data-taste）で完全一致。表示ラベルの表記ゆれに影響されない。
+    list = tasteCanon
+      ? catalogEntries.filter(function (e) { return (e.taste || '') === tasteCanon; })
       : catalogEntries.slice();
     if (list.length === 0 && catalogEntries.length) {
       list = catalogEntries.slice();
@@ -1375,7 +1380,7 @@ function applyThumbFilter() {
     }
   } else {
     // 既定「近い業種のみ」
-    list = catalogEntries.filter(function (e) { return matchesIndustry(e, key); });
+    list = catalogEntries.filter(function (e) { return matchesIndustry(e, key, isCustom); });
     if (list.length === 0 && catalogEntries.length) {
       list = catalogEntries.slice();
       note = '近い業種の実績が見つからないため、すべての実績を表示しています';

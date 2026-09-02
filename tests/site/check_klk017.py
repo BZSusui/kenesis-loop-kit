@@ -51,13 +51,22 @@ check(
 # ===========================================================================
 thumbfilter_handler = bool(re.search(
     r"getElementById\(\s*'thumbFilter'\s*\)\s*\.addEventListener", HTML))
-first_token = "split('('" in HTML or 'split("("' in HTML
-# 双方向前方一致（industry 照合）の痕跡
+# KLK-059: 業種写像の契約を更新。
+# 旧契約は「split('(' で先頭トークンを取り出し双方向前方一致」だったが、これは SCR-001 の語彙が
+# カタログ canonical と乖離していた時代の吸収策であり、業種13種中8種で一致に失敗していた（設計 §2）。
+# 新契約は「一覧選択＝canonical 完全一致 / 自由入力＝従来の双方向前方一致でフォールバック」。
+# 語彙そのものの四者一致は check_klk059.py が検証する。ここでは結線と分岐の存在のみを見る。
+exact_match = bool(re.search(r"if\s*\(\s*!isCustom\s*\)\s*return\s+a\s*===\s*key", HTML))
+is_custom_branch = "function isCustomIndustry" in HTML and "matchesIndustry(e, key, isCustom)" in HTML
+# 自由入力フォールバック（双方向前方一致）の痕跡は維持されていること
 bidirectional = "indexOf(key)" in HTML and "indexOf(a)" in HTML
+# 旧実装が残っていないこと（退行防止）
+no_legacy = "industryKey" not in HTML
 check(
-    "T2 絞り込み結線＋業種写像 (thumbFilter に addEventListener・split('(' 先頭トークン・双方向前方一致)",
-    thumbfilter_handler and first_token and bidirectional,
-    f"thumbFilterハンドラ={thumbfilter_handler}, split('('={first_token}, 双方向前方一致={bidirectional}",
+    "T2 絞り込み結線＋業種写像 (thumbFilter に addEventListener・canonical 完全一致・自由入力は前方一致・industryKey 廃止)",
+    thumbfilter_handler and exact_match and is_custom_branch and bidirectional and no_legacy,
+    f"thumbFilterハンドラ={thumbfilter_handler}, canonical完全一致={exact_match}, "
+    f"自由入力分岐={is_custom_branch}, 前方一致フォールバック={bidirectional}, industryKey廃止={no_legacy}",
 )
 
 # ===========================================================================
@@ -158,7 +167,8 @@ print()
 print("M群（環境制約で静的検証外 = tester/人間がブラウザ実機で手動確認しログへ記録）:")
 print("  - MA ブリッジ稼働時: #thumbs が /catalog.json entries を実画像付きで描画")
 print("  - MB 参考2枚選択→生成で references.thumbnails に {id,label,tags} が載る（tags は配列）")
-print("  - MC #thumbFilter 3択・業種連動（医療→1件・美容サロン→0件で全表示＋注記）が効く")
+print("  - MC #thumbFilter 3択・業種連動（KLK-059: canonical 完全一致。例「クリニック・病院・介護リハビリ」→2件。")
+print("        実績0件の canonical を選ぶと全表示＋注記へフォールバック）が効く")
 print("  - MD 拡大モーダルが稼働時 /catalog/img/{file} の実画像・非稼働はプレースホルダ")
 print("  - ME 非稼働/file:// で空＋案内文・生成はブロックしない")
 sys.exit(1 if failed else 0)
