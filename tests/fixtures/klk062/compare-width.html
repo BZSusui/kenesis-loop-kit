@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<!--
+  KLK-062 ゴールデン（比較ハブ・画面幅プレビュー切替）— DRAFT_RULES.md §13 骨格8 準拠
+  これはテスト検証用のプレースホルダ出力です。実在の顧客・案件ではありません（サンプル）。
+  案件名: サンプル工房 / 2案 / 単一ファイル・外部依存ゼロ・CSS-only 案切替＋CSS-only 幅切替
+  幅切替は第2の隠しラジオ群 name="vw"（全幅 / 768px / 375px）。追加 JS は使わない。
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>サンプル工房 | デザインラフ比較（2案）</title>
+<style>
+  :root { --color-main-deep: #2c5f8a; --color-link: #1c6fa6; --color-text: #374151; --color-text-sub: #6b7280; --color-border: #d6e2ec; --color-bg-subtle: #f0f5fa; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Hiragino Sans", "Yu Gothic UI", system-ui, sans-serif; color: var(--color-text); background: var(--color-bg-subtle); line-height: 1.6; }
+  .info-bar { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; height: 32px; padding: 0 14px; background: #333; color: #fff; font-size: 12px; }
+  .toolchrome { max-width: 1120px; margin: 0 auto; padding: 16px 20px 0; }
+  .proj-head h1 { font-size: 20px; margin: 6px 0; }
+  .settings-chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 0; }
+  .settings-chips span { font-size: 12px; background: #fff; border: 1px solid var(--color-border); border-radius: 999px; padding: 3px 11px; }
+  .variant-bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 16px 0 0; }
+  .seg { display: inline-flex; border: 1px solid var(--color-border); border-radius: 9px; overflow: hidden; background: #fff; }
+  .seg label { padding: 9px 20px; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--color-text-sub); border-right: 1px solid var(--color-border); }
+  .seg label:last-child { border-right: none; }
+  /* 幅切替セグメント（KLK-062）。案切替の .seg と同じ見た目・別のラジオ群 */
+  .vwseg label { padding: 9px 16px; font-size: 13px; }
+  .vwlabel { font-size: 12px; color: var(--color-text-sub); }
+  .thumbstrip { display: flex; gap: 10px; margin-left: auto; flex-wrap: wrap; }
+  .vthumb { width: 108px; border: 2px solid var(--color-border); border-radius: 8px; overflow: hidden; background: #fff; font-size: 11px; }
+  .vthumb .mini { height: 40px; }
+  .vthumb .cap { padding: 4px 6px; display: flex; justify-content: space-between; align-items: center; }
+  .vthumb .cap .full { color: var(--color-link); font-size: 10px; text-decoration: none; }
+  .toolbar { max-width: 1120px; margin: 14px auto 0; padding: 0 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .toolbar a, .toolbar button { font-size: 13px; padding: 8px 14px; border: 1px solid var(--color-border); border-radius: 8px; background: #fff; color: var(--color-link); text-decoration: none; cursor: pointer; }
+  .canvas { max-width: 1120px; margin: 16px auto 40px; padding: 0 20px; }
+  .pane { display: none; background: #e8eef4; padding: 12px; border-radius: 10px; }
+  .pane iframe { width: 100%; display: block; margin: 0 auto; height: 720px; border: 1px solid var(--color-border); background: #fff; }
+
+  /* 隠しラジオ（案切替・幅切替とも画面には出さない） */
+  .tabctrl { position: absolute; opacity: 0; pointer-events: none; }
+
+  /* --- 案切替（既存・CSS-only 兄弟結合子） --- */
+  #ra:checked ~ .canvas #paneA { display: block; }
+  #rb:checked ~ .canvas #paneB { display: block; }
+  #ra:checked ~ .toolchrome label[for=ra],
+  #rb:checked ~ .toolchrome label[for=rb] { background: var(--color-main-deep); color: #fff; }
+
+  /* --- 画面幅プレビュー切替（KLK-062・CSS-only 兄弟結合子・JS 不使用） --- */
+  #vw768:checked ~ .canvas .pane iframe { width: 768px; }
+  #vw375:checked ~ .canvas .pane iframe { width: 375px; }
+  #vwfull:checked ~ .toolchrome label[for=vwfull],
+  #vw768:checked ~ .toolchrome label[for=vw768],
+  #vw375:checked ~ .toolchrome label[for=vw375] { background: var(--color-main-deep); color: #fff; }
+
+  @media print {
+    .info-bar, .toolbar, .variant-bar, .toolchrome, .vwseg { display: none; }
+    .pane { display: block; padding: 0; background: none; }
+    .pane iframe { box-shadow: none; border-radius: 0; height: auto; }
+  }
+</style>
+</head>
+<body data-folder="mockups/2026-09-02_サンプル工房">
+
+<div class="info-bar">
+  <span>デザインラフ比較 | 2案（画面幅プレビュー切替）</span>
+  <span>外部依存ゼロ / CSS-only 案切替・幅切替</span>
+</div>
+
+<input type="radio" name="variant" id="ra" class="tabctrl" checked>
+<input type="radio" name="variant" id="rb" class="tabctrl">
+
+<input type="radio" name="vw" id="vwfull" class="tabctrl" checked>
+<input type="radio" name="vw" id="vw768" class="tabctrl">
+<input type="radio" name="vw" id="vw375" class="tabctrl">
+
+<div class="toolchrome">
+  <div class="proj-head"><h1>サンプル工房</h1></div>
+  <div class="settings-chips">
+    <span>業種: その他・団体/NPO</span>
+    <span>カラム: 1カラム（全案共通）</span>
+    <span>テイスト: ナチュラル</span>
+    <span>可変点: 画面幅プレビュー（全幅 / 768px / 375px）</span>
+  </div>
+  <div class="variant-bar">
+    <div class="seg">
+      <label for="ra">案A</label>
+      <label for="rb">案B</label>
+    </div>
+    <span class="vwlabel">表示幅</span>
+    <div class="seg vwseg">
+      <label for="vwfull">全幅</label>
+      <label for="vw768">768px</label>
+      <label for="vw375">375px</label>
+    </div>
+    <div class="thumbstrip">
+      <div class="vthumb va"><div class="mini" style="background:#2c5f8a"></div><div class="cap"><span>案A</span><a href="index-a.html" target="_blank" class="full">原寸 ↗</a></div></div>
+      <div class="vthumb vb"><div class="mini" style="background:#3d7a52"></div><div class="cap"><span>案B</span><a href="index-b.html" target="_blank" class="full">原寸 ↗</a></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <a href="index-a.html" target="_blank">🖨 印刷 / PDFで保存（原寸を別タブで開く）</a>
+</div>
+
+<div class="canvas">
+  <div class="pane" id="paneA"><iframe src="index-a.html" title="案A プレビュー"></iframe></div>
+  <div class="pane" id="paneB"><iframe src="index-b.html" title="案B プレビュー"></iframe></div>
+</div>
+
+</body>
+</html>

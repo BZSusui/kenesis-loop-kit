@@ -153,6 +153,11 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
   相対 `<iframe src="index-{letter}.html">`・サムネイル `.thumbstrip`/`.vthumb`・原寸別タブ
   `<a href="index-{letter}.html" target="_blank">`・`@media print`（chrome 非表示）を備えた**単一ファイル・外部依存ゼロ**の
   比較ハブを書く。iframe・原寸リンクとも**同ディレクトリ相対 `.html` のみ**（外部URL 0）。`variants:1` では作らない。
+  - **画面幅プレビュー切替（REQ-201・KLK-062・DRAFT_RULES §13 骨格8）**: variant-bar に `.vwseg`（全幅 / 768px / 375px）を置き、
+    第2の隠しラジオ群 `type="radio" name="vw"`（`vwfull` 既定 checked / `vw768` / `vw375`）＋兄弟結合子
+    `#vw375:checked ~ .canvas .pane iframe{width:375px}` で iframe の幅を切り替える。**CSS-only・追加 JS なし**。
+    `@media print` で `.vwseg` を隠す。案切替（`name="variant"`）とは `name` が異なるため独立して機能する。
+    **スマホ表示版を別ファイルで二重生成してはならない**（生成物は §8 によりレスポンシブ）。
   - **🔄 セクション再生成コントロール（REQ-103・KLK-012・additive）**: `compare.html` の toolbar 近傍に、番地 `<select>`＋
     「🔄 このセクションを再生成」ボタンと、ルート要素の `data-folder="mockups/{日付}_{案件名}"`、`</body>` 直前の health-gated
     インライン fetch（`GET /health` 約800ms → 成功で checked ラジオの letter＋番地を `POST http://127.0.0.1:8765/regenerate` へ・

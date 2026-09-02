@@ -178,18 +178,22 @@ check(
 # ===========================================================================
 # S9 生成指示書スキーマ
 # ===========================================================================
+# KLK-062: output.mobile は廃止（スマホ確認は比較画面の幅切替へ移行）。"mobile:" は必須キーから外し、
+# 「復活していないこと」を退行検査として別途見る。
 schema_keys = [
     "schema:", "version:", "project:", "resolved:", "columns:",
     "taste:", "main:", "autofill:", "thumbnails:", "sampleUrls:",
-    "atari:", "variants:", "mobile:", "animation:",
+    "atari:", "variants:", "animation:",
 ]
 missing_keys = [k for k in schema_keys if k not in BUILD_BLK]
+removed_keys = [k for k in ("mobile:",) if k in BUILD_BLK]
 schema_val = "'design-draft-instruction'" in BUILD_BLK
 version_val = bool(re.search(r"version:\s*1\b", BUILD_BLK))
 check(
-    "S9 生成指示書スキーマ (buildInstruction に schema/version/meta.project/industry.resolved/layout.columns/taste/colors.main/autofill/references.*/atari/output.* キー)",
-    (not missing_keys) and schema_val and version_val,
-    f"欠落キー={missing_keys or 'なし'}, schema値={schema_val}, version:1={version_val}",
+    "S9 生成指示書スキーマ (buildInstruction に schema/version/meta.project/industry.resolved/layout.columns/taste/colors.main/autofill/references.*/atari/output.* キー・mobile は廃止済み)",
+    (not missing_keys) and (not removed_keys) and schema_val and version_val,
+    f"欠落キー={missing_keys or 'なし'}, 廃止済みなのに残存={removed_keys or 'なし'}, "
+    f"schema値={schema_val}, version:1={version_val}",
 )
 
 # ===========================================================================
@@ -234,15 +238,19 @@ atari_values = set(re.findall(r'<input type="radio" name="atari"[^>]*value="([^"
 atari_ok = atari_values == {"standard", "free-photo"}
 var_values = set(re.findall(r'<input type="radio" name="variants"[^>]*value="([^"]+)"', HTML))
 var_ok = var_values == {"1", "3"}
-has_mobilew = 'id="mobileW"' in HTML
+# KLK-062: スマホ同時生成は廃止し比較画面の幅切替へ移行。#mobileW / #mobileOn は撤去され、
+# 代わりに「比較画面で表示幅を切り替えられる」案内が置かれる契約になった。
+no_mobile_ui = ('id="mobileW"' not in HTML) and ('id="mobileOn"' not in HTML)
+has_widthhint = "表示幅を切り替え" in HTML
 has_projectname = 'id="projectName"' in HTML
 has_sampleurl = 'class="sample-url"' in HTML
 check(
-    "S12 各UI (業種select+自由入力・テイスト11種・アタリ2種・案数2種・スマホ幅・案件名・見本URL)",
+    "S12 各UI (業種select+自由入力・テイスト11種・アタリ2種・案数2種・スマホ設定は撤去済み・案件名・見本URL)",
     (has_industry_select and has_industry_custom and taste_ok and atari_ok
-     and var_ok and has_mobilew and has_projectname and has_sampleurl),
+     and var_ok and no_mobile_ui and has_widthhint and has_projectname and has_sampleurl),
     f"industrySelect={has_industry_select}, industryCustom={has_industry_custom}, taste={len(taste_radios)}(>=11), "
-    f"atari={sorted(atari_values)}, variants={sorted(var_values)}, mobileW={has_mobilew}, "
+    f"atari={sorted(atari_values)}, variants={sorted(var_values)}, "
+    f"スマホ設定撤去={no_mobile_ui}, 幅切替の案内={has_widthhint}, "
     f"projectName={has_projectname}, sample-url={has_sampleurl}",
 )
 

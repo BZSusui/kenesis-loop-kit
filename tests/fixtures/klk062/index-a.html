@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<!--
+  KLK-062 ゴールデン（幅切替の iframe 先・案A・最小構成）— DRAFT_RULES.md §8 準拠
+  これはテスト検証用のプレースホルダ出力です。実在の顧客・案件ではありません（サンプル）。
+  幅切替の検証に必要な「レスポンシブであること」だけを最小限で示す。
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>サンプル工房 | デザインラフ 案A</title>
+<style>
+  :root { --color-main: #2c5f8a; --color-sub: #6b8fa8; --color-accent: #d98032; --color-bg: #f7f9fb; --color-text: #374151; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Hiragino Sans", "Yu Gothic UI", system-ui, sans-serif; color: var(--color-text); background: var(--color-bg); line-height: 1.7; }
+  .sec { padding: 40px 24px; }
+  .m-hero { background: var(--color-main); color: #fff; }
+  .m-hero h1 { font-size: 30px; margin: 0 0 10px; }
+  .m-about { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: center; max-width: 1040px; margin: 0 auto; }
+  .atari { background: var(--color-sub); color: #fff; display: flex; align-items: center; justify-content: center; min-height: 200px; font-size: 13px; text-align: center; padding: 12px; }
+  .addr { font-size: 11px; color: var(--color-accent); letter-spacing: .06em; }
+
+  /* NFR-002 / DRAFT_RULES §8: モバイル（唯一のブレークポイント） */
+  @media (max-width: 640px) {
+    .sec { padding: 28px 16px; }
+    .m-hero h1 { font-size: 22px; }
+    .m-about { grid-template-columns: 1fr; gap: 16px; }
+  }
+  @media print { .addr { display: none; } }
+</style>
+</head>
+<body>
+<section class="sec m-hero" data-section="HERO">
+  <p class="addr">MV-01</p>
+  <h1>手仕事の温度を、暮らしのそばに。</h1>
+  <p>木のぬくもりを活かした家具を、ひとつずつ手作りしています。</p>
+</section>
+<section class="sec" data-section="ABOUT">
+  <p class="addr">ABOUT-01</p>
+  <div class="m-about">
+    <div class="atari">［アタリ画像］工房で木材を削る職人の手元<br>検索キーワード: woodworking craftsman hands</div>
+    <div>
+      <h2>つくり手の顔が見える家具</h2>
+      <p>設計から仕上げまで、すべて自社の工房で行っています。使う人の暮らしに合わせて、寸法や仕上げを調整できます。</p>
+    </div>
+  </div>
+</section>
+</body>
+</html>

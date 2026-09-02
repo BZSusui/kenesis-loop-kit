@@ -1035,6 +1035,25 @@ SCR-001 でカタログサムネイルを選んだ指示書では、**案Aを「
    「← 設定を変えて再生成」（任意・SCR-001 への案内）。**「📁 保存フォルダを開く」ダミーボタンは置かない**（U-D・§9）。
 7. **canvas**: `.pane#paneA … #paneC` の中に相対 `<iframe src="index-{letter}.html" title="案X プレビュー">`。CSS-only で
    選択案のみ `display:block`。
+8. **画面幅プレビュー切替（REQ-201・KLK-062）**: 生成物は §8 により `@media (max-width: 640px)` を必ず持つ＝
+   **レスポンシブ**なので、スマホ表示版を別ファイルで二重生成せず、**比較画面で iframe の幅を切り替えて確認**する。
+   案切替と**同じ CSS-only 方式**（第2の隠しラジオ群）で実装する。**追加 JS は使わない**。
+   - **隠しラジオ**: `<input type="radio" name="vw" id="vwfull" checked>` / `id="vw768"` / `id="vw375"` を
+     `name="variant"` の隠しラジオと**同じ位置**（`.canvas` より前の兄弟）に置く。`name` が異なるため案切替と干渉しない。
+   - **セグメント**: variant-bar 内に `.vwseg`（`<label for="vwfull">全幅</label>` /
+     `<label for="vw768">768px</label>` / `<label for="vw375">375px</label>`）。
+     ハイライトは案切替と同方式（`#vwfull:checked ~ .toolchrome label[for=vwfull]`）。
+   - **CSS**: 既定 `.pane iframe { width: 100%; display: block; margin: 0 auto; }`。
+     `#vw768:checked ~ .canvas .pane iframe { width: 768px; }` /
+     `#vw375:checked ~ .canvas .pane iframe { width: 375px; }`。
+     幅を絞ったときに枠が分かるよう `.pane` に中央寄せの余白・背景を持たせる。
+   - **`@media print`**: `.vwseg { display: none; }`（chrome 非表示の既存方針に合流）。
+   - **プリセットの根拠**: 生成物のブレークポイントは `640px` の1つだけ。`375px`＝モバイル版レイアウト、
+     `768px`＝PC版が狭まった状態、`全幅`＝通常、の3つで取りうる見え方を網羅できる。
+     **任意幅の数値指定は行わない**（JS が必要になり「JS は原則不要」に反するため。任意幅はブラウザの
+     開発者ツールで代替できる）。
+   - **`variants:1` には compare.html が無い**ため幅切替も無い。standalone はレスポンシブなので
+     ブラウザ幅を変えて確認する。
 
 **依存・安全:**
 - iframe `src`・原寸リンク `href` とも**同ディレクトリの相対 `.html` のみ**（`index-a.html` 等）。`http(s)://` 参照 0 件
