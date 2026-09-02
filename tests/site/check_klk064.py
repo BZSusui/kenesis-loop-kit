@@ -57,7 +57,7 @@ else:
         (dict(good, items="notalist"), False),
         (dict(good, items=[dict(OK_ITEM, file="../x.jpg")]), False),
         (dict(good, items=[dict(OK_ITEM, colors=["虹色"])]), False),
-        (dict(good, items=[dict(OK_ITEM, colors=["マルチカラー", "ブルー"])]), False),
+        (dict(good, items=[dict(OK_ITEM, colors=["カラフル", "ブルー"])]), False),
         (dict(good, items=[dict(OK_ITEM, sectionLayouts={"HERO": ""})]), False),
         ("notadict", False),
     ]

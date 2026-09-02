@@ -1279,7 +1279,8 @@ function updateThumbCount() {
 //   器 index.html に実案件名・画像タグのリテラルを焼き込まない（画像は createElement で後付け＝S13温存）。
 // ============================================================================
 // 主配色カテゴリ（bridge.py / catalog.html の CANONICAL_COLORS と一致・KLK-016）。
-const CANONICAL_COLORS = ['グリーン', 'ブルー', 'レッド', 'ゴールド', 'ピンク', 'モノトーン', 'マルチカラー'];
+// KLK-067: 主配色 canonical（正は palette/index.html の const COLORS・16種・順序も一致）
+const CANONICAL_COLORS = ['レッド', 'ピンク', 'オレンジ', 'イエロー', 'イエローグリーン', 'グリーン', 'ミント・水色', 'ブルー', 'ネイビー', 'パープル', 'ブラウン', 'ベージュ', 'ゴールド', 'シルバー', 'モノトーン', 'カラフル'];
 
 let catalogAlive = false;   // location.protocol!=='file:' かつ probeHealth() 真
 let catalogEntries = [];    // /catalog.json の entries（写像前の生データ）
@@ -1299,7 +1300,7 @@ function thumbTags(el) {
 }
 
 // /catalog.json を相対（同一オリジン）で読む。catalog.html loadCatalog を移植。
-// 失敗/不正/空は [] を返す。colors は許可7カテゴリのみ通す（軽検証）。
+// 失敗/不正/空は [] を返す。colors は許可16カテゴリのみ通す（軽検証）。
 function loadCatalog() {
   return fetch('/catalog.json').then(function (r) {
     if (!r || !r.ok) throw new Error('catalog.json');

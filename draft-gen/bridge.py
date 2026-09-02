@@ -72,7 +72,29 @@ ADDR_RE = re.compile(r"^[A-Z][A-Z0-9]*-\d{2}$")  # 安全文字集合(SECTION-NN
 LETTER_RE = re.compile(r"^[a-c]$")               # 複数案の letter(a-c)。単一案は letter 無し
 
 # 実績カタログ(KLK-013・SCR-004・REQ-105/106)—主配色7カテゴリ/安全名/MIME
-CANONICAL_COLORS = {"グリーン", "ブルー", "レッド", "ゴールド", "ピンク", "モノトーン", "マルチカラー"}  # ワイヤー主配色チップ7値(§3.3・KLK-016で「マルチカラー」を追加)
+# 主配色 canonical(KLK-067)。**正は palette/index.html の `const COLORS`**（ムードカラー ジェネレーターの
+# 「メインカラーの傾向（カラー）」）であり、name をそのまま・順序も揃えて写している。
+# タグ付け(カタログ)と配色生成(パレット)が同じ言葉を話すようにするため。乖離は check_klk067 が検出する。
+# 旧「マルチカラー」は palette の「カラフル」へ改名した（同じ概念の別名・単独指定のみの規約は不変）。
+CANONICAL_COLORS_ORDER = [
+    "レッド",
+    "ピンク",
+    "オレンジ",
+    "イエロー",
+    "イエローグリーン",
+    "グリーン",
+    "ミント・水色",
+    "ブルー",
+    "ネイビー",
+    "パープル",
+    "ブラウン",
+    "ベージュ",
+    "ゴールド",
+    "シルバー",
+    "モノトーン",
+    "カラフル",
+]
+CANONICAL_COLORS = set(CANONICAL_COLORS_ORDER)
 CATALOG_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")  # id/file の安全文字集合(先頭は英数)
 CATALOG_MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}  # 配信MIME(GET /catalog/img/)。png変換方式ゆえ webp は保存せず=不変
 
@@ -253,7 +275,7 @@ def validate_instruction(obj):
             errors.append("mvPhoto.file が不正です(安全名のみ)")
 
     # KLK-034 §12.2/§5.1: 参考準拠の拡張キー。「存在するときのみ」検証する(無指定=後方互換・
-    # 旧 instruction は分岐に入らない)。colors は7カテゴリ(1..3件・マルチカラー単独)、
+    # 旧 instruction は分岐に入らない)。colors は16カテゴリ(1..3件・カラフル単独)、
     # sectionLayouts は shape のみ(object・値が非空文字列。語彙照合は validate_catalog と同方針でしない)。
     refs = obj.get("references")
     if refs is not None and isinstance(refs, dict):
@@ -269,9 +291,9 @@ def validate_instruction(obj):
                 if t_colors is not None:
                     if not isinstance(t_colors, list) or not (1 <= len(t_colors) <= 3) \
                             or any(c not in CANONICAL_COLORS for c in t_colors) \
-                            or ("マルチカラー" in t_colors and len(t_colors) > 1):
+                            or ("カラフル" in t_colors and len(t_colors) > 1):
                         errors.append(
-                            "references.thumbnails[{0}].colors が不正です(7カテゴリ・1..3件・マルチカラー単独)".format(i))
+                            "references.thumbnails[{0}].colors が不正です(16カテゴリ・1..3件・カラフル単独)".format(i))
                 t_sl = t.get("sectionLayouts")
                 if t_sl is not None:
                     if not isinstance(t_sl, dict) \
@@ -610,9 +632,9 @@ def validate_catalog(obj):
                 errors.append("{0}.colors は第1主配色が必須です(空配列不可)".format(where))
             elif len(colors) > 3:
                 errors.append("{0}.colors は最大3件までです".format(where))
-            # KLK-016: マルチカラーは単独指定のみ(具体色と併用不可)
-            if "マルチカラー" in colors and len(colors) != 1:
-                errors.append("{0}.colors のマルチカラーは単独指定のみ可です(他色と併用不可)".format(where))
+            # KLK-016/067: カラフルは単独指定のみ(具体色と併用不可)
+            if "カラフル" in colors and len(colors) != 1:
+                errors.append("{0}.colors のカラフルは単独指定のみ可です(他色と併用不可)".format(where))
         # KLK-030: sectionLayouts(任意)。present→shape検証 / absent→OK。
         # 値の語彙の正は DRAFT_RULES §12.1.1/§12.1.2。ここでは語彙照合をしない
         # (bridge.py に語彙表を持つと第3の複製になり STEP B 追従性を損なうため)。品質は M群/人間確認ゲート。
@@ -641,7 +663,7 @@ def validate_proposal(obj):
     AI が書き出した案を**人間へ見せる前**に構造だけ検証する(値の妥当性は人間が画面で判断する)。
     想定: {"schema":"klk-catalog-proposal","version":1,"jobId":"<hex>","items":[{...}]}
     各 item: file(必須・is_safe_catalog_name) / industry・taste・title・note・columns・source は
-    あれば文字列 / colors はあれば CANONICAL_COLORS の 1..3 件(マルチカラーは単独) /
+    あれば文字列 / colors はあれば CANONICAL_COLORS の 1..3 件(カラフルは単独) /
     sectionLayouts はあれば object かつ各値が非空文字列。
     返却: (ok: bool, errors: list[str])。
     """
@@ -685,8 +707,8 @@ def _validate_tag_fields(it, i, require_file):
             errors.append("items[{0}].colors が 1..3 件の配列ではありません".format(i))
         elif any(c not in CANONICAL_COLORS for c in cols):
             errors.append("items[{0}].colors に許可外の主配色があります".format(i))
-        elif "マルチカラー" in cols and len(cols) > 1:
-            errors.append("items[{0}].colors のマルチカラーは単独指定のみです".format(i))
+        elif "カラフル" in cols and len(cols) > 1:
+            errors.append("items[{0}].colors のカラフルは単独指定のみです".format(i))
     sl = it.get("sectionLayouts")
     if sl is not None:
         if not isinstance(sl, dict):

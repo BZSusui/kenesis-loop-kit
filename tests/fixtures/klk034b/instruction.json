@@ -27,9 +27,9 @@
     "thumbnails": [
       {
         "id": "cat-9035",
-        "label": "ダミー見本（マルチカラー検証用）",
+        "label": "ダミー見本（カラフル検証用）",
         "tags": ["ダミー", "検証用"],
-        "colors": ["マルチカラー"],
+        "colors": ["カラフル"],
         "sectionLayouts": { "HERO": "band" },
         "source": "ref"
       }

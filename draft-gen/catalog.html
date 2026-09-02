@@ -194,13 +194,22 @@
     <div class="frow" data-facet="colors">
       <span class="flabel">主配色</span>
       <div class="fchips">
-        <span class="fchip color" data-val="グリーン"><span class="sw" style="background:#2E7D6B"></span>グリーン</span>
-        <span class="fchip color" data-val="ブルー"><span class="sw" style="background:#2E5FA3"></span>ブルー</span>
-        <span class="fchip color" data-val="レッド"><span class="sw" style="background:#B23A48"></span>レッド</span>
-        <span class="fchip color" data-val="ゴールド"><span class="sw" style="background:#C6A15B"></span>ゴールド</span>
+        <span class="fchip color" data-val="レッド"><span class="sw" style="background:#B3402F"></span>レッド</span>
         <span class="fchip color" data-val="ピンク"><span class="sw" style="background:#E86FA0"></span>ピンク</span>
-        <span class="fchip color" data-val="モノトーン"><span class="sw" style="background:#333"></span>モノトーン</span>
-        <span class="fchip color" data-val="マルチカラー"><span class="sw" style="background:conic-gradient(from 0deg,#2E7D6B,#2E5FA3,#B23A48,#C6A15B,#E86FA0,#333,#2E7D6B)"></span>マルチカラー</span>
+        <span class="fchip color" data-val="オレンジ"><span class="sw" style="background:#C87F42"></span>オレンジ</span>
+        <span class="fchip color" data-val="イエロー"><span class="sw" style="background:#BFA23C"></span>イエロー</span>
+        <span class="fchip color" data-val="イエローグリーン"><span class="sw" style="background:#7E9B45"></span>イエローグリーン</span>
+        <span class="fchip color" data-val="グリーン"><span class="sw" style="background:#2E7D6B"></span>グリーン</span>
+        <span class="fchip color" data-val="ミント・水色"><span class="sw" style="background:#3E9AA6"></span>ミント・水色</span>
+        <span class="fchip color" data-val="ブルー"><span class="sw" style="background:#2C5F8A"></span>ブルー</span>
+        <span class="fchip color" data-val="ネイビー"><span class="sw" style="background:#2A3C6B"></span>ネイビー</span>
+        <span class="fchip color" data-val="パープル"><span class="sw" style="background:#6F4E9C"></span>パープル</span>
+        <span class="fchip color" data-val="ブラウン"><span class="sw" style="background:#885A3A"></span>ブラウン</span>
+        <span class="fchip color" data-val="ベージュ"><span class="sw" style="background:#A98E60"></span>ベージュ</span>
+        <span class="fchip color" data-val="ゴールド"><span class="sw" style="background:#C6A15B"></span>ゴールド</span>
+        <span class="fchip color" data-val="シルバー"><span class="sw" style="background:#7C858D"></span>シルバー</span>
+        <span class="fchip color" data-val="モノトーン"><span class="sw" style="background:#444850"></span>モノトーン</span>
+        <span class="fchip color" data-val="カラフル"><span class="sw" style="background:conic-gradient(from 0deg,#2E7D6B,#2C5F8A,#B3402F,#C6A15B,#E86FA0,#333,#2E7D6B)"></span>カラフル</span>
       </div>
     </div>
     <div class="frow" data-facet="source">
@@ -243,7 +252,7 @@
     <div class="autotag">
       <div class="at-head">自動タグ付けの結果(この画面で確認・修正してから登録します)</div>
       <div class="at-body" id="autotagBody">
-        取り込みを実行すると、AIが推定した業種・テイスト・主配色(7カテゴリ)・カラムを
+        取り込みを実行すると、AIが推定した業種・テイスト・主配色(16カテゴリ)・カラムを
         <b>この下に一覧で表示</b>します。内容を確認・修正し、登録したくない画像は「除外」にしてください。
         「この内容で登録」を押した分<b>だけ</b>がカタログへ登録されます(<b>承認前に確定しません</b>)。
       </div>
@@ -280,8 +289,9 @@
 (function () {
   "use strict";
 
-  // 主配色7カテゴリ(bridge.py CANONICAL_COLORS と一致・§3.3・KLK-016で「マルチカラー」を追加)
-  var CANONICAL_COLORS = ["グリーン", "ブルー", "レッド", "ゴールド", "ピンク", "モノトーン", "マルチカラー"];
+  // 主配色16カテゴリ(bridge.py CANONICAL_COLORS と一致・正は palette/index.html の const COLORS・KLK-067)
+  // KLK-067: 主配色 canonical（正は palette/index.html の const COLORS・16種・順序も一致）
+  var CANONICAL_COLORS = ["レッド", "ピンク", "オレンジ", "イエロー", "イエローグリーン", "グリーン", "ミント・水色", "ブルー", "ネイビー", "パープル", "ブラウン", "ベージュ", "ゴールド", "シルバー", "モノトーン", "カラフル"];
 
   // 選択状態(状態の単一源はDOM: fchip.on とこの sel を同期)
   var sel = { industry: [], taste: [], colors: [], source: [], keyword: "", sort: "new" };
@@ -452,7 +462,7 @@
       return r.json();
     }).then(function (data) {
       var entries = (data && Array.isArray(data.entries)) ? data.entries : [];
-      // 主配色は許可7カテゴリのみ通す(軽検証・不正値は無視)
+      // 主配色は許可16カテゴリのみ通す(軽検証・不正値は無視)
       entries.forEach(function (e) {
         if (Array.isArray(e.colors)) {
           e.colors = e.colors.filter(function (c) { return CANONICAL_COLORS.indexOf(c) >= 0; });
@@ -562,7 +572,7 @@
           '<div><label>テイスト</label><select data-f="taste">' + optionsHtml(CANON_TASTES, it.taste) + "</select></div>" +
           '<div><label>カラム構成</label><select data-f="columns"><option value="">（未指定）</option>' + optionsHtml(CANON_COLUMNS, it.columns) + "</select></div>" +
           '<div style="grid-column:1/-1"><label>メモ</label><input type="text" data-f="note" value="' + esc(it.note || "") + '"></div>' +
-          '<div class="pcolors"><span class="lbl">主配色（最大3・マルチカラーは単独）</span>' +
+          '<div class="pcolors"><span class="lbl">主配色（最大3・カラフルは単独）</span>' +
             CANONICAL_COLORS.map(function (c) {
               var on = (it.colors || []).indexOf(c) >= 0;
               return '<label><input type="checkbox" data-color="' + esc(c) + '"' + (on ? " checked" : "") + "> " + esc(c) + "</label>";
@@ -599,8 +609,8 @@
       if (color) {
         var cur = (it.colors || []).slice();
         if (e.target.checked) {
-          if (color === "マルチカラー") { cur = ["マルチカラー"]; }
-          else { cur = cur.filter(function (c) { return c !== "マルチカラー"; }); if (cur.length < 3) cur.push(color); else e.target.checked = false; }
+          if (color === "カラフル") { cur = ["カラフル"]; }
+          else { cur = cur.filter(function (c) { return c !== "カラフル"; }); if (cur.length < 3) cur.push(color); else e.target.checked = false; }
         } else { cur = cur.filter(function (c) { return c !== color; }); }
         it.colors = cur;
         renderProposal();   // 排他・上限の結果をチェックボックスへ反映する
