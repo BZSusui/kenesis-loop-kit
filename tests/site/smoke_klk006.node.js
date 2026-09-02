@@ -128,7 +128,7 @@ check('D6 配色充足=メインのみ: main有効・sub/accent/bg null でも v
 });
 
 // ===== D7: buildInstruction スキーマ・契約固定・非破壊 =====
-check('D7 buildInstruction: schema/version/columns列挙/resolved/autofill/widthPx整数・入力非破壊', () => {
+check('D7 buildInstruction: schema/version/columns列挙/resolved/autofill/output.mobile 非出力・入力非破壊', () => {
   const input = {
     projectName: 'サンプル案件',
     industryPreset: '美容・サロン', industryCustom: 'オーガニックカフェ',
@@ -136,6 +136,7 @@ check('D7 buildInstruction: schema/version/columns列挙/resolved/autofill/width
     colors: { main: '#2E7D6B', sub: null, accent: '#E8A33D', bg: null, mode: 'explicit' },
     refThumbs: [{ id: 'm1', label: 'サロン内観', tags: '美容 / ナチュラル' }],
     sampleUrls: ['https://example.com/', '', 'https://example.org/'],
+    // KLK-062: mobile は廃止。旧入力を渡しても壊れず、出力に mobile が現れないことを確認する
     atari: 'standard', variants: 3, mobile: { enabled: true, widthPx: 375 },
   };
   const snapshot = JSON.stringify(input);
@@ -152,7 +153,9 @@ check('D7 buildInstruction: schema/version/columns列挙/resolved/autofill/width
   assert(out.colors.autofill.indexOf('sub') >= 0 && out.colors.autofill.indexOf('bg') >= 0,
     'autofill に sub/bg が無い: ' + JSON.stringify(out.colors.autofill));
   assert(out.colors.autofill.indexOf('accent') < 0, 'autofill に accent(有効)が誤混入');
-  assert(Number.isInteger(out.output.mobile.widthPx), 'widthPx が整数でない: ' + out.output.mobile.widthPx);
+  // KLK-062: output.mobile は廃止（スマホ確認は比較画面の幅切替へ移行）。
+  // 旧入力に mobile があっても出力には現れないこと＝廃止の実証かつ後方互換の実証。
+  assert(!('mobile' in out.output), 'output.mobile は KLK-062 で廃止されたはず: ' + JSON.stringify(out.output));
   assert(out.output.variants === 3, 'variants 不一致: ' + out.output.variants);
   // R-A/KLK-008: output.animation は boolean。未指定入力（この input に animation キーは無い）で既定 true
   assert(typeof out.output.animation === 'boolean', 'output.animation が boolean でない: ' + out.output.animation);
@@ -167,7 +170,7 @@ check('D7 buildInstruction: schema/version/columns列挙/resolved/autofill/width
   // 必須キーの存在
   ['schema', 'version', 'meta', 'industry', 'layout', 'taste', 'colors', 'references', 'atari', 'output']
     .forEach(k => assert(k in out, '必須キー欠落: ' + k));
-  assert('project' in out.meta && 'thumbnails' in out.references && 'mobile' in out.output, '入れ子キー欠落');
+  assert('project' in out.meta && 'thumbnails' in out.references && 'variants' in out.output, '入れ子キー欠落');
 
   // 入力オブジェクトを破壊的変更しない
   assert(JSON.stringify(input) === snapshot, 'buildInstruction が入力を破壊的変更した');

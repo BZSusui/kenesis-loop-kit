@@ -659,16 +659,15 @@
   <!-- ⑧ 案数・スマホ -->
   <section class="card">
     <div class="lbl"><span class="step">9</span><h2>生成する案の数・オプション</h2>
-      <span class="reqid">REQ-008・201</span></div>
+      <span class="reqid">REQ-008</span></div>
     <div class="radio-inline" style="margin-bottom:12px">
       <label><input type="radio" name="variants" value="1"> 1案</label>
       <label><input type="radio" name="variants" value="3" checked> 3案（比較しやすい）</label>
     </div>
-    <div class="toggle-line">
-      <label><input type="checkbox" id="mobileOn"> スマホ表示版も同時に生成する</label>
-      <span class="sub-inline">画面幅 <input type="text" id="mobileW" value="375"> px で生成</span>
-      <span class="opt">余裕があれば / REQ-201</span>
-    </div>
+    <p class="note-oq" style="margin:0 0 12px">
+      スマホでの見え方は、生成後の<b>比較画面で表示幅を切り替えて</b>確認できます（全幅 / 768px / 375px・REQ-201）。
+      生成物はもともとレスポンシブなので、スマホ用に別ファイルを作る必要はありません。
+    </p>
     <div class="toggle-line" style="margin-top:12px">
       <label><input type="checkbox" id="animOn" checked> 生成時アニメーション（読込フェードイン・スクロール出現）を付ける</label>
       <span class="sub-inline">既定ON。OFFにすると生成物は最初から全表示になります</span>
@@ -868,9 +867,6 @@ function buildInstruction(input) {
   const nVar = parseInt(input.variants, 10);
   const variants = nVar === 1 ? 1 : 3;
 
-  const mobileIn = input.mobile || {};
-  const wpx = parseInt(mobileIn.widthPx, 10);
-
   const thumbs = (Array.isArray(input.refThumbs) ? input.refThumbs : []).slice(0, 3).map(function (t) {
     var o = { id: t.id, label: t.label, tags: t.tags };
     // KLK-034: 参考準拠タグ（あるときのみ載せる＝additive。旧指示書と同形を保つ）。
@@ -914,10 +910,7 @@ function buildInstruction(input) {
     atari: input.atari || 'standard',
     output: {
       variants: variants,
-      mobile: {
-        enabled: !!mobileIn.enabled,
-        widthPx: Number.isFinite(wpx) ? wpx : 375,
-      },
+      // KLK-062: output.mobile は廃止。スマホ表示は比較画面の幅切替（DRAFT_RULES §13 骨格8）で確認する。
       animation: input.animation !== false,
     },
   };
@@ -1076,10 +1069,6 @@ function collectInput() {
     atari: atariEl ? atariEl.value : 'standard',
     mvPhoto: mvPhotoSaved,   // KLK-020: /upload 済みの保存名 or null（free-photo 時のみ buildInstruction が使用）
     variants: varEl ? parseInt(varEl.value, 10) : 3,
-    mobile: {
-      enabled: document.getElementById('mobileOn').checked,
-      widthPx: parseInt(document.getElementById('mobileW').value, 10) || 375,
-    },
     animation: document.getElementById('animOn').checked,
   };
 }
@@ -1593,11 +1582,12 @@ function renderSectionCopyRows() {
 // ---- イベント登録 ----------------------------------------------------------
 function init() {
   // 汎用: 入力のたびに再評価
-  ['projectName', 'industrySelect', 'industryCustom', 'mobileW'].forEach(function (id) {
+  // KLK-062: mobileW / mobileOn は撤去（スマホ確認は比較画面の幅切替へ移行）。
+  ['projectName', 'industrySelect', 'industryCustom'].forEach(function (id) {
     document.getElementById(id).addEventListener('input', render);
     document.getElementById(id).addEventListener('change', render);
   });
-  document.querySelectorAll('input[name=col], input[name=taste], input[name=atari], input[name=variants], #mobileOn, #animOn')
+  document.querySelectorAll('input[name=col], input[name=taste], input[name=atari], input[name=variants], #animOn')
     .forEach(function (el) { el.addEventListener('change', render); });
   document.querySelectorAll('.sample-url').forEach(function (el) { el.addEventListener('input', render); });
   // KLK-020: MVフリー実写真の選択→ブリッジ /upload（REQ-104 b方式）
