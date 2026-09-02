@@ -208,20 +208,26 @@ check(
 )
 
 # ===========================================================================
-# S6 取込の成功条件（catalog.json 可読 = after is not None・_run_catalog_import_job）
+# S6 取込の成功条件（KLK-064 で改訂: proposal.json の生成有無・_run_catalog_import_job）
+#
+# 旧契約は「catalog.json が読める(after is not None)」を成果物有無としていたが、これは**常に真**で
+# 成否を区別できず、ブリッジ経由の取り込みが一度も登録に到達しないまま「完了」と報告される一因だった。
+# KLK-064 で成果物を **proposal.json の生成** に変更したため、本チェックも新契約へ更新する。
 # ===========================================================================
 s6_after_judge = re.search(
-    r"is_job_success\(\s*proc\.returncode\s*,\s*after\s+is\s+not\s+None\s*\)",
+    r"is_job_success\(\s*proc\.returncode\s*,\s*proposal_ok\s*\)",
     RUN_CATALOG) is not None
-# after 算出が失敗判定の前（after = _count_entries() < is_job_success）
-i_after = RUN_CATALOG.find("after = _count_entries()")
+# proposal_ok 算出が失敗判定の前（proposal_ok = os.path.isfile(...) < is_job_success）
+i_after = RUN_CATALOG.find("proposal_ok = os.path.isfile(")
 i_cat_judge = RUN_CATALOG.find("is_job_success(")
 s6_order = 0 <= i_after < i_cat_judge
-s6 = s6_after_judge and s6_order
+# 旧契約（常に真になる判定）が復活していないこと＝退行防止
+s6_no_legacy = "is_job_success(proc.returncode, after is not None)" not in RUN_CATALOG
+s6 = s6_after_judge and s6_order and s6_no_legacy
 check(
-    "S6 取込の成功条件 (_run_catalog_import_job が after=_count_entries() を判定前に算出し is_job_success(rc, after is not None) 判定)",
+    "S6 取込の成功条件 (_run_catalog_import_job が proposal_ok=os.path.isfile() を判定前に算出し is_job_success(rc, proposal_ok) 判定・旧契約の復活なし)",
     s6,
-    f"is_job_success(rc, after is not None)={s6_after_judge}, after算出<判定={s6_order}",
+    f"is_job_success(rc, proposal_ok)={s6_after_judge}, proposal_ok算出<判定={s6_order}, 旧契約の不在={s6_no_legacy}",
 )
 
 # ===========================================================================

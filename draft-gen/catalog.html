@@ -101,6 +101,32 @@
   .autotag { margin-top: 14px; border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; }
   .autotag .at-head { background: var(--color-bg-subtle); padding: 8px 12px; font-size: 12.5px; color: var(--color-text); border-bottom: 1px solid var(--color-border); }
   .autotag .at-body { padding: 12px; font-size: 12.5px; color: var(--color-text-sub); }
+  /* KLK-064: 承認フォーム（AI の提案を画面で確認・修正して登録する） */
+  .at-list { padding: 0 12px; }
+  .pitem { border: 1px solid var(--color-border); border-radius: 10px; padding: 12px; margin: 0 0 12px;
+    display: grid; grid-template-columns: 132px 1fr; gap: 14px; background: #fff; }
+  .pitem.excluded { opacity: .5; background: var(--color-bg-subtle); }
+  .pitem .pthumb { width: 132px; height: 96px; object-fit: cover; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-bg-subtle); }
+  .pfields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; }
+  .pfields label { font-size: 11.5px; color: var(--color-text-sub); display: block; }
+  .pfields select, .pfields input[type=text] { width: 100%; padding: 5px 7px; font-size: 12.5px;
+    border: 1px solid var(--color-border); border-radius: 6px; background: #fff; color: var(--color-text); }
+  .pcolors { grid-column: 1 / -1; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .pcolors span.lbl { font-size: 11.5px; color: var(--color-text-sub); }
+  .pcolors label { font-size: 12px; display: inline-flex; align-items: center; gap: 3px; }
+  .pactions { grid-column: 1 / -1; display: flex; gap: 12px; align-items: center; font-size: 12px; }
+  .at-foot { padding: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    border-top: 1px solid var(--color-border); background: var(--color-bg-subtle); }
+  .at-count { font-size: 12.5px; color: var(--color-text); }
+  /* アップロード完了モーダル */
+  .up-modal-back { display: none; position: fixed; inset: 0; z-index: 300; background: rgba(20,30,40,.72);
+    align-items: center; justify-content: center; padding: 20px; }
+  .up-modal-back.open { display: flex; }
+  .up-modal { background: #fff; border-radius: 12px; max-width: 460px; width: 100%; padding: 24px; text-align: center; position: relative; }
+  .up-modal h3 { margin: 4px 0 10px; font-size: 17px; }
+  .up-modal p { font-size: 13px; color: var(--color-text-sub); margin: 0 0 6px; }
+  .up-modal .um-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .up-modal .um-close { position: absolute; top: 8px; right: 12px; border: none; background: none; font-size: 20px; cursor: pointer; color: var(--color-text-sub); }
 
   /* モーダル(SCR-001/002 と同方式・CSS-only チェックボックストグル) */
   .modal-toggle { display: none; }
@@ -215,12 +241,33 @@
       <span class="import-status" id="importStatus">ブリッジ未起動のため取り込みは実行できません。</span>
     </div>
     <div class="autotag">
-      <div class="at-head">自動タグ付けの結果(Claude Code のチャットで確認・修正します)</div>
+      <div class="at-head">自動タグ付けの結果(この画面で確認・修正してから登録します)</div>
       <div class="at-body" id="autotagBody">
         取り込みを実行すると、AIが推定した業種・テイスト・主配色(7カテゴリ)・カラムを
-        <b>Claude Code のチャット欄に一覧で提示</b>します(この画面には表示されません)。
-        チャット上で内容を確認・修正し、承認した分だけがカタログへ登録されます(<b>承認前に確定しません</b>)。
-        登録が終わると、この画面のサムネイル一覧が自動で更新されます。
+        <b>この下に一覧で表示</b>します。内容を確認・修正し、登録したくない画像は「除外」にしてください。
+        「この内容で登録」を押した分<b>だけ</b>がカタログへ登録されます(<b>承認前に確定しません</b>)。
+      </div>
+      <div class="at-list" id="proposalList"></div>
+      <div class="at-foot" id="proposalFoot" style="display:none">
+        <span class="at-count" id="proposalCount"></span>
+        <button type="button" class="btn primary" id="commitBtn">この内容で登録</button>
+        <span class="import-status" id="commitStatus"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- KLK-064: アップロード完了モーダル（次に何をすればよいかを案内する） -->
+  <div class="up-modal-back" id="upModalBack" role="dialog" aria-modal="true" aria-labelledby="upModalTitle">
+    <div class="up-modal">
+      <button type="button" class="um-close" id="upModalClose" aria-label="閉じる">×</button>
+      <div style="font-size:34px">✅</div>
+      <h3 id="upModalTitle">画像を追加しました</h3>
+      <p id="upModalBody"></p>
+      <p><b>次は「取り込みを実行」を押してください。</b>AIが業種・テイスト・主配色を推定し、この画面に一覧で表示します。</p>
+      <p>内容を確認・修正してから「この内容で登録」を押すと、カタログに登録されます。</p>
+      <div class="um-actions">
+        <button type="button" class="btn primary" id="upModalGo">取り込みを実行する</button>
+        <button type="button" class="btn" id="upModalLater">あとで</button>
       </div>
     </div>
   </div>
@@ -457,10 +504,181 @@
       st.textContent = j.message || j.state;
       if (j.state === "running") { setTimeout(function () { pollStatus(jobId); }, 1500); return; }
       document.getElementById("importBtn").disabled = false;
-      if (j.state === "done") { loadCatalog().then(function (e) { allEntries = e; updateHeadCount(); renderGrid(); }); }
+      // KLK-064: 取り込み＝**提案の生成**。ここではまだ登録されない。提案を読み込んで承認フォームを描く。
+      if (j.state === "done") {
+        loadProposal().then(function (n) {
+          if (n > 0) { document.getElementById("proposalList").scrollIntoView({ behavior: "smooth", block: "start" }); }
+        });
+      }
     }).catch(function () {
       st.textContent = "状態の取得に失敗しました。";
       document.getElementById("importBtn").disabled = false;
+    });
+  }
+
+  // ---- 承認フォーム(KLK-064・GET /catalog-proposal → 画面で確認・修正 → POST /catalog-commit) ----
+  // AI は提案するだけ。人間がここで確認・修正・除外し、登録はブリッジ(Python)が決定的に行う。
+  // 語彙は KLK-059 の canonical（CATALOG_RULES §3 が正）と一致させる。ずれると絞り込みが効かなくなる。
+  var CANON_INDUSTRIES = [
+    "飲食店・カフェ・食関連", "美容室・エステ・化粧品", "ファッション", "スクール・教室", "不動産・建築",
+    "ホテル・旅館・レジャー", "士業事務所（法律/会計/コンサルティング他）", "コーポレート／BtoB", "EC・物販",
+    "フィットネス・ジム・スポーツ", "イベント・キャンペーンLP", "ジュエリー・時計・貴金属",
+    "クリニック・病院・介護リハビリ", "農業・ファーム", "求人・採用", "アート・ポートフォリオ", "その他・団体/NPO"
+  ];
+  var CANON_TASTES = ["シンプル", "ナチュラル", "高級感", "ポップ", "和風", "かっこいい", "レトロ", "かわいい", "アート", "ダーク"];
+  var CANON_COLUMNS = ["1col", "2col-full-left", "2col-full-right", "2col-body-left", "2col-body-right", "3col"];
+
+  var proposalItems = [];   // 画面の編集状態（提案＋人間の修正）
+
+  function optionsHtml(list, selected) {
+    return list.map(function (v) {
+      return '<option value="' + esc(v) + '"' + (v === selected ? " selected" : "") + ">" + esc(v) + "</option>";
+    }).join("");
+  }
+
+  function renderProposal() {
+    var host = document.getElementById("proposalList");
+    var foot = document.getElementById("proposalFoot");
+    host.textContent = "";
+    if (!proposalItems.length) { foot.style.display = "none"; return; }
+    proposalItems.forEach(function (it, idx) {
+      var row = document.createElement("div");
+      row.className = "pitem" + (it._excluded ? " excluded" : "");
+      row.setAttribute("data-idx", String(idx));
+      row.innerHTML =
+        '<img class="pthumb" alt="" src="/catalog/pending-img/' + encodeURIComponent(it.file) + '">' +
+        '<div class="pfields">' +
+          '<div><label>タイトル</label><input type="text" data-f="title" value="' + esc(it.title || "") + '"></div>' +
+          '<div><label>業種</label><select data-f="industry">' + optionsHtml(CANON_INDUSTRIES, it.industry) + "</select></div>" +
+          '<div><label>テイスト</label><select data-f="taste">' + optionsHtml(CANON_TASTES, it.taste) + "</select></div>" +
+          '<div><label>カラム構成</label><select data-f="columns"><option value="">（未指定）</option>' + optionsHtml(CANON_COLUMNS, it.columns) + "</select></div>" +
+          '<div style="grid-column:1/-1"><label>メモ</label><input type="text" data-f="note" value="' + esc(it.note || "") + '"></div>' +
+          '<div class="pcolors"><span class="lbl">主配色（最大3・マルチカラーは単独）</span>' +
+            CANONICAL_COLORS.map(function (c) {
+              var on = (it.colors || []).indexOf(c) >= 0;
+              return '<label><input type="checkbox" data-color="' + esc(c) + '"' + (on ? " checked" : "") + "> " + esc(c) + "</label>";
+            }).join("") +
+          "</div>" +
+          '<div class="pactions">' +
+            '<label><input type="radio" name="src' + idx + '" data-f="source" value="own"' + (it.source !== "ref" ? " checked" : "") + "> 自社実績</label>" +
+            '<label><input type="radio" name="src' + idx + '" data-f="source" value="ref"' + (it.source === "ref" ? " checked" : "") + "> 収集見本</label>" +
+            '<label style="margin-left:auto"><input type="checkbox" data-f="_excluded"' + (it._excluded ? " checked" : "") + "> このファイルは除外する</label>" +
+          "</div>" +
+        "</div>";
+      host.appendChild(row);
+    });
+    foot.style.display = "flex";
+    updateProposalCount();
+  }
+
+  function updateProposalCount() {
+    var n = proposalItems.filter(function (it) { return !it._excluded; }).length;
+    document.getElementById("proposalCount").textContent = n + " 件を登録します（除外 " + (proposalItems.length - n) + " 件）";
+    document.getElementById("commitBtn").disabled = (n === 0) || !bridgeAlive;
+  }
+
+  // 入力の変更を proposalItems へ反映（委譲・行の再描画はしない＝入力中のフォーカスを保つ）
+  function wireProposalEditing() {
+    var host = document.getElementById("proposalList");
+    host.addEventListener("change", function (e) {
+      var row = e.target.closest ? e.target.closest(".pitem") : null;
+      if (!row) return;
+      var it = proposalItems[parseInt(row.getAttribute("data-idx"), 10)];
+      if (!it) return;
+      var f = e.target.getAttribute("data-f");
+      var color = e.target.getAttribute("data-color");
+      if (color) {
+        var cur = (it.colors || []).slice();
+        if (e.target.checked) {
+          if (color === "マルチカラー") { cur = ["マルチカラー"]; }
+          else { cur = cur.filter(function (c) { return c !== "マルチカラー"; }); if (cur.length < 3) cur.push(color); else e.target.checked = false; }
+        } else { cur = cur.filter(function (c) { return c !== color; }); }
+        it.colors = cur;
+        renderProposal();   // 排他・上限の結果をチェックボックスへ反映する
+        return;
+      }
+      if (f === "_excluded") { it._excluded = e.target.checked; row.classList.toggle("excluded", it._excluded); updateProposalCount(); return; }
+      if (f === "source") { it.source = e.target.value; return; }
+      if (f) { it[f] = e.target.value; }
+    });
+    host.addEventListener("input", function (e) {
+      var row = e.target.closest ? e.target.closest(".pitem") : null;
+      if (!row) return;
+      var it = proposalItems[parseInt(row.getAttribute("data-idx"), 10)];
+      var f = e.target.getAttribute("data-f");
+      if (it && f && e.target.type === "text") it[f] = e.target.value;
+    });
+  }
+
+  function loadProposal() {
+    return fetch("/catalog-proposal").then(function (r) { return r.json(); }).then(function (d) {
+      proposalItems = (d && Array.isArray(d.items) ? d.items : []).map(function (it) {
+        return {
+          file: it.file, title: it.title || "", industry: it.industry || CANON_INDUSTRIES[0],
+          taste: it.taste || CANON_TASTES[0], colors: Array.isArray(it.colors) ? it.colors.slice(0, 3) : [],
+          columns: it.columns || "", source: it.source === "ref" ? "ref" : "own",
+          note: it.note || "", sectionLayouts: it.sectionLayouts, _excluded: false
+        };
+      });
+      renderProposal();
+      return proposalItems.length;
+    }).catch(function () { return 0; });
+  }
+
+  function wireCommit() {
+    document.getElementById("commitBtn").addEventListener("click", function () {
+      var btn = this, st = document.getElementById("commitStatus");
+      var items = proposalItems.filter(function (it) { return !it._excluded; }).map(function (it) {
+        var o = { file: it.file, industry: it.industry, taste: it.taste, colors: it.colors, source: it.source };
+        if (it.title) o.title = it.title;
+        if (it.columns) o.columns = it.columns;
+        if (it.note) o.note = it.note;
+        if (it.sectionLayouts) o.sectionLayouts = it.sectionLayouts;
+        return o;
+      });
+      var bad = items.filter(function (o) { return !o.colors || !o.colors.length; });
+      if (bad.length) { st.textContent = "主配色が未選択の画像があります（" + bad.length + " 件）。1つ以上選んでください。"; return; }
+      btn.disabled = true; st.textContent = "登録しています…";
+      fetch("/catalog-commit", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: items })
+      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (res.ok) {
+            st.textContent = res.j.registered + " 件を登録しました（カタログ全 " + res.j.total + " 件）。";
+            proposalItems = []; renderProposal();
+            loadCatalog().then(function (e) { allEntries = e; updateHeadCount(); renderGrid(); });
+            refreshPendingCount();
+          } else {
+            st.textContent = "登録できませんでした: " + ((res.j && res.j.error) || "内容を確認してください")
+              + (res.j && res.j.details ? "（" + res.j.details.join(" / ") + "）" : "");
+            btn.disabled = false;
+          }
+        }).catch(function () { st.textContent = "登録の通信に失敗しました。"; btn.disabled = false; });
+    });
+  }
+
+  // ---- アップロード完了モーダル(KLK-064) ------------------------------------
+  function openUploadModal(okCount, failText) {
+    var back = document.getElementById("upModalBack");
+    document.getElementById("upModalBody").textContent =
+      okCount + " 件を取り込み待ちに追加しました。" + (failText || "");
+    back.classList.add("open");
+  }
+  function closeUploadModal() { document.getElementById("upModalBack").classList.remove("open"); }
+  function wireUploadModal() {
+    document.getElementById("upModalClose").addEventListener("click", closeUploadModal);
+    document.getElementById("upModalLater").addEventListener("click", closeUploadModal);
+    document.getElementById("upModalBack").addEventListener("click", function (e) {
+      if (e.target === this) closeUploadModal();   // 背景クリックで閉じる
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeUploadModal();  // Esc で閉じる
+    });
+    document.getElementById("upModalGo").addEventListener("click", function () {
+      closeUploadModal();
+      var btn = document.getElementById("importBtn");
+      if (!btn.disabled) btn.click();
+      document.getElementById("add").scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
 
@@ -523,9 +741,12 @@
       });
     }, Promise.resolve()).then(function () {
       var msg = okCount + " 件をアップロードしました。";
-      if (failures.length) { msg += " 取り込めなかったファイル: " + failures.join(" / "); }
+      var failText = failures.length ? "取り込めなかったファイル: " + failures.join(" / ") : "";
+      if (failText) { msg += " " + failText; }
       setUploadStatus(msg);
       refreshPendingCount();
+      // KLK-064: 次に何をすればよいかをモーダルで案内する（1件でも成功したときのみ）
+      if (okCount > 0) { openUploadModal(okCount, failText); }
     });
   }
 
@@ -572,10 +793,14 @@
     wireFilters();
     wireImport();
     wireUpload();
+    wireUploadModal();      // KLK-064
+    wireProposalEditing();  // KLK-064
+    wireCommit();           // KLK-064
     probeHealth().then(function (alive) {
       setBridgeState(alive);
       if (!alive) { allEntries = []; updateHeadCount(); renderGrid(); return; }
       refreshPendingCount();   // KLK-063: 取り込み待ち件数を表示（手動コピー分も含む）
+      loadProposal();          // KLK-064: 未承認の提案が残っていれば復元する
       loadCatalog().then(function (entries) {
         allEntries = entries; updateHeadCount(); renderGrid();
       }).catch(function () {
