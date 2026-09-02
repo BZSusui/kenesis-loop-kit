@@ -671,6 +671,9 @@ def _validate_tag_fields(it, i, require_file):
         return ["items[{0}] がオブジェクトではありません".format(i)]
     if require_file and not is_safe_catalog_name(it.get("file")):
         errors.append("items[{0}].file が安全なファイル名ではありません".format(i))
+    # KLK-066: sourceFile(変換元・任意)。あるときだけ安全名を要求する。
+    if it.get("sourceFile") is not None and not is_safe_catalog_name(it.get("sourceFile")):
+        errors.append("items[{0}].sourceFile が安全なファイル名ではありません".format(i))
     for key in ("industry", "taste", "title", "note", "columns", "source"):
         if key in it and it[key] is not None and not isinstance(it[key], str):
             errors.append("items[{0}].{1} が文字列ではありません".format(i, key))
@@ -717,6 +720,43 @@ def validate_commit_request(obj):
         if not isinstance(it.get("colors"), list) or not it["colors"]:
             errors.append("items[{0}].colors(主配色)が未指定です".format(i))
     return (len(errors) == 0), errors
+
+
+def pending_groups(names):
+    """.pending/ のファイル名を basename でグループ化する(KLK-066)。副作用なし。
+
+    スキルの webp 変換は `.pending/` 内で**同じ basename** の png を作る(CATALOG_RULES・KLK-033)。
+    したがって `pnd-X.webp` と `pnd-X.png` は**同じ画像の2つの表現**であり、
+    取り込み待ちの計数・登録時の片付けはこの単位(=グループ)で行う。
+    返却: {basename: [name, ...]}（各リストは名前順）。
+    """
+    groups = {}
+    for n in names or []:
+        if not isinstance(n, str) or not n:
+            continue
+        base = os.path.splitext(n)[0]
+        groups.setdefault(base, []).append(n)
+    for base in groups:
+        groups[base].sort()
+    return groups
+
+
+# 代表名の優先順位。**登録に使われる側**（視覚認識できる形式）を先に出す。
+_PENDING_PRIORITY = [".png", ".jpg", ".jpeg", ".webp"]
+
+
+def pending_display_name(group):
+    """グループの代表ファイル名を返す(KLK-066)。副作用なし。
+
+    png > jpg/jpeg > webp の順。webp は変換されて初めて視覚認識できるため最後。
+    該当拡張子が無ければ名前順の先頭を返す。
+    """
+    items = sorted(group or [])
+    for ext in _PENDING_PRIORITY:
+        for n in items:
+            if n.lower().endswith(ext):
+                return n
+    return items[0] if items else None
 
 
 def iso_now():
@@ -1465,20 +1505,74 @@ def _run_server(port):
             self._json(200, {"savedName": saved_name, "pendingCount": self._pending_names_count()[1]})
 
         def _pending_names_count(self):
-            """catalog/.pending/ 直下の取り込み対象画像を列挙する(名前リスト, 件数)。
+            """catalog/.pending/ 直下の取り込み対象画像を列挙する(代表名リスト, 件数)。
 
             ジョブ仕様 *.import.json などの非画像は catalog_import_ext_ok で除外する。
+            **KLK-066: 同じ basename の webp/png は同じ画像の2表現なので1件として数える**
+            (画像1枚が「2件が取り込み待ち」と表示される混乱を防ぐ)。代表名は登録に使われる側。
             ディレクトリが無い/読めない場合は空を返す(fail-open・ループを止めない)。
             """
             try:
-                names = sorted(
+                raw = [
                     n for n in os.listdir(catalog_pending_dir)
                     if catalog_import_ext_ok(n)
                     and os.path.isfile(os.path.join(catalog_pending_dir, n))
-                )
+                ]
             except OSError:
-                names = []
+                raw = []
+            groups = pending_groups(raw)
+            names = sorted(
+                filter(None, (pending_display_name(g) for g in groups.values()))
+            )
             return names, len(names)
+
+        def _purge_pending_siblings(self, primary, source_file=None):
+            """登録済み画像の「兄弟」を catalog/.pending/ から取り除く(KLK-066)。
+
+            兄弟＝同じ basename のファイル(変換元 webp など)。特定は
+            ①提案の sourceFile(あれば) → ②同一 basename の全ファイル の順。
+            **catalog_pending_dir 直下に限定**し、catalog/img/ には一切触れない。
+            失敗は握りつぶす: 登録は既に確定しており、残骸1つのために巻き戻す方が害が大きい。
+            """
+            targets = set()
+            if source_file and is_safe_catalog_name(source_file):
+                targets.add(source_file)
+            base = os.path.splitext(primary)[0]
+            try:
+                for n in os.listdir(catalog_pending_dir):
+                    if os.path.splitext(n)[0] == base and catalog_import_ext_ok(n):
+                        targets.add(n)
+            except OSError:
+                pass
+            for n in targets:
+                if not is_safe_catalog_name(n):
+                    continue
+                path = os.path.join(catalog_pending_dir, n)
+                # 念のため配下確認(パストラバーサル多層防御)
+                if os.path.dirname(os.path.abspath(path)) != os.path.abspath(catalog_pending_dir):
+                    continue
+                try:
+                    if os.path.isfile(path):
+                        os.remove(path)
+                except OSError as exc:
+                    print("[bridge] 取り込み待ちの片付けに失敗: {0} ({1})".format(n, exc), file=sys.stderr)
+
+        def _purge_proposals(self):
+            """catalog/.pending/*.proposal.json を全削除する(KLK-066)。
+
+            提案は「その時点の .pending の写像」であり、登録が済めば必ず陳腐化している。
+            除外した画像は .pending に残るので、取り込みを再実行すれば新しい提案が作られる。
+            失敗は握りつぶす(登録の成否に影響させない)。
+            """
+            try:
+                for n in os.listdir(catalog_pending_dir):
+                    if n.endswith(".proposal.json"):
+                        try:
+                            os.remove(os.path.join(catalog_pending_dir, n))
+                        except OSError as exc:
+                            print("[bridge] 提案の片付けに失敗: {0} ({1})".format(n, exc), file=sys.stderr)
+            except OSError:
+                pass
 
         def _catalog_pending(self):
             """GET /catalog-pending — 取り込み待ち画像の件数と名前を返す(KLK-063・SCR-004 の件数表示)。
@@ -1698,11 +1792,16 @@ def _run_server(port):
                         pass
                 self._json(500, {"error": "カタログを保存できませんでした: {0}".format(exc)})
                 return
-            # ⑩ 応答
+            # ⑩ 片付け(KLK-066・登録が確定してから)。失敗しても登録は有効なので握りつぶす。
+            for it, (_src, _dst, _e) in zip(items, planned):
+                self._purge_pending_siblings(it["file"], it.get("sourceFile"))
+            self._purge_proposals()
+            # ⑪ 応答
             self._json(200, {
                 "registered": len(planned),
                 "total": len(merged["entries"]),
                 "ids": [e["id"] for _, _, e in planned],
+                "pendingCount": self._pending_names_count()[1],
             })
 
         def _generate(self):

@@ -104,7 +104,8 @@ description: 実績カタログ(SCR-004・REQ-106)へ新規画像を取り込む
   "version": 1,
   "jobId": "{jobId}",
   "items": [
-    { "file": "pnd-….jpg", "title": "…", "industry": "…", "taste": "…",
+    { "file": "pnd-….png", "sourceFile": "pnd-….webp",
+      "title": "…", "industry": "…", "taste": "…",
       "colors": ["…"], "columns": "1col", "source": "own", "note": "…",
       "sectionLayouts": {"HERO": "full"} }
   ]
@@ -115,6 +116,11 @@ description: 実績カタログ(SCR-004・REQ-106)へ新規画像を取り込む
 - 語彙は §3 の canonical に従う（業種17 / テイスト10 / 主配色7）。画面の選択肢と一致していないと選び直しになる。
 - **webp は `.pending/` 内で png へ変換**し（`sips`）、`file` を変換後の名前にする。
   **`catalog/img/` へは書かない**（移動はブリッジが登録時に行う）。
+  - **同じ basename の `.png` が既にあるなら `sips` を実行しない（KLK-066）**。
+    以前の取り込みで変換済みのことがあり、毎回変換すると同じ画像の巨大な png が積み上がる
+    （実際に 11.5MB の残骸が生まれ、同一画像の**二重登録**を誘発した）。
+  - **変換した場合は item に `sourceFile`（変換元の webp 名）を書く（KLK-066）**。
+    ブリッジは登録時にこれを見て変換元を片付ける。変換していない場合はキーを省略する。
 - **`catalog.json` を書かない。画像を移動しない。** 提案を書いたら終了し、件数を報告する。
 - **提案モードでは人間に質問してはならない（KLK-065・最重要）**。
   ブリッジ経由は `claude -p`（非対話）で動いており、**質問した時点で誰も答えられず処理が止まる**
