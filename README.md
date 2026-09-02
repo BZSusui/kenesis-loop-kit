@@ -35,12 +35,14 @@
 
 ## 動かすのに必要なもの
 
-| | 確認方法 | 無いときは |
-|---|---|---|
-| **macOS** | — | Windows でも大半は動きますが、`起動.command` と WebP 取り込みは macOS 専用です |
-| **Python 3** | `python3 --version` | ターミナルで `xcode-select --install` |
-| **Claude Code** | `claude --version` | [Claude Code](https://claude.com/claude-code) をインストール |
-| **VSCode** | — | Claude Code を VSCode 上で使う想定です |
+| | 確認方法（macOS） | 確認方法（Windows） | 無いときは |
+|---|---|---|---|
+| **Python 3** | `python3 --version` | `py -3 --version` または `python --version` | macOS: `xcode-select --install` ／ Windows: [python.org](https://www.python.org/downloads/) から導入（**「Add Python to PATH」にチェック**） |
+| **Claude Code** | `claude --version` | `claude --version` | [Claude Code](https://claude.com/claude-code) をインストール |
+| **VSCode** | — | — | Claude Code を VSCode 上で使う想定です |
+
+**macOS / Windows のどちらでも動きます。** ひとつだけ違いがあり、**WebP 画像の取り込みは macOS のみ**です
+（変換に macOS 標準の `sips` を使うため）。Windows では JPG / PNG をお使いください。
 
 追加のライブラリ導入（`pip install` 等）は**不要**です。Python の標準ライブラリだけで動きます。
 
@@ -55,14 +57,22 @@
 
 ### 2. 起動する
 
-`draft-gen` フォルダの中の **`起動.command` をダブルクリック**します。
+`draft-gen` フォルダの中の起動ファイルを**ダブルクリック**します。
 
-- ターミナルが開き、ブラウザに**生成設定画面**が自動で表示されます
-- 止めるときは、そのターミナルで **`Ctrl` + `C`**
+| OS | ダブルクリックするファイル |
+|---|---|
+| **macOS** | `draft-gen/起動.command` |
+| **Windows** | `draft-gen/起動.bat` |
 
-> **「開発元を検証できません」と出たとき**
+- ターミナル（コマンドプロンプト）が開き、ブラウザに**生成設定画面**が自動で表示されます
+- 止めるときは、そのウィンドウで **`Ctrl` + `C`**
+
+> **macOS で「開発元を検証できません」と出たとき**
 > `起動.command` を右クリック →「開く」→「開く」を選んでください（初回のみ）。
 > それでも開けないときは、ターミナルで `chmod +x draft-gen/起動.command` を一度だけ実行します。
+
+> **Windows で「WindowsによってPCが保護されました」と出たとき**
+> 「詳細情報」→「実行」を選んでください（初回のみ）。
 
 ### 3. 最初のデザインラフを作る
 
@@ -85,7 +95,7 @@
 
 | 画面 | 開き方 | 用途 |
 |---|---|---|
-| **生成設定** | `起動.command` で自動 / `http://127.0.0.1:8765/` | 条件を選んでデザインラフを生成する |
+| **生成設定** | 起動ファイルで自動 / `http://127.0.0.1:8765/` | 条件を選んでデザインラフを生成する |
 | **比較** | 生成完了で自動 / `mockups/{…}/compare.html` | 案A/B/Cと表示幅を切り替えて見比べる。番地指定で部分再生成も |
 | **実績カタログ** | 生成設定画面の「実績カタログを開く」 / `http://127.0.0.1:8765/catalog` | 実績の閲覧・絞り込み・追加・削除 |
 | **配色ジェネレーター** | 生成設定画面の「🎨 配色ジェネレーターを起動」 | 言葉と割合から配色を3案つくる |
@@ -125,25 +135,36 @@ JPG / PNG / WebP（1枚 8MB まで）。**WebP は macOS でのみ**取り込め
 
 ### ブラウザに画面が出ない / 「ブリッジ未起動」と表示される
 
-`起動.command` が動いているか確認してください。ターミナルのウィンドウが閉じていたら、もう一度ダブルクリックします。
+起動ファイル（macOS: `起動.command` / Windows: `起動.bat`）が動いているか確認してください。
+ウィンドウが閉じていたら、もう一度ダブルクリックします。
 
 ### 「python3 が見つかりません」「claude が見つかりません」と出る
 
-`起動.command` が前提をチェックしています。表示された対処をそのまま実行してください。
+起動ファイルが前提をチェックしています。表示された対処をそのまま実行してください。
+Windows では `python3` ではなく `py -3` または `python` を探します。
 
 ### ポートが使われていると言われる / 前回の起動が残っている
 
+**macOS**
 ```bash
 lsof -nP -iTCP:8765 -sTCP:LISTEN     # 使っているプロセスを調べる
 kill <表示されたPID>                  # 止める
 ```
 
-別のポートで動かしたいときは `KLK_BRIDGE_PORT=8799 python3 draft-gen/bridge.py`。
+**Windows**
+```
+netstat -ano | findstr :8765          :: 使っているプロセスを調べる（右端がPID）
+taskkill /PID <表示されたPID> /F      :: 止める
+```
+
+別のポートで動かしたいときは、環境変数 `KLK_BRIDGE_PORT` を指定します。
+macOS: `KLK_BRIDGE_PORT=8799 python3 draft-gen/bridge.py` ／
+Windows: `set KLK_BRIDGE_PORT=8799` のあと `python draft-gen\bridge.py`。
 
 ### 「取り込みを実行」しても一覧が出てこない
 
 AIが画像を見るのに**3分ほどかかります**。それでも出ない場合は、画面にエラーの理由が表示されます。
-`起動.command` のターミナルにも詳しいログが出ているので、あわせて確認してください。
+起動ファイルのウィンドウにも詳しいログが出ているので、あわせて確認してください。
 
 ### 生成が途中で止まる / 失敗する
 
@@ -177,7 +198,8 @@ AIが画像を見るのに**3分ほどかかります**。それでも出ない�
 テストを流すには（`tests/` を含む配布物の場合）:
 
 ```bash
-python3 -m unittest discover -s tests
+python3 -m unittest discover -s tests     # macOS
+python -m unittest discover -s tests      # Windows
 ```
 
 ---

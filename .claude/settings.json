@@ -102,7 +102,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/validate_ticket_state.py\""
+            "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/validate_ticket_state.py\" 2>/dev/null || python \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/validate_ticket_state.py\""
           }
         ]
       }
@@ -113,7 +113,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/record_metrics.py\""
+            "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/record_metrics.py\" 2>/dev/null || python \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/record_metrics.py\""
           }
         ]
       }
@@ -123,7 +123,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/check_loop_integrity.py\""
+            "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/check_loop_integrity.py\" 2>/dev/null || python \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/check_loop_integrity.py\""
           }
         ]
       }

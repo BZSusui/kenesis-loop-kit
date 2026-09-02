@@ -55,16 +55,24 @@ description: 実績カタログ(SCR-004・REQ-106)へ新規画像を取り込む
 
 ### 2-0. webp の png 変換(受理拡張子に webp を含むとき・KLK-033)
 
-- 対象が `.webp` の場合、視覚認識(Read)の前に **OS標準 `sips` で png へ変換**する:
+- 対象が `.webp` の場合、視覚認識(Read)の前に **`sips` で png へ変換**する。
+  **変換先は `.pending/` 内・同じ basename** とする（KLK-064/066/070）:
   ```
-  sips -s format png catalog/.pending/<対象>.webp --out catalog/img/<新id>.png
+  sips -s format png catalog/.pending/<対象>.webp --out catalog/.pending/<同じbasename>.png
   ```
-  `<新id>` は手順4と同じ連番採番規則で `cat-00NN` を先に確定してよい(`catalog/img/` と `catalog.json` の
-  双方を見て最大連番の次)。
-- 以後この画像は変換後の png(`cat-00NN.png`)を正として **Read・移動・追記**する。**webp を直接 Read しない**。
-- **変換失敗**(sips 非0終了・出力 png 未生成)は当該ファイルを**取り込まず理由を提示して skip** する
-  (手順1受付・「してはならないこと」の停止規律にそのまま合流)。
-- `sips` は macOS標準(`/usr/bin/sips`)ゆえ **Python 依存を増やさない**(NFR-005 と整合)。
+- **`catalog/img/` へは書かない。id も採番しない。**
+  登録（`catalog/img/` への移動と `catalog.json` への追記）は**ブリッジ(Python)の責務**であり、
+  id 採番もブリッジが行う（提案モード＝手順3'）。対話モードでも変換先は `.pending/` で統一し、
+  移動は手順4で行う（経路ごとに変換先が違うと取り違えるため）。
+- **同じ basename の `.png` が既にあるなら `sips` を実行しない**（KLK-066）。
+  以前の取り込みで変換済みのことがあり、毎回変換すると同じ画像の巨大な png が積み上がる。
+- 以後この画像は変換後の png を正として **Read** する。**webp を直接 Read しない**。
+- **`sips` は macOS 専用**（`/usr/bin/sips`）。**Windows など `sips` が無い環境では webp を変換できない**（KLK-070）。
+  その場合は**当該ファイルだけを skip** し、**質問せず**残りの画像で提案を作る。
+  skip した理由は報告文に書く（例:「webp の変換に必要な sips が無いため 1件を除外しました。
+  JPG / PNG でお試しください」）。**JPG / PNG は OS を問わず取り込める。**
+- **変換失敗**(sips 非0終了・出力 png 未生成)も同様に当該ファイルのみ skip し、理由を提示する。
+- `sips` を使うのは **Python 依存を増やさない**ため(NFR-005 と整合)。
 
 ### 2. 視覚認識(AI自動タグ付け・§3.3)
 
