@@ -8,6 +8,9 @@ Kenesis Loop Kitのすべての変更はこのファイルに記録されます�
 
 ## [Unreleased]
 
+### Removed
+- 配布物に無関係な成果物をリポジトリから除去（KLK-060・パッケージ化準備）: `site/`（KLK-002 のコーポレートサイト静的サンプル）・`flyers/`（別件のチラシHTML 2点）・`src/`（`.gitkeep` のみの未使用ディレクトリ）。あわせて対象を失った `tests/site/check_klk002.py` を除去。**Git履歴は保持**しており `git checkout {削除前のコミット} -- site` で復元できる。デザインラフ・ジェネレーターのサンプルは、パッケージ化時に見本となる生成ページ3〜5点をあらためて生成して同梱する方針（`mockups/` の外）。
+
 ### Added
 - 配色ジェネレーター `palette/index.html` v1.2（KLK-005）: CSS変数コピーに「HEXコード一覧」形式を追加し切替可能に（`hexListOf`／`copyTextOf`・グローバル `copyFormat` 保持・微調整後の値を反映）／KLK-005 検証 `tests/site/check_klk005.py`（静的S1-S13）・`tests/site/smoke_klk005.node.js`（動的D1-D7）・`tests/test_palette_klk005.py`（unittestラッパー）
 - 配色ジェネレーター `palette/index.html` v1.1（KLK-004）: メインカラーの傾向に「ゴールド」「シルバー」を追加（色味サブ選択6変種・相性パートナーによる3案生成・最終段クランプ `clampMetalBand`・金属風グラデーションの参考表示）／CSS変数コピー（`--color-main` 等4変数）／URL共有（選択状態＋シードをURLパラメータ化・`replaceState` 同期）／生成ボタンを上段横長に分離
