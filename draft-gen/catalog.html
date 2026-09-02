@@ -507,7 +507,16 @@
       // KLK-064: 取り込み＝**提案の生成**。ここではまだ登録されない。提案を読み込んで承認フォームを描く。
       if (j.state === "done") {
         loadProposal().then(function (n) {
-          if (n > 0) { document.getElementById("proposalList").scrollIntoView({ behavior: "smooth", block: "start" }); }
+          if (n > 0) {
+            document.getElementById("proposalList").scrollIntoView({ behavior: "smooth", block: "start" });
+          } else {
+            // 提案が0件のまま終わった場合に**無言で終わらせない**（KLK-065）。
+            // ジョブは done でも AI が提案を書けていないケースがあり、利用者には何も起きていないように見える。
+            st.textContent = "タグ付け案を作れませんでした。取り込み待ちの画像はそのまま残っています。"
+              + "もう一度「取り込みを実行」を押すか、Claude Code のチャットで /catalog-import を実行してください"
+              + "（ターミナルに出るブリッジのログに原因が表示されます）。";
+          }
+          refreshPendingCount();   // 件数表示を実態に合わせて更新する
         });
       }
     }).catch(function () {

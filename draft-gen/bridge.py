@@ -776,9 +776,15 @@ def build_catalog_import_command(pending_spec_path, allow_open=False):
     """/catalog-import のヘッドレス実行コマンド(list・shell=False 用)を構築する(最小権限・§4.2)。
 
     ['claude','-p', f'/catalog-import {pending_spec_path}',
-     '--permission-mode','acceptEdits','--output-format','json']
-    allow_open=True のとき ['--allowedTools','Bash(open *)'] を追加(版差の保険・依然最小権限)。
+     '--permission-mode','acceptEdits','--output-format','json',
+     '--allowedTools','Bash(sips *)']
+    allow_open=True のとき allowedTools に 'Bash(open *)' を足す(版差の保険・依然最小権限)。
     ★ 全権限スキップ/全許可モードのフラグは決して含めない(build_claude_command と同一方針)。
+
+    **`Bash(sips *)` は必須(KLK-065)**: `--permission-mode acceptEdits` は**ファイル編集しか**
+    自動承認せず、Bash コマンドは承認を要求する。webp→png 変換の `sips`(CATALOG_RULES・KLK-033)が
+    承認待ちで止まり、**非対話ゆえ誰も答えられず提案が1件も作られない**事故が起きたため、
+    この1コマンドだけを明示的に許可する(単一バイナリに限定＝最小権限は維持)。
     """
     cmd = [
         "claude",
@@ -789,8 +795,11 @@ def build_catalog_import_command(pending_spec_path, allow_open=False):
         "--output-format",
         "json",
     ]
+    # 取り込みに必要な Bash は sips(webp→png 変換)のみ。allow_open 時は open も足す。
+    tools = ["Bash(sips *)"]
     if allow_open:
-        cmd += ["--allowedTools", "Bash(open *)"]
+        tools.append("Bash(open *)")
+    cmd += ["--allowedTools", ",".join(tools)]
     return cmd
 
 

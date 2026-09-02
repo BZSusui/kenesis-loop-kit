@@ -340,17 +340,29 @@ s11_base = (cmd[:2] == ["claude", "-p"]
             and "--permission-mode" in cmd and "acceptEdits" in cmd
             and "--output-format" in cmd and "json" in cmd)
 s11_no_danger = not any(f in cmd_flat for f in DANGER_FLAGS)
-s11_no_open_default = "--allowedTools" not in cmd
+# KLK-065: 既定で --allowedTools に Bash(sips *) を付ける契約へ変更。
+# 理由: --permission-mode acceptEdits は**ファイル編集しか**自動承認せず Bash は承認を要求するため、
+# webp→png 変換の sips が承認待ちで停止し、非対話ゆえ提案が1件も作られない事故が起きた。
+# 「既定で allowedTools を付けない」という旧契約は、この不具合を固定してしまうので改める。
+# 許可は sips の1コマンドのみ（単一バイナリ限定＝最小権限は維持）。
+_tools = cmd[cmd.index("--allowedTools") + 1] if "--allowedTools" in cmd else ""
+s11_sips_default = "Bash(sips *)" in _tools
 cmd_open = bcc("/x.import.json", allow_open=True)
-s11_open = ("--allowedTools" in cmd_open and "Bash(open *)" in cmd_open
+_tools_open = cmd_open[cmd_open.index("--allowedTools") + 1] if "--allowedTools" in cmd_open else ""
+s11_open = ("Bash(open *)" in _tools_open and "Bash(sips *)" in _tools_open
+            and cmd_open.count("--allowedTools") == 1
             and not any(f in " ".join(cmd_open) for f in DANGER_FLAGS))
+# 許可されるのは sips / open の2つだけ（歯止め: 増えたら気づく）
+_allowed_set = set(t.strip() for t in _tools_open.split(",") if t.strip())
+s11_scope = _allowed_set <= {"Bash(sips *)", "Bash(open *)"}
 s11_no_shell = ("shell=True" not in BRIDGE_SRC and "shell=True" not in CATALOG_HTML)
-s11 = (s11_base and s11_no_danger and s11_no_open_default and s11_open and s11_no_shell)
+s11 = (s11_base and s11_no_danger and s11_sips_default and s11_open and s11_scope and s11_no_shell)
 check(
-    "S11 最小権限コマンド (build_catalog_import_command: /catalog-import {path} --permission-mode acceptEdits --output-format json・危険フラグ非含有・allow_openでopenのみ追加・shell=True 非使用[bridge/catalog.html])",
+    "S11 最小権限コマンド (build_catalog_import_command: 基本形・危険フラグ非含有・既定で Bash(sips *) のみ許可・allow_open で open 追加・許可は2つまで・shell=True 非使用)",
     s11,
-    f"基本形={s11_base}, 危険フラグ非含有={s11_no_danger}, 既定open非付与={s11_no_open_default}, "
-    f"allow_open時open追加={s11_open}, shell=True非使用={s11_no_shell}",
+    f"基本形={s11_base}, 危険フラグ非含有={s11_no_danger}, 既定sips={s11_sips_default}, "
+    f"allow_open時open追加={s11_open}, 許可集合={sorted(_allowed_set)}, 範囲内={s11_scope}, "
+    f"shell=True非使用={s11_no_shell}",
 )
 
 # ===========================================================================
