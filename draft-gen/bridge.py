@@ -35,6 +35,7 @@ DEFAULT_PORT = 8765                # env KLK_BRIDGE_PORT で上書き可(U-4)
 BRIDGE_TIMEOUT_SEC = 900           # subprocess ハードタイムアウト(NFR-001 目安10分に余裕)
 MAX_BODY_BYTES = 1 << 20           # POST /generate ボディ上限(1 MiB・L-1 多層防御)
 UPLOAD_MAX_BODY_BYTES = 8 << 20    # POST /upload ボディ上限(8 MiB・写真向け・KLK-020 §3.3。JSONルートの MAX_BODY_BYTES は据え置き)
+CATALOG_UPLOAD_MAX_BODY_BYTES = 8 << 20  # POST /catalog-upload ボディ上限(8 MiB・KLK-063。実績のフルページ・スクリーンショットを見込む。/upload と同値だが用途が違うため別定数で持つ)
 
 # カラム構成 canonical(KLK-006 §4.4 / DRAFT_RULES §8)
 CANONICAL_COLUMNS = {
@@ -540,6 +541,29 @@ def sniff_image_ext(head):
     return None
 
 
+def sniff_catalog_image_ext(head):
+    """カタログ取り込み用のマジックバイト判定(JPEG/PNG/WebP・KLK-063)。副作用なし。
+
+    **`sniff_image_ext` とは別関数**である。理由: `/upload`(MV写真・REQ-104/KLK-020)は仕様上 JPEG/PNG 限定で、
+    その挙動は check_klk020 S9/S11 が固定している。カタログ側は `CATALOG_IMPORT_EXTS` が WebP を含み
+    (取込時に sips で png へ変換する・KLK-033)、受理集合が異なるため関数を分ける。
+
+    JPEG(FF D8 FF)→'.jpg' / PNG(89 50 4E 47 0D 0A 1A 0A)→'.png' /
+    WebP(RIFF + 4バイトのサイズ + WEBP)→'.webp' / それ以外→None。
+    クライアントのファイル名・Content-Type ではなく本体先頭バイトを正とする。
+    """
+    if not isinstance(head, (bytes, bytearray)):
+        return None
+    b = bytes(head)
+    if b[:3] == b"\xff\xd8\xff":
+        return ".jpg"
+    if b[:8] == b"\x89PNG\r\n\x1a\n":
+        return ".png"
+    if len(b) >= 12 and b[:4] == b"RIFF" and b[8:12] == b"WEBP":
+        return ".webp"
+    return None
+
+
 def validate_catalog(obj):
     """カタログJSONを検証する(§4.1・多層防御)。
 
@@ -967,6 +991,9 @@ def _run_server(port):
             if path == "/catalog":
                 self._serve_catalog_html()
                 return
+            if path == "/catalog-pending":
+                self._catalog_pending()
+                return
             if path == "/catalog.json":
                 self._serve_catalog_json()
                 return
@@ -989,6 +1016,9 @@ def _run_server(port):
                 return
             if path == "/catalog-import":
                 self._catalog_import()
+                return
+            if path == "/catalog-upload":
+                self._catalog_upload()
                 return
             if path == "/upload":
                 self._upload()
@@ -1231,6 +1261,86 @@ def _run_server(port):
                 return
             # ⑥ 応答(保存名を返す。instruction.mvPhoto.file に載せる)
             self._json(200, {"savedName": saved_name})
+
+        def _catalog_upload(self):
+            """POST /catalog-upload — 実績・見本画像の生バイナリ直POST受信(KLK-063・SCR-004 のD&D/ファイル選択)。
+
+            `_upload`(MV写真・KLK-020)と**同一の6段防御順**を踏襲する(multipart/cgi 非使用):
+            ①Origin(403) ②サイズ上限(CATALOG_UPLOAD_MAX_BODY_BYTES 超過→413 / 不正 Content-Length→400)
+            ③本体読取(空→400) ④マジックバイトで JPEG/PNG/WebP 三重検証(非画像→400。Content-Type は信用しない)
+            ⑤保存: 保存名はサーバ生成 pnd-<uuid>.<ext> で catalog/.pending/ へ(クライアントのファイル名・
+                    Content-Type を保存パスに未使用＝パストラバーサル面ゼロ)
+            ⑥200 JSON で savedName と取り込み待ち件数を返却。
+
+            保存先は catalog/.pending/ に固定する。**catalog/ の外へは書かない**(REQ-011 / NFR-004 /
+            CATALOG_RULES §4)。登録は従来どおり POST /catalog-import → 人間承認後のみ(本経路は保存だけ)。
+            """
+            # ① Origin 検証(M-SEC-1): body 読取前に弾く(_upload と同一)
+            if not is_allowed_origin(self.headers.get("Origin"), BRIDGE_HOST, port):
+                self._json(403, {"error": "許可されていないオリジンです"})
+                return
+            # ② サイズ上限: body 読取前に検証(多層防御)
+            try:
+                length = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length < 0:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length > CATALOG_UPLOAD_MAX_BODY_BYTES:
+                self._json(413, {"error": "リクエストが大きすぎます(1枚 8MB まで)"})
+                return
+            # ③ 本体読取(生バイナリ)
+            raw = self.rfile.read(length) if length else b""
+            if not raw:
+                self._json(400, {"error": "画像がありません"})
+                return
+            # ④ 画像判定(マジックバイト・Content-Type/拡張子は信用しない)
+            ext = sniff_catalog_image_ext(raw[:16])
+            if ext is None:
+                self._json(400, {"error": "画像として認識できません(JPEG/PNG/WebP のみ)"})
+                return
+            # ⑤ 保存(保存名はサーバ生成＝安全名・basename・危険文字なし)
+            saved_name = "pnd-" + uuid.uuid4().hex + ext
+            try:
+                os.makedirs(catalog_pending_dir, exist_ok=True)
+                with open(os.path.join(catalog_pending_dir, saved_name), "wb") as fh:
+                    fh.write(raw)
+            except OSError:
+                self._json(500, {"error": "画像を保存できませんでした"})
+                return
+            # ⑥ 応答(保存名＋取り込み待ち件数)
+            self._json(200, {"savedName": saved_name, "pendingCount": self._pending_names_count()[1]})
+
+        def _pending_names_count(self):
+            """catalog/.pending/ 直下の取り込み対象画像を列挙する(名前リスト, 件数)。
+
+            ジョブ仕様 *.import.json などの非画像は catalog_import_ext_ok で除外する。
+            ディレクトリが無い/読めない場合は空を返す(fail-open・ループを止めない)。
+            """
+            try:
+                names = sorted(
+                    n for n in os.listdir(catalog_pending_dir)
+                    if catalog_import_ext_ok(n)
+                    and os.path.isfile(os.path.join(catalog_pending_dir, n))
+                )
+            except OSError:
+                names = []
+            return names, len(names)
+
+        def _catalog_pending(self):
+            """GET /catalog-pending — 取り込み待ち画像の件数と名前を返す(KLK-063・SCR-004 の件数表示)。
+
+            返すのは catalog/.pending/ 直下の**取り込み対象拡張子のファイル名のみ**。
+            アップロード分はサーバ生成名、手動コピー分は利用者自身が置いた名前であり、
+            いずれも localhost 限定・Origin 検証済みの本人にしか返らない。画像本体は返さない。
+            """
+            if not is_allowed_origin(self.headers.get("Origin"), BRIDGE_HOST, port):
+                self._json(403, {"error": "許可されていないオリジンです"})
+                return
+            names, count = self._pending_names_count()
+            self._json(200, {"count": count, "names": names})
 
         def _generate(self):
             # ① Origin 検証(M-SEC-1): 状態変更は同一オリジン(+file://)のみ許可。body 読取前に弾く

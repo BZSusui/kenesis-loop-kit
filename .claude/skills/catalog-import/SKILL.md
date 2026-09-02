@@ -24,7 +24,7 @@ description: 実績カタログ(SCR-004・REQ-106)へ新規画像を取り込む
 | `templates/CATALOG_RULES.md` | **取り込みの前に必ず全体を読む**。カタログJSONスキーマ・主配色7カテゴリ・タグ付け規約・機密規律の正 |
 | `draft-gen/bridge.py`(`validate_catalog`/`is_safe_catalog_name`/`CANONICAL_COLORS`) | JSON整形・安全名・許可色カテゴリの決定論的な正(スキーマは CATALOG_RULES と同一) |
 | `docs/wireframes/SCR-004-catalog.html` | 見た目の正(`.autotag`「登録前に確認・修正できます」・own/refバッジ・主配色7チップ) |
-| 対象画像 `catalog/.pending/*.jpg` / `*.png` / `*.webp` | 取り込み対象。webp は手順2-0で `sips` により png へ変換したうえで、**Read で開いて視覚認識**し業種・テイスト・主配色・カラムを推定する |
+| 対象画像 `catalog/.pending/*.jpg` / `*.png` / `*.webp` | 取り込み対象（**SCR-004 のドロップゾーンからのアップロード分と手動コピー分の両方**・KLK-063）。webp は手順2-0で `sips` により png へ変換したうえで、**Read で開いて視覚認識**し業種・テイスト・主配色・カラムを推定する |
 
 ## 起動と入力(2経路・後方互換)
 

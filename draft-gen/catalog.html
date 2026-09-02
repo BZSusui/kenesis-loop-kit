@@ -90,6 +90,12 @@
     padding: 26px; text-align: center; color: var(--color-text-sub); }
   .dropzone .big { font-size: 30px; }
   .dropzone .t { font-size: 14px; color: var(--color-text); margin: 6px 0 2px; }
+  /* KLK-063: 実働ドロップゾーン。クリックで選択・D&D 受け入れ・ブリッジ未起動時は無効表示 */
+  .dropzone { cursor: pointer; display: block; transition: background .12s, border-color .12s; }
+  .dropzone.over { background: #e4f0fb; border-color: var(--color-link); }
+  .dropzone.disabled { cursor: not-allowed; opacity: .55; }
+  .dropzone .dz-alt { font-size: 11.5px; margin: 8px 0 0; }
+  .upload-status { font-size: 12.5px; color: var(--color-text-sub); margin: 10px 0 0; min-height: 1.2em; }
   .import-actions { margin-top: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .import-status { font-size: 12.5px; color: var(--color-text-sub); }
   .autotag { margin-top: 14px; border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; }
@@ -196,11 +202,14 @@
   <div class="uploader" id="add">
     <h2>実績・見本画像を追加する</h2>
     <p class="sub">画像を <code>catalog/.pending/</code> に置くと、AIが業種・テイスト・主配色を<b>自動でタグ付け</b>してカタログに登録します。保存先はGit公開対象外のフォルダに限定されます。</p>
-    <div class="dropzone">
+    <label class="dropzone" id="dropzone" for="pendingFiles">
       <div class="big">⬆️</div>
-      <p class="t">追加したい画像を <code>catalog/.pending/</code> フォルダに入れてください</p>
-      <p>JPG / PNG(複数可)</p>
-    </div>
+      <p class="t">ここに画像をドラッグ&amp;ドロップ、またはクリックして選択</p>
+      <p>JPG / PNG / WebP（複数可・1枚 8MB まで）</p>
+      <p class="dz-alt"><code>catalog/.pending/</code> フォルダへ直接コピーしても取り込めます</p>
+      <input type="file" id="pendingFiles" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple hidden>
+    </label>
+    <p class="upload-status" id="uploadStatus"></p>
     <div class="import-actions">
       <button type="button" class="btn primary" id="importBtn" disabled>取り込みを実行</button>
       <span class="import-status" id="importStatus">ブリッジ未起動のため取り込みは実行できません。</span>
@@ -408,6 +417,14 @@
 
   function setBridgeState(alive) {
     bridgeAlive = alive;
+    // KLK-063: アップロードUIも同じ health-gate に乗せる（未起動なら受け付けない）
+    var zone = document.getElementById("dropzone");
+    var input = document.getElementById("pendingFiles");
+    if (zone) zone.classList.toggle("disabled", !alive);
+    if (input) input.disabled = !alive;
+    if (!alive) {
+      setUploadStatus("ローカルブリッジ未起動のため画像を追加できません。draft-gen/起動.command をダブルクリック、またはターミナルで python3 draft-gen/bridge.py を実行してください。");
+    }
     var banner = document.getElementById("bridgeState");
     var btn = document.getElementById("importBtn");
     var st = document.getElementById("importStatus");
@@ -447,6 +464,92 @@
     });
   }
 
+  // ---- 画像アップロード(KLK-063・POST /catalog-upload → GET /catalog-pending) --------
+  // 1ファイル1POSTを**順次**実行する(エンドポイントを単純に保ち、失敗したファイルを特定できるようにする)。
+  // ブリッジ未起動時は無効化して起動方法を案内する(既存 setBridgeState と同じ health-gate に合流)。
+  var UPLOAD_MAX_BYTES = 8 * 1024 * 1024;
+
+  function setUploadStatus(text) {
+    document.getElementById("uploadStatus").textContent = text || "";
+  }
+
+  function refreshPendingCount() {
+    return fetch("/catalog-pending").then(function (r) {
+      if (!r || !r.ok) throw new Error("pending");
+      return r.json();
+    }).then(function (d) {
+      var n = (d && typeof d.count === "number") ? d.count : 0;
+      var st = document.getElementById("importStatus");
+      st.textContent = n > 0
+        ? n + " 件が取り込み待ちです。「取り込みを実行」を押すと、AIがタグ付け案を出します。"
+        : "取り込み待ちの画像はありません。上の枠に画像を追加してください。";
+      document.getElementById("importBtn").disabled = !bridgeAlive || n === 0;
+      return n;
+    }).catch(function () { return -1; });
+  }
+
+  // 1件アップロードして {ok, reason} を返す（例外を投げない＝順次処理を止めない）
+  function uploadOne(file) {
+    if (file.size > UPLOAD_MAX_BYTES) {
+      return Promise.resolve({ ok: false, reason: "サイズ超過(8MBまで)" });
+    }
+    return fetch("/catalog-upload", {
+      method: "POST",
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+      body: file
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        return r.ok && j.savedName ? { ok: true } : { ok: false, reason: (j && j.error) || "保存できませんでした" };
+      });
+    }).catch(function () { return { ok: false, reason: "通信に失敗しました" }; });
+  }
+
+  function uploadFiles(fileList) {
+    var files = Array.prototype.slice.call(fileList || []);
+    if (!files.length) return;
+    if (!bridgeAlive) {
+      setUploadStatus("ローカルブリッジ未起動のためアップロードできません。draft-gen/起動.command をダブルクリック、またはターミナルで python3 draft-gen/bridge.py を実行してください。");
+      return;
+    }
+    var okCount = 0, failures = [];
+    setUploadStatus("アップロード中… 0 / " + files.length);
+    // 順次実行（reduce で直列化）
+    files.reduce(function (chain, file, i) {
+      return chain.then(function () {
+        return uploadOne(file).then(function (res) {
+          if (res.ok) { okCount++; } else { failures.push((file.name || "画像") + "（" + res.reason + "）"); }
+          setUploadStatus("アップロード中… " + (i + 1) + " / " + files.length);
+        });
+      });
+    }, Promise.resolve()).then(function () {
+      var msg = okCount + " 件をアップロードしました。";
+      if (failures.length) { msg += " 取り込めなかったファイル: " + failures.join(" / "); }
+      setUploadStatus(msg);
+      refreshPendingCount();
+    });
+  }
+
+  function wireUpload() {
+    var zone = document.getElementById("dropzone");
+    var input = document.getElementById("pendingFiles");
+    input.addEventListener("change", function () { uploadFiles(input.files); input.value = ""; });
+    ["dragenter", "dragover"].forEach(function (ev) {
+      zone.addEventListener(ev, function (e) {
+        e.preventDefault(); e.stopPropagation();
+        if (bridgeAlive) zone.classList.add("over");
+      });
+    });
+    ["dragleave", "drop"].forEach(function (ev) {
+      zone.addEventListener(ev, function (e) {
+        e.preventDefault(); e.stopPropagation(); zone.classList.remove("over");
+      });
+    });
+    zone.addEventListener("drop", function (e) {
+      var dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length) uploadFiles(dt.files);
+    });
+  }
+
   function wireImport() {
     document.getElementById("importBtn").addEventListener("click", function () {
       if (!bridgeAlive) return;
@@ -468,9 +571,11 @@
   document.addEventListener("DOMContentLoaded", function () {
     wireFilters();
     wireImport();
+    wireUpload();
     probeHealth().then(function (alive) {
       setBridgeState(alive);
       if (!alive) { allEntries = []; updateHeadCount(); renderGrid(); return; }
+      refreshPendingCount();   // KLK-063: 取り込み待ち件数を表示（手動コピー分も含む）
       loadCatalog().then(function (entries) {
         allEntries = entries; updateHeadCount(); renderGrid();
       }).catch(function () {
