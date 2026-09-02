@@ -35,6 +35,7 @@ DEFAULT_PORT = 8765                # env KLK_BRIDGE_PORT で上書き可(U-4)
 BRIDGE_TIMEOUT_SEC = 900           # subprocess ハードタイムアウト(NFR-001 目安10分に余裕)
 MAX_BODY_BYTES = 1 << 20           # POST /generate ボディ上限(1 MiB・L-1 多層防御)
 UPLOAD_MAX_BODY_BYTES = 8 << 20    # POST /upload ボディ上限(8 MiB・写真向け・KLK-020 §3.3。JSONルートの MAX_BODY_BYTES は据え置き)
+CATALOG_UPLOAD_MAX_BODY_BYTES = 8 << 20  # POST /catalog-upload ボディ上限(8 MiB・KLK-063。実績のフルページ・スクリーンショットを見込む。/upload と同値だが用途が違うため別定数で持つ)
 
 # カラム構成 canonical(KLK-006 §4.4 / DRAFT_RULES §8)
 CANONICAL_COLUMNS = {
@@ -71,7 +72,29 @@ ADDR_RE = re.compile(r"^[A-Z][A-Z0-9]*-\d{2}$")  # 安全文字集合(SECTION-NN
 LETTER_RE = re.compile(r"^[a-c]$")               # 複数案の letter(a-c)。単一案は letter 無し
 
 # 実績カタログ(KLK-013・SCR-004・REQ-105/106)—主配色7カテゴリ/安全名/MIME
-CANONICAL_COLORS = {"グリーン", "ブルー", "レッド", "ゴールド", "ピンク", "モノトーン", "マルチカラー"}  # ワイヤー主配色チップ7値(§3.3・KLK-016で「マルチカラー」を追加)
+# 主配色 canonical(KLK-067)。**正は palette/index.html の `const COLORS`**（ムードカラー ジェネレーターの
+# 「メインカラーの傾向（カラー）」）であり、name をそのまま・順序も揃えて写している。
+# タグ付け(カタログ)と配色生成(パレット)が同じ言葉を話すようにするため。乖離は check_klk067 が検出する。
+# 旧「マルチカラー」は palette の「カラフル」へ改名した（同じ概念の別名・単独指定のみの規約は不変）。
+CANONICAL_COLORS_ORDER = [
+    "レッド",
+    "ピンク",
+    "オレンジ",
+    "イエロー",
+    "イエローグリーン",
+    "グリーン",
+    "ミント・水色",
+    "ブルー",
+    "ネイビー",
+    "パープル",
+    "ブラウン",
+    "ベージュ",
+    "ゴールド",
+    "シルバー",
+    "モノトーン",
+    "カラフル",
+]
+CANONICAL_COLORS = set(CANONICAL_COLORS_ORDER)
 CATALOG_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")  # id/file の安全文字集合(先頭は英数)
 CATALOG_MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}  # 配信MIME(GET /catalog/img/)。png変換方式ゆえ webp は保存せず=不変
 
@@ -252,7 +275,7 @@ def validate_instruction(obj):
             errors.append("mvPhoto.file が不正です(安全名のみ)")
 
     # KLK-034 §12.2/§5.1: 参考準拠の拡張キー。「存在するときのみ」検証する(無指定=後方互換・
-    # 旧 instruction は分岐に入らない)。colors は7カテゴリ(1..3件・マルチカラー単独)、
+    # 旧 instruction は分岐に入らない)。colors は16カテゴリ(1..3件・カラフル単独)、
     # sectionLayouts は shape のみ(object・値が非空文字列。語彙照合は validate_catalog と同方針でしない)。
     refs = obj.get("references")
     if refs is not None and isinstance(refs, dict):
@@ -268,9 +291,9 @@ def validate_instruction(obj):
                 if t_colors is not None:
                     if not isinstance(t_colors, list) or not (1 <= len(t_colors) <= 3) \
                             or any(c not in CANONICAL_COLORS for c in t_colors) \
-                            or ("マルチカラー" in t_colors and len(t_colors) > 1):
+                            or ("カラフル" in t_colors and len(t_colors) > 1):
                         errors.append(
-                            "references.thumbnails[{0}].colors が不正です(7カテゴリ・1..3件・マルチカラー単独)".format(i))
+                            "references.thumbnails[{0}].colors が不正です(16カテゴリ・1..3件・カラフル単独)".format(i))
                 t_sl = t.get("sectionLayouts")
                 if t_sl is not None:
                     if not isinstance(t_sl, dict) \
@@ -540,6 +563,29 @@ def sniff_image_ext(head):
     return None
 
 
+def sniff_catalog_image_ext(head):
+    """カタログ取り込み用のマジックバイト判定(JPEG/PNG/WebP・KLK-063)。副作用なし。
+
+    **`sniff_image_ext` とは別関数**である。理由: `/upload`(MV写真・REQ-104/KLK-020)は仕様上 JPEG/PNG 限定で、
+    その挙動は check_klk020 S9/S11 が固定している。カタログ側は `CATALOG_IMPORT_EXTS` が WebP を含み
+    (取込時に sips で png へ変換する・KLK-033)、受理集合が異なるため関数を分ける。
+
+    JPEG(FF D8 FF)→'.jpg' / PNG(89 50 4E 47 0D 0A 1A 0A)→'.png' /
+    WebP(RIFF + 4バイトのサイズ + WEBP)→'.webp' / それ以外→None。
+    クライアントのファイル名・Content-Type ではなく本体先頭バイトを正とする。
+    """
+    if not isinstance(head, (bytes, bytearray)):
+        return None
+    b = bytes(head)
+    if b[:3] == b"\xff\xd8\xff":
+        return ".jpg"
+    if b[:8] == b"\x89PNG\r\n\x1a\n":
+        return ".png"
+    if len(b) >= 12 and b[:4] == b"RIFF" and b[8:12] == b"WEBP":
+        return ".webp"
+    return None
+
+
 def validate_catalog(obj):
     """カタログJSONを検証する(§4.1・多層防御)。
 
@@ -586,9 +632,9 @@ def validate_catalog(obj):
                 errors.append("{0}.colors は第1主配色が必須です(空配列不可)".format(where))
             elif len(colors) > 3:
                 errors.append("{0}.colors は最大3件までです".format(where))
-            # KLK-016: マルチカラーは単独指定のみ(具体色と併用不可)
-            if "マルチカラー" in colors and len(colors) != 1:
-                errors.append("{0}.colors のマルチカラーは単独指定のみ可です(他色と併用不可)".format(where))
+            # KLK-016/067: カラフルは単独指定のみ(具体色と併用不可)
+            if "カラフル" in colors and len(colors) != 1:
+                errors.append("{0}.colors のカラフルは単独指定のみ可です(他色と併用不可)".format(where))
         # KLK-030: sectionLayouts(任意)。present→shape検証 / absent→OK。
         # 値の語彙の正は DRAFT_RULES §12.1.1/§12.1.2。ここでは語彙照合をしない
         # (bridge.py に語彙表を持つと第3の複製になり STEP B 追従性を損なうため)。品質は M群/人間確認ゲート。
@@ -603,6 +649,177 @@ def validate_catalog(obj):
                     if not isinstance(v, str) or not v:
                         errors.append("{0}.sectionLayouts['{1}'] の値は非空文字列である必要があります".format(where, k))
 
+    return (len(errors) == 0), errors
+
+
+PROPOSAL_SCHEMA = "klk-catalog-proposal"   # KLK-064: AI のタグ付け案(登録前)のスキーマ名
+PROPOSAL_VERSION = 1
+CATALOG_ID_RE = re.compile(r"^cat-(\d{4,})$")   # id は cat-0001 形式(4桁以上のゼロ詰め連番)
+
+
+def validate_proposal(obj):
+    """タグ付け案 proposal.json を検証する(KLK-064・§3.2)。副作用なし。
+
+    AI が書き出した案を**人間へ見せる前**に構造だけ検証する(値の妥当性は人間が画面で判断する)。
+    想定: {"schema":"klk-catalog-proposal","version":1,"jobId":"<hex>","items":[{...}]}
+    各 item: file(必須・is_safe_catalog_name) / industry・taste・title・note・columns・source は
+    あれば文字列 / colors はあれば CANONICAL_COLORS の 1..3 件(カラフルは単独) /
+    sectionLayouts はあれば object かつ各値が非空文字列。
+    返却: (ok: bool, errors: list[str])。
+    """
+    errors = []
+    if not isinstance(obj, dict):
+        return False, ["提案がオブジェクトではありません"]
+    if obj.get("schema") != PROPOSAL_SCHEMA:
+        errors.append("schema が '{0}' ではありません".format(PROPOSAL_SCHEMA))
+    if obj.get("version") != PROPOSAL_VERSION:
+        errors.append("version が {0} ではありません".format(PROPOSAL_VERSION))
+    items = obj.get("items")
+    if not isinstance(items, list):
+        errors.append("items が配列ではありません")
+        return (len(errors) == 0), errors
+    for i, it in enumerate(items):
+        errors.extend(_validate_tag_fields(it, i, require_file=True))
+    return (len(errors) == 0), errors
+
+
+def _validate_tag_fields(it, i, require_file):
+    """提案/承認に共通するタグ項目の構造検証(KLK-064・validate_proposal と validate_commit_request で共用)。
+
+    副作用なし。返却: errors(list[str])。空なら妥当。
+    """
+    errors = []
+    if not isinstance(it, dict):
+        return ["items[{0}] がオブジェクトではありません".format(i)]
+    if require_file and not is_safe_catalog_name(it.get("file")):
+        errors.append("items[{0}].file が安全なファイル名ではありません".format(i))
+    # KLK-066: sourceFile(変換元・任意)。あるときだけ安全名を要求する。
+    if it.get("sourceFile") is not None and not is_safe_catalog_name(it.get("sourceFile")):
+        errors.append("items[{0}].sourceFile が安全なファイル名ではありません".format(i))
+    for key in ("industry", "taste", "title", "note", "columns", "source"):
+        if key in it and it[key] is not None and not isinstance(it[key], str):
+            errors.append("items[{0}].{1} が文字列ではありません".format(i, key))
+    if "source" in it and it.get("source") not in (None, "own", "ref"):
+        errors.append("items[{0}].source が own/ref ではありません".format(i))
+    cols = it.get("colors")
+    if cols is not None:
+        if not isinstance(cols, list) or not (1 <= len(cols) <= 3):
+            errors.append("items[{0}].colors が 1..3 件の配列ではありません".format(i))
+        elif any(c not in CANONICAL_COLORS for c in cols):
+            errors.append("items[{0}].colors に許可外の主配色があります".format(i))
+        elif "カラフル" in cols and len(cols) > 1:
+            errors.append("items[{0}].colors のカラフルは単独指定のみです".format(i))
+    sl = it.get("sectionLayouts")
+    if sl is not None:
+        if not isinstance(sl, dict):
+            errors.append("items[{0}].sectionLayouts がオブジェクトではありません".format(i))
+        elif any((not isinstance(v, str)) or (not v.strip()) for v in sl.values()):
+            errors.append("items[{0}].sectionLayouts の値が非空文字列ではありません".format(i))
+    return errors
+
+
+def validate_commit_request(obj):
+    """POST /catalog-commit のボディを検証する(KLK-064・注入対策・§3.3④)。副作用なし。
+
+    想定: {"items":[{file, industry, taste, colors, columns, source, title, note, sectionLayouts}, ...]}
+    **人間が画面で承認した内容**なので、登録に必要な最小項目(file / industry / taste / colors)は必須とする。
+    返却: (ok: bool, errors: list[str])。
+    """
+    errors = []
+    if not isinstance(obj, dict):
+        return False, ["承認内容がオブジェクトではありません"]
+    items = obj.get("items")
+    if not isinstance(items, list) or len(items) == 0:
+        return False, ["登録する画像が選ばれていません"]
+    for i, it in enumerate(items):
+        errors.extend(_validate_tag_fields(it, i, require_file=True))
+        if not isinstance(it, dict):
+            continue
+        if not (isinstance(it.get("industry"), str) and it["industry"].strip()):
+            errors.append("items[{0}].industry(業種)が未指定です".format(i))
+        if not (isinstance(it.get("taste"), str) and it["taste"].strip()):
+            errors.append("items[{0}].taste(テイスト)が未指定です".format(i))
+        if not isinstance(it.get("colors"), list) or not it["colors"]:
+            errors.append("items[{0}].colors(主配色)が未指定です".format(i))
+    return (len(errors) == 0), errors
+
+
+def pending_groups(names):
+    """.pending/ のファイル名を basename でグループ化する(KLK-066)。副作用なし。
+
+    スキルの webp 変換は `.pending/` 内で**同じ basename** の png を作る(CATALOG_RULES・KLK-033)。
+    したがって `pnd-X.webp` と `pnd-X.png` は**同じ画像の2つの表現**であり、
+    取り込み待ちの計数・登録時の片付けはこの単位(=グループ)で行う。
+    返却: {basename: [name, ...]}（各リストは名前順）。
+    """
+    groups = {}
+    for n in names or []:
+        if not isinstance(n, str) or not n:
+            continue
+        base = os.path.splitext(n)[0]
+        groups.setdefault(base, []).append(n)
+    for base in groups:
+        groups[base].sort()
+    return groups
+
+
+# 代表名の優先順位。**登録に使われる側**（視覚認識できる形式）を先に出す。
+_PENDING_PRIORITY = [".png", ".jpg", ".jpeg", ".webp"]
+
+
+def pending_display_name(group):
+    """グループの代表ファイル名を返す(KLK-066)。副作用なし。
+
+    png > jpg/jpeg > webp の順。webp は変換されて初めて視覚認識できるため最後。
+    該当拡張子が無ければ名前順の先頭を返す。
+    """
+    items = sorted(group or [])
+    for ext in _PENDING_PRIORITY:
+        for n in items:
+            if n.lower().endswith(ext):
+                return n
+    return items[0] if items else None
+
+
+def iso_now():
+    """カタログ用のタイムスタンプ文字列(ISO8601・ローカルタイムゾーン付き・KLK-064)。副作用なし。
+
+    既存 entries の `addedAt` / `generatedAt` は '2026-07-28T10:12:31+09:00' 形式の**文字列**。
+    `_now()`(datetime オブジェクト)をそのまま JSON へ入れると TypeError になるため、
+    カタログ書き込み用は必ず本関数を使う。
+    """
+    return datetime.datetime.now().astimezone().replace(microsecond=0).isoformat()
+
+
+def next_catalog_id(existing_ids, img_names):
+    """次のカタログ id(cat-00NN)を決める(KLK-064・採番の責務は bridge 側)。副作用なし。
+
+    **catalog.json の id と catalog/img/ のファイル名の双方**から最大連番を採り、その次を返す
+    (片方だけを見ると、登録途中で落ちた場合などに衝突しうる)。既存が無ければ cat-0001。
+    """
+    nums = []
+    for v in list(existing_ids or []) + [os.path.splitext(n or "")[0] for n in (img_names or [])]:
+        m = CATALOG_ID_RE.match(str(v))
+        if m:
+            nums.append(int(m.group(1)))
+    return "cat-{0:04d}".format((max(nums) + 1) if nums else 1)
+
+
+def validate_delete_request(obj):
+    """POST /catalog-delete のボディを検証する(KLK-068・注入対策)。副作用なし。
+
+    想定: {"ids": ["cat-0054", ...]}。各 id は is_safe_catalog_name(パストラバーサル対策)。
+    返却: (ok: bool, errors: list[str])。
+    """
+    errors = []
+    if not isinstance(obj, dict):
+        return False, ["削除指示がオブジェクトではありません"]
+    ids = obj.get("ids")
+    if not isinstance(ids, list) or len(ids) == 0:
+        return False, ["削除する対象が指定されていません"]
+    for i, v in enumerate(ids):
+        if not is_safe_catalog_name(v):
+            errors.append("ids[{0}] が安全な id ではありません".format(i))
     return (len(errors) == 0), errors
 
 
@@ -639,9 +856,15 @@ def build_catalog_import_command(pending_spec_path, allow_open=False):
     """/catalog-import のヘッドレス実行コマンド(list・shell=False 用)を構築する(最小権限・§4.2)。
 
     ['claude','-p', f'/catalog-import {pending_spec_path}',
-     '--permission-mode','acceptEdits','--output-format','json']
-    allow_open=True のとき ['--allowedTools','Bash(open *)'] を追加(版差の保険・依然最小権限)。
+     '--permission-mode','acceptEdits','--output-format','json',
+     '--allowedTools','Bash(sips *)']
+    allow_open=True のとき allowedTools に 'Bash(open *)' を足す(版差の保険・依然最小権限)。
     ★ 全権限スキップ/全許可モードのフラグは決して含めない(build_claude_command と同一方針)。
+
+    **`Bash(sips *)` は必須(KLK-065)**: `--permission-mode acceptEdits` は**ファイル編集しか**
+    自動承認せず、Bash コマンドは承認を要求する。webp→png 変換の `sips`(CATALOG_RULES・KLK-033)が
+    承認待ちで止まり、**非対話ゆえ誰も答えられず提案が1件も作られない**事故が起きたため、
+    この1コマンドだけを明示的に許可する(単一バイナリに限定＝最小権限は維持)。
     """
     cmd = [
         "claude",
@@ -652,8 +875,11 @@ def build_catalog_import_command(pending_spec_path, allow_open=False):
         "--output-format",
         "json",
     ]
+    # 取り込みに必要な Bash は sips(webp→png 変換)のみ。allow_open 時は open も足す。
+    tools = ["Bash(sips *)"]
     if allow_open:
-        cmd += ["--allowedTools", "Bash(open *)"]
+        tools.append("Bash(open *)")
+    cmd += ["--allowedTools", ",".join(tools)]
     return cmd
 
 
@@ -680,6 +906,7 @@ def repo_root():
 # ============================================================================
 def _run_server(port):
     """127.0.0.1:port で ThreadingHTTPServer を起動する(§4.2/4.3)。"""
+    import shutil   # KLK-064: /catalog-commit の画像移動(.pending → catalog/img)に使用
     import threading
     import uuid
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -698,6 +925,9 @@ def _run_server(port):
     catalog_json_path = os.path.join(catalog_dir, "catalog.json")
     catalog_img_dir = os.path.join(catalog_dir, "img")
     catalog_pending_dir = os.path.join(catalog_dir, ".pending")
+    # KLK-068: 削除した画像の退避先。catalog/ は Git 管理外で復元できないため、
+    # 実削除せずここへ移す（自動削除はしない＝人間が判断して消す）。
+    catalog_trash_dir = os.path.join(catalog_dir, ".trash")
     _EMPTY_CATALOG = {"schema": "klk-catalog", "version": 1, "entries": []}
 
     jobs = {}
@@ -897,10 +1127,15 @@ def _run_server(port):
             _cleanup(pending_spec_path)
             return
 
-        # KLK-018: catalog.json 可読(after is not None)を成果物有無の主判定にする(U3)
-        # 0件承認(件数不変)も正常系のため after>=before ではなく after is not None を用いる
+        # KLK-064: 成果物の主判定を **proposal.json の生成有無** に変更する。
+        # 旧判定は「catalog.json が読める」で、これは常に真になるため成否を区別できなかった
+        # （ブリッジ経由は非対話ゆえ登録に到達せず、常に「完了・0件」と報告していた不具合の一因）。
         after = _count_entries()
-        if not is_job_success(proc.returncode, after is not None):
+        proposal_path = os.path.join(
+            catalog_pending_dir, os.path.basename(pending_spec_path).replace(".import.json", ".proposal.json")
+        )
+        proposal_ok = os.path.isfile(proposal_path)
+        if not is_job_success(proc.returncode, proposal_ok):
             # 診断はサーバコンソール(stderr)のみ。生JSONはブラウザ(message)に出さない
             print("[bridge] 取り込み 失敗 exit={0}".format(proc.returncode), file=sys.stderr)
             with jobs_lock:
@@ -909,10 +1144,17 @@ def _run_server(port):
             _cleanup(pending_spec_path)
             return
 
-        if before is not None and after is not None and after >= before:
-            msg = "取り込みが完了しました。カタログの登録は {0} 件です".format(after)
-        else:
-            msg = "取り込みが完了しました。カタログを確認してください"
+        # KLK-064: この時点では**まだ登録していない**。画面での確認・承認を促す文言にする。
+        n_items = 0
+        try:
+            with open(proposal_path, encoding="utf-8") as fh:
+                n_items = len(json.load(fh).get("items", []))
+        except (OSError, ValueError):
+            n_items = 0
+        msg = (
+            "{0} 件のタグ付け案ができました。下の一覧で内容を確認・修正し、"
+            "「この内容で登録」を押すとカタログに登録されます".format(n_items)
+        )
         with jobs_lock:
             jobs[job_id]["state"] = "done"
             jobs[job_id]["message"] = msg
@@ -967,6 +1209,15 @@ def _run_server(port):
             if path == "/catalog":
                 self._serve_catalog_html()
                 return
+            if path == "/catalog-proposal":
+                self._catalog_proposal()
+                return
+            if path.startswith("/catalog/pending-img/"):
+                self._catalog_pending_img(path[len("/catalog/pending-img/"):])
+                return
+            if path == "/catalog-pending":
+                self._catalog_pending()
+                return
             if path == "/catalog.json":
                 self._serve_catalog_json()
                 return
@@ -989,6 +1240,15 @@ def _run_server(port):
                 return
             if path == "/catalog-import":
                 self._catalog_import()
+                return
+            if path == "/catalog-delete":
+                self._catalog_delete()
+                return
+            if path == "/catalog-commit":
+                self._catalog_commit()
+                return
+            if path == "/catalog-upload":
+                self._catalog_upload()
                 return
             if path == "/upload":
                 self._upload()
@@ -1159,7 +1419,14 @@ def _run_server(port):
                     {
                         "schema": "catalog-import-job",
                         "version": 1,
+                        # KLK-064: ブリッジ経由は**提案モード**。スキルは catalog.json を書かず、
+                        # タグ付け案を proposalPath へ書き出して終了する（承認は SCR-004 の画面で行う）。
+                        "mode": "propose",
                         "files": names,
+                        "proposalPath": os.path.join(
+                            "catalog", ".pending", job_id + ".proposal.json"
+                        ),
+                        "jobId": job_id,
                     },
                     fh,
                     ensure_ascii=False,
@@ -1231,6 +1498,470 @@ def _run_server(port):
                 return
             # ⑥ 応答(保存名を返す。instruction.mvPhoto.file に載せる)
             self._json(200, {"savedName": saved_name})
+
+        def _catalog_upload(self):
+            """POST /catalog-upload — 実績・見本画像の生バイナリ直POST受信(KLK-063・SCR-004 のD&D/ファイル選択)。
+
+            `_upload`(MV写真・KLK-020)と**同一の6段防御順**を踏襲する(multipart/cgi 非使用):
+            ①Origin(403) ②サイズ上限(CATALOG_UPLOAD_MAX_BODY_BYTES 超過→413 / 不正 Content-Length→400)
+            ③本体読取(空→400) ④マジックバイトで JPEG/PNG/WebP 三重検証(非画像→400。Content-Type は信用しない)
+            ⑤保存: 保存名はサーバ生成 pnd-<uuid>.<ext> で catalog/.pending/ へ(クライアントのファイル名・
+                    Content-Type を保存パスに未使用＝パストラバーサル面ゼロ)
+            ⑥200 JSON で savedName と取り込み待ち件数を返却。
+
+            保存先は catalog/.pending/ に固定する。**catalog/ の外へは書かない**(REQ-011 / NFR-004 /
+            CATALOG_RULES §4)。登録は従来どおり POST /catalog-import → 人間承認後のみ(本経路は保存だけ)。
+            """
+            # ① Origin 検証(M-SEC-1): body 読取前に弾く(_upload と同一)
+            if not is_allowed_origin(self.headers.get("Origin"), BRIDGE_HOST, port):
+                self._json(403, {"error": "許可されていないオリジンです"})
+                return
+            # ② サイズ上限: body 読取前に検証(多層防御)
+            try:
+                length = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length < 0:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length > CATALOG_UPLOAD_MAX_BODY_BYTES:
+                self._json(413, {"error": "リクエストが大きすぎます(1枚 8MB まで)"})
+                return
+            # ③ 本体読取(生バイナリ)
+            raw = self.rfile.read(length) if length else b""
+            if not raw:
+                self._json(400, {"error": "画像がありません"})
+                return
+            # ④ 画像判定(マジックバイト・Content-Type/拡張子は信用しない)
+            ext = sniff_catalog_image_ext(raw[:16])
+            if ext is None:
+                self._json(400, {"error": "画像として認識できません(JPEG/PNG/WebP のみ)"})
+                return
+            # ⑤ 保存(保存名はサーバ生成＝安全名・basename・危険文字なし)
+            saved_name = "pnd-" + uuid.uuid4().hex + ext
+            try:
+                os.makedirs(catalog_pending_dir, exist_ok=True)
+                with open(os.path.join(catalog_pending_dir, saved_name), "wb") as fh:
+                    fh.write(raw)
+            except OSError:
+                self._json(500, {"error": "画像を保存できませんでした"})
+                return
+            # ⑥ 応答(保存名＋取り込み待ち件数)
+            self._json(200, {"savedName": saved_name, "pendingCount": self._pending_names_count()[1]})
+
+        def _pending_names_count(self):
+            """catalog/.pending/ 直下の取り込み対象画像を列挙する(代表名リスト, 件数)。
+
+            ジョブ仕様 *.import.json などの非画像は catalog_import_ext_ok で除外する。
+            **KLK-066: 同じ basename の webp/png は同じ画像の2表現なので1件として数える**
+            (画像1枚が「2件が取り込み待ち」と表示される混乱を防ぐ)。代表名は登録に使われる側。
+            ディレクトリが無い/読めない場合は空を返す(fail-open・ループを止めない)。
+            """
+            try:
+                raw = [
+                    n for n in os.listdir(catalog_pending_dir)
+                    if catalog_import_ext_ok(n)
+                    and os.path.isfile(os.path.join(catalog_pending_dir, n))
+                ]
+            except OSError:
+                raw = []
+            groups = pending_groups(raw)
+            names = sorted(
+                filter(None, (pending_display_name(g) for g in groups.values()))
+            )
+            return names, len(names)
+
+        def _purge_pending_siblings(self, primary, source_file=None):
+            """登録済み画像の「兄弟」を catalog/.pending/ から取り除く(KLK-066)。
+
+            兄弟＝同じ basename のファイル(変換元 webp など)。特定は
+            ①提案の sourceFile(あれば) → ②同一 basename の全ファイル の順。
+            **catalog_pending_dir 直下に限定**し、catalog/img/ には一切触れない。
+            失敗は握りつぶす: 登録は既に確定しており、残骸1つのために巻き戻す方が害が大きい。
+            """
+            targets = set()
+            if source_file and is_safe_catalog_name(source_file):
+                targets.add(source_file)
+            base = os.path.splitext(primary)[0]
+            try:
+                for n in os.listdir(catalog_pending_dir):
+                    if os.path.splitext(n)[0] == base and catalog_import_ext_ok(n):
+                        targets.add(n)
+            except OSError:
+                pass
+            for n in targets:
+                if not is_safe_catalog_name(n):
+                    continue
+                path = os.path.join(catalog_pending_dir, n)
+                # 念のため配下確認(パストラバーサル多層防御)
+                if os.path.dirname(os.path.abspath(path)) != os.path.abspath(catalog_pending_dir):
+                    continue
+                try:
+                    if os.path.isfile(path):
+                        os.remove(path)
+                except OSError as exc:
+                    print("[bridge] 取り込み待ちの片付けに失敗: {0} ({1})".format(n, exc), file=sys.stderr)
+
+        def _purge_proposals(self):
+            """catalog/.pending/*.proposal.json を全削除する(KLK-066)。
+
+            提案は「その時点の .pending の写像」であり、登録が済めば必ず陳腐化している。
+            除外した画像は .pending に残るので、取り込みを再実行すれば新しい提案が作られる。
+            失敗は握りつぶす(登録の成否に影響させない)。
+            """
+            try:
+                for n in os.listdir(catalog_pending_dir):
+                    if n.endswith(".proposal.json"):
+                        try:
+                            os.remove(os.path.join(catalog_pending_dir, n))
+                        except OSError as exc:
+                            print("[bridge] 提案の片付けに失敗: {0} ({1})".format(n, exc), file=sys.stderr)
+            except OSError:
+                pass
+
+        def _catalog_pending(self):
+            """GET /catalog-pending — 取り込み待ち画像の件数と名前を返す(KLK-063・SCR-004 の件数表示)。
+
+            返すのは catalog/.pending/ 直下の**取り込み対象拡張子のファイル名のみ**。
+            アップロード分はサーバ生成名、手動コピー分は利用者自身が置いた名前であり、
+            いずれも localhost 限定・Origin 検証済みの本人にしか返らない。画像本体は返さない。
+            """
+            if not is_allowed_origin(self.headers.get("Origin"), BRIDGE_HOST, port):
+                self._json(403, {"error": "許可されていないオリジンです"})
+                return
+            names, count = self._pending_names_count()
+            self._json(200, {"count": count, "names": names})
+
+        def _latest_proposal_path(self):
+            """catalog/.pending/*.proposal.json のうち最新(mtime)のパスを返す。無ければ None。"""
+            try:
+                cands = [
+                    os.path.join(catalog_pending_dir, n)
+                    for n in os.listdir(catalog_pending_dir)
+                    if n.endswith(".proposal.json")
+                ]
+            except OSError:
+                return None
+            cands = [c for c in cands if os.path.isfile(c)]
+            if not cands:
+                return None
+            return max(cands, key=lambda p: os.path.getmtime(p))
+
+        def _catalog_proposal(self):
+            """GET /catalog-proposal — 最新のタグ付け案を返す(KLK-064・SCR-004 の承認フォーム用)。
+
+            AI が書いた案をそのまま返さず **validate_proposal を通してから**返す(壊れた案で画面が
+            崩れるのを防ぐ)。案が無い/壊れている場合は items:[] と理由を返す(ループを止めない)。
+            """
+            if not is_allowed_origin(self.headers.get("Origin"), BRIDGE_HOST, port):
+                self._json(403, {"error": "許可されていないオリジンです"})
+                return
+            path = self._latest_proposal_path()
+            if not path:
+                self._json(200, {"items": [], "message": "タグ付け案はまだありません"})
+                return
+            try:
+                with open(path, encoding="utf-8") as fh:
+                    obj = json.load(fh)
+            except (OSError, ValueError):
+                self._json(200, {"items": [], "message": "タグ付け案を読み込めませんでした"})
+                return
+            ok, errors = validate_proposal(obj)
+            if not ok:
+                print("[bridge] proposal 検証NG: {0}".format(errors), file=sys.stderr)
+                self._json(200, {"items": [], "message": "タグ付け案の形式が不正です"})
+                return
+            # .pending/ に実在する分だけ返す(取り込み済み/削除済みを除く)
+            items = [it for it in obj.get("items", [])
+                     if os.path.isfile(os.path.join(catalog_pending_dir, it.get("file", "")))]
+            self._json(200, {"items": items})
+
+        def _catalog_pending_img(self, raw_name):
+            """GET /catalog/pending-img/{name} — 承認フォームのサムネイル配信(KLK-064)。
+
+            **catalog/.pending/ 直下・安全名・配信許可MIMEのみ**。`catalog/` の外は配信しない。
+            既存 _serve_catalog_img と同じ防御(is_safe_catalog_name → 実在確認 → MIME)。
+            """
+            name = urllib.parse.unquote(raw_name or "")
+            if not is_safe_catalog_name(name):
+                self._json(400, {"error": "ファイル名が不正です"})
+                return
+            ctype = catalog_content_type(name)
+            if ctype is None:
+                self._json(404, {"error": "not found"})
+                return
+            target = os.path.join(catalog_pending_dir, name)
+            if not os.path.isfile(target):
+                self._json(404, {"error": "not found"})
+                return
+            try:
+                with open(target, "rb") as fh:
+                    body = fh.read()
+            except OSError:
+                self._json(500, {"error": "画像を読み込めませんでした"})
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(body)))
+            self._cors()
+            self.end_headers()
+            self.wfile.write(body)
+
+        def _catalog_commit(self):
+            """POST /catalog-commit — 人間が画面で承認した分だけを登録する(KLK-064・§3.3)。
+
+            **登録は AI ではなく本メソッド(Python)が決定的に行う**。AI は提案しかしない。
+            防御/処理順: ①Origin(403) ②サイズ上限(413/400) ③JSON(400) ④validate_commit_request(400)
+            ⑤対象が .pending/ に実在(400) ⑥id 採番 ⑦追記後の全体を validate_catalog(400・**1件も書かない**)
+            ⑧画像移動 ⑨catalog.json を一時ファイル→os.replace で原子的に置換 ⑩200。
+            ⑨で失敗したら⑧の移動を巻き戻す(all-or-nothing)。書き込み先は catalog/ 配下のみ(REQ-011)。
+            """
+            # ① Origin
+            if not is_allowed_origin(self.headers.get("Origin"), BRIDGE_HOST, port):
+                self._json(403, {"error": "許可されていないオリジンです"})
+                return
+            # ② サイズ上限
+            try:
+                length = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length < 0:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length > MAX_BODY_BYTES:
+                self._json(413, {"error": "リクエストが大きすぎます"})
+                return
+            raw = self.rfile.read(length) if length else b""
+            # ③ JSON
+            try:
+                obj = json.loads(raw.decode("utf-8"))
+            except (ValueError, UnicodeDecodeError):
+                self._json(400, {"error": "リクエストJSONを解析できません"})
+                return
+            # ④ 入力検証
+            ok, errors = validate_commit_request(obj)
+            if not ok:
+                self._json(400, {"error": "承認内容が不正です", "details": errors[:5]})
+                return
+            items = obj["items"]
+            # ⑤ 対象の実在確認
+            missing = [it["file"] for it in items
+                       if not os.path.isfile(os.path.join(catalog_pending_dir, it["file"]))]
+            if missing:
+                self._json(400, {"error": "取り込み待ちに見つからない画像があります", "details": missing[:5]})
+                return
+            # 既存カタログ読み込み(無ければ空から作る)
+            try:
+                with open(catalog_json_path, encoding="utf-8") as fh:
+                    catalog = json.load(fh)
+            except (OSError, ValueError):
+                catalog = {"schema": "klk-catalog", "version": 1, "entries": []}
+            if not isinstance(catalog, dict) or not isinstance(catalog.get("entries"), list):
+                self._json(500, {"error": "カタログの形式が不正です。手動で確認してください"})
+                return
+            try:
+                img_names = os.listdir(catalog_img_dir)
+            except OSError:
+                img_names = []
+            # ⑥ id 採番 + エントリ組み立て
+            existing_ids = [e.get("id") for e in catalog["entries"] if isinstance(e, dict)]
+            planned = []   # (src_path, dst_path, entry)
+            for it in items:
+                new_id = next_catalog_id(existing_ids, img_names)
+                existing_ids.append(new_id)
+                ext = os.path.splitext(it["file"])[1].lower()
+                fname = new_id + ext
+                img_names.append(fname)
+                entry = {
+                    "id": new_id,
+                    "file": fname,
+                    "title": (it.get("title") or "").strip() or new_id,
+                    "industry": it["industry"].strip(),
+                    "taste": it["taste"].strip(),
+                    "colors": list(it["colors"]),
+                    "source": it.get("source") if it.get("source") in ("own", "ref") else "own",
+                    "addedAt": iso_now(),
+                }
+                if isinstance(it.get("columns"), str) and it["columns"].strip():
+                    entry["columns"] = it["columns"].strip()
+                if isinstance(it.get("note"), str) and it["note"].strip():
+                    entry["note"] = it["note"].strip()
+                if isinstance(it.get("sectionLayouts"), dict) and it["sectionLayouts"]:
+                    entry["sectionLayouts"] = it["sectionLayouts"]
+                planned.append((
+                    os.path.join(catalog_pending_dir, it["file"]),
+                    os.path.join(catalog_img_dir, fname),
+                    entry,
+                ))
+            # ⑦ 追記後の全体を検証(不正なら1件も書かない)
+            merged = dict(catalog)
+            merged["entries"] = list(catalog["entries"]) + [e for _, _, e in planned]
+            ok, errors = validate_catalog(merged)
+            if not ok:
+                self._json(400, {"error": "登録内容の検証に失敗したため、1件も登録していません",
+                                 "details": errors[:5]})
+                return
+            # ⑧ 画像移動(失敗したら巻き戻す)
+            moved = []
+            try:
+                os.makedirs(catalog_img_dir, exist_ok=True)
+                for src, dst, _e in planned:
+                    shutil.move(src, dst)
+                    moved.append((src, dst))
+            except Exception as exc:   # OSError 以外でも必ず巻き戻す
+                for src, dst in reversed(moved):
+                    try:
+                        shutil.move(dst, src)
+                    except OSError:
+                        pass
+                self._json(500, {"error": "画像を移動できませんでした: {0}".format(exc)})
+                return
+            # ⑨ catalog.json を原子的に置換(一時ファイル→os.replace)
+            merged["generatedAt"] = iso_now()
+            tmp = catalog_json_path + ".tmp"
+            try:
+                with open(tmp, "w", encoding="utf-8") as fh:
+                    json.dump(merged, fh, ensure_ascii=False, indent=2)
+                os.replace(tmp, catalog_json_path)
+            except Exception as exc:   # OSError に限定しない: JSON 直列化不能(TypeError)等でも
+                                       # 画像移動を必ず巻き戻す(中途半端な状態を残さない・KLK-064)
+                try:
+                    os.remove(tmp)
+                except OSError:
+                    pass
+                for src, dst in reversed(moved):   # 画像移動を巻き戻す(all-or-nothing)
+                    try:
+                        shutil.move(dst, src)
+                    except OSError:
+                        pass
+                self._json(500, {"error": "カタログを保存できませんでした: {0}".format(exc)})
+                return
+            # ⑩ 片付け(KLK-066・登録が確定してから)。失敗しても登録は有効なので握りつぶす。
+            for it, (_src, _dst, _e) in zip(items, planned):
+                self._purge_pending_siblings(it["file"], it.get("sourceFile"))
+            self._purge_proposals()
+            # ⑪ 応答
+            self._json(200, {
+                "registered": len(planned),
+                "total": len(merged["entries"]),
+                "ids": [e["id"] for _, _, e in planned],
+                "pendingCount": self._pending_names_count()[1],
+            })
+
+        def _catalog_delete(self):
+            """POST /catalog-delete — カタログから登録を取り消す(KLK-068・_catalog_commit の逆操作)。
+
+            **画像は削除せず catalog/.trash/ へ退避する。** catalog/ は Git 管理外(REQ-011)で
+            `git revert` では戻せないため、登録の誤り(消せば直る)と削除の誤り(原本を失う)は
+            リスクが非対称。退避なら人間が後から戻せる。自動削除はしない。
+
+            処理順: ①Origin(403) ②サイズ上限(413/400) ③JSON(400) ④validate_delete_request(400)
+            ⑤catalog.json 内の実在確認(404・部分欠落でも全体を拒否) ⑥削除後の全体を validate_catalog
+            (400・**1件も消さない**) ⑦画像を .trash へ退避 ⑧一時ファイル→os.replace で原子的置換
+            ⑨200。⑧で失敗したら⑦を巻き戻す(あらゆる例外で・KLK-064 の教訓)。
+            """
+            # ① Origin
+            if not is_allowed_origin(self.headers.get("Origin"), BRIDGE_HOST, port):
+                self._json(403, {"error": "許可されていないオリジンです"})
+                return
+            # ② サイズ上限
+            try:
+                length = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length < 0:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length > MAX_BODY_BYTES:
+                self._json(413, {"error": "リクエストが大きすぎます"})
+                return
+            raw = self.rfile.read(length) if length else b""
+            # ③ JSON
+            try:
+                obj = json.loads(raw.decode("utf-8"))
+            except (ValueError, UnicodeDecodeError):
+                self._json(400, {"error": "リクエストJSONを解析できません"})
+                return
+            # ④ 入力検証
+            ok, errors = validate_delete_request(obj)
+            if not ok:
+                self._json(400, {"error": "削除指示が不正です", "details": errors[:5]})
+                return
+            ids = list(dict.fromkeys(obj["ids"]))   # 重複指定を畳む
+            # 既存カタログ
+            try:
+                with open(catalog_json_path, encoding="utf-8") as fh:
+                    catalog = json.load(fh)
+            except (OSError, ValueError):
+                self._json(500, {"error": "カタログを読み込めませんでした"})
+                return
+            if not isinstance(catalog, dict) or not isinstance(catalog.get("entries"), list):
+                self._json(500, {"error": "カタログの形式が不正です。手動で確認してください"})
+                return
+            # ⑤ 実在確認(部分欠落でも全体を拒否＝何が消えたか曖昧にしない)
+            by_id = {e.get("id"): e for e in catalog["entries"] if isinstance(e, dict)}
+            missing = [i for i in ids if i not in by_id]
+            if missing:
+                self._json(404, {"error": "カタログに見つからない項目があります", "details": missing[:5]})
+                return
+            # ⑥ 削除後の全体を検証(不正なら1件も消さない)
+            merged = dict(catalog)
+            merged["entries"] = [e for e in catalog["entries"]
+                                 if not (isinstance(e, dict) and e.get("id") in ids)]
+            ok, errors = validate_catalog(merged)
+            if not ok:
+                self._json(400, {"error": "削除後の検証に失敗したため、1件も削除していません",
+                                 "details": errors[:5]})
+                return
+            # ⑦ 画像を .trash へ退避(失敗しても続行＝カタログ側の整合を優先。ログのみ)
+            moved = []
+            try:
+                os.makedirs(catalog_trash_dir, exist_ok=True)
+            except OSError:
+                pass
+            for i in ids:
+                fname = (by_id[i] or {}).get("file")
+                if not (isinstance(fname, str) and is_safe_catalog_name(fname)):
+                    continue
+                src = os.path.join(catalog_img_dir, fname)
+                dst = os.path.join(catalog_trash_dir, fname)
+                if os.path.dirname(os.path.abspath(src)) != os.path.abspath(catalog_img_dir):
+                    continue   # 配下確認(多層防御)
+                try:
+                    if os.path.isfile(src):
+                        shutil.move(src, dst)
+                        moved.append((src, dst))
+                except OSError as exc:
+                    print("[bridge] 画像の退避に失敗: {0} ({1})".format(fname, exc), file=sys.stderr)
+            # ⑧ catalog.json を原子的に置換
+            merged["generatedAt"] = iso_now()
+            tmp = catalog_json_path + ".tmp"
+            try:
+                with open(tmp, "w", encoding="utf-8") as fh:
+                    json.dump(merged, fh, ensure_ascii=False, indent=2)
+                os.replace(tmp, catalog_json_path)
+            except Exception as exc:   # OSError に限定しない(KLK-064 の教訓・必ず巻き戻す)
+                try:
+                    os.remove(tmp)
+                except OSError:
+                    pass
+                for src, dst in reversed(moved):
+                    try:
+                        shutil.move(dst, src)
+                    except OSError:
+                        pass
+                self._json(500, {"error": "カタログを保存できませんでした: {0}".format(exc)})
+                return
+            # ⑨ 応答
+            self._json(200, {
+                "deleted": len(ids),
+                "total": len(merged["entries"]),
+                "ids": ids,
+                "trashDir": "catalog/.trash",
+            })
 
         def _generate(self):
             # ① Origin 検証(M-SEC-1): 状態変更は同一オリジン(+file://)のみ許可。body 読取前に弾く

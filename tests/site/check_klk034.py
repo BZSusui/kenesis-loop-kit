@@ -11,7 +11,7 @@ docs/designs/KLK-034.md §4.6 / §9 against 参考準拠生成（案A=カタロ�
   主 golden         tests/fixtures/klk034/{index-a/b/c,compare}.html + instruction.json
                     （席替え/無衝突/other/省略/プール直採用/プール席替え＋§5.1 ブルー/ゴールド表引き）
   副 golden         tests/fixtures/klk034b/{index-a/b/c,compare}.html + instruction.json
-                    （マルチカラー→指定色フォールバック＋HERO=band 参考採用で案C席替え）
+                    （カラフル→指定色フォールバック＋HERO=band 参考採用で案C席替え）
 
 Source of truth = 設計書 §4.6。check_klk029.py と同型（正規表現・文字列検索・exit 0/1・
 Python3標準ライブラリのみ・ネットワーク非使用）。期待値は instruction.json から
@@ -204,10 +204,10 @@ class Golden:
         self.sl = self.thumb.get("sectionLayouts") or {}
         self.ref_colors = self.thumb.get("colors") or []
         self.color_source = refs.get("colorSource")
-        # 実効の配色ソース（マルチカラーは指定色フォールバック・§5.1）
+        # 実効の配色ソース（カラフルは指定色フォールバック・§5.1）
         self.effective = "specified" if (
             self.color_source != "reference" or not self.ref_colors
-            or self.ref_colors[0] == "マルチカラー") else "reference"
+            or self.ref_colors[0] == "カラフル") else "reference"
 
         self.sections = self.INSTR.get("sections", [])
         self.columns = self.INSTR["layout"]["columns"]
@@ -313,7 +313,7 @@ for g in G:
 check("R4 3案 distinct の維持＋各マーカーが実 grid/flex/order を伴う (§12.1.1⑥⑦⑧⑨・§12.1.2 不変条件)",
       r4_ok, "; ".join(r4_det) if r4_det else "全軸 distinct・全マーカー実CSSあり")
 
-# R5 §5.1 配色: 案A --m-main/--m-accent が表引き（klk034）／マルチカラーは指定色のまま（klk034b）
+# R5 §5.1 配色: 案A --m-main/--m-accent が表引き（klk034）／カラフルは指定色のまま（klk034b）
 r5_ok = True
 r5_det = []
 for g in G:
@@ -331,7 +331,7 @@ for g in G:
         r5_det.append(f"{g.name}: フォールバック 案A main={g.MM[0]}(期待=指定色{want_main})")
     ok = ok and distinct3(g.MM)  # 案間 --m-main 相違は維持
     r5_ok = r5_ok and ok
-check("R5 §5.1 配色 (案A=7カテゴリ表引き／マルチカラーは指定色フォールバック。案間 --m-main 相違維持)",
+check("R5 §5.1 配色 (案A=7カテゴリ表引き／カラフルは指定色フォールバック。案間 --m-main 相違維持)",
       r5_ok, "; ".join(r5_det))
 
 # R6 既存不変条件: data-columns 同一/enum・archetype distinct/enum・section-order distinct かつ同一集合・番地整合
@@ -454,10 +454,11 @@ t3_cases = [
         "sampleUrls": [], "colorSource": "reference"}))[0] is True),
     ("colorSource不正はNG", bridge.validate_instruction(_with_refs(
         {"thumbnails": [], "sampleUrls": [], "colorSource": "auto"}))[0] is False),
-    ("colors 7カテゴリ外はNG", bridge.validate_instruction(_with_refs(
-        {"thumbnails": [dict(_t, colors=["ベージュ"])], "sampleUrls": []}))[0] is False),
-    ("マルチカラー併用はNG", bridge.validate_instruction(_with_refs(
-        {"thumbnails": [dict(_t, colors=["マルチカラー", "ピンク"])], "sampleUrls": []}))[0] is False),
+    # KLK-067: 「ベージュ」は16カテゴリの正式メンバーになったため不正例に使えない。
+    ("colors 16カテゴリ外はNG", bridge.validate_instruction(_with_refs(
+        {"thumbnails": [dict(_t, colors=["虹色"])], "sampleUrls": []}))[0] is False),
+    ("カラフル併用はNG", bridge.validate_instruction(_with_refs(
+        {"thumbnails": [dict(_t, colors=["カラフル", "ピンク"])], "sampleUrls": []}))[0] is False),
     ("colors 4件はNG", bridge.validate_instruction(_with_refs(
         {"thumbnails": [dict(_t, colors=["ブルー", "ピンク", "レッド", "ゴールド"])], "sampleUrls": []}))[0] is False),
     ("sectionLayouts 値が空はNG", bridge.validate_instruction(_with_refs(

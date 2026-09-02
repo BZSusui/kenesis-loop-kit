@@ -117,7 +117,7 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
   する（対象は **thumbnails[0] のみ**）。①**レイアウト**: `thumbnails[0].sectionLayouts` の各値を §12.2 の**席替え規則**で
   反映する（案A=参考の型。既定でその型を持つ案があればその案は案Aの既定型へ。キー省略/`"other"`/語彙外は従来のまま。
   等値比較のみ・算術しない）。②**配色**: `references.colorSource:"reference"`（既定）なら案Aの `--m-main`（＋colors[1]→
-  `--m-accent`）を **§5.1 の7カテゴリ→hex表**で決める（マルチカラーは指定色へフォールバック）。`"specified"` なら配色は
+  `--m-accent`）を **§5.1 の16カテゴリ→hex表**で決める（カラフルは指定色へフォールバック）。`"specified"` なら配色は
   従来のまま。③**マーカー**: 案Aルートに `data-ref-id`/`data-ref-colors`（案B/C には付けない）、compare.html の案Aカードに
   `.ref-badge`「参考準拠: {label}（{id}）／参考は着想のみ・そっくり再現はしません」。`references` の拡張キーが無い指示書は
   全て従来どおり（後方互換）。

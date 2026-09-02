@@ -90,11 +90,54 @@
     padding: 26px; text-align: center; color: var(--color-text-sub); }
   .dropzone .big { font-size: 30px; }
   .dropzone .t { font-size: 14px; color: var(--color-text); margin: 6px 0 2px; }
+  /* KLK-063: 実働ドロップゾーン。クリックで選択・D&D 受け入れ・ブリッジ未起動時は無効表示 */
+  .dropzone { cursor: pointer; display: block; transition: background .12s, border-color .12s; }
+  .dropzone.over { background: #e4f0fb; border-color: var(--color-link); }
+  .dropzone.disabled { cursor: not-allowed; opacity: .55; }
+  .dropzone .dz-alt { font-size: 11.5px; margin: 8px 0 0; }
+  .upload-status { font-size: 12.5px; color: var(--color-text-sub); margin: 10px 0 0; min-height: 1.2em; }
   .import-actions { margin-top: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .import-status { font-size: 12.5px; color: var(--color-text-sub); }
   .autotag { margin-top: 14px; border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; }
   .autotag .at-head { background: var(--color-bg-subtle); padding: 8px 12px; font-size: 12.5px; color: var(--color-text); border-bottom: 1px solid var(--color-border); }
   .autotag .at-body { padding: 12px; font-size: 12.5px; color: var(--color-text-sub); }
+  /* KLK-064: 承認フォーム（AI の提案を画面で確認・修正して登録する） */
+  .at-list { padding: 0 12px; }
+  .pitem { border: 1px solid var(--color-border); border-radius: 10px; padding: 12px; margin: 0 0 12px;
+    display: grid; grid-template-columns: 132px 1fr; gap: 14px; background: #fff; }
+  .pitem.excluded { opacity: .5; background: var(--color-bg-subtle); }
+  .pitem .pthumb { width: 132px; height: 96px; object-fit: cover; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-bg-subtle); }
+  .pfields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; }
+  .pfields label { font-size: 11.5px; color: var(--color-text-sub); display: block; }
+  .pfields select, .pfields input[type=text] { width: 100%; padding: 5px 7px; font-size: 12.5px;
+    border: 1px solid var(--color-border); border-radius: 6px; background: #fff; color: var(--color-text); }
+  .pcolors { grid-column: 1 / -1; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .pcolors span.lbl { font-size: 11.5px; color: var(--color-text-sub); }
+  .pcolors label { font-size: 12px; display: inline-flex; align-items: center; gap: 3px; }
+  .pactions { grid-column: 1 / -1; display: flex; gap: 12px; align-items: center; font-size: 12px; }
+  .at-foot { padding: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+    border-top: 1px solid var(--color-border); background: var(--color-bg-subtle); }
+  .at-count { font-size: 12.5px; color: var(--color-text); }
+  /* アップロード完了モーダル */
+  .up-modal-back { display: none; position: fixed; inset: 0; z-index: 300; background: rgba(20,30,40,.72);
+    align-items: center; justify-content: center; padding: 20px; }
+  .up-modal-back.open { display: flex; }
+  .up-modal { background: #fff; border-radius: 12px; max-width: 460px; width: 100%; padding: 24px; text-align: center; position: relative; }
+  .up-modal h3 { margin: 4px 0 10px; font-size: 17px; }
+  .up-modal p { font-size: 13px; color: var(--color-text-sub); margin: 0 0 6px; }
+  .up-modal .um-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .up-modal .um-close { position: absolute; top: 8px; right: 12px; border: none; background: none; font-size: 20px; cursor: pointer; color: var(--color-text-sub); }
+  /* KLK-068: 削除ボタンと確認モーダル */
+  .meta-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .item .del { border: 1px solid var(--color-border); background: #fff; border-radius: 6px;
+    font-size: 13px; line-height: 1; padding: 4px 7px; cursor: pointer; color: var(--color-text-sub); }
+  .item .del:hover { border-color: #c0392b; color: #c0392b; background: #fdf1ef; }
+  .del-modal .dm-target { display: flex; gap: 12px; align-items: center; text-align: left;
+    border: 1px solid var(--color-border); border-radius: 8px; padding: 10px; margin: 12px 0; background: var(--color-bg-subtle); }
+  .del-modal .dm-target img { width: 96px; height: 68px; object-fit: cover; border-radius: 6px; background: #fff; }
+  .del-modal .dm-target .dm-t { font-size: 13px; color: var(--color-text); }
+  .del-modal .dm-target .dm-id { font-size: 11.5px; color: var(--color-text-sub); }
+  .del-modal .danger { background: #c0392b; border-color: #c0392b; color: #fff; }
 
   /* モーダル(SCR-001/002 と同方式・CSS-only チェックボックストグル) */
   .modal-toggle { display: none; }
@@ -162,13 +205,22 @@
     <div class="frow" data-facet="colors">
       <span class="flabel">主配色</span>
       <div class="fchips">
-        <span class="fchip color" data-val="グリーン"><span class="sw" style="background:#2E7D6B"></span>グリーン</span>
-        <span class="fchip color" data-val="ブルー"><span class="sw" style="background:#2E5FA3"></span>ブルー</span>
-        <span class="fchip color" data-val="レッド"><span class="sw" style="background:#B23A48"></span>レッド</span>
-        <span class="fchip color" data-val="ゴールド"><span class="sw" style="background:#C6A15B"></span>ゴールド</span>
+        <span class="fchip color" data-val="レッド"><span class="sw" style="background:#B3402F"></span>レッド</span>
         <span class="fchip color" data-val="ピンク"><span class="sw" style="background:#E86FA0"></span>ピンク</span>
-        <span class="fchip color" data-val="モノトーン"><span class="sw" style="background:#333"></span>モノトーン</span>
-        <span class="fchip color" data-val="マルチカラー"><span class="sw" style="background:conic-gradient(from 0deg,#2E7D6B,#2E5FA3,#B23A48,#C6A15B,#E86FA0,#333,#2E7D6B)"></span>マルチカラー</span>
+        <span class="fchip color" data-val="オレンジ"><span class="sw" style="background:#C87F42"></span>オレンジ</span>
+        <span class="fchip color" data-val="イエロー"><span class="sw" style="background:#BFA23C"></span>イエロー</span>
+        <span class="fchip color" data-val="イエローグリーン"><span class="sw" style="background:#7E9B45"></span>イエローグリーン</span>
+        <span class="fchip color" data-val="グリーン"><span class="sw" style="background:#2E7D6B"></span>グリーン</span>
+        <span class="fchip color" data-val="ミント・水色"><span class="sw" style="background:#3E9AA6"></span>ミント・水色</span>
+        <span class="fchip color" data-val="ブルー"><span class="sw" style="background:#2C5F8A"></span>ブルー</span>
+        <span class="fchip color" data-val="ネイビー"><span class="sw" style="background:#2A3C6B"></span>ネイビー</span>
+        <span class="fchip color" data-val="パープル"><span class="sw" style="background:#6F4E9C"></span>パープル</span>
+        <span class="fchip color" data-val="ブラウン"><span class="sw" style="background:#885A3A"></span>ブラウン</span>
+        <span class="fchip color" data-val="ベージュ"><span class="sw" style="background:#A98E60"></span>ベージュ</span>
+        <span class="fchip color" data-val="ゴールド"><span class="sw" style="background:#C6A15B"></span>ゴールド</span>
+        <span class="fchip color" data-val="シルバー"><span class="sw" style="background:#7C858D"></span>シルバー</span>
+        <span class="fchip color" data-val="モノトーン"><span class="sw" style="background:#444850"></span>モノトーン</span>
+        <span class="fchip color" data-val="カラフル"><span class="sw" style="background:conic-gradient(from 0deg,#2E7D6B,#2C5F8A,#B3402F,#C6A15B,#E86FA0,#333,#2E7D6B)"></span>カラフル</span>
       </div>
     </div>
     <div class="frow" data-facet="source">
@@ -196,23 +248,65 @@
   <div class="uploader" id="add">
     <h2>実績・見本画像を追加する</h2>
     <p class="sub">画像を <code>catalog/.pending/</code> に置くと、AIが業種・テイスト・主配色を<b>自動でタグ付け</b>してカタログに登録します。保存先はGit公開対象外のフォルダに限定されます。</p>
-    <div class="dropzone">
+    <label class="dropzone" id="dropzone" for="pendingFiles">
       <div class="big">⬆️</div>
-      <p class="t">追加したい画像を <code>catalog/.pending/</code> フォルダに入れてください</p>
-      <p>JPG / PNG(複数可)</p>
-    </div>
+      <p class="t">ここに画像をドラッグ&amp;ドロップ、またはクリックして選択</p>
+      <p>JPG / PNG / WebP（複数可・1枚 8MB まで）</p>
+      <p class="dz-alt"><code>catalog/.pending/</code> フォルダへ直接コピーしても取り込めます</p>
+      <input type="file" id="pendingFiles" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple hidden>
+    </label>
+    <p class="upload-status" id="uploadStatus"></p>
     <div class="import-actions">
       <button type="button" class="btn primary" id="importBtn" disabled>取り込みを実行</button>
       <span class="import-status" id="importStatus">ブリッジ未起動のため取り込みは実行できません。</span>
     </div>
     <div class="autotag">
-      <div class="at-head">自動タグ付けの結果(Claude Code のチャットで確認・修正します)</div>
+      <div class="at-head">自動タグ付けの結果(この画面で確認・修正してから登録します)</div>
       <div class="at-body" id="autotagBody">
-        取り込みを実行すると、AIが推定した業種・テイスト・主配色(7カテゴリ)・カラムを
-        <b>Claude Code のチャット欄に一覧で提示</b>します(この画面には表示されません)。
-        チャット上で内容を確認・修正し、承認した分だけがカタログへ登録されます(<b>承認前に確定しません</b>)。
-        登録が終わると、この画面のサムネイル一覧が自動で更新されます。
+        取り込みを実行すると、AIが推定した業種・テイスト・主配色(16カテゴリ)・カラムを
+        <b>この下に一覧で表示</b>します。内容を確認・修正し、登録したくない画像は「除外」にしてください。
+        「この内容で登録」を押した分<b>だけ</b>がカタログへ登録されます(<b>承認前に確定しません</b>)。
       </div>
+      <div class="at-list" id="proposalList"></div>
+      <div class="at-foot" id="proposalFoot" style="display:none">
+        <span class="at-count" id="proposalCount"></span>
+        <button type="button" class="btn primary" id="commitBtn">この内容で登録</button>
+        <span class="import-status" id="commitStatus"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- KLK-064: アップロード完了モーダル（次に何をすればよいかを案内する） -->
+  <div class="up-modal-back" id="upModalBack" role="dialog" aria-modal="true" aria-labelledby="upModalTitle">
+    <div class="up-modal">
+      <button type="button" class="um-close" id="upModalClose" aria-label="閉じる">×</button>
+      <div style="font-size:34px">✅</div>
+      <h3 id="upModalTitle">画像を追加しました</h3>
+      <p id="upModalBody"></p>
+      <p><b>次は「取り込みを実行」を押してください。</b>AIが業種・テイスト・主配色を推定し、この画面に一覧で表示します。</p>
+      <p>内容を確認・修正してから「この内容で登録」を押すと、カタログに登録されます。</p>
+      <div class="um-actions">
+        <button type="button" class="btn primary" id="upModalGo">取り込みを実行する</button>
+        <button type="button" class="btn" id="upModalLater">あとで</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KLK-068: 削除の確認モーダル（何を消すのかを目で確かめてから実行する） -->
+  <div class="up-modal-back" id="delModalBack" role="dialog" aria-modal="true" aria-labelledby="delModalTitle">
+    <div class="up-modal del-modal">
+      <button type="button" class="um-close" id="delModalClose" aria-label="閉じる">×</button>
+      <div style="font-size:32px">🗑</div>
+      <h3 id="delModalTitle">この実績をカタログから削除しますか？</h3>
+      <div class="dm-target" id="delTarget"></div>
+      <p><b>画像は <code>catalog/.trash/</code> へ移動します（自動では消えません）。</b>
+         元に戻したいときは、そのフォルダから取り出してください。</p>
+      <p>カタログの登録情報（タグ・メモ）は失われます。</p>
+      <div class="um-actions">
+        <button type="button" class="btn danger" id="delConfirm">削除する</button>
+        <button type="button" class="btn" id="delCancel">やめる</button>
+      </div>
+      <p class="import-status" id="delStatus"></p>
     </div>
   </div>
 
@@ -224,8 +318,9 @@
 (function () {
   "use strict";
 
-  // 主配色7カテゴリ(bridge.py CANONICAL_COLORS と一致・§3.3・KLK-016で「マルチカラー」を追加)
-  var CANONICAL_COLORS = ["グリーン", "ブルー", "レッド", "ゴールド", "ピンク", "モノトーン", "マルチカラー"];
+  // 主配色16カテゴリ(bridge.py CANONICAL_COLORS と一致・正は palette/index.html の const COLORS・KLK-067)
+  // KLK-067: 主配色 canonical（正は palette/index.html の const COLORS・16種・順序も一致）
+  var CANONICAL_COLORS = ["レッド", "ピンク", "オレンジ", "イエロー", "イエローグリーン", "グリーン", "ミント・水色", "ブルー", "ネイビー", "パープル", "ブラウン", "ベージュ", "ゴールド", "シルバー", "モノトーン", "カラフル"];
 
   // 選択状態(状態の単一源はDOM: fchip.on とこの sel を同期)
   var sel = { industry: [], taste: [], colors: [], source: [], keyword: "", sort: "new" };
@@ -323,7 +418,12 @@
           '<div class="meta">' +
             '<div class="cap">' + esc(e.title || "") + "</div>" +
             '<div class="tags">' + tagHtml + "</div>" +
-            '<a class="use" href="/">この雰囲気で生成 →</a>' +
+            '<div class="meta-foot">' +
+              '<a class="use" href="/">この雰囲気で生成 →</a>' +
+              '<button type="button" class="del" data-del-id="' + esc(e.id || "") + '"' +
+                ' data-del-title="' + esc(e.title || "") + '"' +
+                ' data-del-src="' + esc(src || "") + '" title="カタログから削除">🗑</button>' +
+            "</div>" +
           "</div>" +
         "</div>"
       );
@@ -396,7 +496,7 @@
       return r.json();
     }).then(function (data) {
       var entries = (data && Array.isArray(data.entries)) ? data.entries : [];
-      // 主配色は許可7カテゴリのみ通す(軽検証・不正値は無視)
+      // 主配色は許可16カテゴリのみ通す(軽検証・不正値は無視)
       entries.forEach(function (e) {
         if (Array.isArray(e.colors)) {
           e.colors = e.colors.filter(function (c) { return CANONICAL_COLORS.indexOf(c) >= 0; });
@@ -408,6 +508,14 @@
 
   function setBridgeState(alive) {
     bridgeAlive = alive;
+    // KLK-063: アップロードUIも同じ health-gate に乗せる（未起動なら受け付けない）
+    var zone = document.getElementById("dropzone");
+    var input = document.getElementById("pendingFiles");
+    if (zone) zone.classList.toggle("disabled", !alive);
+    if (input) input.disabled = !alive;
+    if (!alive) {
+      setUploadStatus("ローカルブリッジ未起動のため画像を追加できません。draft-gen/起動.command をダブルクリック、またはターミナルで python3 draft-gen/bridge.py を実行してください。");
+    }
     var banner = document.getElementById("bridgeState");
     var btn = document.getElementById("importBtn");
     var st = document.getElementById("importStatus");
@@ -440,10 +548,347 @@
       st.textContent = j.message || j.state;
       if (j.state === "running") { setTimeout(function () { pollStatus(jobId); }, 1500); return; }
       document.getElementById("importBtn").disabled = false;
-      if (j.state === "done") { loadCatalog().then(function (e) { allEntries = e; updateHeadCount(); renderGrid(); }); }
+      // KLK-064: 取り込み＝**提案の生成**。ここではまだ登録されない。提案を読み込んで承認フォームを描く。
+      if (j.state === "done") {
+        loadProposal().then(function (n) {
+          if (n > 0) {
+            document.getElementById("proposalList").scrollIntoView({ behavior: "smooth", block: "start" });
+          } else {
+            // 提案が0件のまま終わった場合に**無言で終わらせない**（KLK-065）。
+            // ジョブは done でも AI が提案を書けていないケースがあり、利用者には何も起きていないように見える。
+            st.textContent = "タグ付け案を作れませんでした。取り込み待ちの画像はそのまま残っています。"
+              + "もう一度「取り込みを実行」を押すか、Claude Code のチャットで /catalog-import を実行してください"
+              + "（ターミナルに出るブリッジのログに原因が表示されます）。";
+          }
+          refreshPendingCount();   // 件数表示を実態に合わせて更新する
+        });
+      }
     }).catch(function () {
       st.textContent = "状態の取得に失敗しました。";
       document.getElementById("importBtn").disabled = false;
+    });
+  }
+
+  // ---- 承認フォーム(KLK-064・GET /catalog-proposal → 画面で確認・修正 → POST /catalog-commit) ----
+  // AI は提案するだけ。人間がここで確認・修正・除外し、登録はブリッジ(Python)が決定的に行う。
+  // 語彙は KLK-059 の canonical（CATALOG_RULES §3 が正）と一致させる。ずれると絞り込みが効かなくなる。
+  var CANON_INDUSTRIES = [
+    "飲食店・カフェ・食関連", "美容室・エステ・化粧品", "ファッション", "スクール・教室", "不動産・建築",
+    "ホテル・旅館・レジャー", "士業事務所（法律/会計/コンサルティング他）", "コーポレート／BtoB", "EC・物販",
+    "フィットネス・ジム・スポーツ", "イベント・キャンペーンLP", "ジュエリー・時計・貴金属",
+    "クリニック・病院・介護リハビリ", "農業・ファーム", "求人・採用", "アート・ポートフォリオ", "その他・団体/NPO"
+  ];
+  var CANON_TASTES = ["シンプル", "ナチュラル", "高級感", "ポップ", "和風", "かっこいい", "レトロ", "かわいい", "アート", "ダーク"];
+  var CANON_COLUMNS = ["1col", "2col-full-left", "2col-full-right", "2col-body-left", "2col-body-right", "3col"];
+
+  var proposalItems = [];   // 画面の編集状態（提案＋人間の修正）
+
+  function optionsHtml(list, selected) {
+    return list.map(function (v) {
+      return '<option value="' + esc(v) + '"' + (v === selected ? " selected" : "") + ">" + esc(v) + "</option>";
+    }).join("");
+  }
+
+  function renderProposal() {
+    var host = document.getElementById("proposalList");
+    var foot = document.getElementById("proposalFoot");
+    host.textContent = "";
+    if (!proposalItems.length) { foot.style.display = "none"; return; }
+    proposalItems.forEach(function (it, idx) {
+      var row = document.createElement("div");
+      row.className = "pitem" + (it._excluded ? " excluded" : "");
+      row.setAttribute("data-idx", String(idx));
+      row.innerHTML =
+        '<img class="pthumb" alt="" src="/catalog/pending-img/' + encodeURIComponent(it.file) + '">' +
+        '<div class="pfields">' +
+          '<div><label>タイトル</label><input type="text" data-f="title" value="' + esc(it.title || "") + '"></div>' +
+          '<div><label>業種</label><select data-f="industry">' + optionsHtml(CANON_INDUSTRIES, it.industry) + "</select></div>" +
+          '<div><label>テイスト</label><select data-f="taste">' + optionsHtml(CANON_TASTES, it.taste) + "</select></div>" +
+          '<div><label>カラム構成</label><select data-f="columns"><option value="">（未指定）</option>' + optionsHtml(CANON_COLUMNS, it.columns) + "</select></div>" +
+          '<div style="grid-column:1/-1"><label>メモ</label><input type="text" data-f="note" value="' + esc(it.note || "") + '"></div>' +
+          '<div class="pcolors"><span class="lbl">主配色（最大3・カラフルは単独）</span>' +
+            CANONICAL_COLORS.map(function (c) {
+              var on = (it.colors || []).indexOf(c) >= 0;
+              return '<label><input type="checkbox" data-color="' + esc(c) + '"' + (on ? " checked" : "") + "> " + esc(c) + "</label>";
+            }).join("") +
+          "</div>" +
+          '<div class="pactions">' +
+            '<label><input type="radio" name="src' + idx + '" data-f="source" value="own"' + (it.source !== "ref" ? " checked" : "") + "> 自社実績</label>" +
+            '<label><input type="radio" name="src' + idx + '" data-f="source" value="ref"' + (it.source === "ref" ? " checked" : "") + "> 収集見本</label>" +
+            '<label style="margin-left:auto"><input type="checkbox" data-f="_excluded"' + (it._excluded ? " checked" : "") + "> このファイルは除外する</label>" +
+          "</div>" +
+        "</div>";
+      host.appendChild(row);
+    });
+    foot.style.display = "flex";
+    updateProposalCount();
+  }
+
+  function updateProposalCount() {
+    var n = proposalItems.filter(function (it) { return !it._excluded; }).length;
+    document.getElementById("proposalCount").textContent = n + " 件を登録します（除外 " + (proposalItems.length - n) + " 件）";
+    document.getElementById("commitBtn").disabled = (n === 0) || !bridgeAlive;
+  }
+
+  // 入力の変更を proposalItems へ反映（委譲・行の再描画はしない＝入力中のフォーカスを保つ）
+  function wireProposalEditing() {
+    var host = document.getElementById("proposalList");
+    host.addEventListener("change", function (e) {
+      var row = e.target.closest ? e.target.closest(".pitem") : null;
+      if (!row) return;
+      var it = proposalItems[parseInt(row.getAttribute("data-idx"), 10)];
+      if (!it) return;
+      var f = e.target.getAttribute("data-f");
+      var color = e.target.getAttribute("data-color");
+      if (color) {
+        var cur = (it.colors || []).slice();
+        if (e.target.checked) {
+          if (color === "カラフル") { cur = ["カラフル"]; }
+          else { cur = cur.filter(function (c) { return c !== "カラフル"; }); if (cur.length < 3) cur.push(color); else e.target.checked = false; }
+        } else { cur = cur.filter(function (c) { return c !== color; }); }
+        it.colors = cur;
+        renderProposal();   // 排他・上限の結果をチェックボックスへ反映する
+        return;
+      }
+      if (f === "_excluded") { it._excluded = e.target.checked; row.classList.toggle("excluded", it._excluded); updateProposalCount(); return; }
+      if (f === "source") { it.source = e.target.value; return; }
+      if (f) { it[f] = e.target.value; }
+    });
+    host.addEventListener("input", function (e) {
+      var row = e.target.closest ? e.target.closest(".pitem") : null;
+      if (!row) return;
+      var it = proposalItems[parseInt(row.getAttribute("data-idx"), 10)];
+      var f = e.target.getAttribute("data-f");
+      if (it && f && e.target.type === "text") it[f] = e.target.value;
+    });
+  }
+
+  function loadProposal() {
+    return fetch("/catalog-proposal").then(function (r) { return r.json(); }).then(function (d) {
+      proposalItems = (d && Array.isArray(d.items) ? d.items : []).map(function (it) {
+        return {
+          file: it.file, title: it.title || "", industry: it.industry || CANON_INDUSTRIES[0],
+          taste: it.taste || CANON_TASTES[0], colors: Array.isArray(it.colors) ? it.colors.slice(0, 3) : [],
+          columns: it.columns || "", source: it.source === "ref" ? "ref" : "own",
+          note: it.note || "", sectionLayouts: it.sectionLayouts, _excluded: false
+        };
+      });
+      renderProposal();
+      return proposalItems.length;
+    }).catch(function () { return 0; });
+  }
+
+  function wireCommit() {
+    document.getElementById("commitBtn").addEventListener("click", function () {
+      var btn = this, st = document.getElementById("commitStatus");
+      var items = proposalItems.filter(function (it) { return !it._excluded; }).map(function (it) {
+        var o = { file: it.file, industry: it.industry, taste: it.taste, colors: it.colors, source: it.source };
+        if (it.title) o.title = it.title;
+        if (it.columns) o.columns = it.columns;
+        if (it.note) o.note = it.note;
+        if (it.sectionLayouts) o.sectionLayouts = it.sectionLayouts;
+        return o;
+      });
+      var bad = items.filter(function (o) { return !o.colors || !o.colors.length; });
+      if (bad.length) { st.textContent = "主配色が未選択の画像があります（" + bad.length + " 件）。1つ以上選んでください。"; return; }
+      btn.disabled = true; st.textContent = "登録しています…";
+      fetch("/catalog-commit", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: items })
+      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (res.ok) {
+            st.textContent = res.j.registered + " 件を登録しました（カタログ全 " + res.j.total + " 件）。";
+            proposalItems = []; renderProposal();
+            loadCatalog().then(function (e) { allEntries = e; updateHeadCount(); renderGrid(); });
+            refreshPendingCount();
+          } else {
+            st.textContent = "登録できませんでした: " + ((res.j && res.j.error) || "内容を確認してください")
+              + (res.j && res.j.details ? "（" + res.j.details.join(" / ") + "）" : "");
+            btn.disabled = false;
+          }
+        }).catch(function () { st.textContent = "登録の通信に失敗しました。"; btn.disabled = false; });
+    });
+  }
+
+  // ---- 削除(KLK-068・POST /catalog-delete) ------------------------------------
+  // catalog/ は Git 管理外で復元できないため、画像は消さず catalog/.trash/ へ退避する。
+  // 誤操作の被害が大きいので、確認モーダルで「何を消すのか」を必ず目視させる。
+  var pendingDelete = null;   // {id, title, src}
+
+  function openDeleteModal(info) {
+    pendingDelete = info;
+    var host = document.getElementById("delTarget");
+    host.textContent = "";
+    if (info.src) {
+      var img = document.createElement("img");
+      img.src = info.src; img.alt = "";
+      host.appendChild(img);
+    }
+    var box = document.createElement("div");
+    var t = document.createElement("div"); t.className = "dm-t"; t.textContent = info.title || "(タイトルなし)";
+    var i = document.createElement("div"); i.className = "dm-id"; i.textContent = info.id;
+    box.appendChild(t); box.appendChild(i); host.appendChild(box);
+    document.getElementById("delStatus").textContent = "";
+    document.getElementById("delConfirm").disabled = false;
+    document.getElementById("delModalBack").classList.add("open");
+  }
+  function closeDeleteModal() {
+    document.getElementById("delModalBack").classList.remove("open");
+    pendingDelete = null;
+  }
+
+  function wireDelete() {
+    // カードは renderGrid が innerHTML で描き直すので、イベントは grid へ委譲する
+    document.getElementById("grid").addEventListener("click", function (e) {
+      var btn = e.target.closest ? e.target.closest(".del") : null;
+      if (!btn) return;
+      openDeleteModal({
+        id: btn.getAttribute("data-del-id"),
+        title: btn.getAttribute("data-del-title"),
+        src: btn.getAttribute("data-del-src")
+      });
+    });
+    document.getElementById("delModalClose").addEventListener("click", closeDeleteModal);
+    document.getElementById("delCancel").addEventListener("click", closeDeleteModal);
+    document.getElementById("delModalBack").addEventListener("click", function (e) {
+      if (e.target === this) closeDeleteModal();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeDeleteModal();
+    });
+    document.getElementById("delConfirm").addEventListener("click", function () {
+      if (!pendingDelete || !bridgeAlive) return;
+      var btn = this, st = document.getElementById("delStatus"), id = pendingDelete.id;
+      btn.disabled = true; st.textContent = "削除しています…";
+      fetch("/catalog-delete", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: [id] })
+      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (res.ok) {
+            closeDeleteModal();
+            loadCatalog().then(function (entries) {
+              allEntries = entries; updateHeadCount(); renderGrid();
+            });
+          } else {
+            st.textContent = "削除できませんでした: " + ((res.j && res.j.error) || "内容を確認してください")
+              + (res.j && res.j.details ? "（" + res.j.details.join(" / ") + "）" : "");
+            btn.disabled = false;
+          }
+        }).catch(function () { st.textContent = "削除の通信に失敗しました。"; btn.disabled = false; });
+    });
+  }
+
+  // ---- アップロード完了モーダル(KLK-064) ------------------------------------
+  function openUploadModal(okCount, failText) {
+    var back = document.getElementById("upModalBack");
+    document.getElementById("upModalBody").textContent =
+      okCount + " 件を取り込み待ちに追加しました。" + (failText || "");
+    back.classList.add("open");
+  }
+  function closeUploadModal() { document.getElementById("upModalBack").classList.remove("open"); }
+  function wireUploadModal() {
+    document.getElementById("upModalClose").addEventListener("click", closeUploadModal);
+    document.getElementById("upModalLater").addEventListener("click", closeUploadModal);
+    document.getElementById("upModalBack").addEventListener("click", function (e) {
+      if (e.target === this) closeUploadModal();   // 背景クリックで閉じる
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeUploadModal();  // Esc で閉じる
+    });
+    document.getElementById("upModalGo").addEventListener("click", function () {
+      closeUploadModal();
+      var btn = document.getElementById("importBtn");
+      if (!btn.disabled) btn.click();
+      document.getElementById("add").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
+  // ---- 画像アップロード(KLK-063・POST /catalog-upload → GET /catalog-pending) --------
+  // 1ファイル1POSTを**順次**実行する(エンドポイントを単純に保ち、失敗したファイルを特定できるようにする)。
+  // ブリッジ未起動時は無効化して起動方法を案内する(既存 setBridgeState と同じ health-gate に合流)。
+  var UPLOAD_MAX_BYTES = 8 * 1024 * 1024;
+
+  function setUploadStatus(text) {
+    document.getElementById("uploadStatus").textContent = text || "";
+  }
+
+  function refreshPendingCount() {
+    return fetch("/catalog-pending").then(function (r) {
+      if (!r || !r.ok) throw new Error("pending");
+      return r.json();
+    }).then(function (d) {
+      var n = (d && typeof d.count === "number") ? d.count : 0;
+      var st = document.getElementById("importStatus");
+      st.textContent = n > 0
+        ? n + " 件が取り込み待ちです。「取り込みを実行」を押すと、AIがタグ付け案を出します。"
+        : "取り込み待ちの画像はありません。上の枠に画像を追加してください。";
+      document.getElementById("importBtn").disabled = !bridgeAlive || n === 0;
+      return n;
+    }).catch(function () { return -1; });
+  }
+
+  // 1件アップロードして {ok, reason} を返す（例外を投げない＝順次処理を止めない）
+  function uploadOne(file) {
+    if (file.size > UPLOAD_MAX_BYTES) {
+      return Promise.resolve({ ok: false, reason: "サイズ超過(8MBまで)" });
+    }
+    return fetch("/catalog-upload", {
+      method: "POST",
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+      body: file
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        return r.ok && j.savedName ? { ok: true } : { ok: false, reason: (j && j.error) || "保存できませんでした" };
+      });
+    }).catch(function () { return { ok: false, reason: "通信に失敗しました" }; });
+  }
+
+  function uploadFiles(fileList) {
+    var files = Array.prototype.slice.call(fileList || []);
+    if (!files.length) return;
+    if (!bridgeAlive) {
+      setUploadStatus("ローカルブリッジ未起動のためアップロードできません。draft-gen/起動.command をダブルクリック、またはターミナルで python3 draft-gen/bridge.py を実行してください。");
+      return;
+    }
+    var okCount = 0, failures = [];
+    setUploadStatus("アップロード中… 0 / " + files.length);
+    // 順次実行（reduce で直列化）
+    files.reduce(function (chain, file, i) {
+      return chain.then(function () {
+        return uploadOne(file).then(function (res) {
+          if (res.ok) { okCount++; } else { failures.push((file.name || "画像") + "（" + res.reason + "）"); }
+          setUploadStatus("アップロード中… " + (i + 1) + " / " + files.length);
+        });
+      });
+    }, Promise.resolve()).then(function () {
+      var msg = okCount + " 件をアップロードしました。";
+      var failText = failures.length ? "取り込めなかったファイル: " + failures.join(" / ") : "";
+      if (failText) { msg += " " + failText; }
+      setUploadStatus(msg);
+      refreshPendingCount();
+      // KLK-064: 次に何をすればよいかをモーダルで案内する（1件でも成功したときのみ）
+      if (okCount > 0) { openUploadModal(okCount, failText); }
+    });
+  }
+
+  function wireUpload() {
+    var zone = document.getElementById("dropzone");
+    var input = document.getElementById("pendingFiles");
+    input.addEventListener("change", function () { uploadFiles(input.files); input.value = ""; });
+    ["dragenter", "dragover"].forEach(function (ev) {
+      zone.addEventListener(ev, function (e) {
+        e.preventDefault(); e.stopPropagation();
+        if (bridgeAlive) zone.classList.add("over");
+      });
+    });
+    ["dragleave", "drop"].forEach(function (ev) {
+      zone.addEventListener(ev, function (e) {
+        e.preventDefault(); e.stopPropagation(); zone.classList.remove("over");
+      });
+    });
+    zone.addEventListener("drop", function (e) {
+      var dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length) uploadFiles(dt.files);
     });
   }
 
@@ -468,9 +913,16 @@
   document.addEventListener("DOMContentLoaded", function () {
     wireFilters();
     wireImport();
+    wireUpload();
+    wireUploadModal();      // KLK-064
+    wireDelete();           // KLK-068
+    wireProposalEditing();  // KLK-064
+    wireCommit();           // KLK-064
     probeHealth().then(function (alive) {
       setBridgeState(alive);
       if (!alive) { allEntries = []; updateHeadCount(); renderGrid(); return; }
+      refreshPendingCount();   // KLK-063: 取り込み待ち件数を表示（手動コピー分も含む）
+      loadProposal();          // KLK-064: 未承認の提案が残っていれば復元する
       loadCatalog().then(function (entries) {
         allEntries = entries; updateHeadCount(); renderGrid();
       }).catch(function () {

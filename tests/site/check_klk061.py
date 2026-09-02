@@ -77,9 +77,11 @@ AT_HEAD = _m.group(1) if _m else ""
 _m = re.search(r'<div class="at-body" id="autotagBody">(.*?)</div>', CATHTML, re.S)
 AT_BODY = _m.group(1) if _m else ""
 
+# KLK-064 で実態が変わった: 確認・修正は **Claude Code のチャットではなく SCR-004 の画面**で行う
+# （ブリッジ経由は AI が提案を書くだけ・承認は画面・登録は Python）。H4/H5b を新実態へ更新する。
 check(
-    "H4 SCR-004 の見出しが「Claude Code のチャットで確認・修正」の実態を示している",
-    "チャット" in AT_HEAD,
+    "H4 SCR-004 の見出しが「この画面で確認・修正してから登録」の実態を示している（KLK-064 で更新）",
+    "この画面で確認・修正" in AT_HEAD,
     "at-head=%r" % AT_HEAD.strip()[:80],
 )
 check(
@@ -88,9 +90,10 @@ check(
     "旧文言の残存=%s" % ("登録前に確認・修正できます" in CATHTML),
 )
 check(
-    "H5b SCR-004 の本文が「この画面には表示されない」ことを明示している",
-    "この画面には表示されません" in AT_BODY,
-    "明示=%s" % ("この画面には表示されません" in AT_BODY),
+    "H5b SCR-004 の本文が「この下に一覧で表示」＝画面完結であることを明示している（KLK-064 で更新）",
+    "この下に一覧で表示" in AT_BODY and "この画面には表示されません" not in AT_BODY,
+    "新文言=%s / 旧文言(チャット前提)の残存=%s"
+    % ("この下に一覧で表示" in AT_BODY, "この画面には表示されません" in AT_BODY),
 )
 check(
     "H6 SCR-004 の「承認前に確定しません」保証は維持されている（実際に守られている真実）",
