@@ -805,6 +805,24 @@ def next_catalog_id(existing_ids, img_names):
     return "cat-{0:04d}".format((max(nums) + 1) if nums else 1)
 
 
+def validate_delete_request(obj):
+    """POST /catalog-delete のボディを検証する(KLK-068・注入対策)。副作用なし。
+
+    想定: {"ids": ["cat-0054", ...]}。各 id は is_safe_catalog_name(パストラバーサル対策)。
+    返却: (ok: bool, errors: list[str])。
+    """
+    errors = []
+    if not isinstance(obj, dict):
+        return False, ["削除指示がオブジェクトではありません"]
+    ids = obj.get("ids")
+    if not isinstance(ids, list) or len(ids) == 0:
+        return False, ["削除する対象が指定されていません"]
+    for i, v in enumerate(ids):
+        if not is_safe_catalog_name(v):
+            errors.append("ids[{0}] が安全な id ではありません".format(i))
+    return (len(errors) == 0), errors
+
+
 def validate_import_request(obj):
     """POST /catalog-import のボディを検証する(注入対策・§4.2)。
 
@@ -907,6 +925,9 @@ def _run_server(port):
     catalog_json_path = os.path.join(catalog_dir, "catalog.json")
     catalog_img_dir = os.path.join(catalog_dir, "img")
     catalog_pending_dir = os.path.join(catalog_dir, ".pending")
+    # KLK-068: 削除した画像の退避先。catalog/ は Git 管理外で復元できないため、
+    # 実削除せずここへ移す（自動削除はしない＝人間が判断して消す）。
+    catalog_trash_dir = os.path.join(catalog_dir, ".trash")
     _EMPTY_CATALOG = {"schema": "klk-catalog", "version": 1, "entries": []}
 
     jobs = {}
@@ -1219,6 +1240,9 @@ def _run_server(port):
                 return
             if path == "/catalog-import":
                 self._catalog_import()
+                return
+            if path == "/catalog-delete":
+                self._catalog_delete()
                 return
             if path == "/catalog-commit":
                 self._catalog_commit()
@@ -1824,6 +1848,119 @@ def _run_server(port):
                 "total": len(merged["entries"]),
                 "ids": [e["id"] for _, _, e in planned],
                 "pendingCount": self._pending_names_count()[1],
+            })
+
+        def _catalog_delete(self):
+            """POST /catalog-delete — カタログから登録を取り消す(KLK-068・_catalog_commit の逆操作)。
+
+            **画像は削除せず catalog/.trash/ へ退避する。** catalog/ は Git 管理外(REQ-011)で
+            `git revert` では戻せないため、登録の誤り(消せば直る)と削除の誤り(原本を失う)は
+            リスクが非対称。退避なら人間が後から戻せる。自動削除はしない。
+
+            処理順: ①Origin(403) ②サイズ上限(413/400) ③JSON(400) ④validate_delete_request(400)
+            ⑤catalog.json 内の実在確認(404・部分欠落でも全体を拒否) ⑥削除後の全体を validate_catalog
+            (400・**1件も消さない**) ⑦画像を .trash へ退避 ⑧一時ファイル→os.replace で原子的置換
+            ⑨200。⑧で失敗したら⑦を巻き戻す(あらゆる例外で・KLK-064 の教訓)。
+            """
+            # ① Origin
+            if not is_allowed_origin(self.headers.get("Origin"), BRIDGE_HOST, port):
+                self._json(403, {"error": "許可されていないオリジンです"})
+                return
+            # ② サイズ上限
+            try:
+                length = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length < 0:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length > MAX_BODY_BYTES:
+                self._json(413, {"error": "リクエストが大きすぎます"})
+                return
+            raw = self.rfile.read(length) if length else b""
+            # ③ JSON
+            try:
+                obj = json.loads(raw.decode("utf-8"))
+            except (ValueError, UnicodeDecodeError):
+                self._json(400, {"error": "リクエストJSONを解析できません"})
+                return
+            # ④ 入力検証
+            ok, errors = validate_delete_request(obj)
+            if not ok:
+                self._json(400, {"error": "削除指示が不正です", "details": errors[:5]})
+                return
+            ids = list(dict.fromkeys(obj["ids"]))   # 重複指定を畳む
+            # 既存カタログ
+            try:
+                with open(catalog_json_path, encoding="utf-8") as fh:
+                    catalog = json.load(fh)
+            except (OSError, ValueError):
+                self._json(500, {"error": "カタログを読み込めませんでした"})
+                return
+            if not isinstance(catalog, dict) or not isinstance(catalog.get("entries"), list):
+                self._json(500, {"error": "カタログの形式が不正です。手動で確認してください"})
+                return
+            # ⑤ 実在確認(部分欠落でも全体を拒否＝何が消えたか曖昧にしない)
+            by_id = {e.get("id"): e for e in catalog["entries"] if isinstance(e, dict)}
+            missing = [i for i in ids if i not in by_id]
+            if missing:
+                self._json(404, {"error": "カタログに見つからない項目があります", "details": missing[:5]})
+                return
+            # ⑥ 削除後の全体を検証(不正なら1件も消さない)
+            merged = dict(catalog)
+            merged["entries"] = [e for e in catalog["entries"]
+                                 if not (isinstance(e, dict) and e.get("id") in ids)]
+            ok, errors = validate_catalog(merged)
+            if not ok:
+                self._json(400, {"error": "削除後の検証に失敗したため、1件も削除していません",
+                                 "details": errors[:5]})
+                return
+            # ⑦ 画像を .trash へ退避(失敗しても続行＝カタログ側の整合を優先。ログのみ)
+            moved = []
+            try:
+                os.makedirs(catalog_trash_dir, exist_ok=True)
+            except OSError:
+                pass
+            for i in ids:
+                fname = (by_id[i] or {}).get("file")
+                if not (isinstance(fname, str) and is_safe_catalog_name(fname)):
+                    continue
+                src = os.path.join(catalog_img_dir, fname)
+                dst = os.path.join(catalog_trash_dir, fname)
+                if os.path.dirname(os.path.abspath(src)) != os.path.abspath(catalog_img_dir):
+                    continue   # 配下確認(多層防御)
+                try:
+                    if os.path.isfile(src):
+                        shutil.move(src, dst)
+                        moved.append((src, dst))
+                except OSError as exc:
+                    print("[bridge] 画像の退避に失敗: {0} ({1})".format(fname, exc), file=sys.stderr)
+            # ⑧ catalog.json を原子的に置換
+            merged["generatedAt"] = iso_now()
+            tmp = catalog_json_path + ".tmp"
+            try:
+                with open(tmp, "w", encoding="utf-8") as fh:
+                    json.dump(merged, fh, ensure_ascii=False, indent=2)
+                os.replace(tmp, catalog_json_path)
+            except Exception as exc:   # OSError に限定しない(KLK-064 の教訓・必ず巻き戻す)
+                try:
+                    os.remove(tmp)
+                except OSError:
+                    pass
+                for src, dst in reversed(moved):
+                    try:
+                        shutil.move(dst, src)
+                    except OSError:
+                        pass
+                self._json(500, {"error": "カタログを保存できませんでした: {0}".format(exc)})
+                return
+            # ⑨ 応答
+            self._json(200, {
+                "deleted": len(ids),
+                "total": len(merged["entries"]),
+                "ids": ids,
+                "trashDir": "catalog/.trash",
             })
 
         def _generate(self):

@@ -127,6 +127,17 @@
   .up-modal p { font-size: 13px; color: var(--color-text-sub); margin: 0 0 6px; }
   .up-modal .um-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
   .up-modal .um-close { position: absolute; top: 8px; right: 12px; border: none; background: none; font-size: 20px; cursor: pointer; color: var(--color-text-sub); }
+  /* KLK-068: 削除ボタンと確認モーダル */
+  .meta-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .item .del { border: 1px solid var(--color-border); background: #fff; border-radius: 6px;
+    font-size: 13px; line-height: 1; padding: 4px 7px; cursor: pointer; color: var(--color-text-sub); }
+  .item .del:hover { border-color: #c0392b; color: #c0392b; background: #fdf1ef; }
+  .del-modal .dm-target { display: flex; gap: 12px; align-items: center; text-align: left;
+    border: 1px solid var(--color-border); border-radius: 8px; padding: 10px; margin: 12px 0; background: var(--color-bg-subtle); }
+  .del-modal .dm-target img { width: 96px; height: 68px; object-fit: cover; border-radius: 6px; background: #fff; }
+  .del-modal .dm-target .dm-t { font-size: 13px; color: var(--color-text); }
+  .del-modal .dm-target .dm-id { font-size: 11.5px; color: var(--color-text-sub); }
+  .del-modal .danger { background: #c0392b; border-color: #c0392b; color: #fff; }
 
   /* モーダル(SCR-001/002 と同方式・CSS-only チェックボックストグル) */
   .modal-toggle { display: none; }
@@ -281,6 +292,24 @@
     </div>
   </div>
 
+  <!-- KLK-068: 削除の確認モーダル（何を消すのかを目で確かめてから実行する） -->
+  <div class="up-modal-back" id="delModalBack" role="dialog" aria-modal="true" aria-labelledby="delModalTitle">
+    <div class="up-modal del-modal">
+      <button type="button" class="um-close" id="delModalClose" aria-label="閉じる">×</button>
+      <div style="font-size:32px">🗑</div>
+      <h3 id="delModalTitle">この実績をカタログから削除しますか？</h3>
+      <div class="dm-target" id="delTarget"></div>
+      <p><b>画像は <code>catalog/.trash/</code> へ移動します（自動では消えません）。</b>
+         元に戻したいときは、そのフォルダから取り出してください。</p>
+      <p>カタログの登録情報（タグ・メモ）は失われます。</p>
+      <div class="um-actions">
+        <button type="button" class="btn danger" id="delConfirm">削除する</button>
+        <button type="button" class="btn" id="delCancel">やめる</button>
+      </div>
+      <p class="import-status" id="delStatus"></p>
+    </div>
+  </div>
+
   <!-- 拡大モーダルはグリッド描画時に各カードごと(CSS-only トグル)へ動的挿入する -->
   <div id="modalHost"></div>
 </div>
@@ -389,7 +418,12 @@
           '<div class="meta">' +
             '<div class="cap">' + esc(e.title || "") + "</div>" +
             '<div class="tags">' + tagHtml + "</div>" +
-            '<a class="use" href="/">この雰囲気で生成 →</a>' +
+            '<div class="meta-foot">' +
+              '<a class="use" href="/">この雰囲気で生成 →</a>' +
+              '<button type="button" class="del" data-del-id="' + esc(e.id || "") + '"' +
+                ' data-del-title="' + esc(e.title || "") + '"' +
+                ' data-del-src="' + esc(src || "") + '" title="カタログから削除">🗑</button>' +
+            "</div>" +
           "</div>" +
         "</div>"
       );
@@ -676,6 +710,74 @@
     });
   }
 
+  // ---- 削除(KLK-068・POST /catalog-delete) ------------------------------------
+  // catalog/ は Git 管理外で復元できないため、画像は消さず catalog/.trash/ へ退避する。
+  // 誤操作の被害が大きいので、確認モーダルで「何を消すのか」を必ず目視させる。
+  var pendingDelete = null;   // {id, title, src}
+
+  function openDeleteModal(info) {
+    pendingDelete = info;
+    var host = document.getElementById("delTarget");
+    host.textContent = "";
+    if (info.src) {
+      var img = document.createElement("img");
+      img.src = info.src; img.alt = "";
+      host.appendChild(img);
+    }
+    var box = document.createElement("div");
+    var t = document.createElement("div"); t.className = "dm-t"; t.textContent = info.title || "(タイトルなし)";
+    var i = document.createElement("div"); i.className = "dm-id"; i.textContent = info.id;
+    box.appendChild(t); box.appendChild(i); host.appendChild(box);
+    document.getElementById("delStatus").textContent = "";
+    document.getElementById("delConfirm").disabled = false;
+    document.getElementById("delModalBack").classList.add("open");
+  }
+  function closeDeleteModal() {
+    document.getElementById("delModalBack").classList.remove("open");
+    pendingDelete = null;
+  }
+
+  function wireDelete() {
+    // カードは renderGrid が innerHTML で描き直すので、イベントは grid へ委譲する
+    document.getElementById("grid").addEventListener("click", function (e) {
+      var btn = e.target.closest ? e.target.closest(".del") : null;
+      if (!btn) return;
+      openDeleteModal({
+        id: btn.getAttribute("data-del-id"),
+        title: btn.getAttribute("data-del-title"),
+        src: btn.getAttribute("data-del-src")
+      });
+    });
+    document.getElementById("delModalClose").addEventListener("click", closeDeleteModal);
+    document.getElementById("delCancel").addEventListener("click", closeDeleteModal);
+    document.getElementById("delModalBack").addEventListener("click", function (e) {
+      if (e.target === this) closeDeleteModal();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeDeleteModal();
+    });
+    document.getElementById("delConfirm").addEventListener("click", function () {
+      if (!pendingDelete || !bridgeAlive) return;
+      var btn = this, st = document.getElementById("delStatus"), id = pendingDelete.id;
+      btn.disabled = true; st.textContent = "削除しています…";
+      fetch("/catalog-delete", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: [id] })
+      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (res.ok) {
+            closeDeleteModal();
+            loadCatalog().then(function (entries) {
+              allEntries = entries; updateHeadCount(); renderGrid();
+            });
+          } else {
+            st.textContent = "削除できませんでした: " + ((res.j && res.j.error) || "内容を確認してください")
+              + (res.j && res.j.details ? "（" + res.j.details.join(" / ") + "）" : "");
+            btn.disabled = false;
+          }
+        }).catch(function () { st.textContent = "削除の通信に失敗しました。"; btn.disabled = false; });
+    });
+  }
+
   // ---- アップロード完了モーダル(KLK-064) ------------------------------------
   function openUploadModal(okCount, failText) {
     var back = document.getElementById("upModalBack");
@@ -813,6 +915,7 @@
     wireImport();
     wireUpload();
     wireUploadModal();      // KLK-064
+    wireDelete();           // KLK-068
     wireProposalEditing();  // KLK-064
     wireCommit();           // KLK-064
     probeHealth().then(function (alive) {
