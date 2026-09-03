@@ -556,28 +556,37 @@ def list_page_addrs(html):
     return out
 
 
-def read_section_marker(html, addr):
-    """当該セクションが現在どの型かを返す(KLK-078)。読めなければ None。
+def read_section_markers(html, addr):
+    """当該セクションに出現するプール語を**すべて**返す(KLK-079)。出現順ではなくプール順。
 
     find_target_section で範囲を絞ってから、その番地のプール語を**単語境界つき**で探す。
     境界を付けないと `band` が `panel-band` の一部に誤ヒットする。
-    複数該当したときは**最長一致**を採る(`panel-band` と `band` が両方当たる形を防ぐ保険)。
+
+    ★1つに畳まず全部返すのは、**旧マーカーの外し忘れを検出する**ため(KLK-079)。
+      `class="m-gallery pat-grid pat-masonry"` のように2つ残ると CSS が競合して崩れるが、
+      「最長一致で1つ返す」実装ではこれを見逃し、後段検証が誤って成功と判定してしまう。
     """
     pool = pool_for_addr(addr)
     if not pool:
-        return None
+        return []
     # find_target_section は成功時 (start, end)・失敗時 (None, 理由) を返す
     start, end = find_target_section(html, addr)
     if start is None:
-        return None
+        return []
     block = html[start:end]
-    hits = [
+    return [
         t for t in pool
         if re.search(r"(?<![A-Za-z0-9-])" + re.escape(t) + r"(?![A-Za-z0-9-])", block)
     ]
-    if not hits:
-        return None
-    return max(hits, key=len)
+
+
+def read_section_marker(html, addr):
+    """当該セクションが現在どの型かを返す(KLK-078)。読めなければ None。
+
+    複数該当したときは**最長一致**を採る(表示用。厳密な判定は read_section_markers を使う)。
+    """
+    hits = read_section_markers(html, addr)
+    return max(hits, key=len) if hits else None
 
 
 def build_regenerate_command(pending_path, allow_open=False):
@@ -1099,11 +1108,16 @@ def _run_server(port):
             )
         _cleanup(pending_path)
 
-    def _run_regen_job(job_id, pending_path, folder, target, started_at):
+    def _run_regen_job(job_id, pending_path, folder, target, started_at, addr=None, desired=None):
         """ワーカースレッド: /draft-regenerate をヘッドレス実行し、完了後に対象/compare を再オープン(§4.4)。
 
         既存 _run_job と同型。build_regenerate_command(最小権限・危険フラグ非含有)を shell=False で実行。
         成功時 {folder}/compare.html があれば compare を、無ければ target を build_open_command で開く(U-7)。
+
+        ★型入れ替え(KLK-079)のときは、完了後に**実ファイルを読み直して型が変わったかを確かめる**。
+          このリポジトリは「ブリッジが指示 → LLM が生成 → 守ったかは誰も見ていない」形で
+          4回失敗している(KLK-064 の登録未到達、KLK-072〜076 の規約無視)。
+          同じ形なので、**黙って成功と言わない**。結果は typeApplied で返す。
         """
         cmd = build_regenerate_command(pending_path)
         try:
@@ -1167,14 +1181,50 @@ def _run_server(port):
         except Exception:
             opened = False  # 開けなくてもパス表示で無害(グレースフル)
 
+        # ★型入れ替えの後段検証(KLK-079): 指示した型に実際になったかを実ファイルで確かめる
+        type_applied = None
+        got = None
+        if desired and addr:
+            hits = []
+            try:
+                with open(abs_regen_target, encoding="utf-8") as fh:
+                    hits = read_section_markers(fh.read(), addr)
+            except OSError:
+                hits = []
+            # ★「指定の型がちょうど1つ」を要求する(KLK-079)。
+            #   旧マーカーを外し忘れて2つ残った状態は CSS が競合して崩れるので、成功にしない。
+            type_applied = (hits == [desired])
+            got = ", ".join(hits) if hits else None
+            if not type_applied:
+                print(
+                    "[bridge] 型が反映されませんでした addr={0} 指示={1} 実際={2}".format(
+                        addr, desired, hits or "(読み取れず)"
+                    ),
+                    file=sys.stderr,
+                )
+
+        if type_applied is False:
+            if got and desired in got.split(", "):
+                why = "古い型が残っています（現在 {0}）".format(got)
+            elif got:
+                why = "現在 " + got
+            else:
+                why = "型を読み取れませんでした"
+            base = "再生成は完了しましたが、型は {0} になりませんでした（{1}）。".format(desired, why)
+        elif type_applied is True:
+            base = "{0} を {1} にしました。".format(addr, desired)
+        else:
+            base = "再生成が完了しました。"
+
         with jobs_lock:
             jobs[job_id]["state"] = "done"
             jobs[job_id]["folder"] = folder
             jobs[job_id]["openTarget"] = open_target
-            jobs[job_id]["message"] = (
-                "再生成が完了しました。{0} を開きました".format(open_target)
+            jobs[job_id]["typeApplied"] = type_applied
+            jobs[job_id]["message"] = base + (
+                "{0} を開きました".format(open_target)
                 if opened
-                else "再生成が完了しました。{0} を開いてください".format(open_target)
+                else "{0} を開いてください".format(open_target)
             )
         _cleanup(pending_path)
 
@@ -2206,6 +2256,23 @@ def _run_server(port):
             if not is_valid_addr(addr):
                 self._json(400, {"error": "番地ラベルが不正です"})
                 return
+            # ⑧ desiredType(KLK-079・型入れ替え)。省略可＝従来の表引きへ落ちる。
+            #    ★パターン照合ではなく**その番地のプールに載っているか**で判定する(許可リスト)。
+            desired = obj.get("desiredType")
+            if desired is not None and not isinstance(desired, str):
+                self._json(400, {"error": "desiredType が不正です"})
+                return
+            if not is_valid_desired_type(addr, desired):
+                pool = pool_for_addr(addr)
+                self._json(
+                    400,
+                    {
+                        "error": "{0} に指定できない型です: {1}".format(addr, desired),
+                        "pool": list(pool),
+                    },
+                )
+                return
+            desired = desired or None
 
             # ⑤ 対象HTMLの実在確認(上書き対象・U-4)
             target = resolve_target_html(folder, letter)
@@ -2233,18 +2300,17 @@ def _run_server(port):
             job_id = uuid.uuid4().hex
             os.makedirs(pending_dir, exist_ok=True)
             pending_path = os.path.join(pending_dir, job_id + ".regen.json")
+            spec = {
+                "schema": "design-regenerate-job",
+                "version": 1,
+                "target": target,
+                "addr": addr,
+            }
+            if desired:
+                # ★検証済みの語彙だけを書く(可変ユーザー文字列をプロンプト経路に載せない)
+                spec["desiredType"] = desired
             with open(pending_path, "w", encoding="utf-8") as fh:
-                json.dump(
-                    {
-                        "schema": "design-regenerate-job",
-                        "version": 1,
-                        "target": target,
-                        "addr": addr,
-                    },
-                    fh,
-                    ensure_ascii=False,
-                    indent=2,
-                )
+                json.dump(spec, fh, ensure_ascii=False, indent=2)
 
             started_at = _now()
             with jobs_lock:
@@ -2254,11 +2320,13 @@ def _run_server(port):
                     "folder": folder,
                     "openTarget": None,
                     "message": "再生成中…",
+                    "desiredType": desired,
+                    "typeApplied": None,   # 型指定なし=None / 適用済み=True / 反映されず=False
                 }
 
             worker = threading.Thread(
                 target=_run_regen_job,
-                args=(job_id, pending_path, folder, target, started_at),
+                args=(job_id, pending_path, folder, target, started_at, addr, desired),
                 daemon=True,
             )
             worker.start()
@@ -2282,6 +2350,9 @@ def _run_server(port):
                         "folder": job["folder"],
                         "openTarget": job["openTarget"],
                         "message": job["message"],
+                        # 型入れ替え(KLK-079): None=型指定なし / True=適用 / False=反映されず
+                        "typeApplied": job.get("typeApplied"),
+                        "desiredType": job.get("desiredType"),
                     },
                 )
 

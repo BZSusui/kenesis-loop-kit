@@ -53,6 +53,7 @@
   .toolbar a.print-btn{ background:#6b7f4e; color:#fff; border-color:#6b7f4e; }
   .print-a,.print-b,.print-c{ display:none; }
   .regen-ctl{ display:flex; align-items:center; gap:8px; margin-left:auto; }
+  [data-warn="1"]{ color:#b4342b !important; font-weight:700; }
   .regen-type{ font-size:11.5px; color:#8a8578; white-space:nowrap; }
   .regen-ctl select{ font-size:13px; padding:8px 12px; border:1px solid #ddd9cf; border-radius:8px; background:#fff; }
   .regen-ctl button[disabled]{ opacity:.5; cursor:not-allowed; }
@@ -148,7 +149,7 @@
       <select id="regen-addr">
         <option value="">読み込み中…</option>
       </select>
-      <span id="regen-type" class="regen-type"></span>
+      <select id="regen-type" class="regen-type" disabled></select>
       <button class="tb-btn" id="regen-btn" disabled>このセクションを再生成</button>
     </div>
   </div>
@@ -167,7 +168,7 @@
     var folder = root.getAttribute('data-folder');
     var btn = document.getElementById('regen-btn');
     var sel = document.getElementById('regen-addr');
-    var typeEl = document.getElementById('regen-type');
+    var typeSel = document.getElementById('regen-type');
     var msg = document.getElementById('regen-msg');
     var BASE = 'http://127.0.0.1:8765';
     var sections = [];
@@ -179,14 +180,36 @@
       return c ? c.id.replace('r','') : 'a';
     }
 
-    // 現在の型を出す（読み取り専用・型の切替は KLK-079）
-    function showType(){
-      var hit = null;
+    function hit(){
       for (var i = 0; i < sections.length; i++) {
-        if (sections[i].addr === sel.value) { hit = sections[i]; break; }
+        if (sections[i].addr === sel.value) { return sections[i]; }
       }
-      if (!hit) { typeEl.textContent = ''; return; }
-      typeEl.textContent = hit.current ? '現在の型: ' + hit.current : 'この番地に型はありません';
+      return null;
+    }
+
+    function clear(el){ while (el.firstChild) { el.removeChild(el.firstChild); } }
+
+    function opt(value, label){
+      var o = document.createElement('option');
+      o.value = value;
+      o.textContent = label;   // 動的値は textContent（注入対策）
+      return o;
+    }
+
+    // 型セレクタを、選んだ番地のプールで組み立てる（現在の型に「（現在）」）
+    function fillTypes(){
+      var s = hit();
+      clear(typeSel);
+      if (!s || !s.pool || s.pool.length === 0) {
+        typeSel.appendChild(opt('', 'この番地に型はありません'));
+        typeSel.disabled = true;
+        return;
+      }
+      s.pool.forEach(function(t){
+        typeSel.appendChild(opt(t, t === s.current ? t + '（現在）' : t));
+      });
+      typeSel.value = s.current || s.pool[0];
+      typeSel.disabled = false;
     }
 
     // ★番地は焼き込まず、実ページから読む（KLK-078）
@@ -199,17 +222,12 @@
         .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
         .then(function(j){
           sections = j.sections || [];
-          while (sel.firstChild) { sel.removeChild(sel.firstChild); }
-          sections.forEach(function(s){
-            var o = document.createElement('option');
-            o.value = s.addr;
-            o.textContent = s.addr;          // 動的値は textContent（注入対策）
-            sel.appendChild(o);
-          });
-          showType();
+          clear(sel);
+          sections.forEach(function(s){ sel.appendChild(opt(s.addr, s.addr)); });
+          fillTypes();
           btn.disabled = sections.length === 0;
           setMsg(sections.length
-            ? 'ローカルブリッジ稼働中。番地を選んで再生成できます。'
+            ? 'ローカルブリッジ稼働中。番地と型を選んで再生成できます。'
             : 'このページに再生成できるセクションが見つかりませんでした。');
         })
         .catch(function(){
@@ -227,36 +245,56 @@
       .catch(function(){
         clearTimeout(to);
         btn.disabled = true;
-        setMsg('ローカルブリッジ未起動。python3 draft-gen/bridge.py を起動するか、Claude Code で /draft-regenerate ' + folder + ' {案の letter} {番地} でも再生成できます。');
+        typeSel.disabled = true;
+        setMsg('ローカルブリッジ未起動。python3 draft-gen/bridge.py を起動するか、Claude Code で /draft-regenerate ' + folder + ' {案の letter} {番地} {型} でも再生成できます。');
       });
 
-    sel.addEventListener('change', showType);
+    sel.addEventListener('change', fillTypes);
     // 案を切り替えると型も変わる（案ごとに別の型が割り当たる）ので読み直す
     Array.prototype.forEach.call(
       document.querySelectorAll('input[name=variant]'),
-      function(r){ r.addEventListener('change', function(){ if(!btn.disabled || sections.length){ loadSections(); } }); }
+      function(r){ r.addEventListener('change', loadSections); }
     );
 
     btn.addEventListener('click', function(){
       var letter = currentLetter();
       var addr = sel.value;
       if (!addr) { setMsg('番地を選んでください。'); return; }
+      var s = hit();
+      // 現在と違う型を選んだときだけ型指定を載せる（同じなら文言だけの作り直し）
+      var wanted = (!typeSel.disabled && typeSel.value && s && typeSel.value !== s.current)
+                 ? typeSel.value : null;
+      var body = { folder: folder, letter: letter, addr: addr };
+      if (wanted) { body.desiredType = wanted; }
       btn.disabled = true;
-      setMsg('案' + letter.toUpperCase() + ' の ' + addr + ' を再生成しています…');
+      setMsg('案' + letter.toUpperCase() + ' の ' + addr
+             + (wanted ? ' を ' + wanted + ' に作り直しています…' : ' を再生成しています…'));
       fetch(BASE + '/regenerate', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ folder: folder, letter: letter, addr: addr })
+        body: JSON.stringify(body)
       })
       .then(function(r){ return r.json(); })
       .then(function(j){
         var jobId = j.jobId;
-        if(!jobId){ throw new Error(); }
+        if(!jobId){ throw new Error(j.error || ''); }
         var poll = setInterval(function(){
           fetch(BASE + '/status/' + jobId)
             .then(function(r){ return r.json(); })
-            .then(function(s){
-              if(s.state === 'done'){ clearInterval(poll); setMsg('再生成が完了しました。プレビューを再読み込みします。'); location.reload(); }
-              else if(s.state === 'error'){ clearInterval(poll); btn.disabled = false; setMsg('再生成に失敗しました。設定を変えてお試しください。'); }
+            .then(function(s2){
+              if(s2.state === 'done'){
+                clearInterval(poll);
+                // ★型が反映されなかったときは成功と同じ見た目にしない（KLK-079）
+                if (s2.typeApplied === false) {
+                  btn.disabled = false;
+                  msg.textContent = '⚠ ' + s2.message;
+                  msg.setAttribute('data-warn', '1');
+                  return;
+                }
+                msg.removeAttribute('data-warn');
+                setMsg('再生成が完了しました。プレビューを再読み込みします。');
+                location.reload();
+              }
+              else if(s2.state === 'error'){ clearInterval(poll); btn.disabled = false; setMsg('再生成に失敗しました。設定を変えてお試しください。'); }
             })
             .catch(function(){ clearInterval(poll); btn.disabled = false; setMsg('状態の取得に失敗しました。'); });
         }, 900);

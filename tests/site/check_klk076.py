@@ -294,10 +294,20 @@ check(
 )
 
 # --- S5 masonry / mosaic が大小混在で、グリッドに空きが無い --------------------
-def span_of(cls_attr, css_spans):
+def span_of(cls_attr, css_spans, index1):
+    """タイル1枚の占有セルを返す。
+
+    ★型は2通りの書き方で来る（KLK-079 の実機検証で判明）:
+      (a) タイルにクラスを付ける  `.pat-mosaic .g-big{grid-column:span 2}`
+      (b) 位置で指定する          `.pat-masonry .atari:nth-child(1){grid-column:span 2}`
+    (b) を読めないと**全部 1×1 に見えてしまい**、正しい構成なのに「空きセルあり」と誤検出する。
+    """
     w = h = 1
-    for cls, (sw, sh) in css_spans.items():
-        if cls in cls_attr:
+    for key, (sw, sh) in css_spans.items():
+        if key.startswith("nth:"):
+            if int(key[4:]) == index1:
+                w, h = max(w, sw), max(h, sh)
+        elif key and key in cls_attr:
             w, h = max(w, sw), max(h, sh)
     return w, h
 
@@ -322,7 +332,11 @@ for p, html in sample_htmls():
         gc = norm(decl(body, "grid-column") or "")
         gr = norm(decl(body, "grid-row") or "")
         if gc.startswith("span") or gr.startswith("span"):
-            key = sel.split(".")[-1].strip()
+            nth = re.search(r":nth-child\(\s*(\d+)\s*\)", sel)
+            if nth:
+                key = "nth:%s" % nth.group(1)
+            else:
+                key = sel.split(".")[-1].strip()
             sw = int(re.sub(r"\D", "", gc) or 1)
             sh = int(re.sub(r"\D", "", gr) or 1)
             css_spans[key] = (sw, sh)
@@ -335,7 +349,7 @@ for p, html in sample_htmls():
     if not tiles:
         offenders.append("%s  タイルが読めない" % rel(p))
         continue
-    sizes = [span_of(t, css_spans) for t in tiles]
+    sizes = [span_of(t, css_spans, i + 1) for i, t in enumerate(tiles)]
     if len({s for s in sizes}) < 2:
         offenders.append("%s  全タイルが同サイズ（大小混在でない）: %s" % (rel(p), sizes))
     # dense 配置を模して穴を数える
