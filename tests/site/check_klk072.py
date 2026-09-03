@@ -79,12 +79,14 @@ check(
 # masonry の「手順」— 意図の記述だけでは不足（dense は穴を埋めるだけ、という誤解が事故を生んだ）
 _m = re.search(r"\|\s*4\s*\|\s*`pat-masonry`.*?\n", RULES)
 MASONRY = _m.group(0) if _m else ""
+# KLK-075: 「span 合計を列数の倍数に」という抽象指示では守られず（11タイル全部1×1・最終行に空き）、
+# **選べる具体構成(A)(B)(C)** に置き換えた。検査もその契約に合わせる。
 check(
-    "A6 pat-masonry に最終行を埋める手順（span 合計・端数の扱い）がある",
+    "A6 pat-masonry に最終行を埋める手順がある（KLK-075 で具体構成に変更）",
     bool(MASONRY) and "最終行に空きを作らない" in MASONRY
-    and "列数（4）の倍数" in MASONRY and "残り" in MASONRY,
-    "手順の記載=%s / span 合計の指示=%s"
-    % ("最終行に空きを作らない" in MASONRY, "列数（4）の倍数" in MASONRY),
+    and "(A) 8タイル" in MASONRY and "必ず大小を混在させる" in MASONRY,
+    "手順の記載=%s / 具体構成の提示=%s"
+    % ("最終行に空きを作らない" in MASONRY, "(A) 8タイル" in MASONRY),
 )
 check(
     "A6b pat-masonry が dense の限界（穴を埋めるだけ）を説明している",

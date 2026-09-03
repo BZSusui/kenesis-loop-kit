@@ -20,10 +20,10 @@
   .addr{position:absolute;top:8px;left:8px;z-index:30;}
   .pin{display:inline-block;background:var(--m-nav);color:#fff;font-size:11px;font-weight:700;letter-spacing:.05em;padding:3px 8px;border-radius:4px;opacity:.9;}
 
-  /* アタリ */
+  /* アタリ（写真プレースホルダ・既定 4/3・KLK-072） */
   .atari{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
     background:linear-gradient(135deg, color-mix(in srgb, var(--m-main) 22%, #fff), color-mix(in srgb, var(--m-accent) 26%, #fff));
-    border:1.5px dashed color-mix(in srgb, var(--m-main) 45%, #fff);border-radius:10px;min-height:180px;color:color-mix(in srgb, var(--m-nav) 80%, #000);text-align:center;padding:16px;}
+    border:1.5px dashed color-mix(in srgb, var(--m-main) 45%, #fff);border-radius:10px;aspect-ratio:4/3;min-height:140px;color:color-mix(in srgb, var(--m-nav) 80%, #000);text-align:center;padding:16px;}
   .atari .ic{font-size:30px;opacity:.7;}
   .atari .desc{font-size:13px;font-weight:600;}
   .atari .kw{font-size:11px;opacity:.7;}
@@ -45,18 +45,18 @@
   .m-nav .nav-cta{background:var(--m-accent);color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;}
   .m-nav .burger{display:none;font-size:22px;}
 
-  /* HERO overlap（integ: flex-start / center / left） */
+  /* HERO overlap（整列＝flex-start / center / left・KLK-073: 白背景は内容幅） */
   .m-hero[data-hero=overlap]{display:grid;grid-template-columns:1fr 2fr;align-items:center;justify-content:flex-start;text-align:left;position:relative;min-height:440px;padding:40px;gap:0;background:var(--m-bg);}
   .m-hero[data-hero=overlap] .hero-media{grid-column:2;grid-row:1;}
-  .m-hero[data-hero=overlap] .hero-atari{border-radius:0;min-height:400px;}
-  .m-hero[data-hero=overlap] .hero-copy{grid-column:1;grid-row:1;justify-self:start;align-self:center;background:#fff;padding:38px 40px;box-shadow:0 14px 44px rgba(0,0,0,.14);transform:translateX(34px);max-width:480px;z-index:2;border-top:4px solid var(--m-main);}
+  .m-hero[data-hero=overlap] .hero-atari{border-radius:0;aspect-ratio:auto;min-height:400px;}
+  .m-hero[data-hero=overlap] .hero-copy{grid-column:1;grid-row:1;justify-self:start;align-self:center;background:#fff;padding:38px 40px;box-shadow:0 14px 44px rgba(0,0,0,.14);transform:translateX(34px);width:max-content;max-width:480px;z-index:2;border-top:4px solid var(--m-main);}
   .m-hero .catch{font-size:32px;line-height:1.45;color:var(--m-nav);letter-spacing:.03em;margin-bottom:14px;}
   .m-hero .lead{font-size:14.5px;color:#555;margin-bottom:22px;}
   .hero-cta{display:inline-block;background:var(--m-main);color:#fff;padding:12px 30px;border-radius:26px;font-weight:700;font-size:14px;}
 
   /* ABOUT img-overlap */
   .m-about[data-about=img-overlap]{display:grid;grid-template-columns:1fr 1fr;align-items:center;position:relative;gap:0;max-width:900px;margin:0 auto;}
-  .m-about[data-about=img-overlap] .ab-media .atari{min-height:340px;border-radius:6px;}
+  .m-about[data-about=img-overlap] .ab-media .atari{aspect-ratio:4/3;min-height:300px;border-radius:6px;}
   .m-about[data-about=img-overlap] .ab-body{background:#fff;padding:34px 36px;box-shadow:0 12px 40px rgba(0,0,0,.12);transform:translateX(-34px);z-index:2;border-left:4px solid var(--m-main);}
   .m-about .ab-body h3{font-size:20px;color:var(--m-nav);margin-bottom:12px;}
   .m-about .ab-body p{font-size:14px;color:#555;}
@@ -79,17 +79,17 @@
   .m-flow[data-flow=flow-arrow-band] .step .t{font-size:13.5px;font-weight:700;color:var(--m-nav);margin:6px 0 4px;}
   .m-flow[data-flow=flow-arrow-band] .step .d{font-size:11.5px;color:#666;}
 
-  /* STAFF staff-list */
+  /* STAFF staff-list（顔写真は正方 1/1・KLK-072） */
   .m-staff[data-staff=staff-list]{display:flex;flex-direction:column;gap:14px;max-width:760px;margin:0 auto;}
   .m-staff[data-staff=staff-list] .st{display:grid;grid-template-columns:96px 1fr;gap:18px;align-items:center;background:#fff;border:1px solid #eef3f4;border-radius:10px;padding:14px;}
-  .m-staff[data-staff=staff-list] .st .atari{min-height:96px;border-radius:8px;}
+  .m-staff[data-staff=staff-list] .st .atari{aspect-ratio:1;min-height:0;border-radius:8px;}
   .m-staff[data-staff=staff-list] .st .role{font-size:12px;color:var(--m-accent);font-weight:700;}
   .m-staff[data-staff=staff-list] .st .nm{font-size:16px;font-weight:700;color:var(--m-nav);margin:2px 0 4px;}
   .m-staff[data-staff=staff-list] .st .cm{font-size:12.5px;color:#666;}
 
-  /* ACCESS map-hours */
+  /* ACCESS map-hours（地図アタリ 4/3・KLK-072） */
   .m-access[data-access=map-hours]{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:stretch;max-width:920px;margin:0 auto;}
-  .map-atari{position:relative;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg, color-mix(in srgb, var(--m-main) 12%, #fff), color-mix(in srgb, var(--m-main) 12%, #fff) 14px, color-mix(in srgb, var(--m-main) 20%, #fff) 14px, color-mix(in srgb, var(--m-main) 20%, #fff) 28px);border:1.5px dashed color-mix(in srgb, var(--m-main) 45%, #fff);border-radius:10px;min-height:260px;color:var(--m-nav);font-size:13px;font-weight:700;}
+  .map-atari{position:relative;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg, color-mix(in srgb, var(--m-main) 12%, #fff), color-mix(in srgb, var(--m-main) 12%, #fff) 14px, color-mix(in srgb, var(--m-main) 20%, #fff) 14px, color-mix(in srgb, var(--m-main) 20%, #fff) 28px);border:1.5px dashed color-mix(in srgb, var(--m-main) 45%, #fff);border-radius:10px;aspect-ratio:4/3;min-height:240px;color:var(--m-nav);font-size:13px;font-weight:700;}
   .map-atari::before{content:"🗺 地図（イラストマップ／Google Map 想定）";}
   .m-access .info{background:#fff;border:1px solid #eef3f4;border-radius:10px;padding:22px 24px;}
   .m-access .info dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13.5px;margin-bottom:16px;}
@@ -131,7 +131,7 @@
     .m-nav .burger{display:block;}
     .m-hero[data-hero=overlap]{grid-template-columns:1fr;padding:20px;}
     .m-hero[data-hero=overlap] .hero-media,.m-hero[data-hero=overlap] .hero-copy{grid-column:1;}
-    .m-hero[data-hero=overlap] .hero-copy{transform:none;margin-top:-24px;}
+    .m-hero[data-hero=overlap] .hero-copy{transform:none;margin-top:-24px;width:auto;max-width:none;}
     .m-hero .catch{font-size:24px;}
     .m-about[data-about=img-overlap]{grid-template-columns:1fr;}
     .m-about[data-about=img-overlap] .ab-body{transform:none;margin-top:-20px;}
@@ -171,14 +171,14 @@
       </div>
       <div class="hero-copy">
         <h1 class="catch">あなたの笑顔を、<br>一生の健康と共に。</h1>
-        <p class="lead">痛みの少ない治療と、わかりやすい説明を大切に。お子さまからご年配の方まで、地域のみなさまのお口の健康をやさしく支えます。</p>
+        <p class="lead">痛みの少ない治療と、わかりやすい説明を大切に。<br>地域のみなさまのお口の健康を、やさしく支えます。</p>
         <a class="hero-cta" href="#contact">初めての方へ ＞</a>
       </div>
     </div>
   </section>
 
   <!-- NAV-01 -->
-  <nav class="sec">
+  <nav class="sec" id="nav">
     <div class="addr"><span class="pin">NAV-01</span></div>
     <div class="m-nav">
       <span class="brand">サンプル歯科クリニック</span>
@@ -200,7 +200,7 @@
     <div class="m-sec">
       <span class="en">CONCEPT</span>
       <h2>安心して通える歯科医院を</h2>
-      <p class="sec-desc">「歯医者はこわい」をなくしたい。清潔な院内と丁寧なカウンセリングで、通うのが楽しみになる歯科医療を目指します。</p>
+      <p class="sec-desc">「歯医者はこわい」をなくしたい。<br>清潔な院内と丁寧なカウンセリングで、通うのが楽しみになる歯科医療を目指します。</p>
       <div class="m-about" data-about="img-overlap">
         <div class="ab-media">
           <div class="atari"><span class="ic">📷</span><span class="desc">院内・受付の様子</span><span class="kw">検索: <b>dental clinic interior</b></span></div>
@@ -219,7 +219,7 @@
     <div class="m-sec">
       <span class="en">MENU</span>
       <h2>診療案内</h2>
-      <p class="sec-desc">一般的な歯科治療から予防・審美まで、幅広く対応しています。料金の目安は下記のとおりです。</p>
+      <p class="sec-desc">一般的な歯科治療から予防・審美まで、幅広く対応しています。<br>料金の目安は下記のとおりです。</p>
       <div class="m-menu" data-menu="price-table">
         <div class="pt-row pt-head"><div>診療メニュー</div><div>内容</div><div>料金の目安</div></div>
         <div class="pt-row"><div class="pt-name">一般歯科</div><div>むし歯・歯周病の治療</div><div class="pt-price">保険適用</div></div>
@@ -239,7 +239,7 @@
     <div class="m-sec">
       <span class="en">FLOW</span>
       <h2>診療の流れ</h2>
-      <p class="sec-desc">初めての方も安心してご来院いただけるよう、丁寧なステップで進めます。</p>
+      <p class="sec-desc">初めての方も安心してご来院いただけるよう、<br>丁寧なステップで進めます。</p>
       <div class="m-flow" data-flow="flow-arrow-band">
         <div class="step"><span class="no">1</span><span class="t">ご予約</span><span class="d">お電話・WEBから</span></div>
         <div class="step"><span class="no">2</span><span class="t">受付・問診</span><span class="d">お悩みを丁寧に伺います</span></div>

@@ -6,136 +6,148 @@
 <title>サンプル歯科クリニック｜デザインラフ 案B</title>
 <style>
   :root{
-    --m-main:#1f5560; --m-nav:#14343c; --m-accent:#c6a15b; --m-bg:#f3f6f6; --m-text:#2a2a2a;
+    --m-main:#1f5560; --m-nav:#12333a; --m-accent:#c6a15b; --m-bg:#eef2f1; --m-text:#2c2c2c;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   html{scroll-behavior:smooth;}
-  body{font-family:"Yu Mincho","Hiragino Mincho ProN",serif;color:var(--m-text);background:var(--m-bg);line-height:1.85;-webkit-font-smoothing:antialiased;}
+  body{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;color:var(--m-text);background:var(--m-bg);line-height:1.9;-webkit-font-smoothing:antialiased;}
+  img{max-width:100%;display:block;}
   a{color:inherit;text-decoration:none;}
   .mock{max-width:1080px;margin:0 auto;background:#fff;box-shadow:0 0 60px rgba(0,0,0,.08);}
 
+  /* 番地ラベル */
   .sec{position:relative;}
   .addr{position:absolute;top:8px;left:8px;z-index:30;}
   .pin{display:inline-block;background:var(--m-nav);color:#fff;font-size:11px;font-weight:700;letter-spacing:.05em;padding:3px 8px;border-radius:4px;opacity:.9;}
 
+  /* アタリ（写真プレースホルダ・既定 4/3・KLK-072） */
   .atari{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
-    background:linear-gradient(135deg, color-mix(in srgb, var(--m-main) 26%, #fff), color-mix(in srgb, var(--m-accent) 24%, #fff));
-    border:1.5px dashed color-mix(in srgb, var(--m-main) 45%, #fff);border-radius:8px;min-height:180px;color:color-mix(in srgb, var(--m-nav) 80%, #000);text-align:center;padding:16px;}
+    background:linear-gradient(135deg, color-mix(in srgb, var(--m-main) 24%, #fff), color-mix(in srgb, var(--m-accent) 30%, #fff));
+    border:1.5px dashed color-mix(in srgb, var(--m-main) 45%, #fff);border-radius:2px;aspect-ratio:4/3;min-height:140px;color:color-mix(in srgb, var(--m-nav) 82%, #000);text-align:center;padding:16px;}
   .atari .ic{font-size:30px;opacity:.7;}
   .atari .desc{font-size:13px;font-weight:600;}
   .atari .kw{font-size:11px;opacity:.7;}
-  .atari-tag{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;padding:4px 8px;border-radius:5px;}
+  .atari .kw b{font-weight:700;}
+  .atari-tag{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;padding:4px 8px;border-radius:3px;}
 
-  /* セクション共通（split-editorial＝左寄せ非対称） */
+  /* セクション共通（split-editorial＝左寄せ・罫線見出し） */
   .m-sec{padding:66px 46px;}
   .m-sec .en{display:block;text-align:left;font-size:12px;letter-spacing:.28em;color:var(--m-accent);font-weight:700;margin-bottom:6px;}
-  .m-sec h2{text-align:left;font-size:27px;color:var(--m-nav);margin-bottom:10px;letter-spacing:.05em;border-left:4px solid var(--m-accent);padding-left:14px;}
+  .m-sec h2{text-align:left;font-size:27px;color:var(--m-nav);margin-bottom:8px;letter-spacing:.04em;border-left:4px solid var(--m-accent);padding-left:14px;}
   .m-sec .sec-desc{text-align:left;max-width:680px;margin:0 0 34px;color:#555;font-size:14.5px;}
+  .m-sec.band{background:color-mix(in srgb, var(--m-main) 6%, #fff);}
 
   /* NAV（below-hero・バー型） */
-  .m-nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;background:var(--m-nav);color:#fff;padding:14px 30px;}
-  .m-nav .brand{font-weight:700;letter-spacing:.08em;font-size:16px;}
+  .m-nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;background:var(--m-nav);color:#fff;padding:14px 28px;}
+  .m-nav .brand{font-weight:800;letter-spacing:.06em;font-size:16px;}
   .m-nav ul{list-style:none;display:flex;gap:22px;font-size:13.5px;}
-  .m-nav ul a:hover{color:var(--m-accent);}
-  .m-nav .nav-cta{background:var(--m-accent);color:#14343c;padding:8px 16px;border-radius:4px;font-size:13px;font-weight:700;}
+  .m-nav ul a{opacity:.92;}
+  .m-nav ul a:hover{opacity:1;text-decoration:underline;}
+  .m-nav .nav-cta{background:var(--m-accent);color:#12333a;padding:8px 16px;border-radius:3px;font-size:13px;font-weight:700;}
   .m-nav .burger{display:none;font-size:22px;}
 
-  /* HERO center-scroll（integ: space-between / center / center） */
-  .m-hero[data-hero=center-scroll]{display:flex;flex-direction:column;justify-content:space-between;align-items:center;text-align:center;min-height:540px;position:relative;padding:60px 40px 40px;overflow:hidden;}
-  .m-hero[data-hero=center-scroll] .hero-bg{position:absolute;inset:0;background:linear-gradient(135deg, color-mix(in srgb, var(--m-main) 55%, #000), color-mix(in srgb, var(--m-main) 30%, var(--m-accent)));z-index:0;}
-  .m-hero[data-hero=center-scroll] .hero-bg .atari-tag{z-index:2;}
-  .m-hero[data-hero=center-scroll] .hero-top{position:relative;z-index:2;color:#fff;margin-top:60px;}
-  .m-hero[data-hero=center-scroll] .catch{font-size:36px;line-height:1.5;letter-spacing:.06em;text-shadow:0 2px 18px rgba(0,0,0,.3);margin-bottom:16px;}
-  .m-hero[data-hero=center-scroll] .lead{font-size:15px;max-width:560px;margin:0 auto;opacity:.95;text-shadow:0 1px 10px rgba(0,0,0,.3);}
-  .m-hero[data-hero=center-scroll] .scroll-cue{position:relative;z-index:2;color:#fff;font-size:12px;letter-spacing:.2em;opacity:.9;}
-  .m-hero[data-hero=center-scroll] .scroll-cue .arrow{display:block;font-size:22px;margin-top:6px;animation:bob 1.8s ease-in-out infinite;}
+  /* HERO center-scroll（整列＝space-between / center / center・全面ビジュアル） */
+  .m-hero[data-hero=center-scroll]{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;min-height:500px;padding:56px 30px 30px;color:#fff;
+    background:linear-gradient(rgba(18,51,58,.5),rgba(18,51,58,.62)),
+      repeating-linear-gradient(135deg, color-mix(in srgb,var(--m-main) 88%,#000), color-mix(in srgb,var(--m-main) 88%,#000) 26px, color-mix(in srgb,var(--m-main) 70%,#000) 26px, color-mix(in srgb,var(--m-main) 70%,#000) 52px);}
+  .m-hero[data-hero=center-scroll] .hero-copy{margin:auto 0;}
+  .m-hero .catch{font-size:36px;line-height:1.5;letter-spacing:.05em;margin-bottom:16px;text-shadow:0 2px 14px rgba(0,0,0,.35);}
+  .m-hero .lead{font-size:15px;opacity:.95;margin-bottom:24px;}
+  .hero-cta{display:inline-block;background:var(--m-accent);color:#12333a;padding:12px 32px;border-radius:3px;font-weight:700;font-size:14px;}
+  .scroll-cue{display:inline-flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;letter-spacing:.24em;color:#fff;opacity:.9;text-decoration:none;}
+  .scroll-cue .arrow{font-size:20px;animation:bob 1.6s ease-in-out infinite;}
   @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(6px);}}
+  .hero-tag{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;padding:4px 8px;border-radius:3px;}
 
   /* ABOUT img-circle */
-  .m-about[data-about=img-circle]{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;max-width:900px;}
-  .m-about[data-about=img-circle] .ab-media .atari{border-radius:50%;aspect-ratio:1;min-height:0;}
-  .m-about .ab-body h3{font-size:21px;color:var(--m-nav);margin-bottom:12px;}
-  .m-about .ab-body p{font-size:14px;color:#555;}
-
-  /* STAFF staff-two-col */
-  .m-staff[data-staff=staff-two-col]{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;max-width:860px;}
-  .m-staff[data-staff=staff-two-col] .st{display:grid;grid-template-columns:120px 1fr;gap:18px;background:#fff;border:1px solid #e7edee;border-radius:8px;padding:18px;align-items:center;}
-  .m-staff[data-staff=staff-two-col] .st .atari{aspect-ratio:1;min-height:0;border-radius:6px;}
-  .m-staff[data-staff=staff-two-col] .st .role{font-size:12px;color:var(--m-accent);font-weight:700;}
-  .m-staff[data-staff=staff-two-col] .st .nm{font-size:16px;color:var(--m-nav);margin:3px 0 5px;}
-  .m-staff[data-staff=staff-two-col] .st .cm{font-size:12.5px;color:#666;}
-
-  /* FLOW flow-vertical-split */
-  .m-flow[data-flow=flow-vertical-split]{display:flex;flex-direction:column;gap:16px;max-width:760px;}
-  .m-flow[data-flow=flow-vertical-split] .step{display:grid;grid-template-columns:88px 1fr;gap:20px;align-items:center;background:#fff;border:1px solid #e7edee;border-left:4px solid var(--m-main);border-radius:6px;padding:18px 22px;}
-  .m-flow[data-flow=flow-vertical-split] .step .no{font-size:40px;font-weight:700;color:color-mix(in srgb, var(--m-main) 40%, #fff);text-align:center;line-height:1;font-family:serif;}
-  .m-flow[data-flow=flow-vertical-split] .step .t{font-size:16px;font-weight:700;color:var(--m-nav);}
-  .m-flow[data-flow=flow-vertical-split] .step .d{font-size:13px;color:#666;margin-top:4px;}
+  .m-about[data-about=img-circle]{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center;max-width:900px;margin:0 auto;}
+  .m-about[data-about=img-circle] .ab-media .atari{aspect-ratio:1;border-radius:50%;min-height:0;max-width:340px;margin:0 auto;}
+  .m-about[data-about=img-circle] .ab-body h3{font-size:20px;color:var(--m-nav);margin-bottom:12px;}
+  .m-about[data-about=img-circle] .ab-body p{font-size:14px;color:#555;}
 
   /* MENU tab-switch */
-  .m-menu[data-menu=tab-switch]{display:flex;flex-direction:column;max-width:860px;}
-  .m-menu[data-menu=tab-switch] .tabs{display:flex;gap:8px;border-bottom:2px solid #e7edee;margin-bottom:22px;}
-  .m-menu[data-menu=tab-switch] .tab{padding:11px 22px;font-size:14px;font-weight:700;color:#888;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;background:none;font-family:inherit;}
+  .m-menu[data-menu=tab-switch]{max-width:900px;margin:0 auto;}
+  .m-menu[data-menu=tab-switch] .tabs{display:flex;gap:6px;border-bottom:2px solid #e6eef0;margin-bottom:22px;flex-wrap:wrap;}
+  .m-menu[data-menu=tab-switch] .tab{padding:10px 20px;font-size:13.5px;font-weight:700;color:#7c8b8e;cursor:pointer;border:none;background:none;border-bottom:3px solid transparent;margin-bottom:-2px;font-family:inherit;}
   .m-menu[data-menu=tab-switch] .tab.active{color:var(--m-nav);border-bottom-color:var(--m-accent);}
-  .m-menu[data-menu=tab-switch] .panel{display:none;grid-template-columns:repeat(2,1fr);gap:18px;}
+  .m-menu[data-menu=tab-switch] .panel{display:none;grid-template-columns:repeat(2,1fr);gap:16px;}
   .m-menu[data-menu=tab-switch] .panel.active{display:grid;}
-  .m-menu[data-menu=tab-switch] .m-card{background:#fff;border:1px solid #e7edee;border-radius:8px;overflow:hidden;}
-  .m-menu[data-menu=tab-switch] .m-card .atari{border-radius:0;aspect-ratio:4/3;min-height:0;}
-  .m-menu[data-menu=tab-switch] .m-card .body{padding:16px 18px;}
-  .m-menu[data-menu=tab-switch] .m-card .nm{font-size:15px;font-weight:700;color:var(--m-nav);}
-  .m-menu[data-menu=tab-switch] .m-card .pr{font-size:13px;color:var(--m-accent);font-weight:700;margin:4px 0;}
-  .m-menu[data-menu=tab-switch] .m-card .dc{font-size:12.5px;color:#666;}
+  .m-menu[data-menu=tab-switch] .mi{display:grid;grid-template-columns:110px 1fr;gap:14px;align-items:center;background:#fff;border:1px solid #eef3f4;border-radius:6px;padding:12px;}
+  .m-menu[data-menu=tab-switch] .mi .atari{aspect-ratio:4/3;min-height:0;border-radius:4px;}
+  .m-menu[data-menu=tab-switch] .mi h4{font-size:14.5px;color:var(--m-nav);margin-bottom:4px;}
+  .m-menu[data-menu=tab-switch] .mi .price{font-size:13px;color:var(--m-accent);font-weight:700;}
+  .m-menu[data-menu=tab-switch] .mi p{font-size:11.5px;color:#777;}
 
-  /* ACCESS map-cards */
-  .m-access[data-access=map-cards]{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
-  .m-access[data-access=map-cards] .access-card{background:#fff;border:1px solid #e7edee;border-radius:8px;overflow:hidden;}
-  .map-atari{position:relative;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg, color-mix(in srgb, var(--m-main) 12%, #fff), color-mix(in srgb, var(--m-main) 12%, #fff) 14px, color-mix(in srgb, var(--m-main) 20%, #fff) 14px, color-mix(in srgb, var(--m-main) 20%, #fff) 28px);border-bottom:1.5px dashed color-mix(in srgb, var(--m-main) 40%, #fff);min-height:150px;color:var(--m-nav);font-size:12px;font-weight:700;}
-  .m-access[data-access=map-cards] .access-card .map-atari::before{content:"🗺 地図";}
-  .m-access[data-access=map-cards] .access-card .ac-body{padding:16px 18px;}
-  .m-access[data-access=map-cards] .access-card .ac-t{font-size:15px;font-weight:700;color:var(--m-nav);margin-bottom:6px;}
-  .m-access[data-access=map-cards] .access-card .ac-d{font-size:12.5px;color:#666;}
+  /* FLOW flow-vertical-split（各ステップ＝正方番号枠＋本文・KLK-073） */
+  .m-flow[data-flow=flow-vertical-split]{display:flex;flex-direction:column;gap:16px;max-width:760px;margin:0 auto;}
+  .m-flow[data-flow=flow-vertical-split] .step{display:grid;grid-template-columns:72px 1fr;gap:20px;align-items:center;background:#fff;border:1px solid #eef3f4;border-left:4px solid var(--m-main);border-radius:6px;padding:18px 22px;}
+  .m-flow[data-flow=flow-vertical-split] .step .no{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:var(--m-main);color:#fff;font-size:26px;font-weight:800;border-radius:6px;}
+  .m-flow[data-flow=flow-vertical-split] .step .t{font-size:16px;font-weight:700;color:var(--m-nav);}
+  .m-flow[data-flow=flow-vertical-split] .step .d{font-size:13px;color:#666;}
+
+  /* STAFF staff-two-col */
+  .m-staff[data-staff=staff-two-col]{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;max-width:860px;margin:0 auto;}
+  .m-staff[data-staff=staff-two-col] .st{background:#fff;border:1px solid #eef3f4;border-radius:8px;overflow:hidden;}
+  .m-staff[data-staff=staff-two-col] .st .atari{aspect-ratio:4/3;min-height:0;border-radius:0;border:none;border-bottom:1.5px dashed color-mix(in srgb,var(--m-main) 40%,#fff);}
+  .m-staff[data-staff=staff-two-col] .st .ct{padding:16px 18px;}
+  .m-staff[data-staff=staff-two-col] .st .role{font-size:12px;color:var(--m-accent);font-weight:700;}
+  .m-staff[data-staff=staff-two-col] .st .nm{font-size:17px;font-weight:700;color:var(--m-nav);margin:2px 0 6px;}
+  .m-staff[data-staff=staff-two-col] .st .cm{font-size:12.5px;color:#666;}
+
+  /* ACCESS map-cards（各カードに小地図アタリ 4/3・KLK-072） */
+  .m-access[data-access=map-cards]{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;max-width:940px;margin:0 auto;}
+  .m-access[data-access=map-cards] .access-card{background:#fff;border:1px solid #eef3f4;border-radius:8px;overflow:hidden;}
+  .m-access[data-access=map-cards] .access-card .map-atari{border-radius:0;border:none;border-bottom:1.5px dashed color-mix(in srgb,var(--m-main) 40%,#fff);}
+  .m-access[data-access=map-cards] .access-card .ct{padding:16px 18px;}
+  .m-access[data-access=map-cards] .access-card h4{font-size:15px;color:var(--m-nav);margin-bottom:6px;}
+  .m-access[data-access=map-cards] .access-card p{font-size:12.5px;color:#666;}
+  .map-atari{position:relative;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg, color-mix(in srgb, var(--m-main) 12%, #fff), color-mix(in srgb, var(--m-main) 12%, #fff) 14px, color-mix(in srgb, var(--m-main) 20%, #fff) 14px, color-mix(in srgb, var(--m-main) 20%, #fff) 28px);border:1.5px dashed color-mix(in srgb, var(--m-main) 45%, #fff);border-radius:6px;aspect-ratio:4/3;min-height:150px;color:var(--m-nav);font-size:12px;font-weight:700;text-align:center;padding:8px;}
+  .map-atari::before{content:"🗺 地図（想定）";}
 
   /* CONTACT contact-banner */
-  .m-contact[data-contact=contact-banner]{display:flex;flex-direction:column;align-items:center;text-align:center;background:linear-gradient(135deg, var(--m-main), var(--m-nav));color:#fff;padding:52px 40px;border-radius:12px;}
-  .m-contact[data-contact=contact-banner] .cb-t{font-size:24px;letter-spacing:.05em;margin-bottom:10px;}
-  .m-contact[data-contact=contact-banner] .cb-d{font-size:14px;opacity:.9;margin-bottom:22px;}
-  .m-contact[data-contact=contact-banner] .cb-tel{font-size:34px;font-weight:700;letter-spacing:.04em;color:var(--m-accent);margin-bottom:6px;}
-  .m-contact[data-contact=contact-banner] .cb-note{font-size:12.5px;opacity:.85;margin-bottom:22px;}
-  .m-contact[data-contact=contact-banner] .cb-btn{display:inline-block;background:var(--m-accent);color:#14343c;padding:13px 40px;border-radius:6px;font-weight:700;font-size:15px;}
+  .m-contact[data-contact=contact-banner]{background:var(--m-main);color:#fff;border-radius:8px;padding:44px 30px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;}
+  .m-contact[data-contact=contact-banner] .cb-h{font-size:24px;font-weight:700;letter-spacing:.04em;}
+  .m-contact[data-contact=contact-banner] .cb-p{font-size:14px;opacity:.9;}
+  .m-contact[data-contact=contact-banner] .cb-tel{font-size:34px;font-weight:800;letter-spacing:.04em;color:#fff;margin:6px 0;}
+  .m-contact[data-contact=contact-banner] .cb-tel small{display:block;font-size:12px;font-weight:400;opacity:.85;letter-spacing:.1em;}
+  .m-contact[data-contact=contact-banner] .cb-btn{display:inline-block;background:var(--m-accent);color:#12333a;padding:13px 40px;border-radius:4px;font-weight:700;font-size:14.5px;}
 
   /* FOOTER */
-  .m-foot{background:var(--m-nav);color:#fff;padding:50px 46px 26px;}
+  .m-foot{background:var(--m-nav);color:#fff;padding:48px 40px 26px;}
   .m-foot .foot-cta{text-align:center;margin-bottom:32px;}
-  .m-foot .foot-cta h2{font-size:22px;margin-bottom:10px;border:0;padding:0;}
+  .m-foot .foot-cta h2{font-size:22px;margin-bottom:10px;}
   .m-foot .foot-cta p{font-size:13.5px;opacity:.85;margin-bottom:18px;}
-  .m-foot .foot-cta a{display:inline-block;background:var(--m-accent);color:#14343c;padding:12px 34px;border-radius:6px;font-weight:700;}
+  .m-foot .foot-cta a{display:inline-block;background:var(--m-accent);color:#12333a;padding:12px 34px;border-radius:4px;font-weight:700;}
   .m-foot .foot-nav{display:flex;justify-content:center;gap:22px;flex-wrap:wrap;font-size:13px;opacity:.9;border-top:1px solid rgba(255,255,255,.2);padding-top:22px;}
   .m-foot .copy{text-align:center;font-size:11px;opacity:.6;margin-top:20px;}
 
-  .todo{color:#8a5a1e;background:#f6efe0;border-radius:4px;padding:0 5px;font-size:.92em;font-weight:600;}
+  .todo{color:#b4622f;background:#fff3ea;border-radius:4px;padding:0 5px;font-size:.92em;font-weight:600;}
 
+  /* 出現アニメ */
   .reveal{opacity:0;transform:translateY(16px);transition:opacity .6s ease, transform .6s ease;}
   .reveal.in{opacity:1;transform:none;}
-  @media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none;transition:none;}}
+  @media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none;transition:none;} .scroll-cue .arrow{animation:none;}}
 
+  /* レスポンシブ */
   @media (max-width:640px){
     .m-sec{padding:44px 20px;}
     .m-nav{padding:12px 16px;}
     .m-nav ul{display:none;}
     .m-nav .burger{display:block;}
-    .m-hero[data-hero=center-scroll]{min-height:440px;padding:40px 20px 28px;}
-    .m-hero[data-hero=center-scroll] .catch{font-size:26px;}
-    .m-about[data-about=img-circle]{grid-template-columns:1fr;}
-    .m-staff[data-staff=staff-two-col]{grid-template-columns:1fr;}
+    .m-hero .catch{font-size:26px;}
+    .m-about[data-about=img-circle]{grid-template-columns:1fr;gap:24px;}
     .m-menu[data-menu=tab-switch] .panel.active{grid-template-columns:1fr;}
-    .m-menu[data-menu=tab-switch] .tabs{overflow-x:auto;}
+    .m-menu[data-menu=tab-switch] .tabs{flex-wrap:nowrap;overflow-x:auto;}
+    .m-flow[data-flow=flow-vertical-split] .step{grid-template-columns:56px 1fr;gap:14px;}
+    .m-staff[data-staff=staff-two-col]{grid-template-columns:1fr;}
     .m-access[data-access=map-cards]{grid-template-columns:1fr;}
     .m-contact[data-contact=contact-banner] .cb-tel{font-size:26px;}
     .m-foot .foot-nav{gap:12px;}
   }
 
+  /* 印刷 */
   @media print{
-    .addr,.atari-tag{display:none !important;}
+    .addr,.atari-tag,.hero-tag,.scroll-cue{display:none !important;}
     body{background:#fff;}
     .mock{box-shadow:none;}
     .reveal{opacity:1 !important;transform:none !important;}
@@ -151,17 +163,18 @@
   <section class="sec">
     <div class="addr"><span class="pin">MV-01</span></div>
     <div class="m-hero" data-hero="center-scroll">
-      <div class="hero-bg"><span class="atari-tag">診療室のワイドビジュアル ／ 検索: <b>modern dental office</b></span></div>
-      <div class="hero-top">
+      <div class="hero-copy">
         <h1 class="catch">あなたの笑顔を、<br>一生の健康と共に。</h1>
-        <p class="lead">痛みの少ない治療と、わかりやすい説明を大切に。地域のみなさまのお口の健康をやさしく支えます。</p>
+        <p class="lead">痛みの少ない治療と、わかりやすい説明を大切に。<br>地域のみなさまのお口の健康を、やさしく支えます。</p>
+        <a class="hero-cta" href="#contact">初めての方へ ＞</a>
       </div>
-      <div class="scroll-cue">SCROLL<span class="arrow">↓</span></div>
+      <a class="scroll-cue" href="#nav">SCROLL <span class="arrow">↓</span></a>
+      <span class="hero-tag">明るい診療室と笑顔の患者 ／ 検索: <b>dental clinic smile</b></span>
     </div>
   </section>
 
   <!-- NAV-01 -->
-  <nav class="sec">
+  <nav class="sec" id="nav">
     <div class="addr"><span class="pin">NAV-01</span></div>
     <div class="m-nav">
       <span class="brand">サンプル歯科クリニック</span>
@@ -183,13 +196,13 @@
     <div class="m-sec">
       <span class="en">CONCEPT</span>
       <h2>安心して通える歯科医院を</h2>
-      <p class="sec-desc">清潔な院内と丁寧なカウンセリングで、通うのが楽しみになる歯科医療を目指します。</p>
+      <p class="sec-desc">「歯医者はこわい」をなくしたい。<br>清潔な院内と丁寧なカウンセリングで、通うのが楽しみになる歯科医療を目指します。</p>
       <div class="m-about" data-about="img-circle">
         <div class="ab-media">
-          <div class="atari"><span class="ic">📷</span><span class="desc">院長のポートレート</span><span class="kw">検索: <b>dentist portrait</b></span></div>
+          <div class="atari"><span class="ic">📷</span><span class="desc">院内・受付の様子</span><span class="kw">検索: <b>dental clinic interior</b></span></div>
         </div>
         <div class="ab-body">
-          <h3>対話を大切にした、納得の歯科医療</h3>
+          <h3>患者さま一人ひとりに寄り添う診療</h3>
           <p>治療の前には必ずご説明の時間を設け、ご納得いただいてから進めます。徹底した衛生管理と<span class="todo">(要検討: 導入設備・滅菌体制の具体名)</span>で、安心できる環境を整えています。</p>
         </div>
       </div>
@@ -197,17 +210,17 @@
   </section>
 
   <!-- STAFF-01（staff-two-col） -->
-  <section class="sec reveal" id="staff">
+  <section class="sec reveal band" id="staff">
     <div class="addr"><span class="pin">STAFF-01</span></div>
     <div class="m-sec">
       <span class="en">STAFF</span>
       <h2>スタッフ紹介</h2>
       <p class="sec-desc">経験豊富なスタッフが、チームでみなさまのお口の健康をサポートします。</p>
       <div class="m-staff" data-staff="staff-two-col">
-        <div class="st"><div class="atari"><span class="ic">👤</span></div><div><span class="role">院長・歯科医師</span><div class="nm"><span class="todo">(要検討: 院長名)</span></div><span class="cm">患者さまとの対話を第一に、痛みの少ない治療を心がけています。</span></div></div>
-        <div class="st"><div class="atari"><span class="ic">👤</span></div><div><span class="role">歯科医師</span><div class="nm"><span class="todo">(要検討: 氏名)</span></div><span class="cm">小児歯科・予防を担当。お子さまにやさしい診療を大切にしています。</span></div></div>
-        <div class="st"><div class="atari"><span class="ic">👤</span></div><div><span class="role">歯科衛生士</span><div class="nm"><span class="todo">(要検討: 氏名)</span></div><span class="cm">クリーニングとセルフケア指導で健康なお口づくりをお手伝いします。</span></div></div>
-        <div class="st"><div class="atari"><span class="ic">👤</span></div><div><span class="role">受付・歯科助手</span><div class="nm"><span class="todo">(要検討: 氏名)</span></div><span class="cm">ご来院時から笑顔でお迎えします。お気軽にご相談ください。</span></div></div>
+        <div class="st"><div class="atari"><span class="ic">👤</span><span class="desc">院長</span></div><div class="ct"><span class="role">院長・歯科医師</span><div class="nm"><span class="todo">(要検討: 院長名)</span></div><span class="cm">患者さまとの対話を第一に、痛みの少ない治療を心がけています。</span></div></div>
+        <div class="st"><div class="atari"><span class="ic">👤</span><span class="desc">歯科医師</span></div><div class="ct"><span class="role">歯科医師</span><div class="nm"><span class="todo">(要検討: 氏名)</span></div><span class="cm">小児歯科・予防を担当。お子さまにやさしい診療を大切にしています。</span></div></div>
+        <div class="st"><div class="atari"><span class="ic">👤</span><span class="desc">歯科衛生士</span></div><div class="ct"><span class="role">歯科衛生士</span><div class="nm"><span class="todo">(要検討: 氏名)</span></div><span class="cm">クリーニングとセルフケア指導で、健康なお口づくりをお手伝いします。</span></div></div>
+        <div class="st"><div class="atari"><span class="ic">👤</span><span class="desc">受付</span></div><div class="ct"><span class="role">受付・歯科助手</span><div class="nm"><span class="todo">(要検討: 氏名)</span></div><span class="cm">ご来院時から笑顔でお迎えします。何でもお気軽にご相談ください。</span></div></div>
       </div>
     </div>
   </section>
@@ -218,41 +231,43 @@
     <div class="m-sec">
       <span class="en">FLOW</span>
       <h2>診療の流れ</h2>
-      <p class="sec-desc">初めての方も安心してご来院いただけるよう、丁寧なステップで進めます。</p>
+      <p class="sec-desc">初めての方も安心してご来院いただけるよう、<br>丁寧なステップで進めます。</p>
       <div class="m-flow" data-flow="flow-vertical-split">
-        <div class="step"><span class="no">1</span><div><div class="t">ご予約</div><div class="d">お電話・WEBからご予約いただけます。</div></div></div>
-        <div class="step"><span class="no">2</span><div><div class="t">受付・問診</div><div class="d">お悩みやご希望を丁寧に伺います。</div></div></div>
-        <div class="step"><span class="no">3</span><div><div class="t">検査・診断</div><div class="d">レントゲン等でお口の状態を確認します。</div></div></div>
-        <div class="step"><span class="no">4</span><div><div class="t">治療・処置</div><div class="d">治療計画をご説明のうえ進めます。</div></div></div>
-        <div class="step"><span class="no">5</span><div><div class="t">メンテナンス</div><div class="d">定期検診で健康なお口を守ります。</div></div></div>
+        <div class="step"><span class="no">1</span><div><div class="t">ご予約</div><div class="d">お電話・WEB からご希望の日時をお知らせください。</div></div></div>
+        <div class="step"><span class="no">2</span><div><div class="t">受付・問診</div><div class="d">お悩みやご希望を丁寧に伺い、問診票にご記入いただきます。</div></div></div>
+        <div class="step"><span class="no">3</span><div><div class="t">検査・診断</div><div class="d">レントゲン等でお口の状態を確認し、治療計画をご提案します。</div></div></div>
+        <div class="step"><span class="no">4</span><div><div class="t">治療・処置</div><div class="d">ご納得いただいたうえで、無理のないペースで進めます。</div></div></div>
+        <div class="step"><span class="no">5</span><div><div class="t">メンテナンス</div><div class="d">治療後も定期検診で、健康なお口を一緒に守ります。</div></div></div>
       </div>
     </div>
   </section>
 
   <!-- MENU-01（tab-switch） -->
-  <section class="sec reveal" id="menu">
+  <section class="sec reveal band" id="menu">
     <div class="addr"><span class="pin">MENU-01</span></div>
     <div class="m-sec">
       <span class="en">MENU</span>
       <h2>診療案内</h2>
-      <p class="sec-desc">保険診療と自由診療、それぞれの内容をご案内します。</p>
+      <p class="sec-desc">診療内容をカテゴリごとにご案内します。<br>タブを切り替えてご覧ください。</p>
       <div class="m-menu" data-menu="tab-switch">
         <div class="tabs">
-          <button class="tab active" data-tab="0">保険診療</button>
-          <button class="tab" data-tab="1">自由診療</button>
+          <button class="tab active" data-tab="0">一般・予防</button>
+          <button class="tab" data-tab="1">小児・矯正</button>
+          <button class="tab" data-tab="2">自由診療</button>
         </div>
         <div class="panel active" data-panel="0">
-          <div class="m-card"><div class="atari"><span class="ic">🦷</span><span class="desc">治療の様子</span></div><div class="body"><div class="nm">一般歯科</div><div class="pr">保険適用</div><div class="dc">むし歯・歯周病の治療に対応します。</div></div></div>
-          <div class="m-card"><div class="atari"><span class="ic">🦷</span><span class="desc">クリーニング</span></div><div class="body"><div class="nm">予防歯科</div><div class="pr">¥3,300〜</div><div class="dc">クリーニング・PMTCで再発を防ぎます。</div></div></div>
-          <div class="m-card"><div class="atari"><span class="ic">🦷</span><span class="desc">小児診療</span></div><div class="body"><div class="nm">小児歯科</div><div class="pr">¥1,650〜</div><div class="dc">フッ素塗布・シーラントでむし歯予防。</div></div></div>
+          <div class="mi"><div class="atari"><span class="ic">📷</span></div><div><h4>一般歯科</h4><div class="price">保険適用</div><p>むし歯・歯周病の治療</p></div></div>
+          <div class="mi"><div class="atari"><span class="ic">📷</span></div><div><h4>予防歯科</h4><div class="price">¥3,300〜</div><p>クリーニング・PMTC</p></div></div>
         </div>
         <div class="panel" data-panel="1">
-          <div class="m-card"><div class="atari"><span class="ic">✨</span><span class="desc">ホワイトニング</span></div><div class="body"><div class="nm">ホワイトニング</div><div class="pr">¥16,500〜</div><div class="dc">歯本来の白さを引き出します。</div></div></div>
-          <div class="m-card"><div class="atari"><span class="ic">✨</span><span class="desc">セラミック</span></div><div class="body"><div class="nm">審美歯科</div><div class="pr">¥55,000〜</div><div class="dc">自然な見た目のセラミック治療。</div></div></div>
-          <div class="m-card"><div class="atari"><span class="ic">✨</span><span class="desc">インプラント</span></div><div class="body"><div class="nm">インプラント</div><div class="pr">¥385,000〜</div><div class="dc">失った歯を機能・見た目ともに回復。</div></div></div>
+          <div class="mi"><div class="atari"><span class="ic">📷</span></div><div><h4>小児歯科</h4><div class="price">¥1,650〜</div><p>フッ素塗布・シーラント</p></div></div>
+          <div class="mi"><div class="atari"><span class="ic">📷</span></div><div><h4>矯正相談</h4><div class="price">相談無料</div><p><span class="todo">(要検討: 矯正の対応範囲・費用)</span></p></div></div>
+        </div>
+        <div class="panel" data-panel="2">
+          <div class="mi"><div class="atari"><span class="ic">📷</span></div><div><h4>ホワイトニング</h4><div class="price">¥16,500〜</div><p>オフィスホワイトニング</p></div></div>
+          <div class="mi"><div class="atari"><span class="ic">📷</span></div><div><h4>審美・インプラント</h4><div class="price">¥55,000〜</div><p>セラミック・インプラント</p></div></div>
         </div>
       </div>
-      <p class="sec-desc" style="margin-top:16px;font-size:12.5px;"><span class="todo">(要検討: 実際の料金・保険適用の範囲)</span></p>
     </div>
   </section>
 
@@ -261,13 +276,14 @@
     <div class="addr"><span class="pin">ACCESS-01</span></div>
     <div class="m-sec">
       <span class="en">ACCESS</span>
-      <h2>アクセスのご案内</h2>
-      <p class="sec-desc">お越しの方法に合わせてご案内します。</p>
+      <h2>アクセス</h2>
+      <p class="sec-desc">ご来院方法にあわせて、経路をご案内します。</p>
       <div class="m-access" data-access="map-cards">
-        <div class="access-card"><div class="map-atari"></div><div class="ac-body"><div class="ac-t">当院所在地</div><div class="ac-d"><span class="todo">(要検討: 住所)</span><br>TEL <span class="todo">(要検討: 電話番号)</span></div></div></div>
-        <div class="access-card"><div class="map-atari"></div><div class="ac-body"><div class="ac-t">お車でお越しの方</div><div class="ac-d">提携駐車場をご用意。<span class="todo">(要検討: 台数・場所)</span></div></div></div>
-        <div class="access-card"><div class="map-atari"></div><div class="ac-body"><div class="ac-t">電車・バスの方</div><div class="ac-d"><span class="todo">(要検討: 最寄駅・徒歩分数・バス停)</span></div></div></div>
+        <div class="access-card"><div class="map-atari"></div><div class="ct"><h4>電車でお越しの方</h4><p><span class="todo">(要検討: 最寄駅・出口・徒歩分数)</span></p></div></div>
+        <div class="access-card"><div class="map-atari"></div><div class="ct"><h4>お車でお越しの方</h4><p><span class="todo">(要検討: 主要道路からの経路・所要時間)</span></p></div></div>
+        <div class="access-card"><div class="map-atari"></div><div class="ct"><h4>提携駐車場</h4><p><span class="todo">(要検討: 駐車台数・提携先・料金)</span></p></div></div>
       </div>
+      <p class="sec-desc" style="margin-top:20px;font-size:13px;">住所：<span class="todo">(要検討: 住所)</span>／TEL：<span class="todo">(要検討: 電話番号)</span></p>
     </div>
   </section>
 
@@ -275,12 +291,13 @@
   <section class="sec reveal" id="contact">
     <div class="addr"><span class="pin">CONTACT-01</span></div>
     <div class="m-sec">
+      <span class="en">CONTACT</span>
+      <h2>お問い合わせ</h2>
       <div class="m-contact" data-contact="contact-banner">
-        <div class="cb-t">お電話でのご予約・ご相談</div>
-        <div class="cb-d">診療時間内に受付いたします。初めての方もお気軽にどうぞ。</div>
-        <div class="cb-tel"><span class="todo">(要検討: 000-000-0000)</span></div>
-        <div class="cb-note">受付時間：平日 9:00-18:30 ／ 土 9:00-13:00</div>
-        <a class="cb-btn" href="#">WEBで予約する</a>
+        <div class="cb-h">まずはお電話でご相談ください</div>
+        <div class="cb-p">痛みが気になる方は、当日のご予約も承ります。</div>
+        <div class="cb-tel">000-000-0000<small><span class="todo">(要検討: 電話番号)</span>／受付 平日 9:00-18:30</small></div>
+        <a class="cb-btn" href="#">WEB予約はこちら ＞</a>
       </div>
     </div>
   </section>
@@ -291,7 +308,7 @@
     <div class="m-foot">
       <div class="foot-cta">
         <h2>まずはお気軽にご相談ください</h2>
-        <p>痛みが気になる方も、予防で通いたい方も歓迎いたします。</p>
+        <p>痛みや違和感が気になる方も、予防で通いたい方も、歓迎いたします。</p>
         <a href="#contact">ご予約・お問い合わせ</a>
       </div>
       <div class="foot-nav">
@@ -304,21 +321,20 @@
 </div>
 <script>
   (function(){
-    // MENU tab-switch
-    document.querySelectorAll('.m-menu[data-menu=tab-switch]').forEach(function(m){
-      var tabs=m.querySelectorAll('.tab'), panels=m.querySelectorAll('.panel');
+    var els=document.querySelectorAll('.reveal');
+    if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in');});}
+    else{var io=new IntersectionObserver(function(ens){ens.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target);}});},{threshold:.12});els.forEach(function(e){io.observe(e);});}
+    // MENU tab-switch（外部依存なしの最小切替）
+    var menu=document.querySelector('.m-menu[data-menu=tab-switch]');
+    if(menu){
+      var tabs=menu.querySelectorAll('.tab'),panels=menu.querySelectorAll('.panel');
       tabs.forEach(function(t){t.addEventListener('click',function(){
         var i=t.getAttribute('data-tab');
         tabs.forEach(function(x){x.classList.remove('active');});
-        panels.forEach(function(p){p.classList.toggle('active', p.getAttribute('data-panel')===i);});
+        panels.forEach(function(p){p.classList.toggle('active',p.getAttribute('data-panel')===i);});
         t.classList.add('active');
       });});
-    });
-    // 出現アニメ
-    var els=document.querySelectorAll('.reveal');
-    if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in');});return;}
-    var io=new IntersectionObserver(function(ens){ens.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target);}});},{threshold:.12});
-    els.forEach(function(e){io.observe(e);});
+    }
   })();
 </script>
 </body>

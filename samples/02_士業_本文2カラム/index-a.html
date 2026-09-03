@@ -1,259 +1,322 @@
-<!DOCTYPE html>
-<!--
-  配布サンプル02（KLK-071）案A / letter=a — 士業事務所・本文のみ2カラム（サイドバー左）
-  2col-body-left × navPosition:top → offset3 → 各プール index3。
-  HERO=overlap / ABOUT=img-overlap / VOICE=voice-two-col / FAQ=faq-cards / NEWS=news-timeline / CONTACT=contact-methods
-  archetype=stack-centered / 配色: 指示書に忠実（ネイビー #2a3c6b・sans・中央寄せ）
-  これは見本用のプレースホルダ出力です。実在の事務所ではありません（ダミー案件名）。
--->
-<html lang="ja">
-<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>サンプル法律事務所 | デザインラフ 案A</title>
+<title>サンプル法律事務所 — 案A（デザインラフ）</title>
 <style>
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif; line-height: 1.7; }
-
-  /* 配色（5つのCSS変数・DRAFT_RULES §5） */
-  .mock { --m-main: #2a3c6b; --m-nav: #1d2a4d; --m-accent: #b08d4f; --m-bg: #f6f7fa; --m-text: #2c2f36;
-    background: var(--m-bg); color: var(--m-text); overflow: hidden; position: relative; }
-
-  .sec { position: relative; }
-  .addr { position: absolute; top: 8px; left: 8px; z-index: 5; display: inline-flex; gap: 6px; align-items: center; }
-  .addr .pin { background: rgba(17,24,39,.82); color: #fff; font-size: 10px; letter-spacing: .04em; padding: 2px 7px; border-radius: 4px; font-family: ui-monospace, monospace; }
-
-  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
-  .reveal.in { opacity: 1; transform: none; }
-  @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
-
-  /* nav */
-  .m-nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 26px; background: var(--m-nav); color: #fff; }
-  .m-nav .logo { font-size: 17px; font-weight: 700; letter-spacing: .06em; }
-  .m-nav ul { display: flex; gap: 18px; list-style: none; margin: 0; padding: 0; font-size: 12px; }
-  .m-nav .cta { background: var(--m-accent); color: #fff; padding: 6px 14px; border-radius: 4px; font-size: 12px; }
-
-  /* HERO 型: overlap（せり出し横長画像＋白背景文言の重なり・整列 flex-start/center/left・index3） */
-  .m-hero { display: grid; grid-template-columns: 1fr 1.4fr; justify-content: flex-start; align-items: center; text-align: left; min-height: 360px; background: var(--m-bg); position: relative; }
-  .m-hero .hbg { grid-column: 2; grid-row: 1; min-height: 340px; border-radius: 0;
-    background: linear-gradient(rgba(29,42,77,.28), rgba(29,42,77,.28)), repeating-linear-gradient(45deg, var(--m-main), var(--m-main) 14px, color-mix(in srgb, var(--m-main) 86%, #000) 14px, color-mix(in srgb, var(--m-main) 86%, #000) 28px); }
-  .m-hero .htxt { grid-column: 1; grid-row: 1; background: #fff; padding: 28px 26px; box-shadow: 0 8px 30px rgba(0,0,0,.14); transform: translateX(30px); z-index: 2; }
-  .m-hero .catch { font-size: 26px; font-weight: 800; letter-spacing: .05em; margin: 0 0 12px; color: var(--m-main); line-height: 1.4; }
-  .m-hero .lead { font-size: 13.5px; margin: 0 0 18px; }
-  .m-hero .hero-cta { display: inline-block; background: var(--m-accent); color: #fff; padding: 11px 24px; border-radius: 4px; font-size: 13.5px; font-weight: 700; }
-  .atari-tag { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,.55); color: #fff; font-size: 10px; padding: 3px 8px; border-radius: 4px; }
-
-  /* ===== 本文のみ2カラム（サブ左）: FV は全幅、その下の本文だけ 左サイドバー + 右本文（§8） ===== */
-  .m-layout { display: grid; grid-template-columns: 300px 1fr; gap: 30px; max-width: 1080px; margin: 0 auto; padding: 44px 34px; align-items: start; }
-  .m-main-col { min-width: 0; }
-  .m-aside { display: flex; flex-direction: column; gap: 22px; }
-  .aside-box { background: #fff; border-radius: 8px; padding: 18px; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
-  .aside-box .ah { font-size: 14px; font-weight: 700; color: var(--m-main); margin-bottom: 10px; border-left: 3px solid var(--m-accent); padding-left: 8px; }
-  .aside-box .ab { font-size: 12.5px; }
-  .aside-box ul { margin: 0; padding-left: 1.1em; font-size: 12.5px; }
-  .aside-box ul li { margin-bottom: 5px; }
-  .aside-box .ask-btn { display: block; text-align: center; background: var(--m-accent); color: #fff; padding: 11px; border-radius: 6px; font-size: 13px; font-weight: 700; margin-top: 4px; }
-  .aside-box .map-atari { background: linear-gradient(135deg, color-mix(in srgb, var(--m-main) 20%, #fff), color-mix(in srgb, var(--m-accent) 24%, #fff)); border: 1px dashed color-mix(in srgb, var(--m-main) 45%, #999); border-radius: 6px; min-height: 90px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: color-mix(in srgb, var(--m-main) 55%, #333); margin-bottom: 8px; }
-
-  /* 本文セクション（本文列内） */
-  .m-block { margin-bottom: 42px; }
-  .m-block:last-child { margin-bottom: 0; }
-  .m-block h2 { text-align: center; font-size: 22px; letter-spacing: .1em; margin: 0 0 3px; color: var(--m-main); }
-  .m-block .en { text-align: center; font-size: 11px; letter-spacing: .3em; color: var(--m-accent); margin: 0 0 22px; font-family: ui-monospace, monospace; }
-  .todo { color: #B54; background: #FFF0F0; border: 1px dashed #E39; border-radius: 4px; padding: 1px 6px; font-size: 12.5px; }
-
-  /* アタリ（§3 a方式） */
-  .atari { background: linear-gradient(135deg, color-mix(in srgb, var(--m-main) 22%, #fff), color-mix(in srgb, var(--m-accent) 26%, #fff)); border: 1px dashed color-mix(in srgb, var(--m-main) 45%, #999); border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: color-mix(in srgb, var(--m-main) 55%, #333); padding: 14px; gap: 4px; }
-  .atari .ic { font-size: 22px; }
-  .atari .desc { font-size: 12.5px; font-weight: 600; }
-  .atari .kw { font-size: 11px; color: #6B7280; }
-  .atari .kw b { font-family: ui-monospace, monospace; color: var(--m-main); }
-
-  /* ABOUT 画像配置: img-overlap（左画像せり出し・右白背景文言の重なり・§12.1.3 index3） */
-  .m-about.img-overlap { position: relative; display: grid; grid-template-columns: 1fr 1fr; align-items: center; }
-  .m-about.img-overlap .atari { grid-column: 1 / 2; grid-row: 1; min-height: 300px; align-self: start; }
-  .m-about.img-overlap .txt { grid-column: 2 / 3; grid-row: 1; z-index: 1; background: rgba(255,255,255,.95); padding: 26px 30px; box-shadow: 0 8px 30px rgba(0,0,0,.12); transform: translateX(-26%); }
-  .m-about .txt h3 { font-size: 18px; color: var(--m-main); margin: 0 0 10px; }
-  .m-about .txt p { font-size: 13.5px; margin: 0; }
-
-  /* VOICE 型: voice-two-col（2カラム千鳥・項ごとに引用｜アバターを order で交互反転・index3） */
-  .m-voice.voice-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  .m-voice.voice-two-col .v-item { display: grid; grid-template-columns: 64px 1fr; gap: 12px; align-items: center; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.08); padding: 14px; }
-  .m-voice.voice-two-col .v-item:nth-child(even) .va { order: 2; }
-  .m-voice.voice-two-col .v-item:nth-child(even) .vt { order: 1; }
-  .m-voice.voice-two-col .va { min-height: 56px; }
-  .m-voice .quote { font-size: 13px; margin: 0 0 6px; }
-  .m-voice .who { font-size: 12px; color: var(--m-main); font-weight: 700; }
-
-  /* FAQ 型: faq-cards（アイコン＋質問＋短答の3列カード・§12.1.3 index3） */
-  .m-faq.faq-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .m-faq .faq-card { border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; padding: 22px 16px; text-align: center; }
-  .m-faq .faq-card .ic { font-size: 26px; }
-  .m-faq .faq-card h3 { font-size: 14px; color: var(--m-main); margin: 10px 0 8px; }
-  .m-faq .faq-card p { font-size: 12.5px; color: #555; margin: 0; }
-
-  /* NEWS 型: news-timeline（縦の時系列・日付＋縦線＋ドット＋内容・§12.1.3 index3） */
-  .m-news.news-timeline { display: flex; flex-direction: column; padding-left: 8px; }
-  .m-news .trow { display: grid; grid-template-columns: 96px 1fr; gap: 16px; padding: 0 0 24px 22px; border-left: 2px solid color-mix(in srgb, var(--m-main) 35%, #fff); position: relative; }
-  .m-news .trow::before { content: ""; position: absolute; left: -7px; top: 3px; width: 12px; height: 12px; border-radius: 50%; background: var(--m-main); }
-  .m-news .trow:last-child { border-left-color: transparent; padding-bottom: 0; }
-  .m-news .date { font-family: ui-monospace, monospace; font-size: 12px; color: var(--m-accent); }
-  .m-news .tbody h3 { font-size: 15px; margin: 0 0 6px; color: var(--m-main); }
-  .m-news .tbody p { font-size: 13px; margin: 0; color: #555; }
-
-  /* CONTACT 型: contact-methods（連絡手段を3カード・§12.1.3 index3・選択式導線） */
-  .m-contact.contact-methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-  .m-contact .contact-card { border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; padding: 24px 16px; text-align: center; }
-  .m-contact .contact-card .ic { font-size: 28px; }
-  .m-contact .contact-card h3 { font-size: 14px; color: var(--m-main); margin: 10px 0 6px; }
-  .m-contact .contact-card p { font-size: 12px; color: #555; margin: 0 0 12px; }
-  .m-contact .contact-card .cm-btn { display: inline-block; background: var(--m-accent); color: #fff; padding: 9px 22px; border-radius: 4px; font-size: 12.5px; font-weight: 700; }
-
-  .m-foot { background: var(--m-nav); color: #fff; text-align: center; padding: 30px 20px; }
-  .m-foot .fnav { font-size: 11px; opacity: .85; }
-
-  /* ===== レスポンシブ（§8・NFR-002） ===== */
-  @media (max-width: 640px) {
-    .m-layout { grid-template-columns: 1fr; }
-    .m-main-col { order: 0; }
-    .m-aside { order: 1; }
-    .m-nav ul { display: none; }
-    .m-nav::after { content: "\2630"; color: #fff; font-size: 20px; }
-    .m-hero { grid-template-columns: 1fr; }
-    .m-hero .hbg, .m-hero .htxt { grid-column: 1; grid-row: auto; transform: none; }
-    .m-hero .catch { font-size: 22px; }
-    .m-about.img-overlap { grid-template-columns: 1fr; }
-    .m-about.img-overlap .txt { transform: none; margin: -30px 12px 0; }
-    .m-voice.voice-two-col { grid-template-columns: 1fr; }
-    .m-faq.faq-cards, .m-contact.contact-methods { grid-template-columns: 1fr; }
-    .m-news .trow { grid-template-columns: 1fr; gap: 4px; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:#e7eaf0;color:var(--m-text);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif;
+    line-height:1.75;-webkit-font-smoothing:antialiased}
+  .mock{max-width:1120px;margin:24px auto;background:var(--m-bg);
+    box-shadow:0 12px 44px rgba(0,0,0,.14);overflow:hidden}
+  .sec{position:relative}
+  .addr{position:absolute;top:0;left:0;z-index:30}
+  .pin{display:inline-block;background:var(--m-main);color:#fff;font-size:11px;
+    letter-spacing:.05em;padding:3px 8px;font-weight:700;font-family:monospace;opacity:.92}
+  .todo{color:#b03636;background:#fbeaea;padding:1px 5px;border-radius:3px;font-size:.9em}
+  /* --- reveal --- */
+  .reveal{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease}
+  .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+  /* --- nav --- */
+  .m-nav{display:flex;align-items:center;justify-content:space-between;gap:20px;
+    padding:18px 40px;background:var(--m-nav);color:#fff}
+  .m-nav .logo{font-weight:700;font-size:18px;letter-spacing:.06em}
+  .m-nav nav{display:flex;gap:22px;font-size:13px;flex-wrap:wrap}
+  .m-nav nav a{color:#fff;text-decoration:none;opacity:.85}
+  .m-nav nav a:hover{opacity:1}
+  .m-nav .nav-cta{background:var(--m-accent);color:#fff;padding:9px 18px;border-radius:4px;
+    font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap}
+  /* --- hero: overlap --- */
+  .m-hero{position:relative}
+  .m-hero[data-hero=overlap]{display:grid;grid-template-columns:1fr 2fr;
+    justify-content:flex-start;align-items:center;text-align:left;
+    background:var(--m-bg);min-height:470px;padding:44px}
+  .hero-atari{position:relative;min-height:400px;border-radius:0;
+    background:linear-gradient(135deg,color-mix(in srgb,var(--m-main) 60%,#000),
+      color-mix(in srgb,var(--m-accent) 46%,var(--m-main)));
+    grid-column:2;grid-row:1}
+  .hero-copy{grid-column:1;grid-row:1;z-index:5;background:#fff;padding:34px 32px;
+    box-shadow:0 14px 44px rgba(0,0,0,.16);width:max-content;max-width:430px;
+    transform:translateX(34px)}
+  .hero-en{display:block;font-size:12px;letter-spacing:.28em;color:var(--m-accent);
+    font-weight:700;margin-bottom:12px}
+  .catch{font-size:30px;line-height:1.5;color:var(--m-main);font-weight:800;letter-spacing:.02em}
+  .lead{margin-top:16px;font-size:14px;color:var(--m-text)}
+  .hero-cta{display:inline-block;margin-top:22px;background:var(--m-accent);color:#fff;
+    text-decoration:none;padding:12px 26px;border-radius:4px;font-weight:700;font-size:14px}
+  .atari-tag{position:absolute;right:12px;bottom:12px;background:rgba(0,0,0,.5);color:#fff;
+    font-size:11px;padding:4px 9px;border-radius:3px}
+  /* --- layout: 2col-body-left --- */
+  .m-layout{display:grid;grid-template-columns:300px 1fr}
+  .m-aside{background:color-mix(in srgb,var(--m-main) 7%,#fff);padding:34px 26px;
+    border-right:1px solid rgba(0,0,0,.06)}
+  .aside-card{background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:6px;
+    padding:18px 18px;margin-bottom:18px}
+  .aside-card h4{font-size:13px;color:var(--m-main);margin-bottom:10px;letter-spacing:.04em}
+  .aside-card p,.aside-card li{font-size:12.5px;color:var(--m-text);line-height:1.7}
+  .aside-card ul{list-style:none}
+  .aside-card li{padding:5px 0;border-bottom:1px dashed rgba(0,0,0,.08)}
+  .aside-card li:last-child{border-bottom:none}
+  .aside-cta{display:block;text-align:center;background:var(--m-accent);color:#fff;
+    text-decoration:none;padding:12px;border-radius:5px;font-weight:700;font-size:13px}
+  .aside-free{background:color-mix(in srgb,var(--m-accent) 16%,#fff);
+    border:1px solid color-mix(in srgb,var(--m-accent) 40%,#fff)}
+  .m-main-col .sec{padding:52px 44px;border-bottom:1px solid rgba(0,0,0,.05)}
+  /* --- section heads (stack-centered = 中央寄せ) --- */
+  .m-sec-head{margin-bottom:28px;text-align:center}
+  .m-sec-head .en{display:block;font-size:12px;letter-spacing:.24em;color:var(--m-accent);
+    font-weight:700;margin-bottom:6px}
+  .m-sec-head h2{font-size:23px;color:var(--m-main);font-weight:800}
+  /* --- atari (4/3) --- */
+  .atari{position:relative;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:6px;aspect-ratio:4/3;text-align:center;padding:12px;
+    background:linear-gradient(135deg,color-mix(in srgb,var(--m-main) 20%,var(--m-bg)),
+      color-mix(in srgb,var(--m-accent) 30%,var(--m-bg)));
+    border:1px dashed color-mix(in srgb,var(--m-main) 40%,#fff);
+    color:color-mix(in srgb,var(--m-main) 72%,#000)}
+  .atari .ic{font-size:26px;opacity:.7}
+  .atari .desc{font-size:12px;font-weight:700}
+  .atari .kw{font-size:11px;opacity:.8}
+  /* --- NEWS: news-timeline --- */
+  .m-news.news-timeline{display:flex;flex-direction:column}
+  .nt-row{display:grid;grid-template-columns:110px 1fr;gap:16px;padding:0 0 22px 0;position:relative}
+  .nt-date{font-size:12.5px;color:var(--m-accent);font-weight:700;text-align:right;padding-top:2px}
+  .nt-body{border-left:2px solid color-mix(in srgb,var(--m-main) 30%,#fff);
+    padding:0 0 6px 20px;position:relative}
+  .nt-body::before{content:"";position:absolute;left:-7px;top:4px;width:12px;height:12px;
+    border-radius:50%;background:var(--m-main)}
+  .nt-cat{display:inline-block;background:color-mix(in srgb,var(--m-main) 12%,#fff);
+    color:var(--m-main);font-size:11px;font-weight:700;padding:2px 9px;border-radius:11px;margin-bottom:5px}
+  .nt-ttl{font-size:14px;font-weight:600}
+  /* --- ABOUT: img-overlap --- */
+  .m-about.img-overlap{display:grid;grid-template-columns:1fr 1fr;align-items:center;position:relative}
+  .m-about.img-overlap .ab-img{position:relative;min-height:340px;grid-column:1;grid-row:1;z-index:1}
+  .m-about.img-overlap .ab-img .atari{aspect-ratio:auto;height:100%;min-height:340px}
+  .m-about.img-overlap .ab-text{grid-column:2;grid-row:1;z-index:5;background:#fff;
+    padding:30px 30px;box-shadow:0 12px 40px rgba(0,0,0,.12);transform:translateX(-42px)}
+  .ab-text h3{font-size:18px;color:var(--m-main);margin-bottom:12px}
+  .ab-text p{font-size:14px;margin-bottom:12px}
+  /* --- VOICE: voice-two-col --- */
+  .m-voice.voice-two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .v-item{background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:8px;padding:22px 22px;
+    border-top:3px solid var(--m-accent)}
+  .m-voice.voice-two-col .v-item:nth-child(even){order:0}
+  .v-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .v-avatar{width:44px;height:44px;border-radius:50%;flex:0 0 44px;display:flex;
+    align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:15px;
+    background:var(--m-main)}
+  .v-who{font-size:12px;color:var(--m-accent);font-weight:700}
+  .v-quote{font-size:13.5px;line-height:1.8}
+  .v-quote::before{content:"“";color:var(--m-accent);font-size:22px;font-weight:700;margin-right:2px}
+  /* --- FAQ: faq-cards --- */
+  .m-faq.faq-cards{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .faq-card{background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:8px;padding:22px 20px}
+  .faq-card .fic{font-size:24px;margin-bottom:8px;display:block}
+  .faq-card .fq{font-size:14px;font-weight:700;color:var(--m-main);margin-bottom:8px}
+  .faq-card .fa{font-size:13px;color:var(--m-text)}
+  /* --- CONTACT: contact-methods --- */
+  .m-contact.contact-methods{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .contact-card{background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:8px;
+    padding:26px 20px;text-align:center}
+  .contact-card .cic{font-size:28px;display:block;margin-bottom:10px}
+  .contact-card h4{font-size:15px;color:var(--m-main);margin-bottom:6px}
+  .contact-card p{font-size:12.5px;margin-bottom:14px}
+  .contact-card .cbtn{display:inline-block;background:var(--m-accent);color:#fff;
+    text-decoration:none;padding:9px 20px;border-radius:4px;font-weight:700;font-size:13px}
+  /* --- footer --- */
+  .m-foot{background:var(--m-nav);color:#fff;padding:44px 40px 30px;text-align:center}
+  .m-foot .f-name{font-size:17px;font-weight:700;letter-spacing:.06em;margin-bottom:10px}
+  .m-foot .f-info{font-size:12.5px;opacity:.82;line-height:1.9}
+  .m-foot nav{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin:16px 0;font-size:12.5px}
+  .m-foot nav a{color:#fff;text-decoration:none;opacity:.85}
+  .m-foot .copy{font-size:11px;opacity:.6;margin-top:16px}
+  /* --- print --- */
+  @media print{
+    .addr,.atari-tag,.anim-note{display:none!important}
+    body{background:#fff}
+    .mock{box-shadow:none;border-radius:0;max-width:none;margin:0}
+    .reveal{opacity:1!important;transform:none!important}
   }
-
-  /* ===== 印刷（PDF化）: 補助表示を隠す・§6 ===== */
-  @media print {
-    .addr, .atari-tag, .anim-note { display: none !important; }
-    body { background: #fff; }
-    .mock { box-shadow: none; border-radius: 0; }
-    .reveal { opacity: 1 !important; transform: none !important; }
+  /* --- responsive --- */
+  @media (max-width:640px){
+    .m-nav{flex-wrap:wrap;padding:14px 18px}
+    .m-nav nav{gap:12px}
+    .m-hero[data-hero=overlap]{grid-template-columns:1fr;min-height:auto;padding:24px}
+    .hero-atari{grid-column:1;grid-row:2;min-height:220px}
+    .hero-copy{grid-column:1;grid-row:1;transform:none;max-width:none;width:auto;margin-bottom:-24px;position:relative;z-index:5}
+    .m-layout{grid-template-columns:1fr}
+    .m-aside{order:2;border-right:none}
+    .m-main-col .sec{padding:34px 18px}
+    .m-about.img-overlap{grid-template-columns:1fr}
+    .m-about.img-overlap .ab-img,.m-about.img-overlap .ab-text{grid-column:1}
+    .m-about.img-overlap .ab-img{grid-row:1}.m-about.img-overlap .ab-text{grid-row:2;transform:none}
+    .m-voice.voice-two-col,.m-faq.faq-cards,.m-contact.contact-methods{grid-template-columns:1fr}
+    .nt-row{grid-template-columns:80px 1fr;gap:10px}
   }
 </style>
-</head>
-<body>
 
-<div class="mock" data-columns="2col-body-left" data-archetype="stack-centered" data-section-order="NEWS,ABOUT,VOICE,FAQ,CONTACT" data-nav-position="top">
+<div class="mock" data-columns="2col-body-left" data-archetype="stack-centered"
+     data-section-order="NEWS,ABOUT,VOICE,FAQ,CONTACT" data-nav-position="top"
+     style="--m-main:#2a3c6b;--m-nav:#1d2a4d;--m-accent:#b08d4f;--m-bg:#f6f7fa;--m-text:#333;">
 
-  <div class="sec reveal">
+  <!-- NAV-01 -->
+  <div class="sec">
     <div class="addr"><span class="pin">NAV-01</span></div>
     <div class="m-nav">
       <span class="logo">サンプル法律事務所</span>
-      <ul><li>取扱分野</li><li>お客様の声</li><li>よくある質問</li><li>お知らせ</li><li>お問い合わせ</li></ul>
-      <span class="cta">初回相談を予約</span>
+      <nav>
+        <a href="#about">事務所案内</a>
+        <a href="#voice">お客様の声</a>
+        <a href="#faq">よくある質問</a>
+        <a href="#news">お知らせ</a>
+        <a href="#contact">お問い合わせ</a>
+      </nav>
+      <a class="nav-cta" href="#contact">無料相談のご予約</a>
     </div>
   </div>
 
-  <div class="sec reveal">
+  <!-- MV-01 -->
+  <div class="sec">
     <div class="addr"><span class="pin">MV-01</span></div>
     <div class="m-hero" data-hero="overlap">
-      <div class="hbg"></div>
-      <div class="htxt">
-        <h1 class="catch">その悩みを、<br>法律の力で解きほぐす。</h1>
-        <p class="lead">企業法務から相続・労働問題まで。依頼者の立場に立ち、解決までの道すじを一緒に描きます。初回相談は無料です。</p>
-        <span class="hero-cta">初回相談を予約する ＞</span>
+      <div class="hero-atari">
+        <span class="atari-tag">アタリ: 執務室／法廷のイメージ ・検索: <b>law office interior</b></span>
       </div>
-      <span class="atari-tag">📷 アタリ: 事務所の応接・弁護士の相談風景 / 検索: law office consultation</span>
+      <div class="hero-copy reveal">
+        <span class="hero-en">SAMPLE LAW OFFICE</span>
+        <h1 class="catch">その不安に、<br>誠実に向き合います。</h1>
+        <p class="lead">相続・遺言から企業法務まで。<br>地域に根ざした法律事務所として、<br>あなたの一歩を支えます。</p>
+        <a class="hero-cta" href="#contact">初回相談は無料です ＞</a>
+      </div>
     </div>
   </div>
 
-  <!-- 本文のみ2カラム（サブ左）: 左サイドバー + 右本文 -->
-  <div class="m-layout">
-
-    <!-- サイドバー（左・補助情報・番地なし） -->
-    <div class="m-aside">
-      <div class="aside-box">
-        <div class="ah">初回相談は無料です</div>
-        <div class="ab">お電話・フォームからお気軽にご予約ください。<br>受付 平日 9:00〜18:00</div>
-        <span class="ask-btn">相談を予約する ＞</span>
+  <!-- BODY (2col-body-left) -->
+  <div class="m-layout" id="after-hero">
+    <aside class="m-aside">
+      <div class="aside-card">
+        <h4>事務所情報</h4>
+        <p>受付時間：平日 9:00–18:00<br>土曜：事前予約で対応<br><span class="todo">(要検討: 実際の受付時間・定休日)</span></p>
       </div>
-      <div class="aside-box">
-        <div class="ah">取扱分野</div>
+      <div class="aside-card">
+        <h4>取扱分野</h4>
         <ul>
-          <li>企業法務・顧問契約</li>
           <li>相続・遺言</li>
-          <li>労働問題</li>
           <li>離婚・男女問題</li>
-          <li>債権回収・交通事故</li>
+          <li>交通事故</li>
+          <li>債務整理</li>
+          <li>企業法務・顧問契約</li>
         </ul>
       </div>
-      <div class="aside-box">
-        <div class="ah">アクセス</div>
-        <div class="map-atari">🗺️ 事務所周辺の地図（アタリ）</div>
-        <div class="ab"><span class="todo">(要検討: 住所・最寄駅・徒歩分数・電話番号)</span></div>
+      <div class="aside-card aside-free">
+        <h4>初回相談は無料です</h4>
+        <p style="margin-bottom:14px">お一人で抱え込まず、まずはお気軽にご相談ください。</p>
+        <a class="aside-cta" href="#contact">無料相談を予約する</a>
       </div>
-    </div>
+      <div class="aside-card">
+        <h4>お電話でのご相談</h4>
+        <p><span class="todo">(要検討: 電話番号)</span><br>受付：平日 9:00–18:00</p>
+      </div>
+    </aside>
 
-    <!-- 本文列（右） -->
-    <div class="m-main-col">
+    <main class="m-main-col">
 
-      <div class="sec m-block reveal">
+      <!-- NEWS-01 : news-timeline -->
+      <div class="sec" id="news">
         <div class="addr"><span class="pin">NEWS-01</span></div>
-        <h2>お知らせ</h2><div class="en">NEWS</div>
-        <div class="m-news news-timeline">
-          <div class="trow"><span class="date">2026.08.20</span><div class="tbody"><h3>夏季休業のお知らせ</h3><p>8/13〜8/16は休業とさせていただきます。期間中のお問い合わせはフォームで承ります。</p></div></div>
-          <div class="trow"><span class="date">2026.07.10</span><div class="tbody"><h3>相続・遺言の無料相談会を開催</h3><p>ご予約制で個別相談を承ります。定員に達し次第締め切ります。<span class="todo">(要検討: 開催日・会場)</span></p></div></div>
-          <div class="trow"><span class="date">2026.06.01</span><div class="tbody"><h3>顧問契約プランを新設しました</h3><p>中小企業向けに、月額での継続サポートをご用意しました。</p></div></div>
-        </div>
-      </div>
-
-      <div class="sec m-block reveal">
-        <div class="addr"><span class="pin">ABOUT-01</span></div>
-        <h2>CONCEPT</h2><div class="en">事務所の考え方</div>
-        <div class="m-about img-overlap">
-          <div class="atari"><span class="ic">📷</span><span class="desc">弁護士のポートレート・執務風景</span><span class="kw">検索: <b>lawyer portrait office</b></span></div>
-          <div class="txt">
-            <h3>依頼者の立場に立つ、ということ。</h3>
-            <p>法律用語を並べるのではなく、「いま何ができるか」を分かる言葉でお伝えします。見通しと費用を最初に共有し、納得して進められる進め方を大切にしています。<span class="todo">(要検討: 開業年・所属弁護士数・取扱実績の数字)</span></p>
+        <div class="reveal">
+          <div class="m-sec-head"><span class="en">NEWS</span><h2>お知らせ</h2></div>
+          <div class="m-news news-timeline">
+            <div class="nt-row"><div class="nt-date">2026.08.20</div>
+              <div class="nt-body"><span class="nt-cat">お知らせ</span><div class="nt-ttl">夏季休業のお知らせ <span class="todo">(要検討: 休業期間)</span></div></div></div>
+            <div class="nt-row"><div class="nt-date">2026.07.15</div>
+              <div class="nt-body"><span class="nt-cat">セミナー</span><div class="nt-ttl">相続対策セミナーを開催しました</div></div></div>
+            <div class="nt-row"><div class="nt-date">2026.06.30</div>
+              <div class="nt-body"><span class="nt-cat">メディア</span><div class="nt-ttl">地域情報誌に当事務所が紹介されました</div></div></div>
+            <div class="nt-row"><div class="nt-date">2026.06.01</div>
+              <div class="nt-body"><span class="nt-cat">お知らせ</span><div class="nt-ttl">新しい相談室を開設しました</div></div></div>
           </div>
         </div>
       </div>
 
-      <div class="sec m-block reveal">
+      <!-- ABOUT-01 : img-overlap -->
+      <div class="sec" id="about">
+        <div class="addr"><span class="pin">ABOUT-01</span></div>
+        <div class="reveal">
+          <div class="m-sec-head"><span class="en">CONCEPT</span><h2>依頼者に寄り添う法律サービス</h2></div>
+          <div class="m-about img-overlap">
+            <div class="ab-img">
+              <div class="atari"><span class="ic">📷</span><span class="desc">相談室でのカウンセリング風景</span><span class="kw">検索: <b>lawyer client consultation</b></span></div>
+            </div>
+            <div class="ab-text">
+              <h3>わかりやすく、誠実に。</h3>
+              <p>私たちは、専門的な法律の内容をできる限りわかりやすくお伝えし、依頼者お一人おひとりの状況に合わせた最善の解決策をご提案します。</p>
+              <p>初めての方でも安心してご相談いただけるよう、丁寧な対話を大切にしています。<span class="todo">(要検討: 開業年数・所属弁護士数などの実績)</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VOICE-01 : voice-two-col -->
+      <div class="sec" id="voice">
         <div class="addr"><span class="pin">VOICE-01</span></div>
-        <h2>VOICE</h2><div class="en">ご相談者の声</div>
-        <div class="m-voice voice-two-col">
-          <div class="v-item"><div class="atari va"><span class="ic">📷</span><span class="desc">相談者の写真</span></div><div class="vt"><p class="quote">先の見通しを丁寧に説明してもらえて、不安が軽くなりました。</p><div class="who">40代・会社経営</div></div></div>
-          <div class="v-item"><div class="atari va"><span class="ic">📷</span><span class="desc">相談者の写真</span></div><div class="vt"><p class="quote">相続の手続きを一つずつ整理してくれて、家族間の話し合いも前に進みました。</p><div class="who">60代・無職</div></div></div>
-          <div class="v-item"><div class="atari va"><span class="ic">📷</span><span class="desc">相談者の写真</span></div><div class="vt"><p class="quote">費用を最初に提示してくれたので、安心して依頼できました。</p><div class="who">30代・会社員</div></div></div>
-          <div class="v-item"><div class="atari va"><span class="ic">📷</span><span class="desc">相談者の写真</span></div><div class="vt"><p class="quote">労働問題で悩んでいましたが、味方になってくれる存在に心強さを感じました。</p><div class="who">20代・会社員</div></div></div>
+        <div class="reveal">
+          <div class="m-sec-head"><span class="en">VOICE</span><h2>お客様の声</h2></div>
+          <div class="m-voice voice-two-col">
+            <div class="v-item"><div class="v-head"><span class="v-avatar">相</span><span class="v-who">相続のご相談・60代 女性</span></div>
+              <p class="v-quote">複雑な相続の手続きを親身に進めていただき、安心してお任せできました。</p></div>
+            <div class="v-item"><div class="v-head"><span class="v-avatar">離</span><span class="v-who">離婚のご相談・40代 男性</span></div>
+              <p class="v-quote">初めての法律相談で不安でしたが、一つひとつ丁寧に説明してくださいました。</p></div>
+            <div class="v-item"><div class="v-head"><span class="v-avatar">企</span><span class="v-who">企業法務・50代 会社経営</span></div>
+              <p class="v-quote">契約トラブルを迅速に解決していただき、事業への影響を最小限に抑えられました。</p></div>
+            <div class="v-item"><div class="v-head"><span class="v-avatar">交</span><span class="v-who">交通事故・30代 女性</span></div>
+              <p class="v-quote">保険会社とのやり取りをすべて任せられ、治療に専念することができました。</p></div>
+          </div>
         </div>
       </div>
 
-      <div class="sec m-block reveal">
+      <!-- FAQ-01 : faq-cards -->
+      <div class="sec" id="faq">
         <div class="addr"><span class="pin">FAQ-01</span></div>
-        <h2>よくある質問</h2><div class="en">FAQ</div>
-        <div class="m-faq faq-cards">
-          <div class="faq-card"><div class="ic">💬</div><h3>相談だけでも大丈夫？</h3><p>もちろんです。依頼を前提とせず、まずはお話をお聞かせください。初回相談は無料です。</p></div>
-          <div class="faq-card"><div class="ic">💴</div><h3>費用はどのくらい？</h3><p>着手金・報酬の目安を事前にご説明します。分割のご相談も承ります。<span class="todo">(要検討: 料金表)</span></p></div>
-          <div class="faq-card"><div class="ic">🔒</div><h3>秘密は守られる？</h3><p>弁護士には守秘義務があります。ご相談内容が外部に漏れることはありません。</p></div>
+        <div class="reveal">
+          <div class="m-sec-head"><span class="en">FAQ</span><h2>よくあるご質問</h2></div>
+          <div class="m-faq faq-cards">
+            <div class="faq-card"><span class="fic">💬</span><div class="fq">相談は無料ですか？</div><div class="fa">初回のご相談は無料です。2回目以降の費用は内容に応じてご案内します。</div></div>
+            <div class="faq-card"><span class="fic">📅</span><div class="fq">予約は必要ですか？</div><div class="fa">事前予約制です。お電話またはお問い合わせフォームからご予約ください。</div></div>
+            <div class="faq-card"><span class="fic">🗓</span><div class="fq">土日も相談できますか？</div><div class="fa">土曜は事前予約で対応しています。<span class="todo">(要検討: 日曜・祝日の対応)</span></div></div>
+            <div class="faq-card"><span class="fic">📄</span><div class="fq">相談時に必要なものは？</div><div class="fa">関係する書類がございましたらお持ちください。無い場合もまずはご相談ください。</div></div>
+          </div>
         </div>
       </div>
 
-      <div class="sec m-block reveal">
+      <!-- CONTACT-01 : contact-methods -->
+      <div class="sec" id="contact">
         <div class="addr"><span class="pin">CONTACT-01</span></div>
-        <h2>お問い合わせ方法</h2><div class="en">CONTACT</div>
-        <div class="m-contact contact-methods">
-          <div class="contact-card"><div class="ic">📞</div><h3>お電話</h3><p>平日 9:00〜18:00<br><span class="todo">(要検討: 電話番号)</span></p><span class="cm-btn">電話をかける</span></div>
-          <div class="contact-card"><div class="ic">✉️</div><h3>メールフォーム</h3><p>24時間受付<br>翌営業日までにご返信</p><span class="cm-btn">フォームで相談</span></div>
-          <div class="contact-card"><div class="ic">📅</div><h3>来所予約</h3><p>ご都合の良い日時で<br>個別にご相談</p><span class="cm-btn">来所を予約</span></div>
+        <div class="reveal">
+          <div class="m-sec-head"><span class="en">CONTACT</span><h2>お問い合わせ</h2></div>
+          <div class="m-contact contact-methods">
+            <div class="contact-card"><span class="cic">📞</span><h4>お電話でのご相談</h4><p>受付：平日 9:00–18:00<br><span class="todo">(要検討: 電話番号)</span></p><a class="cbtn" href="#">電話をかける</a></div>
+            <div class="contact-card"><span class="cic">✉️</span><h4>メールでのお問い合わせ</h4><p>24時間受付・翌営業日までにご返信します。</p><a class="cbtn" href="#">フォームへ進む</a></div>
+            <div class="contact-card"><span class="cic">🏢</span><h4>来所でのご相談</h4><p>事前予約制です。<span class="todo">(要検討: 所在地)</span></p><a class="cbtn" href="#">予約する</a></div>
+            <div class="contact-card"><span class="cic">💬</span><h4>LINEでのご相談</h4><p>友だち登録でお気軽にご質問いただけます。</p><a class="cbtn" href="#">友だち追加</a></div>
+          </div>
         </div>
       </div>
 
-    </div>
+    </main>
   </div>
 
-  <div class="sec reveal">
+  <!-- FOOTER-01 -->
+  <div class="sec">
     <div class="addr"><span class="pin">FOOTER-01</span></div>
     <div class="m-foot">
-      <div class="fnav">取扱分野 ・ お客様の声 ・ よくある質問 ・ お知らせ ・ お問い合わせ<br>© サンプル法律事務所</div>
+      <div class="f-name">サンプル法律事務所</div>
+      <div class="f-info"><span class="todo">(要検討: 住所)</span>　／　TEL <span class="todo">(要検討: 電話番号)</span><br>受付時間：平日 9:00–18:00（土曜は事前予約）</div>
+      <nav>
+        <a href="#about">事務所案内</a><a href="#voice">お客様の声</a><a href="#faq">よくある質問</a><a href="#news">お知らせ</a><a href="#contact">お問い合わせ</a>
+      </nav>
+      <div class="copy">© 2026 サンプル法律事務所（デザインラフ・実在の事務所ではありません）</div>
     </div>
   </div>
 
@@ -263,10 +326,9 @@
   (function () {
     var els = document.querySelectorAll('.reveal');
     if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
-    var io = new IntersectionObserver(function (ens) { ens.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } }); }, { threshold: .12 });
+    var io = new IntersectionObserver(function (ens) {
+      ens.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } });
+    }, { threshold: .12 });
     els.forEach(function (e) { io.observe(e); });
   })();
 </script>
-
-</body>
-</html>

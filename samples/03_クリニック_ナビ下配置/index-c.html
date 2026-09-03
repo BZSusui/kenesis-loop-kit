@@ -6,111 +6,126 @@
 <title>サンプル歯科クリニック｜デザインラフ 案C</title>
 <style>
   :root{
-    --m-main:#37b3b0; --m-nav:#1f7d80; --m-accent:#ff9e6d; --m-bg:#f2fdfd; --m-text:#333;
+    --m-main:#2fb4c4; --m-nav:#1f8a97; --m-accent:#ff8a5b; --m-bg:#f0fdff; --m-text:#33484c;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   html{scroll-behavior:smooth;}
-  body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;color:var(--m-text);background:var(--m-bg);line-height:1.8;-webkit-font-smoothing:antialiased;}
+  body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;color:var(--m-text);background:var(--m-bg);line-height:1.85;-webkit-font-smoothing:antialiased;}
+  img{max-width:100%;display:block;}
   a{color:inherit;text-decoration:none;}
   .mock{max-width:1080px;margin:0 auto;background:#fff;box-shadow:0 0 60px rgba(0,0,0,.06);}
 
+  /* 番地ラベル */
   .sec{position:relative;}
   .addr{position:absolute;top:8px;left:8px;z-index:30;}
   .pin{display:inline-block;background:var(--m-nav);color:#fff;font-size:11px;font-weight:700;letter-spacing:.05em;padding:3px 8px;border-radius:6px;opacity:.9;}
 
+  /* アタリ（写真プレースホルダ・既定 4/3・KLK-072） */
   .atari{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
-    background:linear-gradient(135deg, color-mix(in srgb, var(--m-main) 20%, #fff), color-mix(in srgb, var(--m-accent) 28%, #fff));
-    border:1.5px dashed color-mix(in srgb, var(--m-main) 40%, #fff);border-radius:14px;min-height:180px;color:color-mix(in srgb, var(--m-nav) 80%, #000);text-align:center;padding:16px;}
+    background:linear-gradient(135deg, color-mix(in srgb, var(--m-main) 22%, #fff), color-mix(in srgb, var(--m-accent) 26%, #fff));
+    border:1.5px dashed color-mix(in srgb, var(--m-main) 45%, #fff);border-radius:14px;aspect-ratio:4/3;min-height:140px;color:color-mix(in srgb, var(--m-nav) 80%, #000);text-align:center;padding:16px;}
   .atari .ic{font-size:30px;opacity:.7;}
   .atari .desc{font-size:13px;font-weight:600;}
   .atari .kw{font-size:11px;opacity:.7;}
+  .atari .kw b{font-weight:700;}
   .atari-tag{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;padding:4px 8px;border-radius:6px;}
 
-  /* セクション共通（banded-showcase＝帯構成・下線アクセント） */
-  .m-sec{padding:60px 40px;}
-  .m-sec .en{display:block;text-align:center;font-size:12px;letter-spacing:.28em;color:var(--m-accent);font-weight:800;margin-bottom:6px;}
-  .m-sec h2{text-align:center;font-size:26px;color:var(--m-nav);margin-bottom:8px;letter-spacing:.03em;}
-  .m-sec h2::after{content:"";display:block;width:56px;height:4px;background:var(--m-accent);border-radius:3px;margin:12px auto 0;}
-  .m-sec .sec-desc{text-align:center;max-width:640px;margin:14px auto 34px;color:#555;font-size:14.5px;}
-  /* 帯：交互に淡色背景 */
-  .sec.band .m-sec{background:color-mix(in srgb, var(--m-main) 8%, #fff);}
+  /* セクション共通（banded-showcase＝中央・下線見出し・交互帯） */
+  .m-sec{padding:64px 40px;}
+  .m-sec .en{display:block;text-align:center;font-size:12px;letter-spacing:.28em;color:var(--m-accent);font-weight:700;margin-bottom:6px;}
+  .m-sec h2{text-align:center;font-size:27px;color:var(--m-nav);margin-bottom:8px;letter-spacing:.04em;}
+  .m-sec h2::after{content:"";display:block;width:56px;height:4px;border-radius:3px;background:var(--m-accent);margin:12px auto 0;}
+  .m-sec .sec-desc{text-align:center;max-width:660px;margin:20px auto 34px;color:#556;font-size:14.5px;}
+  .m-sec.band{background:color-mix(in srgb, var(--m-main) 8%, #fff);}
 
-  /* NAV（below-hero・バー型） */
-  .m-nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;background:#fff;color:var(--m-nav);padding:12px 26px;box-shadow:0 2px 14px rgba(0,0,0,.06);}
-  .m-nav .brand{font-weight:800;letter-spacing:.04em;font-size:16px;color:var(--m-main);}
-  .m-nav ul{list-style:none;display:flex;gap:20px;font-size:13.5px;font-weight:600;}
-  .m-nav ul a:hover{color:var(--m-accent);}
-  .m-nav .nav-cta{background:var(--m-accent);color:#fff;padding:9px 18px;border-radius:24px;font-size:13px;font-weight:700;}
-  .m-nav .burger{display:none;font-size:22px;}
-
-  /* HERO panel-band（integ: flex-end / center / center） */
-  .m-hero[data-hero=panel-band]{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;text-align:center;min-height:500px;position:relative;overflow:hidden;padding:60px 30px 0;}
-  .m-hero[data-hero=panel-band] .hero-bg{position:absolute;inset:0;background:linear-gradient(160deg, color-mix(in srgb, var(--m-main) 45%, #fff), color-mix(in srgb, var(--m-accent) 40%, #fff));z-index:0;}
-  .m-hero[data-hero=panel-band] .hero-top{position:relative;z-index:2;margin-bottom:30px;}
-  .m-hero[data-hero=panel-band] .catch{font-size:34px;line-height:1.5;color:var(--m-nav);letter-spacing:.04em;margin-bottom:14px;text-shadow:0 2px 12px rgba(255,255,255,.5);}
-  .m-hero[data-hero=panel-band] .lead{font-size:15px;color:#3a5a5a;max-width:540px;margin:0 auto;}
-  .m-hero[data-hero=panel-band] .cta{display:inline-block;margin-top:18px;background:var(--m-accent);color:#fff;padding:12px 32px;border-radius:28px;font-weight:700;font-size:14px;}
-  .m-hero[data-hero=panel-band] .film{position:relative;z-index:2;display:grid;grid-template-columns:repeat(6,1fr);gap:4px;width:100%;max-width:900px;}
-  .m-hero[data-hero=panel-band] .film .fp{aspect-ratio:3/2;max-height:130px;border-radius:0;background:linear-gradient(135deg, color-mix(in srgb, var(--m-main) 30%, #fff), color-mix(in srgb, var(--m-accent) 30%, #fff));border:1px solid rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;font-size:18px;opacity:.9;}
-
-  /* STAFF staff-zigzag */
-  .m-staff[data-staff=staff-zigzag]{display:flex;flex-direction:column;gap:20px;max-width:820px;margin:0 auto;}
-  .m-staff[data-staff=staff-zigzag] .st{display:grid;grid-template-columns:200px 1fr;gap:24px;align-items:center;background:#fff;border-radius:16px;box-shadow:0 6px 22px rgba(0,0,0,.06);padding:18px;}
-  .m-staff[data-staff=staff-zigzag] .st:nth-child(even) .st-media{order:2;}
-  .m-staff[data-staff=staff-zigzag] .st .atari{aspect-ratio:1;min-height:0;border-radius:14px;}
-  .m-staff[data-staff=staff-zigzag] .st .role{font-size:12px;color:var(--m-accent);font-weight:800;}
-  .m-staff[data-staff=staff-zigzag] .st .nm{font-size:17px;font-weight:800;color:var(--m-nav);margin:3px 0 6px;}
-  .m-staff[data-staff=staff-zigzag] .st .cm{font-size:13px;color:#666;}
-
-  /* ABOUT img-zigzag */
-  .m-about[data-about=img-zigzag]{display:flex;flex-direction:column;gap:26px;max-width:900px;margin:0 auto;}
-  .m-about[data-about=img-zigzag] .row{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center;}
-  .m-about[data-about=img-zigzag] .row:nth-child(even) .r-media{order:2;}
-  .m-about[data-about=img-zigzag] .row .atari{min-height:240px;border-radius:16px;}
-  .m-about[data-about=img-zigzag] .row h3{font-size:19px;color:var(--m-nav);margin-bottom:10px;}
-  .m-about[data-about=img-zigzag] .row p{font-size:13.5px;color:#555;}
-
-  /* MENU feature-large */
-  .m-menu[data-menu=feature-large]{display:grid;grid-template-columns:1.2fr 1fr;gap:30px;align-items:center;max-width:940px;margin:0 auto;}
-  .m-menu[data-menu=feature-large] .fl-media .atari{min-height:320px;border-radius:16px;}
-  .m-menu[data-menu=feature-large] .fl-body .badge{display:inline-block;background:var(--m-accent);color:#fff;font-size:11px;font-weight:800;padding:4px 12px;border-radius:20px;margin-bottom:10px;}
-  .m-menu[data-menu=feature-large] .fl-body h3{font-size:22px;color:var(--m-nav);margin-bottom:6px;}
-  .m-menu[data-menu=feature-large] .fl-body .pr{font-size:16px;color:var(--m-accent);font-weight:800;margin-bottom:12px;}
-  .m-menu[data-menu=feature-large] .fl-body p{font-size:13.5px;color:#555;margin-bottom:14px;}
-  .m-menu[data-menu=feature-large] .fl-body ul{list-style:none;font-size:13px;color:#555;}
-  .m-menu[data-menu=feature-large] .fl-body li{padding:5px 0 5px 22px;position:relative;}
-  .m-menu[data-menu=feature-large] .fl-body li::before{content:"✓";position:absolute;left:0;color:var(--m-main);font-weight:800;}
+  /* もっと見るボタン（§4.3 共通 .sec-more） */
   .sec-more{text-align:center;margin-top:40px;}
   .sec-more-btn{display:inline-block;border:1.5px solid var(--m-main);color:var(--m-main);background:#fff;padding:11px 30px;border-radius:24px;font-size:13px;font-weight:700;}
 
-  /* FLOW flow-zigzag */
-  .m-flow[data-flow=flow-zigzag]{display:flex;flex-direction:column;gap:16px;max-width:820px;margin:0 auto;}
-  .m-flow[data-flow=flow-zigzag] .step{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center;background:#fff;border-radius:16px;box-shadow:0 5px 18px rgba(0,0,0,.05);padding:20px 24px;}
-  .m-flow[data-flow=flow-zigzag] .step:nth-child(even) .s-no{order:2;}
-  .m-flow[data-flow=flow-zigzag] .step .s-no{display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--m-main),var(--m-accent));border-radius:14px;min-height:100px;}
-  .m-flow[data-flow=flow-zigzag] .step .t{font-size:17px;font-weight:800;color:var(--m-nav);}
-  .m-flow[data-flow=flow-zigzag] .step .d{font-size:13px;color:#666;margin-top:5px;}
+  /* NAV（below-hero・バー型） */
+  .m-nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;background:var(--m-nav);color:#fff;padding:14px 28px;}
+  .m-nav .brand{font-weight:800;letter-spacing:.06em;font-size:16px;}
+  .m-nav ul{list-style:none;display:flex;gap:22px;font-size:13.5px;}
+  .m-nav ul a{opacity:.92;}
+  .m-nav ul a:hover{opacity:1;text-decoration:underline;}
+  .m-nav .nav-cta{background:var(--m-accent);color:#fff;padding:8px 18px;border-radius:22px;font-size:13px;font-weight:700;}
+  .m-nav .burger{display:none;font-size:22px;}
 
-  /* ACCESS map-steps */
-  .m-access[data-access=map-steps]{display:flex;flex-direction:column;gap:24px;max-width:900px;margin:0 auto;}
-  .map-atari{position:relative;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg, color-mix(in srgb, var(--m-main) 12%, #fff), color-mix(in srgb, var(--m-main) 12%, #fff) 14px, color-mix(in srgb, var(--m-main) 20%, #fff) 14px, color-mix(in srgb, var(--m-main) 20%, #fff) 28px);border:1.5px dashed color-mix(in srgb, var(--m-main) 40%, #fff);border-radius:16px;min-height:240px;color:var(--m-nav);font-size:13px;font-weight:700;}
+  /* HERO panel-band（整列＝flex-end / center / center・下にフィルム風パネル帯） */
+  .m-hero[data-hero=panel-band]{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;text-align:center;min-height:500px;padding:56px 30px 0;color:#fff;
+    background:linear-gradient(rgba(31,138,151,.42),rgba(31,138,151,.58)),
+      repeating-linear-gradient(120deg, color-mix(in srgb,var(--m-main) 82%,#000), color-mix(in srgb,var(--m-main) 82%,#000) 24px, color-mix(in srgb,var(--m-main) 64%,#000) 24px, color-mix(in srgb,var(--m-main) 64%,#000) 48px);}
+  .m-hero[data-hero=panel-band] .hero-copy{margin-top:auto;margin-bottom:30px;}
+  .m-hero[data-hero=panel-band] .film{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;width:100%;max-height:130px;}
+  .m-hero[data-hero=panel-band] .film .cell{aspect-ratio:3/2;border-radius:0;background:linear-gradient(135deg, color-mix(in srgb,var(--m-main) 40%,#fff), color-mix(in srgb,var(--m-accent) 30%,#fff));border:1px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:16px;opacity:.9;}
+  .m-hero .catch{font-size:36px;line-height:1.5;letter-spacing:.05em;margin-bottom:14px;text-shadow:0 2px 14px rgba(0,0,0,.32);}
+  .m-hero .lead{font-size:15px;opacity:.96;margin-bottom:22px;}
+  .hero-cta{display:inline-block;background:var(--m-accent);color:#fff;padding:12px 32px;border-radius:26px;font-weight:700;font-size:14px;}
+  .hero-tag{position:absolute;right:8px;top:8px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;padding:4px 8px;border-radius:6px;}
+
+  /* ABOUT img-zigzag */
+  .m-about[data-about=img-zigzag]{display:flex;flex-direction:column;gap:30px;max-width:940px;margin:0 auto;}
+  .m-about[data-about=img-zigzag] .row{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;}
+  .m-about[data-about=img-zigzag] .row:nth-child(even) .z-media{order:2;}
+  .m-about[data-about=img-zigzag] .row .atari{aspect-ratio:4/3;min-height:0;}
+  .m-about[data-about=img-zigzag] .row h3{font-size:19px;color:var(--m-nav);margin-bottom:10px;}
+  .m-about[data-about=img-zigzag] .row p{font-size:13.5px;color:#556;}
+
+  /* MENU feature-large */
+  .m-menu[data-menu=feature-large]{display:grid;grid-template-columns:1.2fr 1fr;gap:30px;align-items:center;max-width:960px;margin:0 auto;}
+  .m-menu[data-menu=feature-large] .fl-media .atari{aspect-ratio:4/3;min-height:0;border-radius:14px;}
+  .m-menu[data-menu=feature-large] .fl-body h3{font-size:22px;color:var(--m-nav);margin-bottom:6px;}
+  .m-menu[data-menu=feature-large] .fl-body .price{font-size:16px;color:var(--m-accent);font-weight:800;margin-bottom:10px;}
+  .m-menu[data-menu=feature-large] .fl-body p{font-size:13.5px;color:#556;margin-bottom:14px;}
+  .m-menu[data-menu=feature-large] .fl-body ul{list-style:none;display:flex;flex-direction:column;gap:8px;}
+  .m-menu[data-menu=feature-large] .fl-body li{font-size:13px;padding-left:22px;position:relative;}
+  .m-menu[data-menu=feature-large] .fl-body li::before{content:"✓";position:absolute;left:0;color:var(--m-main);font-weight:800;}
+
+  /* FLOW flow-zigzag（全幅縦積み・番号枠正方・偶数反転・KLK-073） */
+  .m-flow[data-flow=flow-zigzag]{display:flex;flex-direction:column;gap:16px;max-width:820px;margin:0 auto;}
+  .m-flow[data-flow=flow-zigzag] .step{display:grid;grid-template-columns:80px 1fr;gap:22px;align-items:center;background:#fff;border:1px solid #e4f4f6;border-radius:14px;padding:18px 24px;box-shadow:0 6px 20px rgba(0,0,0,.04);}
+  .m-flow[data-flow=flow-zigzag] .step:nth-child(even){grid-template-columns:1fr 80px;}
+  .m-flow[data-flow=flow-zigzag] .step:nth-child(even) .no{order:2;}
+  .m-flow[data-flow=flow-zigzag] .step:nth-child(even) .body{order:1;text-align:right;}
+  .m-flow[data-flow=flow-zigzag] .step .no{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:var(--m-main);color:#fff;font-size:28px;font-weight:800;border-radius:50%;}
+  .m-flow[data-flow=flow-zigzag] .step .t{font-size:16px;font-weight:700;color:var(--m-nav);}
+  .m-flow[data-flow=flow-zigzag] .step .d{font-size:13px;color:#666;}
+
+  /* STAFF staff-zigzag（全幅縦積み・画像左右交互） */
+  .m-staff[data-staff=staff-zigzag]{display:flex;flex-direction:column;gap:18px;max-width:860px;margin:0 auto;}
+  .m-staff[data-staff=staff-zigzag] .st{display:grid;grid-template-columns:200px 1fr;gap:26px;align-items:center;background:#fff;border:1px solid #e4f4f6;border-radius:14px;padding:18px 22px;box-shadow:0 6px 20px rgba(0,0,0,.04);}
+  .m-staff[data-staff=staff-zigzag] .st:nth-child(even){grid-template-columns:1fr 200px;}
+  .m-staff[data-staff=staff-zigzag] .st:nth-child(even) .atari{order:2;}
+  .m-staff[data-staff=staff-zigzag] .st:nth-child(even) .body{order:1;text-align:right;}
+  .m-staff[data-staff=staff-zigzag] .st .atari{aspect-ratio:1;min-height:0;border-radius:12px;}
+  .m-staff[data-staff=staff-zigzag] .st .role{font-size:12px;color:var(--m-accent);font-weight:700;}
+  .m-staff[data-staff=staff-zigzag] .st .nm{font-size:18px;font-weight:700;color:var(--m-nav);margin:2px 0 6px;}
+  .m-staff[data-staff=staff-zigzag] .st .cm{font-size:13px;color:#666;}
+
+  /* ACCESS map-steps（地図アタリ 4/3＋道順ステップ） */
+  .m-access[data-access=map-steps]{display:flex;flex-direction:column;gap:26px;max-width:920px;margin:0 auto;}
+  .map-atari{position:relative;display:flex;align-items:center;justify-content:center;background:repeating-linear-gradient(45deg, color-mix(in srgb, var(--m-main) 12%, #fff), color-mix(in srgb, var(--m-main) 12%, #fff) 14px, color-mix(in srgb, var(--m-main) 20%, #fff) 14px, color-mix(in srgb, var(--m-main) 20%, #fff) 28px);border:1.5px dashed color-mix(in srgb, var(--m-main) 45%, #fff);border-radius:14px;aspect-ratio:4/3;min-height:240px;color:var(--m-nav);font-size:13px;font-weight:700;}
   .map-atari::before{content:"🗺 地図（イラストマップ／Google Map 想定）";}
-  .m-access[data-access=map-steps] .route-steps{display:flex;gap:14px;}
-  .m-access[data-access=map-steps] .rstep{flex:1;background:#fff;border-radius:14px;box-shadow:0 5px 18px rgba(0,0,0,.05);padding:18px;text-align:center;}
-  .m-access[data-access=map-steps] .rstep .rn{display:inline-block;width:34px;height:34px;line-height:34px;border-radius:50%;background:var(--m-main);color:#fff;font-weight:800;margin-bottom:8px;}
-  .m-access[data-access=map-steps] .rstep .rt{font-size:14px;font-weight:700;color:var(--m-nav);margin-bottom:4px;}
-  .m-access[data-access=map-steps] .rstep .rd{font-size:12.5px;color:#666;}
+  .m-access[data-access=map-steps] .route-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .m-access[data-access=map-steps] .route-steps .rs{background:#fff;border:1px solid #e4f4f6;border-radius:12px;padding:18px 16px;text-align:center;}
+  .m-access[data-access=map-steps] .route-steps .rs .no{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;background:var(--m-main);color:#fff;font-weight:800;margin-bottom:8px;}
+  .m-access[data-access=map-steps] .route-steps .rs h4{font-size:14px;color:var(--m-nav);margin-bottom:4px;}
+  .m-access[data-access=map-steps] .route-steps .rs p{font-size:12px;color:#667;}
+  .m-access .addr-line{text-align:center;font-size:13px;color:#556;}
 
   /* CONTACT contact-steps */
-  .m-contact[data-contact=contact-steps]{display:flex;flex-direction:column;gap:22px;max-width:820px;margin:0 auto;}
-  .m-contact[data-contact=contact-steps] .cs-steps{display:flex;gap:14px;}
-  .m-contact[data-contact=contact-steps] .cs{flex:1;text-align:center;background:#fff;border-radius:14px;box-shadow:0 5px 18px rgba(0,0,0,.05);padding:18px;}
-  .m-contact[data-contact=contact-steps] .cs .csn{display:inline-block;width:34px;height:34px;line-height:34px;border-radius:50%;background:var(--m-accent);color:#fff;font-weight:800;margin-bottom:8px;}
-  .m-contact[data-contact=contact-steps] .cs .cst{font-size:14px;font-weight:700;color:var(--m-nav);margin-bottom:4px;}
-  .m-contact[data-contact=contact-steps] .cs .csd{font-size:12.5px;color:#666;}
-  .m-contact[data-contact=contact-steps] .cs-actions{text-align:center;}
-  .m-contact[data-contact=contact-steps] .cs-actions a{display:inline-block;margin:0 6px;background:var(--m-main);color:#fff;padding:12px 30px;border-radius:26px;font-weight:700;font-size:14px;}
-  .m-contact[data-contact=contact-steps] .cs-actions a.alt{background:#fff;color:var(--m-main);border:1.5px solid var(--m-main);}
+  .m-contact[data-contact=contact-steps]{max-width:820px;margin:0 auto;}
+  .m-contact[data-contact=contact-steps] .c-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:30px;}
+  .m-contact[data-contact=contact-steps] .c-steps .cs{background:#fff;border:1px solid #e4f4f6;border-radius:12px;padding:20px 16px;text-align:center;}
+  .m-contact[data-contact=contact-steps] .c-steps .cs .no{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:var(--m-accent);color:#fff;font-weight:800;margin-bottom:8px;}
+  .m-contact[data-contact=contact-steps] .c-steps .cs h4{font-size:14.5px;color:var(--m-nav);margin-bottom:4px;}
+  .m-contact[data-contact=contact-steps] .c-steps .cs p{font-size:12px;color:#667;}
+  .m-contact[data-contact=contact-steps] .c-form{background:#fff;border:1px solid #e4f4f6;border-radius:14px;padding:26px 28px;display:flex;flex-direction:column;gap:14px;}
+  .m-contact[data-contact=contact-steps] .c-field{display:flex;flex-direction:column;gap:5px;}
+  .m-contact[data-contact=contact-steps] .c-field label{font-size:12.5px;font-weight:700;color:var(--m-nav);}
+  .m-contact[data-contact=contact-steps] .c-field .box{background:#f4fbfc;border:1.5px dashed color-mix(in srgb,var(--m-main) 35%,#fff);border-radius:8px;height:40px;}
+  .m-contact[data-contact=contact-steps] .c-field .box.area{height:88px;}
+  .m-contact[data-contact=contact-steps] .c-submit{display:inline-block;align-self:center;background:var(--m-accent);color:#fff;padding:13px 44px;border-radius:26px;font-weight:700;font-size:14.5px;margin-top:6px;}
 
   /* FOOTER */
   .m-foot{background:var(--m-nav);color:#fff;padding:48px 40px 26px;}
@@ -121,34 +136,38 @@
   .m-foot .foot-nav{display:flex;justify-content:center;gap:22px;flex-wrap:wrap;font-size:13px;opacity:.9;border-top:1px solid rgba(255,255,255,.2);padding-top:22px;}
   .m-foot .copy{text-align:center;font-size:11px;opacity:.6;margin-top:20px;}
 
-  .todo{color:#c05a2e;background:#fff1e8;border-radius:5px;padding:0 5px;font-size:.92em;font-weight:600;}
+  .todo{color:#b4622f;background:#fff3ea;border-radius:4px;padding:0 5px;font-size:.92em;font-weight:600;}
 
+  /* 出現アニメ */
   .reveal{opacity:0;transform:translateY(16px);transition:opacity .6s ease, transform .6s ease;}
   .reveal.in{opacity:1;transform:none;}
   @media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none;transition:none;}}
 
+  /* レスポンシブ */
   @media (max-width:640px){
     .m-sec{padding:44px 20px;}
-    .m-nav{padding:10px 16px;}
+    .m-nav{padding:12px 16px;}
     .m-nav ul{display:none;}
     .m-nav .burger{display:block;}
-    .m-hero[data-hero=panel-band]{min-height:440px;}
-    .m-hero[data-hero=panel-band] .catch{font-size:25px;}
+    .m-hero .catch{font-size:26px;}
     .m-hero[data-hero=panel-band] .film{grid-template-columns:repeat(3,1fr);}
-    .m-staff[data-staff=staff-zigzag] .st{grid-template-columns:1fr;}
-    .m-staff[data-staff=staff-zigzag] .st:nth-child(even) .st-media{order:0;}
-    .m-about[data-about=img-zigzag] .row{grid-template-columns:1fr;}
-    .m-about[data-about=img-zigzag] .row:nth-child(even) .r-media{order:0;}
+    .m-about[data-about=img-zigzag] .row{grid-template-columns:1fr;gap:16px;}
+    .m-about[data-about=img-zigzag] .row:nth-child(even) .z-media{order:0;}
     .m-menu[data-menu=feature-large]{grid-template-columns:1fr;}
-    .m-flow[data-flow=flow-zigzag] .step{grid-template-columns:1fr;}
-    .m-flow[data-flow=flow-zigzag] .step:nth-child(even) .s-no{order:0;}
-    .m-access[data-access=map-steps] .route-steps{flex-direction:column;}
-    .m-contact[data-contact=contact-steps] .cs-steps{flex-direction:column;}
+    .m-flow[data-flow=flow-zigzag] .step,.m-flow[data-flow=flow-zigzag] .step:nth-child(even){grid-template-columns:60px 1fr;}
+    .m-flow[data-flow=flow-zigzag] .step:nth-child(even) .no{order:0;}
+    .m-flow[data-flow=flow-zigzag] .step:nth-child(even) .body{order:0;text-align:left;}
+    .m-staff[data-staff=staff-zigzag] .st,.m-staff[data-staff=staff-zigzag] .st:nth-child(even){grid-template-columns:1fr;}
+    .m-staff[data-staff=staff-zigzag] .st:nth-child(even) .atari{order:0;}
+    .m-staff[data-staff=staff-zigzag] .st:nth-child(even) .body{order:0;text-align:center;}
+    .m-access[data-access=map-steps] .route-steps{grid-template-columns:1fr;}
+    .m-contact[data-contact=contact-steps] .c-steps{grid-template-columns:1fr;}
     .m-foot .foot-nav{gap:12px;}
   }
 
+  /* 印刷 */
   @media print{
-    .addr,.atari-tag{display:none !important;}
+    .addr,.atari-tag,.hero-tag{display:none !important;}
     body{background:#fff;}
     .mock{box-shadow:none;}
     .reveal{opacity:1 !important;transform:none !important;}
@@ -158,33 +177,33 @@
 </head>
 <body>
 <div class="mock" data-columns="1col" data-archetype="banded-showcase" data-nav-position="below-hero"
-     data-section-order="STAFF,ABOUT,MENU,FLOW,ACCESS,CONTACT">
+     data-section-order="MENU,STAFF,ABOUT,FLOW,ACCESS,CONTACT">
 
   <!-- MV-01（HERO：panel-band） -->
   <section class="sec">
     <div class="addr"><span class="pin">MV-01</span></div>
     <div class="m-hero" data-hero="panel-band">
-      <div class="hero-bg"></div>
-      <div class="hero-top">
+      <div class="hero-copy">
         <h1 class="catch">あなたの笑顔を、<br>一生の健康と共に。</h1>
-        <p class="lead">痛みの少ない治療と、わかりやすい説明を大切に。地域のみなさまのお口の健康をやさしく支えます。</p>
-        <a class="cta" href="#contact">初めての方へ ＞</a>
+        <p class="lead">痛みの少ない治療と、わかりやすい説明を大切に。<br>地域のみなさまのお口の健康を、やさしく支えます。</p>
+        <a class="hero-cta" href="#contact">初めての方へ ＞</a>
       </div>
-      <div class="film" aria-hidden="true">
-        <span class="fp">🦷</span><span class="fp">😊</span><span class="fp">🪥</span><span class="fp">✨</span><span class="fp">👨‍⚕️</span><span class="fp">🏥</span>
+      <div class="film">
+        <div class="cell">🦷</div><div class="cell">😊</div><div class="cell">🪥</div><div class="cell">🏥</div><div class="cell">👩‍⚕️</div><div class="cell">✨</div>
       </div>
+      <span class="hero-tag">明るい診療室と笑顔の患者 ／ 検索: <b>dental clinic smile</b></span>
     </div>
   </section>
 
   <!-- NAV-01 -->
-  <nav class="sec">
+  <nav class="sec" id="nav">
     <div class="addr"><span class="pin">NAV-01</span></div>
     <div class="m-nav">
       <span class="brand">サンプル歯科クリニック</span>
       <ul>
+        <li><a href="#menu">診療案内</a></li>
         <li><a href="#staff">スタッフ</a></li>
         <li><a href="#about">医院紹介</a></li>
-        <li><a href="#menu">診療案内</a></li>
         <li><a href="#flow">診療の流れ</a></li>
         <li><a href="#access">アクセス</a></li>
       </ul>
@@ -193,72 +212,80 @@
     </div>
   </nav>
 
+  <!-- MENU-01（feature-large） -->
+  <section class="sec reveal" id="menu">
+    <div class="addr"><span class="pin">MENU-01</span></div>
+    <div class="m-sec">
+      <span class="en">MENU</span>
+      <h2>診療案内</h2>
+      <p class="sec-desc">まずは、力を入れている予防歯科からご紹介します。</p>
+      <div class="m-menu" data-menu="feature-large">
+        <div class="fl-media">
+          <div class="atari"><span class="ic">📷</span><span class="desc">予防歯科・クリーニングの様子</span><span class="kw">検索: <b>dental cleaning</b></span></div>
+        </div>
+        <div class="fl-body">
+          <h3>予防歯科・定期メンテナンス</h3>
+          <div class="price">¥3,300〜</div>
+          <p>削って詰めるだけでなく、「むし歯にならないお口」を一緒に育てます。定期的なクリーニングで、治療の負担も費用も抑えられます。</p>
+          <ul>
+            <li>専門スタッフによるPMTC</li>
+            <li>お一人おひとりに合わせたセルフケア指導</li>
+            <li>お子さまのフッ素塗布にも対応</li>
+          </ul>
+        </div>
+      </div>
+      <div class="sec-more"><a class="sec-more-btn" href="#">診療メニュー一覧を見る ＞</a></div>
+    </div>
+  </section>
+
   <!-- STAFF-01（staff-zigzag） -->
-  <section class="sec reveal" id="staff">
+  <section class="sec reveal band" id="staff">
     <div class="addr"><span class="pin">STAFF-01</span></div>
     <div class="m-sec">
       <span class="en">STAFF</span>
       <h2>スタッフ紹介</h2>
       <p class="sec-desc">経験豊富なスタッフが、チームでみなさまのお口の健康をサポートします。</p>
       <div class="m-staff" data-staff="staff-zigzag">
-        <div class="st"><div class="st-media"><div class="atari"><span class="ic">👤</span></div></div><div><span class="role">院長・歯科医師</span><div class="nm"><span class="todo">(要検討: 院長名)</span></div><span class="cm">患者さまとの対話を第一に、痛みの少ない治療を心がけています。地域のかかりつけ医として、末永くお口の健康を支えます。</span></div></div>
-        <div class="st"><div class="st-media"><div class="atari"><span class="ic">👤</span></div></div><div><span class="role">歯科医師</span><div class="nm"><span class="todo">(要検討: 氏名)</span></div><span class="cm">小児歯科・予防を担当。お子さまにやさしい診療で、歯医者を好きになってもらえるよう努めています。</span></div></div>
-        <div class="st"><div class="st-media"><div class="atari"><span class="ic">👤</span></div></div><div><span class="role">歯科衛生士</span><div class="nm"><span class="todo">(要検討: 氏名)</span></div><span class="cm">クリーニングとセルフケア指導で、健康なお口づくりをお手伝いします。</span></div></div>
+        <div class="st"><div class="atari"><span class="ic">👤</span></div><div class="body"><span class="role">院長・歯科医師</span><div class="nm"><span class="todo">(要検討: 院長名)</span></div><span class="cm">患者さまとの対話を第一に、痛みの少ない治療を心がけています。</span></div></div>
+        <div class="st"><div class="atari"><span class="ic">👤</span></div><div class="body"><span class="role">歯科医師</span><div class="nm"><span class="todo">(要検討: 氏名)</span></div><span class="cm">小児歯科・予防を担当。お子さまにやさしい診療を大切にしています。</span></div></div>
+        <div class="st"><div class="atari"><span class="ic">👤</span></div><div class="body"><span class="role">歯科衛生士</span><div class="nm"><span class="todo">(要検討: 氏名)</span></div><span class="cm">クリーニングとセルフケア指導で、健康なお口づくりをお手伝いします。</span></div></div>
       </div>
     </div>
   </section>
 
   <!-- ABOUT-01（img-zigzag） -->
-  <section class="sec band reveal" id="about">
+  <section class="sec reveal" id="about">
     <div class="addr"><span class="pin">ABOUT-01</span></div>
     <div class="m-sec">
       <span class="en">CONCEPT</span>
       <h2>安心して通える歯科医院を</h2>
-      <p class="sec-desc">「歯医者はこわい」をなくしたい。清潔な院内と丁寧なカウンセリングを大切にしています。</p>
+      <p class="sec-desc">「歯医者はこわい」をなくしたい。<br>清潔な院内と丁寧なカウンセリングで、通うのが楽しみになる歯科医療を目指します。</p>
       <div class="m-about" data-about="img-zigzag">
-        <div class="row"><div class="r-media"><div class="atari"><span class="ic">📷</span><span class="desc">明るい待合室</span></div></div><div><h3>リラックスできる院内空間</h3><p>木のぬくもりを感じる待合室と、プライバシーに配慮した診療室。緊張せずに過ごせる空間づくりを心がけています。</p></div></div>
-        <div class="row"><div class="r-media"><div class="atari"><span class="ic">📷</span><span class="desc">滅菌・衛生管理</span></div></div><div><h3>徹底した衛生管理</h3><p>器具の滅菌や使い捨ての徹底など、<span class="todo">(要検討: 滅菌体制・導入設備の具体名)</span>で院内感染の防止に努めています。</p></div></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- MENU-01（feature-large・.sec-more 常設） -->
-  <section class="sec reveal" id="menu">
-    <div class="addr"><span class="pin">MENU-01</span></div>
-    <div class="m-sec">
-      <span class="en">MENU</span>
-      <h2>診療案内</h2>
-      <p class="sec-desc">当院がとくに力を入れている「予防歯科」をご紹介します。</p>
-      <div class="m-menu" data-menu="feature-large">
-        <div class="fl-media"><div class="atari"><span class="ic">📷</span><span class="desc">クリーニングの様子</span><span class="kw">検索: <b>dental cleaning</b></span></div></div>
-        <div class="fl-body">
-          <span class="badge">おすすめ</span>
-          <h3>予防歯科（定期メンテナンス）</h3>
-          <div class="pr">¥3,300〜</div>
-          <p>むし歯や歯周病は「なってから治す」より「ならないように守る」ことが大切。定期的なプロのケアで、健康なお口を長く保ちます。</p>
-          <ul>
-            <li>歯石除去・PMTCによるクリーニング</li>
-            <li>むし歯・歯周病のチェック</li>
-            <li>ブラッシング指導・生活アドバイス</li>
-          </ul>
+        <div class="row">
+          <div class="z-media"><div class="atari"><span class="ic">📷</span><span class="desc">院内・受付の様子</span><span class="kw">検索: <b>dental clinic interior</b></span></div></div>
+          <div class="z-body"><h3>通いやすい、明るい院内</h3><p>バリアフリー設計で、お子さま連れやご年配の方も安心。<span class="todo">(要検討: キッズスペース・個室の有無)</span>を備えています。</p></div>
+        </div>
+        <div class="row">
+          <div class="z-media"><div class="atari"><span class="ic">📷</span><span class="desc">滅菌・衛生管理の様子</span><span class="kw">検索: <b>dental sterilization</b></span></div></div>
+          <div class="z-body"><h3>徹底した衛生管理</h3><p>器具は患者さまごとに滅菌し、清潔な環境を保っています。<span class="todo">(要検討: 導入設備・滅菌体制の具体名)</span>で、目に見えない安心をお届けします。</p></div>
         </div>
       </div>
-      <div class="sec-more"><a class="sec-more-btn" href="#">診療案内をすべて見る ＞</a></div>
     </div>
   </section>
 
   <!-- FLOW-01（flow-zigzag） -->
-  <section class="sec band reveal" id="flow">
+  <section class="sec reveal band" id="flow">
     <div class="addr"><span class="pin">FLOW-01</span></div>
     <div class="m-sec">
       <span class="en">FLOW</span>
       <h2>診療の流れ</h2>
-      <p class="sec-desc">初めての方も安心してご来院いただけるよう、丁寧なステップで進めます。</p>
+      <p class="sec-desc">初めての方も安心してご来院いただけるよう、<br>丁寧なステップで進めます。</p>
       <div class="m-flow" data-flow="flow-zigzag">
-        <div class="step"><div class="s-no">1</div><div><div class="t">ご予約</div><div class="d">お電話・WEBからご予約いただけます。</div></div></div>
-        <div class="step"><div class="s-no">2</div><div><div class="t">受付・問診</div><div class="d">お悩みやご希望を丁寧に伺います。</div></div></div>
-        <div class="step"><div class="s-no">3</div><div><div class="t">検査・診断</div><div class="d">レントゲン等でお口の状態を確認します。</div></div></div>
-        <div class="step"><div class="s-no">4</div><div><div class="t">治療・メンテナンス</div><div class="d">ご説明のうえ治療し、定期検診で守ります。</div></div></div>
+        <div class="step"><span class="no">1</span><div class="body"><div class="t">ご予約</div><div class="d">お電話・WEB からご希望の日時をお知らせください。</div></div></div>
+        <div class="step"><span class="no">2</span><div class="body"><div class="t">受付・問診</div><div class="d">お悩みやご希望を丁寧に伺います。</div></div></div>
+        <div class="step"><span class="no">3</span><div class="body"><div class="t">検査・診断</div><div class="d">レントゲン等で状態を確認し、治療計画をご提案します。</div></div></div>
+        <div class="step"><span class="no">4</span><div class="body"><div class="t">治療・処置</div><div class="d">ご納得いただいたうえで、無理なく進めます。</div></div></div>
+        <div class="step"><span class="no">5</span><div class="body"><div class="t">メンテナンス</div><div class="d">定期検診で、健康なお口を一緒に守ります。</div></div></div>
       </div>
     </div>
   </section>
@@ -269,34 +296,38 @@
     <div class="m-sec">
       <span class="en">ACCESS</span>
       <h2>アクセス</h2>
-      <p class="sec-desc">最寄駅からの道順をご案内します。</p>
+      <p class="sec-desc">最寄り駅からの道順をご案内します。</p>
       <div class="m-access" data-access="map-steps">
         <div class="map-atari"></div>
         <div class="route-steps">
-          <div class="rstep"><span class="rn">1</span><div class="rt">駅の改札を出る</div><div class="rd"><span class="todo">(要検討: 最寄駅・出口)</span>を出て左へ。</div></div>
-          <div class="rstep"><span class="rn">2</span><div class="rt">大通りを直進</div><div class="rd">商店街を<span class="todo">(要検討: 徒歩分数)</span>ほど直進します。</div></div>
-          <div class="rstep"><span class="rn">3</span><div class="rt">当院に到着</div><div class="rd"><span class="todo">(要検討: 目印の建物)</span>の1階が当院です。</div></div>
+          <div class="rs"><span class="no">1</span><h4>改札を出て右へ</h4><p><span class="todo">(要検討: 最寄駅・出口)</span></p></div>
+          <div class="rs"><span class="no">2</span><h4>商店街を直進</h4><p>約200mまっすぐ進みます</p></div>
+          <div class="rs"><span class="no">3</span><h4>2つ目の角を左折</h4><p>ビル2階が当院です</p></div>
         </div>
+        <p class="addr-line">住所：<span class="todo">(要検討: 住所)</span>／TEL：<span class="todo">(要検討: 電話番号)</span></p>
       </div>
     </div>
   </section>
 
   <!-- CONTACT-01（contact-steps） -->
-  <section class="sec band reveal" id="contact">
+  <section class="sec reveal band" id="contact">
     <div class="addr"><span class="pin">CONTACT-01</span></div>
     <div class="m-sec">
       <span class="en">CONTACT</span>
       <h2>お問い合わせ</h2>
-      <p class="sec-desc">ご予約・ご相談の流れです。お気軽にお問い合わせください。</p>
+      <p class="sec-desc">ご相談から治療開始までの流れと、お問い合わせフォームです。</p>
       <div class="m-contact" data-contact="contact-steps">
-        <div class="cs-steps">
-          <div class="cs"><span class="csn">1</span><div class="cst">お問い合わせ</div><div class="csd">お電話・WEBフォームからご連絡ください。</div></div>
-          <div class="cs"><span class="csn">2</span><div class="cst">ご返信・日程調整</div><div class="csd">ご希望に合わせて日時をご案内します。</div></div>
-          <div class="cs"><span class="csn">3</span><div class="cst">ご来院・ご相談</div><div class="csd">当日は受付でお名前をお伝えください。</div></div>
+        <div class="c-steps">
+          <div class="cs"><span class="no">1</span><h4>お問い合わせ</h4><p>フォーム・お電話で受付</p></div>
+          <div class="cs"><span class="no">2</span><h4>ご返信・日程調整</h4><p>ご希望を伺い日時を決定</p></div>
+          <div class="cs"><span class="no">3</span><h4>ご来院・ご相談</h4><p>まずはお気軽にどうぞ</p></div>
         </div>
-        <div class="cs-actions">
-          <a href="#">WEBで予約する</a>
-          <a class="alt" href="#">電話をかける</a>
+        <div class="c-form">
+          <div class="c-field"><label>お名前</label><div class="box"></div></div>
+          <div class="c-field"><label>メールアドレス</label><div class="box"></div></div>
+          <div class="c-field"><label>電話番号</label><div class="box"></div></div>
+          <div class="c-field"><label>ご相談内容</label><div class="box area"></div></div>
+          <span class="c-submit">送信する</span>
         </div>
       </div>
     </div>
@@ -308,11 +339,11 @@
     <div class="m-foot">
       <div class="foot-cta">
         <h2>まずはお気軽にご相談ください</h2>
-        <p>痛みが気になる方も、予防で通いたい方も歓迎いたします。</p>
+        <p>痛みや違和感が気になる方も、予防で通いたい方も、歓迎いたします。</p>
         <a href="#contact">ご予約・お問い合わせ</a>
       </div>
       <div class="foot-nav">
-        <a href="#staff">スタッフ</a><a href="#about">医院紹介</a><a href="#menu">診療案内</a><a href="#flow">診療の流れ</a><a href="#access">アクセス</a><a href="#contact">お問い合わせ</a>
+        <a href="#menu">診療案内</a><a href="#staff">スタッフ</a><a href="#about">医院紹介</a><a href="#flow">診療の流れ</a><a href="#access">アクセス</a><a href="#contact">お問い合わせ</a>
       </div>
       <p class="copy">© サンプル歯科クリニック（デザインラフ・実在の医院ではありません）</p>
     </div>
