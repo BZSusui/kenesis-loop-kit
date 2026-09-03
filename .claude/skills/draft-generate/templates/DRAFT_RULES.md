@@ -146,6 +146,83 @@
 <div class="atari"><span class="ic">📷</span><span class="desc">ボブ</span></div>
 ```
 
+### 3.0 アタリ枠の比率（KLK-072・**既定 `aspect-ratio: 4 / 3`**）
+
+**画像アタリの縦横比は `aspect-ratio: 4 / 3`（横4:縦3）を既定とする。**
+`min-height` だけで高さを決めてはならない（幅がコンテナ任せになり、**横に長細い帯**になってしまう）。
+
+```css
+/* 良い: 幅が変わっても比率が保たれる */
+.atari { aspect-ratio: 4 / 3; }
+/* 悪い: サイドバーでは細長く、全幅では潰れる */
+.atari { min-height: 90px; }
+```
+
+- **対象**: 写真・イラスト・地図が入る想定のアタリ全般。
+  ABOUT / MENU / GALLERY / VOICE / NEWS / PRICE / FAQ / CONTACT / **ACCESS の地図アタリ（`.map-atari`）** など。
+- **`min-height` は下限としてのみ併用してよい**（`aspect-ratio` と併記した場合、狭い幅でも潰れすぎないための保険）。
+  ただし `min-height` が支配的にならない値にすること。
+
+**この比率を適用しない例外（意図して別の形にしている型）:**
+
+| 例外 | 比率 | 理由 |
+|---|---|---|
+| STAFF のプロフィール写真・`sns-grid`・`sns-reels`・`img-circle` | `1 / 1`（正方・円） | 人物や SNS サムネは正方が自然。型の定義そのものが正方を前提にしている |
+| HERO の全面ビジュアル（`.hero-atari` 等・`full`/`center-scroll`/`overlap`/`split`/`band`） | 画面を覆う（`min-height` 可） | ファーストビューは画面いっぱいに見せるもので、比率で縛る対象ではない |
+| HERO `panel-band` のフィルム風パネル | `3 / 2`（KLK-043） | フィルムのコマ帯としてあえて横長にした型。4/3 にすると帯の見た目が崩れる。**ただし帯は MV の左右いっぱいまで伸ばし、`max-height` は付けない**（§3.0.1・KLK-076） |
+| ロゴ枠・アイコン枠など画像ではない飾り | 対象外 | 写真が入る想定の枠ではない |
+
+**★この規約は型定義の表現より優先する（KLK-075）**
+
+型プール（§12.1.x）の説明に「**横長**」「**横帯ワイド**」「**大判横長**」などの語があっても、
+**それは形の方向性を示すだけで、`16/6` や `16/7` のような極端な比率を意味しない。比率は本節の 4/3 を使う。**
+
+実際に KLK-072 の規約追加後も、次の3箇所が極端な横長のまま生成された（型の語に引きずられた）:
+
+| 生成された CSS | あるべき |
+|---|---|
+| `.map-atari { aspect-ratio: 16/7 }` | `4/3` |
+| `.m-gallery.pat-wide .atari { aspect-ratio: 16/6 }` | `4/3` |
+| `.m-about.img-top .atari { aspect-ratio: 16/7 }` | `4/3` |
+
+**判断に迷ったら 4/3。** 例外は下の表に載っている型**だけ**であり、型の説明文は例外の根拠にならない。
+
+**なぜ 4/3 か**: 実績カタログの参考画像も一般的な写真も横長が多く、`16/9` ほど細くない
+`4/3` が「写真らしさ」と「縦の情報量」の折り合いが良い。正方に近づくため、
+サイドバーのような狭い幅でも帯にならない。
+
+#### 3.0.1 HERO `panel-band` の帯は MV の左右いっぱいに伸ばす（KLK-076）
+
+`panel-band` のフィルム帯（`.film` / `.film-band` など名前は問わない）は、
+**MV の左右端まで届かせる**。左右に余白が残るとフィルムのコマ帯に見えず、ただのカード列になる。
+
+**守るべき結果は3つだけ:**
+
+1. 帯の左右端が **MV の左右端と一致**している（`.m-hero` の左右 padding の**内側で止まらない**）
+2. `grid-template-columns` は **`repeat(auto-fit, minmax(220px, 1fr))`**（列数を画面幅にあわせて可変にする）
+3. 帯にもコマにも **`max-height` を付けない**
+
+**実装は次のどちらでもよい**（結果が上の3つを満たせば形は問わない）:
+
+| 解き方 | 書き方 |
+|---|---|
+| A: padding を相殺する | `.m-hero{padding:56px 30px 0}` に対し `.film{margin-inline:-30px;width:calc(100% + 60px)}` |
+| B: padding を内側の要素へ移す | `.m-hero` の左右 padding を 0 にし、見出しだけを包む `.hero-head{padding:50px 30px 24px}` に持たせる。帯は `width:100%` のままで端まで届く |
+
+**★実際に負けた CSS（KLK-075 で直したはずが KLK-076 の再生成で再発した）:**
+
+```css
+/* NG — width:100% は padding の内側で 100%。左右に 30px の余白が残る */
+.m-hero[data-hero=panel-band]{ padding:56px 30px 0; }
+.m-hero[data-hero=panel-band] .film{ grid-template-columns:repeat(6,1fr); width:100%; max-height:130px; }
+```
+
+`repeat(6,1fr)` と `max-height` の組合せは**KLK-075 で撤廃した旧実装そのもの**である。
+1440px 幅では 1コマが 226px になり、`aspect-ratio:3/2` なら高さ 151px。
+`max-height:130px` がこれを切り落とすため、コマの下端が欠ける。
+
+モバイル（`max-width:640px`）だけは `repeat(3,1fr)` の上書きでよい（`minmax(220px,1fr)` では1列になるため）。
+
 ### 3.1 MV-01 フリー実写真 b方式（REQ-104・KLK-020・MV-01 限定）
 
 `atari:"free-photo"` かつ `mvPhoto.file` 供給時は、**MV-01（HERO）のアタリのみ**を実写真（相対 `<img>`）にする。
@@ -197,6 +274,39 @@
   instruction に現れる（KLK-020 `mvPhoto` と同型・SCR-001/ブリッジ側で 60/200字切詰め・改行以外の制御文字は除去/拒否）。
 - 部分再生成（§14）で MV-01 を作り直す場合も、対象フォルダの `instruction.json` に `copy` があればそれを尊重する。
 
+#### 4.1.1 AI が文言を書く場合の改行（KLK-074）
+
+`copy` の指定が**無い**とき（＝AIが §4 本則で文言を提案するとき）も、**改行位置は AI が決めて `<br>` を置く**。
+ブラウザの自動折り返し任せにしない。
+
+- **句点（`。`）で改行する**のが基本。2文なら2行にする。
+  例: `初回相談は無料です。<br>まずはお話をお聞かせください。`
+- 1文が長いときは**読点（`、`）**で改行してよい。
+  例: `あなたの笑顔を、<br>一生の健康と共に。`
+- **改行は最大2行まで**（キャッチ）／**3行まで**（リード）。それ以上は文言自体を短くする。
+- **改行した行の途中でさらに折り返されないよう、器の幅を内容にあわせる**（§12.1.3 `overlap` の白背景など）。
+  `<br>` で決めた行組と、幅不足による再折り返しが二重にかかると
+  「あなたの笑顔／を、／一生の健康と共／に。」のような**不格好な行組**になる（実際に見本で発生）。
+
+**★3案すべてに同じ規律を適用する（KLK-076）**
+
+`catch` と `lead` の文言は3案で共通なので、**行組も3案で揃える**。
+案Aで `<br>` を入れたのに案B/案Cが1行のまま、という不一致を作らない。
+
+実際に、規約と例文があるのに次のように**案Aだけ**適用されて生成された:
+
+| 案 | 生成された lead |
+|---|---|
+| 案A | `初回のご相談は無料です。<br>まずはあなたのお話を、じっくりお聞かせください。` |
+| 案B | `初回のご相談は無料です。まずはあなたのお話を、じっくりお聞かせください。` ← NG |
+| 案C | `初回のご相談は無料です。まずはあなたのお話を、じっくりお聞かせください。` ← NG |
+
+**確認のしかた**: 書き終えたら3案の `catch` / `lead` を並べ、
+**文末以外に `。` があるのに `<br>` が無い行が1つでもあれば直す**。
+
+**なぜ AI が改行を決めるのか**: キャッチが1行か2行かで紙面の印象が大きく変わる（§4.1 と同じ理由）。
+自動折り返しに任せると、幅によって毎回違う位置で切れ、デザインラフとして見せられない。
+
 ### 4.2 セクション見出し・リード文の指定（KLK-027・`sectionOptions.{KEY}.heading` / `.lead`）
 
 選択セクション（§2.1）ごとに見出し・リード文を事前指定できる。指定があれば §4 本則のAI提案より優先し
@@ -234,6 +344,25 @@
   `--m-main` を使うので配色は案ごとに追従する。
 - **後方互換**: `moreLink` が無い sectionOptions は従来どおり（CTA の `purpose`/`label`・`heading`/`lead` と独立に併用可）。
   部分再生成（§14）でも該当 `sectionOptions.moreLink` を尊重する。
+
+#### 4.3.1 スクロール誘導（`SCROLL ↓`）はクリックできること（KLK-074）
+
+HERO に置くスクロール誘導（`SCROLL ↓` / `.scroll-cue` / `.scrolldown` 等）は、
+**押したら次のコンテンツがブラウザ最上部に来るようにスクロールする**こと。
+ただの飾りテキストにしない（実際に見本で「押しても何も起きない」状態が発生・KLK-074）。
+
+- **実装は同一ページ内アンカー**（`<a href="#next">`）。JS は使わない。
+  ```html
+  <a class="scroll-cue" href="#after-hero">SCROLL <span class="arrow">↓</span></a>
+  ...
+  <div class="sec" id="after-hero"> ← HERO の次に来るセクション（本文の先頭）
+  ```
+  `html { scroll-behavior: smooth; }` を添えるとなめらかに動く（任意・外部依存なし）。
+- **飛び先は「HERO の次に表示されるもの」**。`2col-*` レイアウトでは
+  **本文カラムとサイドバーを含む `.m-layout` の先頭**（＝画面に次に現れる塊）を指す。
+  本文だけを指すとサイドバーが画面外に取り残される。
+- `text-decoration:none` を当て、リンクらしい下線が出ないようにする（見た目は従来どおり）。
+- **対象は `SCROLL ↓` を出すすべての型**（`center-scroll` のほか、HERO で同様の誘導を置いた型すべて）。
 
 ### 4.4 CTA マルチボタンと自動整列（KLK-058・`sectionOptions.CTA.buttons`・1〜4個・文字数で整列）
 
@@ -407,6 +536,46 @@ SCR-002 mock テーマ変数へ写す。**生成ルート要素（`.mock` 等）
   2col-sub-left  → 2col-body-left
   2col-sub-right → 2col-body-right
   ```
+
+### 8.1 狭い本文カラムでの畳み方（KLK-073）
+
+`layout.columns` が **`2col-*` または `3col`** のとき、本文カラム（`.m-main-col`）は
+サイドバーに幅を取られて**1カラム時よりずっと狭くなる**（例: `2col-body-left` は `300px 1fr`）。
+
+**この狭い幅では、カード内で「画像＋本文」を横並びにしてはならない。**
+横並びのままだと画像が数十pxまで潰れ、本文も1行に数文字しか入らない。
+実際に見本（`2col-body-left` の VOICE）で、写真が 64px の帯になる事故が起きた。
+
+**規律:**
+
+1. **カード内で画像と本文を横並びにする型は、`2col-*` / `3col` では縦積み（画像が上・本文が下）にする。**
+   対象例: `voice-two-col` / `voice-cards` / **`voice-zigzag`** / `news-cards` / `news-media` /
+   `faq-cards` / `price-cards` / `contact-methods` / `map-cards` / **`flow-zigzag`** / **`staff-zigzag`** /
+   **`img-left` / `img-right` / `img-overlap`（ABOUT）** / `feature-large`（MENU）など、
+   **カード内・セクション内で画像と本文を左右に並べる型すべて**。
+
+   **★この規律は型定義より優先する（KLK-075）。**
+   型の説明に「**左右交互**」「**画像左／文章右**」とあっても、`2col-*` / `3col` では**縦積みにする**。
+   「左右交互」は1カラムページでの見せ方であり、狭いカラムでは成立しない。
+   実際に KLK-073 の規約追加後も、`2col-body-left` の `voice-zigzag` が
+   `grid-template-columns: 170px 1fr` の横並びのまま生成された（型の語に引きずられた）。
+   **偶数項の `order` 反転も、縦積みにしたら不要**（上下が入れ替わるだけで意味がない）ので外す。
+   ```css
+   /* 1col: 横並びでよい */
+   .v-item { display: grid; grid-template-columns: 120px 1fr; gap: 14px; }
+   /* 2col-* / 3col: 縦積みにする */
+   .v-item { display: grid; grid-template-columns: 1fr; gap: 10px; }
+   ```
+2. **画像の比率は §3.0 の `aspect-ratio: 4 / 3` を、1カラム時も狭いカラム時も同じく守る。**
+   縦積みにしたからといって正方や横長へ変えない。
+3. **セクション自体の列数も減らす**（狭い本文で3列カードは破綻する）。
+   `2col-*` / `3col` では、`repeat(3,1fr)` → `repeat(2,1fr)`、`1fr 1fr` → `1fr` を基本とする。
+4. モバイル（`@media (max-width:640px)`）は従来どおり全型で縦積み（本規律とは独立・§8 のまま）。
+
+**なぜ「カラム構成」で分けるのか**: 同じ型でも、1カラムのページでは横並びが読みやすく、
+2カラムのページでは縦積みでないと成立しない。**型の選択ではなくレイアウトの帰結**なので、
+型プール（§12.1.x）ではなくカラム構成の規約（本節）で決める。
+
 
   version:1 で作られた既存 `instruction.json`（`mockups/*`）はそのまま再現できる。`data-columns` には**正規化後の
   canonical 値**を出力する（旧値をそのまま書かない）。
@@ -618,9 +787,12 @@ KLK-021 の archetype は整列と配色しか振らず、本文の**組み立�
   `flow-timeline`: 縦タイムライン＋左縦線（`flex-direction:column`＋`border-left`）。
   `flow-number-card`: 番号大きめカードのグリッド（`grid-template-columns:repeat(4,1fr)`／モバイル2列）。
   `flow-arrow-band`: 全幅の矢羽根帯（`grid-auto-flow:column`＋各帯 `clip-path`／モバイルは `grid-auto-flow:row`）。
-  `flow-vertical-split`: 各ステップ＝2カラム（左大番号／右説明）を縦に並べる（`flex-direction:column`＋`.step{grid-template-columns:88px 1fr}`）。
-  `flow-zigzag`（KLK-035）: 全幅縦積み（`flex-direction:column`）＋各ステップ内 `grid-template-columns:1fr 1fr`、偶数ステップで
-  本文/番号の `order` 反転＝左右交互（flow-vertical-split の「固定左番号 88px」とは別＝1fr 1fr の千鳥／モバイルは縦積み・order解除）。
+  `flow-vertical-split`: 各ステップ＝2カラム（左大番号／右説明）を縦に並べる（`flex-direction:column`＋`.step{grid-template-columns:88px 1fr}`）。**番号枠は正方形**（`aspect-ratio:1`・KLK-073）。
+  `flow-zigzag`（KLK-035・KLK-073調整）: 全幅縦積み（`flex-direction:column`）＋各ステップ内で
+  **番号枠と本文の2カラム**。偶数ステップで `order` 反転＝左右交互（モバイルは縦積み・order解除）。
+  **番号枠は数字だけを入れる枠なので正方形にする**（`aspect-ratio:1`・幅は数字が収まる程度＝`grid-template-columns:<番号枠の一辺> 1fr`）。
+  `1fr 1fr` で半々にすると**番号枠だけが不自然に間延びする**（実際に見本で発生・KLK-073）。**本文側を広く取る**こと。
+  ただし**番号枠の背景に画像を置く設計にする場合は、正方ではなく §3.0 の `aspect-ratio:4/3`** とし幅も保持する。
 - **STAFF** — `staff-grid`: 顔写真グリッド4列（`grid-template-columns:repeat(4,1fr)`／モバイル2列）。
   `staff-hscroll`: 横スクロール風1列（`flex-wrap:nowrap;overflow-x:auto`＋各 `flex:0 0 200px`）。
   `staff-feature`: 代表1名を大写し＋残りをリスト（`grid-template-columns:1.2fr .8fr`／モバイル縦積み）。
@@ -708,10 +880,10 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | index | マーカー | 見た目（実CSS差）／モバイル |
 |---|---|---|
 | 0 | `pat-grid` | 均等グリッド（`grid-template-columns:repeat(3〜4,1fr)`・従来／最頻 6件）。モバイル2列 |
-| 1 | `pat-wide` | 横帯ワイド（1列の大判横長を積む）。モバイル1列 |
+| 1 | `pat-wide` | 横帯ワイド（1列の大判を積む。**比率は §3.0 の 4/3**＝「ワイド」は1列いっぱいに使うという意味であり、極端に平たくしない）。モバイル1列 |
 | 2 | `pat-mosaic` | 大小モザイク（`grid`＋`grid-column/row span` 強弱）。モバイル2列 |
 | 3 | `pat-slider`（KLK-036新） | 横スクロール/カルーセル（`display:flex;flex-wrap:nowrap;overflow-x:auto`＋各 `flex:0 0 <幅>`＋`scroll-snap-type`。矢印/スワイプ送り想定）。**モバイルも横スクロール継続** |
-| 4 | `pat-masonry`（KLK-047新） | 大小混在タイルを**長方形にきれいに敷き詰めるベントー型**（縦長・横長・大の混在を隙間なく矩形に収める。`display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:<列幅の約0.75倍＝タイルが約4:3の横長に見える基準>;grid-auto-flow:row dense` ＋各タイルに `grid-column:span N`／`grid-row:span N`＝横長/大2×2・縦長1×2・小1×1 の組合せで矩形充填。横長タイルは**縦:横≒3:4**）。cat-0001/cat-0037 系。モバイル2列 |
+| 4 | `pat-masonry`（KLK-047新） | 大小混在タイルを**長方形にきれいに敷き詰めるベントー型**（縦長・横長・大の混在を隙間なく矩形に収める。`display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:<列幅の約0.75倍＝タイルが約4:3の横長に見える基準>;grid-auto-flow:row dense` ＋各タイルに `grid-column:span N`／`grid-row:span N`＝横長/大2×2・縦長1×2・小1×1 の組合せで矩形充填。横長タイルは**縦:横≒3:4**）。**最終行に空きを作らないこと（KLK-072）**: `dense` は既存の穴を後続タイルで埋めるだけで、**タイル総数が足りなければ右下に空白が残る**。実際に見本で空白が出た。**対策＝下の「使ってよい構成」からそのまま選ぶ（KLK-075）**。「合計を倍数に」という抽象的な指示では守られず、**11タイル全部が 1×1・最終行に1セル空き**という結果になった（ベントーの大小混在も失われた）。**次の3構成のいずれかを使うこと**:<br>**(A) 8タイル・2行**: `big(2×2)` ×1 ＋ `1×1` ×4 ＋ `wide(2×1)` ×2 → 4列×3行が完全に埋まる<br>**(B) 6タイル・2行**: `big(2×2)` ×1 ＋ `tall(1×2)` ×2 ＋ `1×1` ×2<br>**(C) 12タイル・3行**: `wide(2×1)` ×2 ＋ `1×1` ×8 （大判なしの均等寄り）<br>**必ず大小を混在させる**（全部 1×1 はベントー型ではない＝`pat-grid` と区別がつかない）。各タイルの見た目の比率は §3.0 の 4/3 を基準に、`grid-auto-rows` を列幅の約0.75倍に置く。cat-0001/cat-0037 系。モバイル2列 |
 | 5 | `pat-tab-grid`（KLK-047新） | カテゴリタブ切替＋タイルグリッド（`display:flex;flex-direction:column`＝上部にカテゴリタブ行＋下部にタブごとのパネル `grid-template-columns:repeat(3,1fr)` の**3列×2行程度のサムネタイル**。商品/作品が多いサイト向け）。**クリックで切替（最小インライン JS・外部依存なし。各パネル既定 `display:none`・active のみ `display:grid`・`data-tab`/`data-panel` 対応・MENU tab-switch と同型）**。モバイルはタブ横スクロール・パネル2列 |
 
 **HERO プール（`.m-hero` の `data-hero`・KLK-037）— ★型ごとに整列シグネチャ(justify-content/align-items/text-align)が付随（§12.1 不変条件4）:**
@@ -721,9 +893,9 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 0 | `full` | 全面中央（`center` / `center` / `center`）・従来最頻 |
 | 1 | `split` | 左右分割（`space-between` / `center` / `left`） |
 | 2 | `band` | 下寄せ帯（`flex-end` / `flex-start` / `left`） |
-| 3 | `overlap`（KLK-037新・KLK-038/039調整） | せり出し横長画像＋白背景文言の重なり（`display:grid;grid-template-columns:1fr 2fr`＝**画像列を広め約2/3**・画像を右、白背景文言を左から `transform` で重ね・**画像は角丸なし＝直角でシャープ（`border-radius:0`）**）。**整列＝`flex-start` / `center` / `left`（既存3型と非重複＝3案 distinct 維持）**。モバイルは重なり解除・縦積み |
-| 4 | `center-scroll`（KLK-040新） | 全面ビジュアル＋キャッチを上・スクロール誘導（↓）を下に（`display:flex;flex-direction:column`）。**整列＝`space-between` / `center` / `center`（上下分散・中央）**。モバイルは padding 縮小 |
-| 5 | `panel-band`（KLK-040新・KLK-041調整） | 全幅背景ビジュアル＋見出し（上〜中）＋**下部に横一列のフィルム風パネル群**（`display:grid;grid-template-columns:repeat(6,1fr);gap:4px;width:100%` の細かい多めコマ・**`aspect-ratio:3/2` の横長**（KLK-043・縦は控えめ・`max-height` で MV 全体縦の約1/3に）・`border-radius:0` で直角＝フィルムのコマ風・縦幅広め `min-height:480px`・**パネルは全幅中央配置（`grid-template-columns:1fr`・右寄せしない）**）。cat-0007/0019 の形。**整列＝`flex-end` / `center` / `center`**。モバイルはパネル3列 |
+| 3 | `overlap`（KLK-037新・KLK-038/039調整） | せり出し横長画像＋白背景文言の重なり（`display:grid;grid-template-columns:1fr 2fr`＝**画像列を広め約2/3**・画像を右、白背景文言を左から `transform` で重ね・**画像は角丸なし＝直角でシャープ（`border-radius:0`）**）。**白背景ブロックの幅はキャッチコピーの改行位置にあわせて可変にする**（`width:max-content;max-width:<列幅>` 等・KLK-073）。固定幅にすると、`<br>` で意図した改行位置とブラウザの折り返しが二重にかかり「あなたの笑顔／を、／一生の健康と共／に。」のような**不格好な折り返し**になる（実際に見本で発生）。**整列＝`flex-start` / `center` / `left`（既存3型と非重複＝3案 distinct 維持）**。モバイルは重なり解除・縦積み |
+| 4 | `center-scroll`（KLK-040新・KLK-074調整） | 全面ビジュアル＋キャッチを上・スクロール誘導（↓）を下に（`display:flex;flex-direction:column`）。**スクロール誘導はクリックできること**（§4.3.1・KLK-074）。**整列＝`space-between` / `center` / `center`（上下分散・中央）**。モバイルは padding 縮小 |
+| 5 | `panel-band`（KLK-040新・KLK-041調整） | 全幅背景ビジュアル＋見出し（上〜中）＋**下部に横一列のフィルム風パネル群**（**`grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:4px`**・**`aspect-ratio:3/2` の横長**（KLK-043）・`border-radius:0` で直角＝フィルムのコマ風・縦幅広め `min-height:480px`）。**帯は MV の左右いっぱいまで伸ばす（KLK-075）**: `.m-hero` の左右 padding を`margin-inline:calc(-1 * <padding>);width:calc(100% + 2 * <padding>)` で相殺し、端まで届かせる。**`max-height` は付けない**。cat-0007/0019 の形。**整列＝`flex-end` / `center` / `center`**。モバイルはパネル3列<br>**なぜ `auto-fit` か（KLK-075）**: 旧実装は `repeat(6,1fr)` ＋ `max-height:150px` だった。`aspect-ratio:3/2` と `max-height` が組み合わさると**幅も 225px で頭打ち**になり、画面が広いほど余りが増えて**左右に大きなマージン**が出た（1680px 幅で余り270px）。`auto-fit` は列数を画面幅にあわせて増減させるので**余りが出ず、パネル幅も 224〜237px に揃う**（1200px→5列237px / 1366px→6列224px / 1440px→6列237px / 1680px→7列237px）。比率は 3/2 のままでこの範囲に収まるため変更不要（高さ150〜158px＝MV 460px の約1/3・KLK-043 の意図を維持） |
 
 **ABOUT プール（`.m-about`・KLK-037）:**
 
@@ -731,7 +903,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 |---|---|---|
 | 0 | `img-left` | 左画像・右文言（`grid-template-columns:1fr 1fr`）・従来最頻 |
 | 1 | `img-right` | 右画像・左文言 |
-| 2 | `img-top` | 横長画像＋下キャプション |
+| 2 | `img-top` | 画像を上・下にキャプション（**画像は §3.0 の 4/3**＝「上に置く」型であり、平たい帯にしない） |
 | 3 | `img-overlap`（KLK-037新・KLK-038調整） | せり出し横長画像＋白背景文言の重なり（`display:grid;grid-template-columns:1fr 1fr`・画像を左、白背景文言を右から `transform` で重ね）。**画像は文言背景に対し縦に余裕をとる（`min-height` を大きめ・上下に余白＝圧迫感を避けるモダン志向）**。モバイルは重なり解除・縦積み |
 | 4 | `img-circle`（KLK-040新） | 円形/型抜き画像（`border-radius:50%;aspect-ratio:1`）＋横にテキスト（`display:grid;grid-template-columns:1fr 1fr`）。モバイル1列 |
 | 5 | `img-zigzag`（KLK-040新） | 画像/文言を左右交互に複数段（`display:flex;flex-direction:column`＋各段 `grid-template-columns:1fr 1fr`＋偶数段 `order` 反転）＝ストーリー型。モバイル縦積み・order解除 |
@@ -754,7 +926,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 0 | `sns-grid` | Instagram フィード風の**正方サムネ格子**（`display:grid;grid-template-columns:repeat(4,1fr)` の正方タイル `aspect-ratio:1`）。cat-0015 上部フィード系。モバイル3列 |
 | 1 | `sns-slider` | 横スクロールの投稿フィード（`display:flex;flex-wrap:nowrap;overflow-x:auto`＋各 `flex:0 0 <幅>`＋`scroll-snap-type`）。GALLERY pat-slider 流用。**モバイルも横スクロール継続** |
 | 2 | `sns-cards`（共通カード） | **画像＋キャプション（日付/属性）＋本文30字程度**を**横並び3〜4件**（`display:grid;grid-template-columns:repeat(3,1fr)` の `.sns-card`＝角丸/円形アタリ＋`.cap`＋短文）。お客様の声/ビフォーアフター/SNS投稿で使える**共通カードパターン**（VOICE `voice-cards` と視覚同系＝両セクションで使える）。§4.3 `.sec-more`（もっと見る）と併用可。モバイル1列 |
-| 3 | `sns-masonry`（KLK-050新） | 大小混在タイルを長方形に敷き詰めるベントー型（縦長横長を隙間なく矩形に・`display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:<基準>;grid-auto-flow:row dense`＋各タイル `grid-column/row:span N`）。cat-0001 系・Instagram 埋込でよく見る。GALLERY `pat-masonry` 同機構。モバイル2列 |
+| 3 | `sns-masonry`（KLK-050新） | 大小混在タイルを長方形に敷き詰めるベントー型（縦長横長を隙間なく矩形に・`display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:<基準>;grid-auto-flow:row dense`＋各タイル `grid-column/row:span N`）。cat-0001 系・Instagram 埋込でよく見る。GALLERY `pat-masonry` 同機構（**最終行に空きを作らない**規律も同じ・KLK-072）。モバイル2列 |
 | 4 | `sns-reels`（KLK-050新・KLK-050調整） | リール/ストーリーズ帯（`display:flex;flex-wrap:nowrap;overflow-x:auto`＋各 `.sns-reel` の `flex:0 0 <幅>`・アタリは**正方 `aspect-ratio:1`**・`🎬` でリール/動画を示す）。近年のリール普及に対応。**モバイルも横スクロール継続** |
 | 5 | `sns-feed`（KLK-050新・KLK-050調整） | 公式埋込ウィジェット風の**投稿カードを横並び3〜4件**（`display:grid;grid-template-columns:repeat(3,1fr)`＋`.sns-post`＝ヘッダ[丸アバター＋ハンドル]＋正方アタリ＋キャプション＋いいね/コメント風アイコン行）。実埋め込みに最も近い見立て（実埋め込みはしない）。モバイル1列 |
 
@@ -796,7 +968,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | index | マーカー | 見た目（実CSS差・地図の扱い）／モバイル |
 |---|---|---|
 | 0 | `map-side` | 地図アタリ＋住所/営業時間の**2カラム**（`display:grid;grid-template-columns:1fr 1fr`＝片側 `.map-atari`・反対側に住所・TEL・営業時間）。現行 default「地図＋住所・営業時間」相当・最頻。ABOUT img-left と同機構。モバイル1列（地図→情報） |
-| 1 | `map-top` | **横長の大きな地図アタリを上**＋下に住所・アクセス情報（`display:flex;flex-direction:column`＝上 `.map-atari`[全幅・`aspect-ratio` 横長]＋下に中央寄せ情報）。cat-0002 下部の全幅地図系。モバイルも縦 |
+| 1 | `map-top` | **横長の大きな地図アタリを上**＋下に住所・アクセス情報（`display:flex;flex-direction:column`＝上 `.map-atari`[全幅・**`aspect-ratio:4/3`**・§3.0]＋下に中央寄せ情報）。cat-0002 下部の全幅地図系。モバイルも縦 |
 | 2 | `map-overlay`（KLK-054新） | **全幅の地図アタリの上に情報カードを重ねる**（`display:grid`＝`.map-atari` を全面に敷き、住所カードを `transform`/`align-self` で重ねる）。モダン・不動産/店舗系。cat-0042 系。モバイルは重なり解除・縦積み |
 | 3 | `map-hours`（KLK-054新） | 地図アタリ＋**営業/診療時間テーブル（曜日×時間）**（`display:grid;grid-template-columns:<地図列 情報列>`＋情報側に `.hours-table`＝曜日ヘッダ×時間帯行の grid 表）。クリニック/店舗向け。PRICE price-table／NEWS news-table と同機構。cat-0002 診療時間表。モバイルは縦積み・表は横スクロール |
 | 4 | `map-cards`（KLK-054新） | **複数店舗を小地図アタリ付きカードで並べる**（`display:grid;grid-template-columns:repeat(3,1fr)` の `.access-card`＝上に小 `.map-atari`＋下に店舗名・住所・TEL）。多店舗/グループ展開。NEWS news-cards／MENU pat-cards 流用。cat-0018 系。モバイル1列 |

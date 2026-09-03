@@ -1,0 +1,46 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": {
+    "project": "サンプル歯科クリニック",
+    "createdAt": "2026-09-02T10:00:00.000Z",
+    "source": "SCR-001",
+    "note": "配布サンプル03: ナビをHERO下に置いた構成。診療の流れ・スタッフ紹介つき。実在の医院ではありません。"
+  },
+  "industry": {
+    "preset": "クリニック・病院・介護リハビリ",
+    "custom": "",
+    "resolved": "クリニック・病院・介護リハビリ"
+  },
+  "layout": {
+    "columns": "1col",
+    "navPosition": "below-hero"
+  },
+  "sections": [
+    "ABOUT",
+    "MENU",
+    "STAFF",
+    "FLOW",
+    "ACCESS",
+    "CONTACT"
+  ],
+  "sectionOptions": {},
+  "taste": "清潔・安心",
+  "colors": {
+    "main": "#3e9aa6",
+    "sub": "#2c6e77",
+    "accent": "#e08a5a",
+    "bg": "#f5fbfc",
+    "mode": "explicit",
+    "autofill": []
+  },
+  "references": {
+    "thumbnails": [],
+    "sampleUrls": []
+  },
+  "atari": "standard",
+  "output": {
+    "variants": 3,
+    "animation": true
+  }
+}

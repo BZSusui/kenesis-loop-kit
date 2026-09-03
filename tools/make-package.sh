@@ -67,7 +67,8 @@ echo
 mkdir -p "$DEST" || { echo "【エラー】出力先を作成できませんでした。" >&2; exit 1; }
 
 # ---- 必須（動作に要るもの） -------------------------------------------------
-for d in draft-gen palette .claude agents docs; do
+# KLK-071: samples/ は「まず開いてもらう見本」。ダミー案件名の生成物のみで機密は無い（既定で含める）
+for d in draft-gen palette .claude agents docs samples; do
   [ -d "$d" ] && cp -R "$d" "$DEST/" && echo "  含めた: $d/"
 done
 for f in README.md CLAUDE.md CHANGELOG.md LICENSE; do
@@ -98,9 +99,28 @@ if [ "$WITH_CATALOG" -eq 1 ]; then
   [ -d catalog/img ] && cp -R catalog/img "$DEST/catalog/"
   [ -f catalog/catalog.json ] && cp catalog/catalog.json "$DEST/catalog/"
   echo "  含めた: catalog/img/ catalog/catalog.json（--with-catalog）"
+  # README を「空から始める」前提から「最初から入っている」前提へ差し替える。
+  # リポジトリの README.md は B（カタログなし）の内容のまま＝普段見る README が正。
+  # 失敗したら組み立てを中止する。README が「カタログは空です」と言ったまま
+  # 345MB の社外秘を配るのが一番まずいので、黙って続けない。
+  if python3 tools/readme_for_catalog.py "$DEST/README.md" "$ROOT/catalog/catalog.json"; then
+    echo "  書き換え: README.md（カタログ同梱版の案内・取り扱いの注意）"
+  else
+    echo "【エラー】README.md をカタログ同梱版へ書き換えられませんでした。" >&2
+    echo "         中途半端な配布物を残さないため、$DEST を削除して中止します。" >&2
+    rm -rf "$DEST"
+    exit 1
+  fi
 else
   echo "  含めない: catalog/img/ catalog/catalog.json（社外秘。含めるには --with-catalog）"
 fi
+
+# ---- Finder のメタデータを落とす --------------------------------------------
+# .DS_Store は「そのフォルダに以前あったファイル名」を保持しうる。
+# 削除済みの案件フォルダ名が配布物に残る余地を断つ。
+DS_N=$(find "$DEST" -name '.DS_Store' | wc -l | tr -d ' ')
+find "$DEST" -name '.DS_Store' -delete 2>/dev/null
+echo "  取り除いた: .DS_Store $DS_N 個（Finder のメタデータ）"
 
 # ---- 実行権限を戻す（cp で失われる環境があるため） --------------------------
 [ -f "$DEST/draft-gen/起動.command" ] && chmod +x "$DEST/draft-gen/起動.command"

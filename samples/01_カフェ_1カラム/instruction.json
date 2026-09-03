@@ -1,0 +1,45 @@
+{
+  "schema": "design-draft-instruction",
+  "version": 1,
+  "meta": {
+    "project": "サンプルカフェ",
+    "createdAt": "2026-09-02T10:00:00.000Z",
+    "source": "SCR-001",
+    "note": "配布サンプル01: 1カラムの王道構成。3案の比較と幅切り替えを試せます。実在の店舗ではありません。"
+  },
+  "industry": {
+    "preset": "飲食店・カフェ・食関連",
+    "custom": "",
+    "resolved": "飲食店・カフェ・食関連"
+  },
+  "layout": {
+    "columns": "1col",
+    "navPosition": "top"
+  },
+  "sections": [
+    "ABOUT",
+    "MENU",
+    "GALLERY",
+    "ACCESS",
+    "CONTACT"
+  ],
+  "sectionOptions": {},
+  "taste": "ナチュラル・あたたかい",
+  "colors": {
+    "main": "#6b7f4e",
+    "sub": "#4a5936",
+    "accent": "#c98a3c",
+    "bg": "#faf8f3",
+    "mode": "explicit",
+    "autofill": []
+  },
+  "references": {
+    "thumbnails": [],
+    "sampleUrls": []
+  },
+  "atari": "standard",
+  "output": {
+    "variants": 3,
+    "animation": true
+  }
+}

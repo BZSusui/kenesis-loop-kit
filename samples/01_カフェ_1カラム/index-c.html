@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>サンプルカフェ — 案C</title>
+<style>
+  :root{ --radius:18px; }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; font-family:"Hiragino Maru Gothic ProN","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+        color:var(--m-text); background:#eae7dc; line-height:1.85; -webkit-font-smoothing:antialiased; }
+  .mock{ max-width:1080px; margin:0 auto; background:var(--m-bg); box-shadow:0 0 40px rgba(0,0,0,.08); overflow:hidden; }
+
+  /* 番地ラベル */
+  .sec{ position:relative; }
+  .addr{ position:absolute; top:8px; left:8px; z-index:30; }
+  .pin{ display:inline-block; background:var(--m-accent); color:#fff; font-size:11px; font-weight:700;
+        letter-spacing:.04em; padding:3px 8px; border-radius:6px; font-family:"SFMono-Regular",Menlo,monospace; }
+
+  /* 帯構成：交互色 */
+  .band-tint > .m-sec{ background:color-mix(in srgb,var(--m-main) 9%,var(--m-bg)); }
+
+  /* NAV */
+  .m-nav{ display:flex; align-items:center; justify-content:space-between; padding:18px 40px; background:var(--m-bg); }
+  .m-nav .logo{ font-size:20px; font-weight:800; letter-spacing:.04em; color:var(--m-nav); }
+  .m-nav ul{ display:flex; gap:24px; list-style:none; margin:0; padding:0; }
+  .m-nav li{ font-size:13px; font-weight:700; letter-spacing:.04em; color:var(--m-nav); cursor:pointer; }
+  .m-nav li:hover{ color:var(--m-accent); }
+  .nav-burger{ display:none; font-size:22px; color:var(--m-nav); }
+
+  /* HERO — band（下寄せ帯：flex-end/flex-start/left・下部キャプション） */
+  .m-hero[data-hero="band"]{ position:relative; display:flex; flex-direction:column; justify-content:flex-end;
+    align-items:flex-start; text-align:left; min-height:540px; padding:0; overflow:hidden; }
+  .hero-bg{ position:absolute; inset:0; z-index:0;
+    background:linear-gradient(150deg,color-mix(in srgb,var(--m-main) 62%,#fff) 0%,
+      color-mix(in srgb,var(--m-accent) 55%,var(--m-main)) 100%); }
+  .hero-bg::after{ content:""; position:absolute; inset:0;
+    background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.42) 100%); }
+  .hero-caption{ position:relative; z-index:2; color:#fff; width:100%; padding:40px 48px 52px;
+    background:linear-gradient(180deg,transparent,rgba(0,0,0,.25)); }
+  .catch{ font-size:38px; font-weight:800; line-height:1.5; margin:0 0 16px; text-shadow:0 2px 14px rgba(0,0,0,.4); }
+  .lead{ font-size:16px; margin:0 0 24px; max-width:560px; text-shadow:0 1px 8px rgba(0,0,0,.4); }
+  .hero-cta{ display:inline-block; background:var(--m-accent); color:#fff; text-decoration:none; font-weight:800;
+    font-size:15px; padding:14px 40px; border-radius:30px; box-shadow:0 8px 20px rgba(0,0,0,.25); }
+  .atari-tag{ position:absolute; right:12px; top:12px; z-index:3; background:rgba(0,0,0,.5); color:#fff;
+    font-size:11px; padding:4px 9px; border-radius:6px; }
+
+  /* セクション共通（下線アクセント見出し） */
+  .m-sec{ padding:76px 48px; }
+  .sec-head{ text-align:center; margin-bottom:44px; }
+  .sec-head .en{ display:block; font-size:12px; letter-spacing:.24em; color:var(--m-accent); font-weight:800; margin-bottom:10px; }
+  .sec-head h2{ display:inline-block; font-size:27px; font-weight:800; color:var(--m-nav); margin:0;
+    padding-bottom:10px; border-bottom:4px solid var(--m-accent); }
+
+  /* アタリ画像（a方式・4/3） */
+  .atari{ position:relative; aspect-ratio:4/3; border:1.5px dashed color-mix(in srgb,var(--m-main) 42%,#fff);
+    border-radius:var(--radius); background:linear-gradient(135deg,
+      color-mix(in srgb,var(--m-main) 16%,var(--m-bg)), color-mix(in srgb,var(--m-accent) 20%,var(--m-bg)));
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; text-align:center;
+    padding:14px; color:color-mix(in srgb,var(--m-main) 66%,#000); }
+  .atari .ic{ font-size:26px; opacity:.7; }
+  .atari .desc{ font-size:13px; font-weight:700; }
+  .atari .kw{ font-size:11px; opacity:.85; }
+  .atari .kw b{ font-weight:800; }
+
+  /* GALLERY — pat-mosaic（大小モザイク・タイルの見た目は 4/3 基準＝§3.0） */
+  .m-gallery.pat-mosaic{ display:grid; grid-template-columns:repeat(4,1fr); grid-auto-rows:132px;
+    grid-auto-flow:row dense; gap:14px; }
+  .m-gallery.pat-mosaic .atari{ aspect-ratio:auto; }
+  .m-gallery.pat-mosaic .g-big{ grid-column:span 2; grid-row:span 2; }
+  .m-gallery.pat-mosaic .g-wide{ grid-column:span 2; grid-row:span 1; }
+
+  /* ABOUT — img-top（画像を上・下にキャプション・画像は 4/3＝§3.0/KLK-075。平たい帯にしない） */
+  .m-about.img-top{ display:flex; flex-direction:column; gap:28px; max-width:640px; margin:0 auto; text-align:center; }
+  .m-about.img-top .atari{ aspect-ratio:4/3; }
+  .about-body p{ margin:0 0 16px; font-size:15px; }
+  .about-body .about-lede{ font-size:20px; font-weight:800; color:var(--m-nav); line-height:1.7; }
+
+  /* MENU — pat-zigzag（ジグザグ交互） */
+  .m-menu.pat-zigzag{ display:flex; flex-direction:column; gap:26px; }
+  .menu-zz{ display:flex; align-items:center; gap:28px; background:#fff; border-radius:var(--radius);
+    padding:20px; box-shadow:0 6px 18px rgba(0,0,0,.05); }
+  .menu-zz:nth-child(even){ flex-direction:row-reverse; }
+  .menu-zz .atari{ flex:0 0 220px; margin:0; }
+  .menu-zz .zz-body{ flex:1; }
+  .menu-zz .m-name{ display:flex; justify-content:space-between; align-items:baseline; gap:16px; }
+  .menu-zz .m-name b{ font-size:19px; color:var(--m-nav); font-weight:800; }
+  .menu-zz .m-name .price{ font-size:17px; font-weight:800; color:var(--m-accent); white-space:nowrap; }
+  .menu-zz .m-desc{ font-size:14px; margin:8px 0 0; color:color-mix(in srgb,var(--m-text) 82%,var(--m-bg)); }
+
+  /* ACCESS — map-overlay（全幅地図に情報カードを重ねる・地図は 4/3＝§3.0/KLK-075） */
+  .m-access.map-overlay{ position:relative; display:grid; }
+  .map-atari{ position:relative; aspect-ratio:4/3; min-height:300px; border:1.5px dashed color-mix(in srgb,var(--m-main) 42%,#fff);
+    border-radius:var(--radius); background:
+      repeating-linear-gradient(45deg,color-mix(in srgb,var(--m-main) 10%,var(--m-bg)) 0 14px,color-mix(in srgb,var(--m-main) 16%,var(--m-bg)) 14px 28px);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:color-mix(in srgb,var(--m-main) 66%,#000); }
+  .map-atari .ic{ font-size:32px; opacity:.7; }
+  .map-atari .desc{ font-size:12px; font-weight:700; }
+  .access-card{ position:absolute; top:50%; left:44px; transform:translateY(-50%); z-index:2;
+    background:#fff; border-radius:var(--radius); padding:26px 30px; box-shadow:0 10px 30px rgba(0,0,0,.18); max-width:330px; }
+  .access-card dl{ margin:0; display:grid; grid-template-columns:78px 1fr; row-gap:12px; column-gap:12px; }
+  .access-card dt{ font-size:13px; font-weight:800; color:var(--m-accent); }
+  .access-card dd{ margin:0; font-size:13px; }
+
+  /* CONTACT — contact-split（左に連絡先＋右にフォーム・静的アタリ） */
+  .m-contact.contact-split{ display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:start; }
+  .contact-detail{ background:var(--m-nav); color:#fff; border-radius:var(--radius); padding:32px; }
+  .contact-detail h3{ margin:0 0 18px; font-size:18px; font-weight:800; }
+  .contact-detail dl{ margin:0; display:grid; grid-template-columns:72px 1fr; row-gap:14px; column-gap:12px; }
+  .contact-detail dt{ font-size:13px; font-weight:800; color:var(--m-accent); }
+  .contact-detail dd{ margin:0; font-size:13px; opacity:.95; }
+  .c-field{ display:flex; flex-direction:column; gap:8px; margin-bottom:18px; }
+  .c-field label{ font-size:13px; font-weight:800; color:var(--m-nav); }
+  .c-input{ border:1.5px solid color-mix(in srgb,var(--m-nav) 26%,transparent); border-radius:12px;
+    background:#fff; padding:12px 14px; font-size:13px; color:color-mix(in srgb,var(--m-text) 55%,var(--m-bg)); }
+  .c-input.area{ min-height:100px; }
+  .c-submit{ display:inline-block; width:100%; text-align:center; background:var(--m-accent); color:#fff; border:0;
+    border-radius:30px; text-decoration:none; font-weight:800; font-size:15px; padding:15px; cursor:default;
+    box-shadow:0 8px 18px color-mix(in srgb,var(--m-accent) 40%,transparent); }
+
+  /* FOOTER */
+  .m-foot{ background:var(--m-nav); color:#fff; padding:52px 48px 28px; text-align:center; }
+  .m-foot h2{ font-size:23px; margin:0 0 16px; font-weight:800; }
+  .m-foot .foot-cta a{ display:inline-block; background:var(--m-accent); color:#fff; text-decoration:none; font-weight:800;
+    font-size:14px; padding:13px 38px; border-radius:28px; margin-bottom:34px; }
+  .m-foot .foot-nav{ display:flex; gap:24px; justify-content:center; flex-wrap:wrap; margin-bottom:26px;
+    font-size:13px; letter-spacing:.04em; opacity:.9; }
+  .m-foot small{ font-size:12px; opacity:.7; }
+
+  .todo{ background:color-mix(in srgb,var(--m-accent) 24%,#fff); color:#8a5a12; font-size:.9em;
+    padding:1px 7px; border-radius:6px; font-weight:700; }
+
+  /* 出現アニメ */
+  .reveal{ opacity:0; transform:translateY(16px); transition:opacity .6s ease, transform .6s ease; }
+  .reveal.in{ opacity:1; transform:none; }
+  @media (prefers-reduced-motion:reduce){ .reveal{ opacity:1; transform:none; transition:none; } }
+
+  /* レスポンシブ */
+  @media (max-width:640px){
+    .m-nav{ padding:16px 20px; }
+    .m-nav ul{ display:none; }
+    .nav-burger{ display:block; }
+    .m-hero[data-hero="band"]{ min-height:440px; }
+    .hero-caption{ padding:28px 22px 34px; }
+    .catch{ font-size:27px; }
+    .m-sec{ padding:52px 22px; }
+    .m-gallery.pat-mosaic{ grid-template-columns:repeat(2,1fr); grid-auto-rows:120px; }
+    .m-gallery.pat-mosaic .g-big,.m-gallery.pat-mosaic .g-wide{ grid-column:span 2; }
+    .m-gallery.pat-mosaic .g-big{ grid-row:span 2; }
+    .menu-zz,.menu-zz:nth-child(even){ flex-direction:column; align-items:stretch; gap:14px; }
+    .menu-zz .atari{ flex:none; width:100%; }
+    .access-card{ position:static; transform:none; max-width:none; margin-top:16px; }
+    .m-contact.contact-split{ grid-template-columns:1fr; gap:24px; }
+    .m-foot{ padding:40px 22px 24px; }
+  }
+
+  /* 印刷 */
+  @media print{
+    .addr, .atari-tag{ display:none !important; }
+    body{ background:#fff; }
+    .mock{ box-shadow:none; max-width:none; }
+    .reveal{ opacity:1 !important; transform:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="mock" data-columns="1col" data-archetype="banded-showcase"
+     data-section-order="GALLERY,ABOUT,MENU,ACCESS,CONTACT" data-nav-position="top"
+     style="--m-main:#86a34e; --m-nav:#5e7439; --m-accent:#e39a3c; --m-bg:#fbfaf4; --m-text:#3a3a3a;">
+
+  <!-- NAV-01 -->
+  <header class="sec">
+    <div class="addr"><span class="pin">NAV-01</span></div>
+    <nav class="m-nav">
+      <div class="logo">サンプルカフェ</div>
+      <ul><li>GALLERY</li><li>CONCEPT</li><li>MENU</li><li>ACCESS</li><li>CONTACT</li></ul>
+      <span class="nav-burger">☰</span>
+    </nav>
+  </header>
+
+  <!-- MV-01 -->
+  <section class="sec">
+    <div class="addr"><span class="pin">MV-01</span></div>
+    <div class="m-hero" data-hero="band">
+      <div class="hero-bg"></div>
+      <span class="atari-tag">アタリ: 自然光の差すカフェ店内 / 検索: cozy cafe interior</span>
+      <div class="hero-caption">
+        <h1 class="catch">しずかな時間を、<br>一杯のコーヒーとともに。</h1>
+        <p class="lead">焙煎したての香りと、木のぬくもり。<br>日々のあいだにある、ちいさな休息を。</p>
+        <a class="hero-cta" href="#contact">席を予約する</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALLERY-01 -->
+  <section class="sec reveal" id="after-hero">
+    <div class="addr"><span class="pin">GALLERY-01</span></div>
+    <div class="m-sec">
+      <div class="sec-head"><span class="en">GALLERY</span><h2>店内のようす</h2></div>
+      <div class="m-gallery pat-mosaic">
+        <div class="atari g-big"><span class="ic">📷</span><span class="desc">木のテーブルが並ぶ客席の全景</span><span class="kw">検索: <b>cafe interior wide</b></span></div>
+        <div class="atari g-wide"><span class="ic">📷</span><span class="desc">焼き菓子のショーケース</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">窓辺のひとり席</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">コーヒーを淹れる手元</span><span class="kw">検索: <b>barista hands</b></span></div>
+        <div class="atari g-wide"><span class="ic">📷</span><span class="desc">店先の看板と植栽</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">豆の量り売り</span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">スタッフとカウンター</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT-01 -->
+  <section class="sec reveal band-tint">
+    <div class="addr"><span class="pin">ABOUT-01</span></div>
+    <div class="m-sec">
+      <div class="sec-head"><span class="en">CONCEPT</span><h2>しぜんと、心地よい場所</h2></div>
+      <div class="m-about img-top">
+        <div class="atari">
+          <span class="ic">📷</span>
+          <span class="desc">窓辺のカウンターと観葉植物</span>
+          <span class="kw">検索: <b>cafe counter plants sunlight</b></span>
+        </div>
+        <div class="about-body">
+          <p class="about-lede">肩の力がふっと抜ける、<br>そんな一杯を淹れています。</p>
+          <p>季節のうつろいを感じられる、あたたかな空間を目指しました。<br>厳選した豆をていねいに焙煎し、香りの立つ一杯をお届けします。</p>
+          <p>木のぬくもりに包まれた店内で、あなたの「ちょうどいい」を見つけてください。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MENU-01 -->
+  <section class="sec reveal">
+    <div class="addr"><span class="pin">MENU-01</span></div>
+    <div class="m-sec">
+      <div class="sec-head"><span class="en">MENU</span><h2>メニュー</h2></div>
+      <div class="m-menu pat-zigzag">
+        <div class="menu-zz">
+          <div class="atari"><span class="ic">☕</span><span class="desc">ブレンドコーヒー</span><span class="kw">検索: <b>brewed coffee</b></span></div>
+          <div class="zz-body">
+            <div class="m-name"><b>本日のブレンド</b><span class="price">¥550</span></div>
+            <p class="m-desc">日替わりで表情を変える、店主おすすめの一杯。その日いちばんの豆をお出しします。</p>
+          </div>
+        </div>
+        <div class="menu-zz">
+          <div class="atari"><span class="ic">☕</span><span class="desc">カフェラテ</span><span class="kw">検索: <b>latte art</b></span></div>
+          <div class="zz-body">
+            <div class="m-name"><b>カフェラテ</b><span class="price">¥600</span></div>
+            <p class="m-desc">なめらかなミルクと深煎りの香ばしさ。ほっとひと息つきたいときに。</p>
+          </div>
+        </div>
+        <div class="menu-zz">
+          <div class="atari"><span class="ic">🥐</span><span class="desc">自家製スコーン</span><span class="kw">検索: <b>homemade scone</b></span></div>
+          <div class="zz-body">
+            <div class="m-name"><b>自家製スコーン</b><span class="price">¥450</span></div>
+            <p class="m-desc">外はさっくり、中はしっとり。焼きたてをコーヒーと一緒にどうぞ。</p>
+          </div>
+        </div>
+        <div class="menu-zz">
+          <div class="atari"><span class="ic">🍽️</span><span class="desc">キッシュプレート</span><span class="kw">検索: <b>quiche plate</b></span></div>
+          <div class="zz-body">
+            <div class="m-name"><b>キッシュプレート</b><span class="price">¥1,200</span></div>
+            <p class="m-desc">サラダ・スープ付き。お昼にうれしい、しっかり満たされる一皿です。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ACCESS-01 -->
+  <section class="sec reveal band-tint">
+    <div class="addr"><span class="pin">ACCESS-01</span></div>
+    <div class="m-sec">
+      <div class="sec-head"><span class="en">ACCESS</span><h2>アクセス</h2></div>
+      <div class="m-access map-overlay">
+        <div class="map-atari">
+          <span class="ic">🗺️</span>
+          <span class="desc">地図（Google Map 等の埋め込み想定）</span>
+        </div>
+        <div class="access-card">
+          <dl>
+            <dt>住所</dt><dd><span class="todo">(要検討: 店舗の住所)</span></dd>
+            <dt>電話</dt><dd><span class="todo">(要検討: 電話番号)</span></dd>
+            <dt>営業</dt><dd>9:00 – 18:00 <span class="todo">(要検討: 営業時間)</span></dd>
+            <dt>定休</dt><dd><span class="todo">(要検討: 定休日)</span></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT-01 -->
+  <section class="sec reveal" id="contact">
+    <div class="addr"><span class="pin">CONTACT-01</span></div>
+    <div class="m-sec">
+      <div class="sec-head"><span class="en">CONTACT</span><h2>お問い合わせ</h2></div>
+      <div class="m-contact contact-split">
+        <div class="contact-detail">
+          <h3>お気軽にご連絡ください</h3>
+          <dl>
+            <dt>電話</dt><dd><span class="todo">(要検討: 電話番号)</span></dd>
+            <dt>営業</dt><dd>9:00 – 18:00 <span class="todo">(要検討)</span></dd>
+            <dt>定休</dt><dd><span class="todo">(要検討: 定休日)</span></dd>
+            <dt>SNS</dt><dd><span class="todo">(要検討: 公式SNSアカウント)</span></dd>
+          </dl>
+        </div>
+        <div class="contact-formwrap">
+          <div class="c-field"><label>お名前</label><div class="c-input">山田 花子</div></div>
+          <div class="c-field"><label>メールアドレス</label><div class="c-input">example@example.com</div></div>
+          <div class="c-field"><label>お問い合わせ内容</label><div class="c-input area">ご相談内容をご記入ください。</div></div>
+          <a class="c-submit" href="#">送信する</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER-01 -->
+  <footer class="sec">
+    <div class="addr"><span class="pin">FOOTER-01</span></div>
+    <div class="m-foot">
+      <div class="foot-cta">
+        <h2>あなたの一杯を、待っています。</h2>
+        <a href="#contact">席を予約する</a>
+      </div>
+      <div class="foot-nav">
+        <span>GALLERY</span><span>CONCEPT</span><span>MENU</span><span>ACCESS</span><span>CONTACT</span>
+      </div>
+      <small>© サンプルカフェ</small>
+    </div>
+  </footer>
+
+</div>
+<script>
+  (function () {
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) { els.forEach(function (e) { e.classList.add('in'); }); return; }
+    var io = new IntersectionObserver(function (ens) {
+      ens.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } });
+    }, { threshold: .12 });
+    els.forEach(function (e) { io.observe(e); });
+  })();
+</script>
+</body>
+</html>
