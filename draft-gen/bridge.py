@@ -71,6 +71,30 @@ KNOWN_ADDR = {"NAV-01", "MV-01", "ABOUT-01", "MENU-01", "GALLERY-01", "FOOTER-01
 ADDR_RE = re.compile(r"^[A-Z][A-Z0-9]*-\d{2}$")  # 安全文字集合(SECTION-NN 連番拡張も許容・注入不能)
 LETTER_RE = re.compile(r"^[a-c]$")               # 複数案の letter(a-c)。単一案は letter 無し
 
+# 型入れ替え(KLK-078/079・第3弾)—番地→型プールの語彙。
+# ★正は DRAFT_RULES §12.1.2(VOICE/FLOW/STAFF)と §12.1.3(その他11セクション)の型プール表であり、
+#   ここはその写し。**順序も index 0〜5 のまま揃える**(表引きの pool index と対応させるため)。
+#   規約側の表を変えたら必ずここも同期させる(乖離は check_klk078 が検出する)。
+# NAV/FOOTER/CTA はプールを持たない: NAV/FOOTER は型プール方式の対象外、
+#   CTA は §4.4 でボタン数と文字数から整列を自動決定する(選ばせる型が無い)。
+SECTION_TYPE_POOLS = {
+    "MV": ("full", "split", "band", "overlap", "center-scroll", "panel-band"),
+    "ABOUT": ("img-left", "img-right", "img-top", "img-overlap", "img-circle", "img-zigzag"),
+    "MENU": ("pat-cards", "pat-list", "pat-zigzag", "price-table", "tab-switch", "feature-large"),
+    "GALLERY": ("pat-grid", "pat-wide", "pat-mosaic", "pat-slider", "pat-masonry", "pat-tab-grid"),
+    "VOICE": ("voice-cards", "voice-quote-stack", "voice-feature", "voice-two-col", "voice-slider", "voice-zigzag"),
+    "FLOW": ("flow-row", "flow-timeline", "flow-number-card", "flow-arrow-band", "flow-vertical-split", "flow-zigzag"),
+    "STAFF": ("staff-grid", "staff-hscroll", "staff-feature", "staff-list", "staff-two-col", "staff-zigzag"),
+    "NEWS": ("news-list", "news-cards", "news-media", "news-timeline", "news-table", "news-accordion"),
+    "PRICE": ("price-table", "price-cards", "price-featured", "price-list", "price-toggle", "price-matrix"),
+    "FAQ": ("faq-list", "faq-accordion", "faq-two-col", "faq-cards", "faq-category-tabs", "faq-search"),
+    "ACCESS": ("map-side", "map-top", "map-overlay", "map-hours", "map-cards", "map-steps"),
+    "CONTACT": ("contact-cta", "contact-form", "contact-split", "contact-methods", "contact-banner", "contact-steps"),
+    "SNS": ("sns-grid", "sns-slider", "sns-cards", "sns-masonry", "sns-reels", "sns-feed"),
+    "SEARCH": ("search-bar", "search-keywords", "search-filters", "search-sidebar", "search-header", "search-hero"),
+}
+PIN_RE = re.compile(r'<span class="pin">\s*([A-Z][A-Z0-9]*-\d{2})\s*</span>')
+
 # 実績カタログ(KLK-013・SCR-004・REQ-105/106)—主配色7カテゴリ/安全名/MIME
 # 主配色 canonical(KLK-067)。**正は palette/index.html の `const COLORS`**（ムードカラー ジェネレーターの
 # 「メインカラーの傾向（カラー）」）であり、name をそのまま・順序も揃えて写している。
@@ -444,21 +468,27 @@ def find_target_section(html, addr):
         return (None, "duplicate")
 
     pin_pos = pins[0].start()
-    # pin より前の最も近い <div class="sec ...> を開始点にする
+    # pin より前の最も近い `class="sec"` の**開始タグ**を開始点にする。
+    # ★タグ名は div とは限らない(KLK-078): 生成物は <section>/<nav>/<header>/<footer> も使う。
+    #   div 決め打ちだった間、それらのページでは全番地が 404 になり
+    #   🔄 セクション再生成が丸ごと機能していなかった(見本 01/03 で再現)。
+    #   `class="sec-more-btn"` のような別クラスに当たらないよう `sec` の直後は空白か引用符に限る。
     start = None
-    for m in re.finditer(r'<div\s+class="sec\b', html):
+    tag = None
+    for m in re.finditer(r'<([a-z]+)\s[^>]*class="sec[ "]', html):
         if m.start() < pin_pos:
-            start = m.start()
+            start, tag = m.start(), m.group(1)
         else:
             break
     if start is None:
         return (None, "unknown")
 
-    # <div ...>/<div>/</div> の入れ子均衡で対応する終端 </div> を探す
+    # 同じタグ名の入れ子均衡で対応する終端 </tag> を探す
     depth = 0
     end = None
-    for m in re.compile(r'<div\b|</div>').finditer(html, start):
-        if m.group(0) == "</div>":
+    open_close = re.compile(r"<{0}\b|</{0}>".format(re.escape(tag)))
+    for m in open_close.finditer(html, start):
+        if m.group(0).startswith("</"):
             depth -= 1
             if depth == 0:
                 end = m.end()
@@ -485,6 +515,69 @@ def read_root_palette(html):
         if m:
             out[name] = m.group(1).strip()
     return out
+
+
+def pool_for_addr(addr):
+    """番地から選べる型プールを返す(KLK-078)。プールを持たない番地・未知の番地は ()。
+
+    番地は `{SECTION}-{NN}` 形式(§2)。連番拡張(ABOUT-02 等)も同じプールを共有する。
+    副作用なし・import 単体テスト対象(S群)。
+    """
+    if not isinstance(addr, str) or not ADDR_RE.match(addr):
+        return ()
+    return SECTION_TYPE_POOLS.get(addr.rsplit("-", 1)[0], ())
+
+
+def is_valid_desired_type(addr, desired):
+    """desiredType が その番地のプールに載っているか(KLK-078/079・許可リスト判定)。
+
+    ★パターン照合ではなく**集合の所属**で判定する。語彙は有限なので、
+      正規表現で「それらしい文字列」を通すより、載っているものだけを通す方が注入面が小さい。
+    None/'' は「指定なし」＝有効(従来の表引きへ落ちる)。
+    """
+    if desired in (None, ""):
+        return True
+    return isinstance(desired, str) and desired in pool_for_addr(addr)
+
+
+def list_page_addrs(html):
+    """対象HTMLに実在する番地を DOM 順で返す(KLK-078)。重複は最初の1回だけ。
+
+    ★compare.html に番地を焼き込まず**実ファイルから読む**ための関数。
+      焼き込むと、セクション構成が指示書ごとに変わる現在の仕様(§2.1)と食い違い、
+      「選べるのに 404」「実在するのに選べない」が起きる(見本3点すべてで発生していた)。
+    """
+    if not isinstance(html, str):
+        return []
+    out = []
+    for m in PIN_RE.finditer(html):
+        if m.group(1) not in out:
+            out.append(m.group(1))
+    return out
+
+
+def read_section_marker(html, addr):
+    """当該セクションが現在どの型かを返す(KLK-078)。読めなければ None。
+
+    find_target_section で範囲を絞ってから、その番地のプール語を**単語境界つき**で探す。
+    境界を付けないと `band` が `panel-band` の一部に誤ヒットする。
+    複数該当したときは**最長一致**を採る(`panel-band` と `band` が両方当たる形を防ぐ保険)。
+    """
+    pool = pool_for_addr(addr)
+    if not pool:
+        return None
+    # find_target_section は成功時 (start, end)・失敗時 (None, 理由) を返す
+    start, end = find_target_section(html, addr)
+    if start is None:
+        return None
+    block = html[start:end]
+    hits = [
+        t for t in pool
+        if re.search(r"(?<![A-Za-z0-9-])" + re.escape(t) + r"(?![A-Za-z0-9-])", block)
+    ]
+    if not hits:
+        return None
+    return max(hits, key=len)
 
 
 def build_regenerate_command(pending_path, allow_open=False):
@@ -1217,6 +1310,10 @@ def _run_server(port):
                 return
             if path == "/catalog-pending":
                 self._catalog_pending()
+                return
+            # 型入れ替え(KLK-078)—実ページの番地・現在型・選べる型
+            if path == "/sections":
+                self._sections()
                 return
             if path == "/catalog.json":
                 self._serve_catalog_json()
@@ -2018,6 +2115,48 @@ def _run_server(port):
             )
             worker.start()
             self._json(202, {"jobId": job_id})
+
+        def _sections(self):
+            """GET /sections?folder=&letter= — 実ページの番地・現在の型・選べる型を返す(KLK-078)。
+
+            ★compare.html に番地を焼き込まない**ため**のエンドポイント。
+              焼き込むと、セクション構成が指示書ごとに変わる現在の仕様(§2.1)と食い違い、
+              「選択肢にあるのに 404」「実在するのに選べない」が起きる(見本3点すべてで発生していた)。
+
+            防御: ①folder(400) ②letter(400) ③対象ファイル不在(404)。既存の純関数を再利用する。
+            読むだけ・副作用なし。Origin 検証は行わない(GET・機微情報なし・/catalog.json と同方針)。
+            """
+            qs = urllib.parse.parse_qs(
+                self.path.split("?", 1)[1] if "?" in self.path else ""
+            )
+            folder = (qs.get("folder") or [None])[0]
+            letter = (qs.get("letter") or [""])[0]
+            if not is_safe_mockups_folder(folder):
+                self._json(400, {"error": "folder が不正です(mockups/ 配下の相対パスのみ)"})
+                return
+            if not is_valid_letter(letter):
+                self._json(400, {"error": "letter が不正です(a-c または未指定)"})
+                return
+            target = resolve_target_html(folder, letter)
+            abs_target = os.path.join(root, target)
+            if not os.path.isfile(abs_target):
+                self._json(404, {"error": "対象ファイルが見つかりません: {0}".format(target)})
+                return
+            try:
+                with open(abs_target, encoding="utf-8") as fh:
+                    html = fh.read()
+            except OSError:
+                self._json(500, {"error": "対象ファイルを読み込めません"})
+                return
+            sections = [
+                {
+                    "addr": addr,
+                    "current": read_section_marker(html, addr),
+                    "pool": list(pool_for_addr(addr)),
+                }
+                for addr in list_page_addrs(html)
+            ]
+            self._json(200, {"letter": letter, "target": target, "sections": sections})
 
         def _regenerate(self):
             """POST /regenerate — 部分再生成(KLK-012・§4.4)。body={folder, letter, addr}。

@@ -53,6 +53,7 @@
   .toolbar a.print-btn{ background:#6b7f4e; color:#fff; border-color:#6b7f4e; }
   .print-a,.print-b,.print-c{ display:none; }
   .regen-ctl{ display:flex; align-items:center; gap:8px; margin-left:auto; }
+  .regen-type{ font-size:11.5px; color:#8a8578; white-space:nowrap; }
   .regen-ctl select{ font-size:13px; padding:8px 12px; border:1px solid #ddd9cf; border-radius:8px; background:#fff; }
   .regen-ctl button[disabled]{ opacity:.5; cursor:not-allowed; }
   .regen-msg{ font-size:11px; color:#8a8578; margin:6px 26px 0; }
@@ -145,13 +146,9 @@
     <div class="regen-ctl">
       <span style="font-size:13px;color:#6b6558">🔄 セクション再生成</span>
       <select id="regen-addr">
-        <option value="NAV-01">NAV-01</option>
-        <option value="MV-01">MV-01</option>
-        <option value="ABOUT-01">ABOUT-01</option>
-        <option value="MENU-01">MENU-01</option>
-        <option value="GALLERY-01">GALLERY-01</option>
-        <option value="FOOTER-01">FOOTER-01</option>
+        <option value="">読み込み中…</option>
       </select>
+      <span id="regen-type" class="regen-type"></span>
       <button class="tb-btn" id="regen-btn" disabled>このセクションを再生成</button>
     </div>
   </div>
@@ -170,35 +167,80 @@
     var folder = root.getAttribute('data-folder');
     var btn = document.getElementById('regen-btn');
     var sel = document.getElementById('regen-addr');
+    var typeEl = document.getElementById('regen-type');
     var msg = document.getElementById('regen-msg');
     var BASE = 'http://127.0.0.1:8765';
+    var sections = [];
 
     function setMsg(t){ msg.textContent = t; }
-
-    // health-gate（約800ms）
-    var ctrl = new AbortController();
-    var to = setTimeout(function(){ ctrl.abort(); }, 800);
-    fetch(BASE + '/health', { signal: ctrl.signal })
-      .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
-      .then(function(){
-        clearTimeout(to);
-        btn.disabled = false;
-        setMsg('ローカルブリッジ稼働中。番地を選んで再生成できます。');
-      })
-      .catch(function(){
-        clearTimeout(to);
-        btn.disabled = true;
-        setMsg('ローカルブリッジ未起動。python3 draft-gen/bridge.py を起動するか、Claude Code で /draft-regenerate ' + folder + ' {案の letter} {番地} でも再生成できます。');
-      });
 
     function currentLetter(){
       var c = document.querySelector('input[name=variant]:checked');
       return c ? c.id.replace('r','') : 'a';
     }
 
+    // 現在の型を出す（読み取り専用・型の切替は KLK-079）
+    function showType(){
+      var hit = null;
+      for (var i = 0; i < sections.length; i++) {
+        if (sections[i].addr === sel.value) { hit = sections[i]; break; }
+      }
+      if (!hit) { typeEl.textContent = ''; return; }
+      typeEl.textContent = hit.current ? '現在の型: ' + hit.current : 'この番地に型はありません';
+    }
+
+    // ★番地は焼き込まず、実ページから読む（KLK-078）
+    //   焼き込むとセクション構成の変わるページと食い違い、
+    //   「選べるのに 404」「実在するのに選べない」が起きる。
+    function loadSections(){
+      var url = BASE + '/sections?folder=' + encodeURIComponent(folder)
+              + '&letter=' + encodeURIComponent(currentLetter());
+      return fetch(url)
+        .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+        .then(function(j){
+          sections = j.sections || [];
+          while (sel.firstChild) { sel.removeChild(sel.firstChild); }
+          sections.forEach(function(s){
+            var o = document.createElement('option');
+            o.value = s.addr;
+            o.textContent = s.addr;          // 動的値は textContent（注入対策）
+            sel.appendChild(o);
+          });
+          showType();
+          btn.disabled = sections.length === 0;
+          setMsg(sections.length
+            ? 'ローカルブリッジ稼働中。番地を選んで再生成できます。'
+            : 'このページに再生成できるセクションが見つかりませんでした。');
+        })
+        .catch(function(){
+          btn.disabled = true;
+          setMsg('セクション一覧を取得できませんでした。ローカルブリッジをご確認ください。');
+        });
+    }
+
+    // health-gate（約800ms）
+    var ctrl = new AbortController();
+    var to = setTimeout(function(){ ctrl.abort(); }, 800);
+    fetch(BASE + '/health', { signal: ctrl.signal })
+      .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+      .then(function(){ clearTimeout(to); loadSections(); })
+      .catch(function(){
+        clearTimeout(to);
+        btn.disabled = true;
+        setMsg('ローカルブリッジ未起動。python3 draft-gen/bridge.py を起動するか、Claude Code で /draft-regenerate ' + folder + ' {案の letter} {番地} でも再生成できます。');
+      });
+
+    sel.addEventListener('change', showType);
+    // 案を切り替えると型も変わる（案ごとに別の型が割り当たる）ので読み直す
+    Array.prototype.forEach.call(
+      document.querySelectorAll('input[name=variant]'),
+      function(r){ r.addEventListener('change', function(){ if(!btn.disabled || sections.length){ loadSections(); } }); }
+    );
+
     btn.addEventListener('click', function(){
       var letter = currentLetter();
       var addr = sel.value;
+      if (!addr) { setMsg('番地を選んでください。'); return; }
       btn.disabled = true;
       setMsg('案' + letter.toUpperCase() + ' の ' + addr + ' を再生成しています…');
       fetch(BASE + '/regenerate', {

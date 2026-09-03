@@ -84,6 +84,7 @@
     .thumbstrip { margin-left: 0; }
     .regen { margin-left: 0; }
   }
+  .regen-type{ font-size:11.5px; color:#8a8578; white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -147,17 +148,12 @@
     <span class="tbtn ghost">← 設定を変えて再生成（SCR-001）</span>
     <span class="regen">
       <span>🔄 セクション再生成</span>
-      <select id="regenAddr">
-        <option value="">番地を選択</option>
-        <option value="NAV-01">NAV-01</option>
-        <option value="MV-01">MV-01</option>
-        <option value="ABOUT-01">ABOUT-01</option>
-        <option value="MENU-01">MENU-01</option>
-        <option value="GALLERY-01">GALLERY-01</option>
-        <option value="FOOTER-01">FOOTER-01</option>
+      <select id="regen-addr">
+        <option value="">読み込み中…</option>
       </select>
-      <button id="regenBtn" disabled>このセクションを再生成</button>
-      <span class="rmsg" id="regenMsg">ローカルブリッジを確認中…</span>
+      <span id="regen-type" class="regen-type"></span>
+      <button id="regen-btn" disabled>このセクションを再生成</button>
+      <span class="rmsg" id="regen-msg">ローカルブリッジを確認中…</span>
     </span>
   </div>
 
@@ -171,57 +167,105 @@
 
 <script>
   (function () {
-    var folder = document.querySelector('.cmp').getAttribute('data-folder');
-    var addrSel = document.getElementById('regenAddr');
-    var btn = document.getElementById('regenBtn');
-    var msg = document.getElementById('regenMsg');
-    var BRIDGE = 'http://127.0.0.1:8765';
+    var root = document.querySelector('.cmp');
+    var folder = root.getAttribute('data-folder');
+    var btn = document.getElementById('regen-btn');
+    var sel = document.getElementById('regen-addr');
+    var typeEl = document.getElementById('regen-type');
+    var msg = document.getElementById('regen-msg');
+    var BASE = 'http://127.0.0.1:8765';
+    var sections = [];
 
-    function setMsg(t) { msg.textContent = t; }
+    function setMsg(t){ msg.textContent = t; }
 
-    // ① 起動時 health チェック（約800ms・失敗ならコントロール無効化）
-    var ac = new AbortController();
-    var timer = setTimeout(function () { ac.abort(); }, 800);
-    fetch(BRIDGE + '/health', { signal: ac.signal })
-      .then(function (r) { return r.ok ? r.json().catch(function(){return {};}) : Promise.reject(); })
-      .then(function () {
-        clearTimeout(timer);
-        setMsg('番地を選んで再生成できます。');
-        addrSel.addEventListener('change', function () { btn.disabled = !addrSel.value; });
-      })
-      .catch(function () {
-        clearTimeout(timer);
-        btn.disabled = true; addrSel.disabled = true;
-        setMsg('ローカルブリッジ未起動。python3 draft-gen/bridge.py を起動するか、Claude Code で /draft-regenerate でも再生成できます。');
+    function currentLetter(){
+      var c = document.querySelector('input[name=variant]:checked');
+      return c ? c.id.replace('r','') : 'a';
+    }
+
+    // 現在の型を出す（読み取り専用・型の切替は KLK-079）
+    function showType(){
+      var hit = null;
+      for (var i = 0; i < sections.length; i++) {
+        if (sections[i].addr === sel.value) { hit = sections[i]; break; }
+      }
+      if (!hit) { typeEl.textContent = ''; return; }
+      typeEl.textContent = hit.current ? '現在の型: ' + hit.current : 'この番地に型はありません';
+    }
+
+    // ★番地は焼き込まず、実ページから読む（KLK-078）
+    //   焼き込むとセクション構成の変わるページと食い違い、
+    //   「選べるのに 404」「実在するのに選べない」が起きる。
+    function loadSections(){
+      var url = BASE + '/sections?folder=' + encodeURIComponent(folder)
+              + '&letter=' + encodeURIComponent(currentLetter());
+      return fetch(url)
+        .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+        .then(function(j){
+          sections = j.sections || [];
+          while (sel.firstChild) { sel.removeChild(sel.firstChild); }
+          sections.forEach(function(s){
+            var o = document.createElement('option');
+            o.value = s.addr;
+            o.textContent = s.addr;          // 動的値は textContent（注入対策）
+            sel.appendChild(o);
+          });
+          showType();
+          btn.disabled = sections.length === 0;
+          setMsg(sections.length
+            ? 'ローカルブリッジ稼働中。番地を選んで再生成できます。'
+            : 'このページに再生成できるセクションが見つかりませんでした。');
+        })
+        .catch(function(){
+          btn.disabled = true;
+          setMsg('セクション一覧を取得できませんでした。ローカルブリッジをご確認ください。');
+        });
+    }
+
+    // health-gate（約800ms）
+    var ctrl = new AbortController();
+    var to = setTimeout(function(){ ctrl.abort(); }, 800);
+    fetch(BASE + '/health', { signal: ctrl.signal })
+      .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+      .then(function(){ clearTimeout(to); loadSections(); })
+      .catch(function(){
+        clearTimeout(to);
+        btn.disabled = true;
+        setMsg('ローカルブリッジ未起動。python3 draft-gen/bridge.py を起動するか、Claude Code で /draft-regenerate ' + folder + ' {案の letter} {番地} でも再生成できます。');
       });
 
-    // ② ボタン押下で選択中の案の letter＋番地を POST
-    btn.addEventListener('click', function () {
-      var checked = document.querySelector('input[name=variant]:checked');
-      var letter = { ra: 'a', rb: 'b', rc: 'c' }[checked && checked.id] || 'a';
-      var addr = addrSel.value;
-      if (!addr) return;
-      btn.disabled = true; setMsg('再生成をリクエスト中…');
-      fetch(BRIDGE + '/regenerate', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+    sel.addEventListener('change', showType);
+    // 案を切り替えると型も変わる（案ごとに別の型が割り当たる）ので読み直す
+    Array.prototype.forEach.call(
+      document.querySelectorAll('input[name=variant]'),
+      function(r){ r.addEventListener('change', function(){ if(!btn.disabled || sections.length){ loadSections(); } }); }
+    );
+
+    btn.addEventListener('click', function(){
+      var letter = currentLetter();
+      var addr = sel.value;
+      if (!addr) { setMsg('番地を選んでください。'); return; }
+      btn.disabled = true;
+      setMsg('案' + letter.toUpperCase() + ' の ' + addr + ' を再生成しています…');
+      fetch(BASE + '/regenerate', {
+        method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ folder: folder, letter: letter, addr: addr })
       })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-          var jobId = d.jobId;
-          if (!jobId) { setMsg('再生成を受け付けられませんでした。'); btn.disabled = false; return; }
-          setMsg('再生成中…（' + addr + '・案' + letter.toUpperCase() + '）');
-          var poll = setInterval(function () {
-            fetch(BRIDGE + '/status/' + encodeURIComponent(jobId))
-              .then(function (r) { return r.json(); })
-              .then(function (s) {
-                if (s.status === 'done') { clearInterval(poll); setMsg('完了しました。表示を更新します。'); location.reload(); }
-                else if (s.status === 'error') { clearInterval(poll); setMsg('再生成でエラーが発生しました。'); btn.disabled = false; }
-              })
-              .catch(function () { clearInterval(poll); setMsg('状態の取得に失敗しました。'); btn.disabled = false; });
-          }, 1000);
-        })
-        .catch(function () { setMsg('再生成をリクエストできませんでした。'); btn.disabled = false; });
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        var jobId = j.jobId;
+        if(!jobId){ throw new Error(); }
+        var poll = setInterval(function(){
+          fetch(BASE + '/status/' + jobId)
+            .then(function(r){ return r.json(); })
+            .then(function(s){
+              if(s.state === 'done'){ clearInterval(poll); setMsg('再生成が完了しました。プレビューを再読み込みします。'); location.reload(); }
+              else if(s.state === 'error'){ clearInterval(poll); btn.disabled = false; setMsg('再生成に失敗しました。設定を変えてお試しください。'); }
+            })
+            .catch(function(){ clearInterval(poll); btn.disabled = false; setMsg('状態の取得に失敗しました。'); });
+        }, 900);
+      })
+      .catch(function(){ btn.disabled = false; setMsg('再生成の開始に失敗しました。ローカルブリッジをご確認ください。'); });
     });
   })();
 </script>

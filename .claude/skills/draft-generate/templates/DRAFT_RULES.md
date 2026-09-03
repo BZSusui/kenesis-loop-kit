@@ -1258,12 +1258,35 @@ SCR-001 でカタログサムネイルを選んだ指示書では、**案Aを「
 
 - **ルート要素に `data-folder="mockups/{YYYY-MM-DD}_{案件名}"` を焼き込む**（保存先フォルダの相対パス。`compare.html` は既に
   `meta.project` を表示しており、フォルダパスは新たな機密ではない・`mockups/` はGit除外）。JS はこれを読んで `folder` を得る。
-- **コントロール本体**: 「🔄 セクション再生成」＝番地 `<select>`（`NAV-01`/`MV-01`/`ABOUT-01`/`MENU-01`/`GALLERY-01`/`FOOTER-01` を
-  **列挙**した固定 `<option>`。ユーザー自由入力は作らない＝注入面を作らない）＋「このセクションを再生成」`<button>`。既定は無効化しておく。
+- **コントロール本体**: 「🔄 セクション再生成」＝番地 `<select id="regen-addr">` ＋ 現在型ラベル `<span id="regen-type">`
+  ＋「このセクションを再生成」`<button id="regen-btn">`。既定は無効化しておく。
+  **★番地は焼き込まない（KLK-078）**: `<option>` は `<option value="">読み込み中…</option>` の1つだけを出力し、
+  中身は **`GET /sections` の結果で埋める**。ユーザー自由入力は作らない（＝注入面を作らない）点は不変。
+
+**★なぜ固定列挙をやめたか（KLK-078）**
+
+  以前は `NAV-01`/`MV-01`/`ABOUT-01`/`MENU-01`/`GALLERY-01`/`FOOTER-01` の6番地を**固定で列挙**していた。
+  しかし KLK-022 以降、本文セクションは**指示書ごとに変わる**（§2.1 の14語彙から選択）。
+  結果、選択肢と実ページが食い違い、**同梱の見本3点すべてで壊れていた**:
+
+  | 見本 | 症状 |
+  |---|---|
+  | 01 カフェ | `ACCESS-01`・`CONTACT-01` が実在するのに**選べない** |
+  | 02 士業 | `MENU-01`・`GALLERY-01` は**404** ／ `NEWS`・`VOICE`・`FAQ`・`CONTACT` が選べない |
+  | 03 クリニック | `GALLERY-01` は**404** ／ `FLOW`・`STAFF`・`ACCESS`・`CONTACT` が選べない |
+
+  **生成時に分かっている情報でも、後から変わりうるものは焼き込まない。**実ファイルから読む。
+
+- **現在の型を出す（KLK-078）**: `GET /sections` が返す `current` を `現在の型: {マーカー}` として控えめに表示する。
+  型を持たない番地（`NAV-01`/`FOOTER-01`/`CTA-01`）では `この番地に型はありません` と出す。
+  **案を切り替えたら読み直す**（案ごとに別の型が割り当たるため・§12.1.2/§12.1.3）。
 - **`</body>` 直前のインライン JS（外部依存ゼロ・localhost fetch のみ）**:
   1. 起動時に `GET http://127.0.0.1:8765/health` を **AbortController 約800ms** で試行。**失敗ならコントロールを無効化**し
      「ローカルブリッジ未起動。`python3 draft-gen/bridge.py` を起動するか、Claude Code で `/draft-regenerate {folder} {letter} {番地}`
      でも再生成できます」と案内する（**graceful**・KLK-010 U-7 同型）。
+  1'. 成功後、**`GET http://127.0.0.1:8765/sections?folder=&letter=`** を呼び、返った番地で `<select>` を組み立て、
+     現在型ラベルを更新する（`textContent` で構築＝注入対策）。`input[name=variant]` の `change` でも呼び直す。
+     取得に失敗したらボタンを無効化し、理由を出す（**空の選択肢のまま押させない**）。
   2. 成功時、ボタン押下で **checked ラジオの letter**（`document.querySelector('input[name=variant]:checked')` の id `ra/rb/rc` → `a/b/c`）と
      選択中の番地を取り、`fetch('http://127.0.0.1:8765/regenerate', {method:'POST', headers:{'Content-Type':'application/json'},
      body: JSON.stringify({folder, letter, addr})})` を投げ、返った `jobId` で `GET /status/{jobId}` をポーリングする
@@ -1325,6 +1348,14 @@ SCR-001 でカタログサムネイルを選んだ指示書では、**案Aを「
 現行マーカーが読めない/語彙外のときのみ、上の従来規則（表引き・archetype 既定）へフォールバックする。
 `data-ref-id` が無いファイル（従来生成・案B/C）は本段落の対象外＝従来規則のまま。
 
-- `compare.html` の再生成 `<select>` は基本6番地のまま（VOICE 等は追加しない・§13）。ブラウザ経由の VOICE/FLOW/STAFF 部分
-  再生成は既存制約どおり非対象。手動 `/draft-regenerate {folder} {letter} VOICE-01` は番地パターン（`^[A-Z][A-Z0-9]*-\d{2}$`）が
-  既に許容する。`bridge.py`（KNOWN_ADDR / ADDR_RE）への変更は不要。
+- ~~`compare.html` の再生成 `<select>` は基本6番地のまま~~ → **KLK-078 で撤回**。`<select>` は `GET /sections` が返す
+  **実ページの番地**で組み立てる（§13）。VOICE/FLOW/STAFF もブラウザから選べる。手動
+  `/draft-regenerate {folder} {letter} VOICE-01` は従来どおり番地パターン（`^[A-Z][A-Z0-9]*-\d{2}$`）で通る。
+
+**★`.sec` の要素名は `div` とは限らない（KLK-078）**
+
+生成物のセクション容器は `<section class="sec">` / `<nav class="sec">` / `<header class="sec">` / `<footer class="sec">` も使う
+（ゴールデン `tests/fixtures/klk007` は `<div>` のみだったため、この差に長く気づけなかった）。
+**番地から `.sec` ブロックを特定する処理は、要素名を決め打ちにしないこと。**
+`bridge.py` の `find_target_section` が `<div class="sec` 決め打ちだった間、`<section>` を使うページでは
+**全番地が 404 になり、🔄 セクション再生成が丸ごと機能していなかった**（見本 01・03 で再現）。
