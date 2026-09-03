@@ -65,9 +65,9 @@
   .about-body p{ margin:0 0 18px; font-size:15px; }
   .about-body .about-lede{ font-size:20px; font-weight:700; color:var(--m-nav); line-height:1.8; }
 
-  /* GALLERY — pat-wide（横帯ワイド・1列の大判横長を積む） */
-  .m-gallery.pat-wide{ display:flex; flex-direction:column; gap:20px; }
-  .m-gallery.pat-wide .atari{ aspect-ratio:16/6; }
+  /* GALLERY — pat-wide（1列の大判を積む・比率は 4/3＝§3.0/KLK-075。平たい帯にしない） */
+  .m-gallery.pat-wide{ display:flex; flex-direction:column; gap:22px; align-items:center; }
+  .m-gallery.pat-wide .atari{ aspect-ratio:4/3; width:100%; max-width:600px; }
   .m-gallery.pat-wide .atari .desc{ font-size:14px; }
 
   /* MENU — pat-list（横並びリスト） */
@@ -81,9 +81,10 @@
   .menu-row .m-name .price{ font-size:16px; font-weight:700; color:var(--m-accent); white-space:nowrap; }
   .menu-row .m-desc{ font-size:13px; margin:6px 0 0; color:color-mix(in srgb,var(--m-text) 82%,var(--m-bg)); }
 
-  /* ACCESS — map-top（横長の大地図を上・下に情報） */
+  /* ACCESS — map-top（横長の大地図を上・下に情報・地図も 4/3＝§3.0） */
   .m-access.map-top{ display:flex; flex-direction:column; gap:32px; }
-  .map-atari{ position:relative; aspect-ratio:4/3; max-height:360px; border:1px dashed color-mix(in srgb,var(--m-main) 42%,#fff);
+  .map-atari{ position:relative; aspect-ratio:4/3; max-width:760px; margin:0 auto; width:100%;
+    border:1px dashed color-mix(in srgb,var(--m-main) 42%,#fff);
     border-radius:var(--radius); background:
       repeating-linear-gradient(45deg,color-mix(in srgb,var(--m-main) 10%,var(--m-bg)) 0 14px,color-mix(in srgb,var(--m-main) 16%,var(--m-bg)) 14px 28px);
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:color-mix(in srgb,var(--m-main) 70%,#000); }
@@ -136,7 +137,7 @@
     .m-about.img-right .about-body{ order:1; }
     .menu-row{ flex-direction:column; align-items:stretch; gap:12px; }
     .menu-row .atari{ flex:none; width:100%; }
-    .m-gallery.pat-wide .atari{ aspect-ratio:4/3; }
+    .m-gallery.pat-wide .atari{ max-width:none; }
     .m-foot{ padding:40px 22px 24px; }
   }
 
@@ -206,7 +207,7 @@
     <div class="m-sec">
       <div class="sec-head"><span class="en">GALLERY</span><h2>店内のようす</h2></div>
       <div class="m-gallery pat-wide">
-        <div class="atari"><span class="ic">📷</span><span class="desc">木のテーブルが並ぶ客席の全景</span><span class="kw">検索: <b>cafe wooden table interior wide</b></span></div>
+        <div class="atari"><span class="ic">📷</span><span class="desc">木のテーブルが並ぶ客席の全景</span><span class="kw">検索: <b>cafe wooden table interior</b></span></div>
         <div class="atari"><span class="ic">📷</span><span class="desc">コーヒーを淹れるカウンター越しの一枚</span><span class="kw">検索: <b>barista counter pour</b></span></div>
         <div class="atari"><span class="ic">📷</span><span class="desc">窓辺の席と外の緑</span></div>
       </div>

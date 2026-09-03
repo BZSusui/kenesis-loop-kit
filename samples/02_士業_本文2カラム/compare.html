@@ -1,208 +1,230 @@
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>サンプル法律事務所 — デザインラフ 3案比較</title>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>サンプル法律事務所 — デザインラフ比較</title>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:#eef1f5;color:#2a2f3a;font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif;line-height:1.6}
-  .wrap{max-width:1180px;margin:0 auto;padding:20px 18px 60px}
-  input.sw{position:absolute;opacity:0;pointer-events:none}
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #eceef2; color: #222;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif; }
+
+  .cmp > input { position: absolute; opacity: 0; pointer-events: none; }
+
   /* toolchrome */
-  .toolchrome{background:#fff;border:1px solid #e0e4ea;border-radius:12px 12px 0 0;padding:20px 24px;border-bottom:none}
-  .proj-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
-  .proj-head .pj{font-size:19px;font-weight:800;color:#1d2a4d}
-  .proj-head .meta{font-size:12.5px;color:#7a828f}
-  .settings-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
-  .settings-chips span{font-size:11.5px;background:#f1f4f8;color:#48505d;border:1px solid #e2e7ee;border-radius:20px;padding:4px 12px}
-  .partial-note{display:none}
+  .toolchrome { background: #fff; padding: 16px 24px; border-bottom: 1px solid #e0e2e8; }
+  .proj-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .proj-head .pname { font-size: 18px; font-weight: 700; }
+  .proj-head .pmeta { font-size: 12px; color: #888; }
+  .settings-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .settings-chips .chip { background: #f1f3f7; color: #445; font-size: 11.5px; padding: 5px 12px; border-radius: 14px; }
+
   /* variant-bar */
-  .variant-bar{background:#fff;border:1px solid #e0e4ea;border-top:none;padding:14px 24px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;justify-content:space-between}
-  .seg{display:flex;gap:6px}
-  .seg label{cursor:pointer;font-size:13px;font-weight:700;padding:8px 18px;border-radius:8px;background:#f1f4f8;color:#48505d;border:1px solid #e2e7ee}
-  #ra:checked ~ .wrapinner .seg label[for=ra],
-  #rb:checked ~ .wrapinner .seg label[for=rb],
-  #rc:checked ~ .wrapinner .seg label[for=rc]{background:#1d2a4d;color:#fff;border-color:#1d2a4d}
-  .vwseg{display:flex;gap:6px}
-  .vwseg label{cursor:pointer;font-size:12px;font-weight:700;padding:7px 14px;border-radius:8px;background:#f1f4f8;color:#48505d;border:1px solid #e2e7ee}
-  #vwfull:checked ~ .wrapinner .vwseg label[for=vwfull],
-  #vw768:checked ~ .wrapinner .vwseg label[for=vw768],
-  #vw375:checked ~ .wrapinner .vwseg label[for=vw375]{background:#b08d4f;color:#fff;border-color:#b08d4f}
-  /* thumbstrip */
-  .thumbstrip{display:flex;gap:12px;background:#fff;border:1px solid #e0e4ea;border-top:none;padding:14px 24px}
-  .vthumb{flex:0 0 132px;border-radius:8px;overflow:hidden;border:2px solid transparent;cursor:pointer;background:#fff}
-  .vthumb .mini{height:64px;position:relative;display:flex;flex-direction:column;justify-content:flex-end}
-  .vthumb .mini .bar{height:14px}.vthumb .mini .bd{flex:1}
-  .va .mini .bar{background:#1d2a4d}.va .mini .bd{background:linear-gradient(135deg,#2a3c6b,#b08d4f)}
-  .vb .mini .bar{background:#12182e}.vb .mini .bd{background:linear-gradient(135deg,#1e2a4d,#c6a15b)}
-  .vc .mini .bar{background:#2a4f88}.vc .mini .bd{background:linear-gradient(135deg,#3d6bb5,#e0a94a)}
-  .vthumb .cap{font-size:11.5px;padding:6px 8px;display:flex;justify-content:space-between;align-items:center;gap:6px}
-  .vthumb .cap a{font-size:11px;color:#2a3c6b;text-decoration:none;white-space:nowrap}
-  #ra:checked ~ .wrapinner label.va,#rb:checked ~ .wrapinner label.vb,#rc:checked ~ .wrapinner label.vc{border-color:#b08d4f}
+  .variant-bar { background: #fff; padding: 10px 24px 16px; border-bottom: 1px solid #e0e2e8; display: flex;
+    flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+  .seg, .vwseg { display: inline-flex; border: 1px solid #d4d7df; border-radius: 8px; overflow: hidden; }
+  .seg label, .vwseg label { cursor: pointer; padding: 8px 18px; font-size: 13px; font-weight: 700; color: #778;
+    background: #fff; border-right: 1px solid #e3e5ec; }
+  .seg label:last-child, .vwseg label:last-child { border-right: 0; }
+  .barlabel { font-size: 11px; color: #99a; margin: 0 0 4px; letter-spacing: .05em; }
+  .thumbstrip { display: flex; gap: 12px; margin-left: auto; }
+  .vthumb { width: 92px; text-align: center; }
+  .vthumb .mini { height: 58px; border-radius: 6px; border: 1px solid #d8dbe3; overflow: hidden; display: flex; flex-direction: column; }
+  .vthumb .mini .mtop { height: 16px; }
+  .vthumb .mini .mbody { flex: 1; }
+  .vthumb.va .mtop { background: #1d2a4d; } .vthumb.va .mbody { background: linear-gradient(135deg,#2a3c6b,#b08d4f); }
+  .vthumb.vb .mtop { background: #141d38; } .vthumb.vb .mbody { background: linear-gradient(135deg,#1f2c50,#c6a15b); }
+  .vthumb.vc .mtop { background: #2a3c6b; } .vthumb.vc .mbody { background: linear-gradient(135deg,#3f5aa6,#f0a63e); }
+  .vthumb .cap { font-size: 11px; color: #667; margin-top: 5px; }
+  .vthumb .cap .full { display: block; font-size: 10.5px; color: #3f5aa6; text-decoration: none; margin-top: 2px; }
+
   /* toolbar */
-  .toolbar{background:#fff;border:1px solid #e0e4ea;border-top:none;padding:12px 24px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-  .toolbar a.tb,.toolbar .tb{font-size:12.5px;text-decoration:none;color:#2a3c6b;background:#f1f4f8;border:1px solid #e2e7ee;border-radius:8px;padding:8px 16px;font-weight:700}
-  .regen{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .regen select,.regen button{font-size:12.5px;padding:8px 12px;border-radius:8px;border:1px solid #d6dbe3;background:#fff}
-  .regen button{background:#2a3c6b;color:#fff;border-color:#2a3c6b;font-weight:700;cursor:pointer}
-  .regen button:disabled{background:#c7ccd4;border-color:#c7ccd4;cursor:not-allowed}
-  .regen .rmsg{font-size:11.5px;color:#7a828f;flex-basis:100%}
-  #ra:checked ~ .wrapinner .toolbar a.print{}
-  /* print-link switches by checked variant */
-  .toolbar a.print[data-for]{display:none}
-  #ra:checked ~ .wrapinner .toolbar a.print[data-for=a],
-  #rb:checked ~ .wrapinner .toolbar a.print[data-for=b],
-  #rc:checked ~ .wrapinner .toolbar a.print[data-for=c]{display:inline-block}
+  .toolbar { background: #fafbfc; padding: 10px 24px; border-bottom: 1px solid #e0e2e8; display: flex;
+    flex-wrap: wrap; gap: 12px; align-items: center; }
+  .toolbar a.tbtn, .toolbar .tbtn { display: inline-block; background: #2a3c6b; color: #fff; font-size: 12.5px; font-weight: 700;
+    padding: 8px 16px; border-radius: 6px; text-decoration: none; }
+  .toolbar .tbtn.ghost { background: #fff; color: #556; border: 1px solid #d4d7df; }
+  .toolbar a.print-a, .toolbar a.print-b, .toolbar a.print-c { display: none; }
+  .regen { display: inline-flex; gap: 8px; align-items: center; margin-left: auto; }
+  .regen select, .regen button { font-size: 12px; padding: 7px 10px; border-radius: 6px; border: 1px solid #d4d7df; background: #fff; }
+  .regen button { background: #b08d4f; color: #fff; border: 0; font-weight: 700; cursor: pointer; }
+  .regen button:disabled { background: #cfd3db; cursor: not-allowed; }
+  .regen .rmsg { font-size: 11px; color: #99a; max-width: 320px; }
+
   /* canvas */
-  .canvas{background:#dfe3ea;border:1px solid #e0e4ea;border-top:none;border-radius:0 0 12px 12px;padding:22px}
-  .pane{display:none}
-  #ra:checked ~ .wrapinner .canvas #paneA,
-  #rb:checked ~ .wrapinner .canvas #paneB,
-  #rc:checked ~ .wrapinner .canvas #paneC{display:block}
-  .pane iframe{width:100%;height:1400px;display:block;margin:0 auto;border:1px solid #cfd5de;background:#fff;box-shadow:0 6px 24px rgba(0,0,0,.1)}
-  #vw768:checked ~ .wrapinner .canvas .pane iframe{width:768px}
-  #vw375:checked ~ .wrapinner .canvas .pane iframe{width:375px}
-  @media print{
-    body{background:#fff}
-    .toolchrome,.variant-bar,.thumbstrip,.toolbar,.vwseg{display:none!important}
-    .canvas{border:none;padding:0}
-    .pane iframe{box-shadow:none;border:none}
+  .canvas { padding: 22px; }
+  .pane { display: none; background: #d9dce3; padding: 18px; border-radius: 8px; }
+  .pane iframe { width: 100%; display: block; margin: 0 auto; height: 82vh; border: 0; background: #fff;
+    box-shadow: 0 4px 24px rgba(0,0,0,.12); }
+
+  /* 案切替（CSS-only 兄弟結合子） */
+  #ra:checked ~ .variant-bar .seg label[for="ra"],
+  #rb:checked ~ .variant-bar .seg label[for="rb"],
+  #rc:checked ~ .variant-bar .seg label[for="rc"] { background: #2a3c6b; color: #fff; }
+  #ra:checked ~ .canvas #paneA,
+  #rb:checked ~ .canvas #paneB,
+  #rc:checked ~ .canvas #paneC { display: block; }
+  #ra:checked ~ .toolbar a.print-a,
+  #rb:checked ~ .toolbar a.print-b,
+  #rc:checked ~ .toolbar a.print-c { display: inline-block; }
+
+  /* 画面幅プレビュー切替（REQ-201・第2ラジオ群 name=vw） */
+  #vwfull:checked ~ .variant-bar .vwseg label[for="vwfull"],
+  #vw768:checked ~ .variant-bar .vwseg label[for="vw768"],
+  #vw375:checked ~ .variant-bar .vwseg label[for="vw375"] { background: #2a3c6b; color: #fff; }
+  #vw768:checked ~ .canvas .pane iframe { width: 768px; }
+  #vw375:checked ~ .canvas .pane iframe { width: 375px; }
+
+  @media print {
+    .toolchrome, .variant-bar, .toolbar, .vwseg { display: none !important; }
+    .canvas { padding: 0; }
+    .pane { background: #fff; padding: 0; }
+  }
+  @media (max-width: 640px) {
+    .thumbstrip { margin-left: 0; }
+    .regen { margin-left: 0; }
   }
 </style>
+</head>
+<body>
 
-<div class="wrap" data-folder="samples/02_士業_本文2カラム">
-  <!-- variant switch radios -->
-  <input class="sw" type="radio" name="variant" id="ra" checked>
-  <input class="sw" type="radio" name="variant" id="rb">
-  <input class="sw" type="radio" name="variant" id="rc">
-  <!-- viewport width radios -->
-  <input class="sw" type="radio" name="vw" id="vwfull" checked>
-  <input class="sw" type="radio" name="vw" id="vw768">
-  <input class="sw" type="radio" name="vw" id="vw375">
+<div class="cmp" data-folder="samples/02_士業_本文2カラム">
 
-  <div class="wrapinner">
-    <!-- toolchrome -->
-    <div class="toolchrome">
-      <div class="proj-head">
-        <span class="pj">サンプル法律事務所</span>
-        <span class="meta">生成日 2026-09-03 ・ 3案</span>
-      </div>
-      <div class="settings-chips">
-        <span>業種：士業事務所（法律/会計/コンサルティング他）</span>
-        <span>カラム：本文のみ2カラム（サイドバー左）</span>
-        <span>テイスト：誠実・信頼</span>
-        <span>主色：#2a3c6b</span>
-        <span>アタリ：色面（standard）</span>
-      </div>
-      <div class="partial-note"></div>
+  <!-- 案切替ラジオ（既定=案A） -->
+  <input type="radio" name="variant" id="ra" checked>
+  <input type="radio" name="variant" id="rb">
+  <input type="radio" name="variant" id="rc">
+  <!-- 画面幅ラジオ（既定=全幅） -->
+  <input type="radio" name="vw" id="vwfull" checked>
+  <input type="radio" name="vw" id="vw768">
+  <input type="radio" name="vw" id="vw375">
+
+  <div class="toolchrome">
+    <div class="proj-head">
+      <span class="pname">サンプル法律事務所</span>
+      <span class="pmeta">生成日 2026-09-03 ／ 3案</span>
     </div>
+    <div class="settings-chips">
+      <span class="chip">業種: 士業事務所（法律/会計/コンサルティング他）</span>
+      <span class="chip">カラム: 本文2カラム（サイドバー左）</span>
+      <span class="chip">テイスト: 誠実・信頼</span>
+      <span class="chip">配色: #2a3c6b 系</span>
+      <span class="chip">アタリ: 色面（a方式）</span>
+    </div>
+  </div>
 
-    <!-- variant bar -->
-    <div class="variant-bar">
+  <div class="variant-bar">
+    <div>
+      <div class="barlabel">デザイン案</div>
       <div class="seg">
-        <label for="ra">案A</label>
-        <label for="rb">案B</label>
-        <label for="rc">案C</label>
+        <label for="ra">案A 忠実</label>
+        <label for="rb">案B 濃色高級</label>
+        <label for="rc">案C 明色ポップ</label>
       </div>
+    </div>
+    <div>
+      <div class="barlabel">画面幅</div>
       <div class="vwseg">
         <label for="vwfull">全幅</label>
         <label for="vw768">768px</label>
         <label for="vw375">375px</label>
       </div>
     </div>
-
-    <!-- thumbstrip -->
     <div class="thumbstrip">
-      <label class="vthumb va" for="ra">
-        <div class="mini"><div class="bar"></div><div class="bd"></div></div>
-        <div class="cap"><span>案A 忠実</span><a href="index-a.html" target="_blank" class="full">原寸 ↗</a></div>
-      </label>
-      <label class="vthumb vb" for="rb">
-        <div class="mini"><div class="bar"></div><div class="bd"></div></div>
-        <div class="cap"><span>案B 濃色</span><a href="index-b.html" target="_blank" class="full">原寸 ↗</a></div>
-      </label>
-      <label class="vthumb vc" for="rc">
-        <div class="mini"><div class="bar"></div><div class="bd"></div></div>
-        <div class="cap"><span>案C 明色</span><a href="index-c.html" target="_blank" class="full">原寸 ↗</a></div>
-      </label>
-    </div>
-
-    <!-- toolbar -->
-    <div class="toolbar">
-      <a class="tb print" data-for="a" href="index-a.html" target="_blank">🖨 選択中の案を印刷 / PDFで保存</a>
-      <a class="tb print" data-for="b" href="index-b.html" target="_blank">🖨 選択中の案を印刷 / PDFで保存</a>
-      <a class="tb print" data-for="c" href="index-c.html" target="_blank">🖨 選択中の案を印刷 / PDFで保存</a>
-      <div class="regen">
-        <select id="regen-addr">
-          <option value="">🔄 再生成する番地を選択…</option>
-          <option value="NAV-01">NAV-01</option>
-          <option value="MV-01">MV-01</option>
-          <option value="ABOUT-01">ABOUT-01</option>
-          <option value="MENU-01">MENU-01</option>
-          <option value="GALLERY-01">GALLERY-01</option>
-          <option value="FOOTER-01">FOOTER-01</option>
-        </select>
-        <button id="regen-btn" type="button" disabled>このセクションを再生成</button>
-        <div class="rmsg" id="regen-msg">ローカルブリッジの状態を確認しています…</div>
-      </div>
-    </div>
-
-    <!-- canvas -->
-    <div class="canvas">
-      <div class="pane" id="paneA"><iframe src="index-a.html" title="案A プレビュー"></iframe></div>
-      <div class="pane" id="paneB"><iframe src="index-b.html" title="案B プレビュー"></iframe></div>
-      <div class="pane" id="paneC"><iframe src="index-c.html" title="案C プレビュー"></iframe></div>
+      <div class="vthumb va"><div class="mini"><div class="mtop"></div><div class="mbody"></div></div>
+        <div class="cap">案A<a class="full" href="index-a.html" target="_blank">原寸 ↗</a></div></div>
+      <div class="vthumb vb"><div class="mini"><div class="mtop"></div><div class="mbody"></div></div>
+        <div class="cap">案B<a class="full" href="index-b.html" target="_blank">原寸 ↗</a></div></div>
+      <div class="vthumb vc"><div class="mini"><div class="mtop"></div><div class="mbody"></div></div>
+        <div class="cap">案C<a class="full" href="index-c.html" target="_blank">原寸 ↗</a></div></div>
     </div>
   </div>
+
+  <div class="toolbar">
+    <a class="tbtn print-a" href="index-a.html" target="_blank">🖨 印刷 / PDFで保存（案A）</a>
+    <a class="tbtn print-b" href="index-b.html" target="_blank">🖨 印刷 / PDFで保存（案B）</a>
+    <a class="tbtn print-c" href="index-c.html" target="_blank">🖨 印刷 / PDFで保存（案C）</a>
+    <span class="tbtn ghost">← 設定を変えて再生成（SCR-001）</span>
+    <span class="regen">
+      <span>🔄 セクション再生成</span>
+      <select id="regenAddr">
+        <option value="">番地を選択</option>
+        <option value="NAV-01">NAV-01</option>
+        <option value="MV-01">MV-01</option>
+        <option value="ABOUT-01">ABOUT-01</option>
+        <option value="MENU-01">MENU-01</option>
+        <option value="GALLERY-01">GALLERY-01</option>
+        <option value="FOOTER-01">FOOTER-01</option>
+      </select>
+      <button id="regenBtn" disabled>このセクションを再生成</button>
+      <span class="rmsg" id="regenMsg">ローカルブリッジを確認中…</span>
+    </span>
+  </div>
+
+  <div class="canvas">
+    <div class="pane" id="paneA"><iframe src="index-a.html" title="案A プレビュー"></iframe></div>
+    <div class="pane" id="paneB"><iframe src="index-b.html" title="案B プレビュー"></iframe></div>
+    <div class="pane" id="paneC"><iframe src="index-c.html" title="案C プレビュー"></iframe></div>
+  </div>
+
 </div>
 
 <script>
   (function () {
-    var folder = document.querySelector('.wrap').getAttribute('data-folder');
-    var sel = document.getElementById('regen-addr');
-    var btn = document.getElementById('regen-btn');
-    var msg = document.getElementById('regen-msg');
-    var bridgeUp = false;
+    var folder = document.querySelector('.cmp').getAttribute('data-folder');
+    var addrSel = document.getElementById('regenAddr');
+    var btn = document.getElementById('regenBtn');
+    var msg = document.getElementById('regenMsg');
+    var BRIDGE = 'http://127.0.0.1:8765';
 
-    function currentLetter() {
-      var r = document.querySelector('input[name=variant]:checked');
-      return r ? ({ ra: 'a', rb: 'b', rc: 'c' }[r.id] || 'a') : 'a';
-    }
     function setMsg(t) { msg.textContent = t; }
 
-    // health-gated (約800ms)
-    (function probeHealth() {
-      var ac = new AbortController();
-      var to = setTimeout(function () { ac.abort(); }, 800);
-      fetch('http://127.0.0.1:8765/health', { signal: ac.signal })
-        .then(function (r) { return r.ok ? r.json().catch(function () { return {}; }) : Promise.reject(); })
-        .then(function () {
-          clearTimeout(to); bridgeUp = true;
-          setMsg('ローカルブリッジ稼働中。番地を選ぶと再生成できます。');
-          sel.addEventListener('change', function () { btn.disabled = !sel.value; });
-        })
-        .catch(function () {
-          clearTimeout(to); bridgeUp = false; btn.disabled = true;
-          setMsg('ローカルブリッジ未起動。python3 draft-gen/bridge.py を起動するか、Claude Code で /draft-regenerate ' + folder + ' <案a/b/c> <番地> でも再生成できます。');
-        });
-    })();
+    // ① 起動時 health チェック（約800ms・失敗ならコントロール無効化）
+    var ac = new AbortController();
+    var timer = setTimeout(function () { ac.abort(); }, 800);
+    fetch(BRIDGE + '/health', { signal: ac.signal })
+      .then(function (r) { return r.ok ? r.json().catch(function(){return {};}) : Promise.reject(); })
+      .then(function () {
+        clearTimeout(timer);
+        setMsg('番地を選んで再生成できます。');
+        addrSel.addEventListener('change', function () { btn.disabled = !addrSel.value; });
+      })
+      .catch(function () {
+        clearTimeout(timer);
+        btn.disabled = true; addrSel.disabled = true;
+        setMsg('ローカルブリッジ未起動。python3 draft-gen/bridge.py を起動するか、Claude Code で /draft-regenerate でも再生成できます。');
+      });
 
+    // ② ボタン押下で選択中の案の letter＋番地を POST
     btn.addEventListener('click', function () {
-      if (!bridgeUp || !sel.value) return;
-      var letter = currentLetter(), addr = sel.value;
-      btn.disabled = true; setMsg('案' + letter.toUpperCase() + ' の ' + addr + ' を再生成しています…');
-      fetch('http://127.0.0.1:8765/regenerate', {
+      var checked = document.querySelector('input[name=variant]:checked');
+      var letter = { ra: 'a', rb: 'b', rc: 'c' }[checked && checked.id] || 'a';
+      var addr = addrSel.value;
+      if (!addr) return;
+      btn.disabled = true; setMsg('再生成をリクエスト中…');
+      fetch(BRIDGE + '/regenerate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ folder: folder, letter: letter, addr: addr })
-      }).then(function (r) { return r.json(); }).then(function (j) {
-        var jobId = j && j.jobId;
-        if (!jobId) { setMsg('再生成の受付に失敗しました。'); btn.disabled = false; return; }
-        (function poll() {
-          fetch('http://127.0.0.1:8765/status/' + jobId).then(function (r) { return r.json(); }).then(function (s) {
-            if (s.state === 'done') { setMsg('再生成が完了しました。プレビューを更新します…'); setTimeout(function () { location.reload(); }, 600); }
-            else if (s.state === 'error') { setMsg('再生成でエラーが発生しました：' + (s.message || '')); btn.disabled = false; }
-            else { setTimeout(poll, 900); }
-          }).catch(function () { setMsg('状態の取得に失敗しました。'); btn.disabled = false; });
-        })();
-      }).catch(function () { setMsg('再生成リクエストに失敗しました。'); btn.disabled = false; });
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          var jobId = d.jobId;
+          if (!jobId) { setMsg('再生成を受け付けられませんでした。'); btn.disabled = false; return; }
+          setMsg('再生成中…（' + addr + '・案' + letter.toUpperCase() + '）');
+          var poll = setInterval(function () {
+            fetch(BRIDGE + '/status/' + encodeURIComponent(jobId))
+              .then(function (r) { return r.json(); })
+              .then(function (s) {
+                if (s.status === 'done') { clearInterval(poll); setMsg('完了しました。表示を更新します。'); location.reload(); }
+                else if (s.status === 'error') { clearInterval(poll); setMsg('再生成でエラーが発生しました。'); btn.disabled = false; }
+              })
+              .catch(function () { clearInterval(poll); setMsg('状態の取得に失敗しました。'); btn.disabled = false; });
+          }, 1000);
+        })
+        .catch(function () { setMsg('再生成をリクエストできませんでした。'); btn.disabled = false; });
     });
   })();
 </script>
+
+</body>
+</html>
