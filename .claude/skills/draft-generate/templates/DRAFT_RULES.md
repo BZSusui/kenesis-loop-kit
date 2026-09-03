@@ -146,6 +146,36 @@
 <div class="atari"><span class="ic">📷</span><span class="desc">ボブ</span></div>
 ```
 
+### 3.0 アタリ枠の比率（KLK-072・**既定 `aspect-ratio: 4 / 3`**）
+
+**画像アタリの縦横比は `aspect-ratio: 4 / 3`（横4:縦3）を既定とする。**
+`min-height` だけで高さを決めてはならない（幅がコンテナ任せになり、**横に長細い帯**になってしまう）。
+
+```css
+/* 良い: 幅が変わっても比率が保たれる */
+.atari { aspect-ratio: 4 / 3; }
+/* 悪い: サイドバーでは細長く、全幅では潰れる */
+.atari { min-height: 90px; }
+```
+
+- **対象**: 写真・イラスト・地図が入る想定のアタリ全般。
+  ABOUT / MENU / GALLERY / VOICE / NEWS / PRICE / FAQ / CONTACT / **ACCESS の地図アタリ（`.map-atari`）** など。
+- **`min-height` は下限としてのみ併用してよい**（`aspect-ratio` と併記した場合、狭い幅でも潰れすぎないための保険）。
+  ただし `min-height` が支配的にならない値にすること。
+
+**この比率を適用しない例外（意図して別の形にしている型）:**
+
+| 例外 | 比率 | 理由 |
+|---|---|---|
+| STAFF のプロフィール写真・`sns-grid`・`sns-reels`・`img-circle` | `1 / 1`（正方・円） | 人物や SNS サムネは正方が自然。型の定義そのものが正方を前提にしている |
+| HERO の全面ビジュアル（`.hero-atari` 等・`full`/`center-scroll`/`overlap`/`split`/`band`） | 画面を覆う（`min-height` 可） | ファーストビューは画面いっぱいに見せるもので、比率で縛る対象ではない |
+| HERO `panel-band` のフィルム風パネル | `3 / 2`（KLK-043） | フィルムのコマ帯としてあえて横長にした型。4/3 にすると帯の見た目が崩れる |
+| ロゴ枠・アイコン枠など画像ではない飾り | 対象外 | 写真が入る想定の枠ではない |
+
+**なぜ 4/3 か**: 実績カタログの参考画像も一般的な写真も横長が多く、`16/9` ほど細くない
+`4/3` が「写真らしさ」と「縦の情報量」の折り合いが良い。正方に近づくため、
+サイドバーのような狭い幅でも帯にならない。
+
 ### 3.1 MV-01 フリー実写真 b方式（REQ-104・KLK-020・MV-01 限定）
 
 `atari:"free-photo"` かつ `mvPhoto.file` 供給時は、**MV-01（HERO）のアタリのみ**を実写真（相対 `<img>`）にする。
@@ -711,7 +741,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 1 | `pat-wide` | 横帯ワイド（1列の大判横長を積む）。モバイル1列 |
 | 2 | `pat-mosaic` | 大小モザイク（`grid`＋`grid-column/row span` 強弱）。モバイル2列 |
 | 3 | `pat-slider`（KLK-036新） | 横スクロール/カルーセル（`display:flex;flex-wrap:nowrap;overflow-x:auto`＋各 `flex:0 0 <幅>`＋`scroll-snap-type`。矢印/スワイプ送り想定）。**モバイルも横スクロール継続** |
-| 4 | `pat-masonry`（KLK-047新） | 大小混在タイルを**長方形にきれいに敷き詰めるベントー型**（縦長・横長・大の混在を隙間なく矩形に収める。`display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:<列幅の約0.75倍＝タイルが約4:3の横長に見える基準>;grid-auto-flow:row dense` ＋各タイルに `grid-column:span N`／`grid-row:span N`＝横長/大2×2・縦長1×2・小1×1 の組合せで矩形充填。横長タイルは**縦:横≒3:4**）。cat-0001/cat-0037 系。モバイル2列 |
+| 4 | `pat-masonry`（KLK-047新） | 大小混在タイルを**長方形にきれいに敷き詰めるベントー型**（縦長・横長・大の混在を隙間なく矩形に収める。`display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:<列幅の約0.75倍＝タイルが約4:3の横長に見える基準>;grid-auto-flow:row dense` ＋各タイルに `grid-column:span N`／`grid-row:span N`＝横長/大2×2・縦長1×2・小1×1 の組合せで矩形充填。横長タイルは**縦:横≒3:4**）。**最終行に空きを作らないこと（KLK-072）**: `dense` は既存の穴を後続タイルで埋めるだけで、**タイル総数が足りなければ右下に空白が残る**。実際に見本で空白が出た。対策＝**各タイルの `grid-column: span N` の合計が列数（4）の倍数になるようにタイル数と span を組む**（例: 2×2 が1つ＋1×1 が4つ＋1×2 が2つ… のように行が完結する構成にする）。端数が出るときは**最後のタイルを `grid-column: span <残り>` で広げて埋める**。cat-0001/cat-0037 系。モバイル2列 |
 | 5 | `pat-tab-grid`（KLK-047新） | カテゴリタブ切替＋タイルグリッド（`display:flex;flex-direction:column`＝上部にカテゴリタブ行＋下部にタブごとのパネル `grid-template-columns:repeat(3,1fr)` の**3列×2行程度のサムネタイル**。商品/作品が多いサイト向け）。**クリックで切替（最小インライン JS・外部依存なし。各パネル既定 `display:none`・active のみ `display:grid`・`data-tab`/`data-panel` 対応・MENU tab-switch と同型）**。モバイルはタブ横スクロール・パネル2列 |
 
 **HERO プール（`.m-hero` の `data-hero`・KLK-037）— ★型ごとに整列シグネチャ(justify-content/align-items/text-align)が付随（§12.1 不変条件4）:**
@@ -754,7 +784,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 0 | `sns-grid` | Instagram フィード風の**正方サムネ格子**（`display:grid;grid-template-columns:repeat(4,1fr)` の正方タイル `aspect-ratio:1`）。cat-0015 上部フィード系。モバイル3列 |
 | 1 | `sns-slider` | 横スクロールの投稿フィード（`display:flex;flex-wrap:nowrap;overflow-x:auto`＋各 `flex:0 0 <幅>`＋`scroll-snap-type`）。GALLERY pat-slider 流用。**モバイルも横スクロール継続** |
 | 2 | `sns-cards`（共通カード） | **画像＋キャプション（日付/属性）＋本文30字程度**を**横並び3〜4件**（`display:grid;grid-template-columns:repeat(3,1fr)` の `.sns-card`＝角丸/円形アタリ＋`.cap`＋短文）。お客様の声/ビフォーアフター/SNS投稿で使える**共通カードパターン**（VOICE `voice-cards` と視覚同系＝両セクションで使える）。§4.3 `.sec-more`（もっと見る）と併用可。モバイル1列 |
-| 3 | `sns-masonry`（KLK-050新） | 大小混在タイルを長方形に敷き詰めるベントー型（縦長横長を隙間なく矩形に・`display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:<基準>;grid-auto-flow:row dense`＋各タイル `grid-column/row:span N`）。cat-0001 系・Instagram 埋込でよく見る。GALLERY `pat-masonry` 同機構。モバイル2列 |
+| 3 | `sns-masonry`（KLK-050新） | 大小混在タイルを長方形に敷き詰めるベントー型（縦長横長を隙間なく矩形に・`display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:<基準>;grid-auto-flow:row dense`＋各タイル `grid-column/row:span N`）。cat-0001 系・Instagram 埋込でよく見る。GALLERY `pat-masonry` 同機構（**最終行に空きを作らない**規律も同じ・KLK-072）。モバイル2列 |
 | 4 | `sns-reels`（KLK-050新・KLK-050調整） | リール/ストーリーズ帯（`display:flex;flex-wrap:nowrap;overflow-x:auto`＋各 `.sns-reel` の `flex:0 0 <幅>`・アタリは**正方 `aspect-ratio:1`**・`🎬` でリール/動画を示す）。近年のリール普及に対応。**モバイルも横スクロール継続** |
 | 5 | `sns-feed`（KLK-050新・KLK-050調整） | 公式埋込ウィジェット風の**投稿カードを横並び3〜4件**（`display:grid;grid-template-columns:repeat(3,1fr)`＋`.sns-post`＝ヘッダ[丸アバター＋ハンドル]＋正方アタリ＋キャプション＋いいね/コメント風アイコン行）。実埋め込みに最も近い見立て（実埋め込みはしない）。モバイル1列 |
 
@@ -796,7 +826,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | index | マーカー | 見た目（実CSS差・地図の扱い）／モバイル |
 |---|---|---|
 | 0 | `map-side` | 地図アタリ＋住所/営業時間の**2カラム**（`display:grid;grid-template-columns:1fr 1fr`＝片側 `.map-atari`・反対側に住所・TEL・営業時間）。現行 default「地図＋住所・営業時間」相当・最頻。ABOUT img-left と同機構。モバイル1列（地図→情報） |
-| 1 | `map-top` | **横長の大きな地図アタリを上**＋下に住所・アクセス情報（`display:flex;flex-direction:column`＝上 `.map-atari`[全幅・`aspect-ratio` 横長]＋下に中央寄せ情報）。cat-0002 下部の全幅地図系。モバイルも縦 |
+| 1 | `map-top` | **横長の大きな地図アタリを上**＋下に住所・アクセス情報（`display:flex;flex-direction:column`＝上 `.map-atari`[全幅・**`aspect-ratio:4/3`**・§3.0]＋下に中央寄せ情報）。cat-0002 下部の全幅地図系。モバイルも縦 |
 | 2 | `map-overlay`（KLK-054新） | **全幅の地図アタリの上に情報カードを重ねる**（`display:grid`＝`.map-atari` を全面に敷き、住所カードを `transform`/`align-self` で重ねる）。モダン・不動産/店舗系。cat-0042 系。モバイルは重なり解除・縦積み |
 | 3 | `map-hours`（KLK-054新） | 地図アタリ＋**営業/診療時間テーブル（曜日×時間）**（`display:grid;grid-template-columns:<地図列 情報列>`＋情報側に `.hours-table`＝曜日ヘッダ×時間帯行の grid 表）。クリニック/店舗向け。PRICE price-table／NEWS news-table と同機構。cat-0002 診療時間表。モバイルは縦積み・表は横スクロール |
 | 4 | `map-cards`（KLK-054新） | **複数店舗を小地図アタリ付きカードで並べる**（`display:grid;grid-template-columns:repeat(3,1fr)` の `.access-card`＝上に小 `.map-atari`＋下に店舗名・住所・TEL）。多店舗/グループ展開。NEWS news-cards／MENU pat-cards 流用。cat-0018 系。モバイル1列 |

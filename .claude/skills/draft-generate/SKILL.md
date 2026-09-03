@@ -131,6 +131,7 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
   ボタン文言を可変にする（contact/order/reserve/document/signup/custom・§2.1）。**複数案は全案で同じ sections/navPosition**
   （中身を揃え、配色・レイアウト型だけ振る）。
 - **アタリ画像**: a方式（色面＋`.desc`＋`.kw`。HERO は `.atari-tag`。キーワード未定は `.desc` のみ）。
+- **アタリ枠の比率（§3.0・KLK-072）**: 画像アタリは **`aspect-ratio: 4 / 3`** を既定にする。`min-height` だけで高さを決めない（幅がコンテナ任せになり横に長細い帯になる）。例外は STAFF/SNS/円形の正方系・HERO の全面ビジュアル・HERO `panel-band`（3/2）のみ。**ACCESS の地図アタリ `.map-atari` も 4/3**。
   **REQ-104 b方式（KLK-020・MV-01 限定）**: `atari:"free-photo"` かつ `mvPhoto.file` 供給時は **MV-01 のアタリのみ**を
   出力フォルダ同梱の**相対** `<img src="assets/mv.<ext>">` で実写真化する（他枠は a方式・DRAFT_RULES §3.1）。未供給・
   ステージング画像の読込失敗時は MV-01 も a方式へフォールバック。`variants≥2` は同じ画像を全案共通で MV-01 に入れる。
