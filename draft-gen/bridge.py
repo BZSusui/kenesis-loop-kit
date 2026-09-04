@@ -404,14 +404,40 @@ def build_open_command(target_path, platform):
 def is_allowed_origin(origin, host, port):
     """状態変更(POST /generate)の Origin 許可判定(M-SEC-1)。
 
-    None(不在)/"null"(file://) を許可、http://{host}:{port} と http://localhost:{port}
-    を許可、それ以外は False。副作用なし・import 単体テスト対象(S群)。
-    許可リスト文字列は format プレースホルダ/ローカルホストで組む(S10 外部URL検査に非抵触)。
+    None(不在)/"null"(file://) を許可。それ以外は **スキームが http・ポートが一致・
+    ホストがループバック** のときだけ許可する。副作用なし・import 単体テスト対象(S群)。
+
+    ★文字列の完全一致をやめた理由(KLK-084): 以前は
+      `http://{host}:{port}` と `http://localhost:{port}` の2つとだけ突き合わせていたため、
+      ブラウザが `localhost` を IPv6 で解決して `http://[::1]:{port}` を送ってくると
+      **同じ端末の同じブリッジなのに 403** になった（実際に踏んだ）。
+      ループバックかどうかで判定すれば、綴りが増えても破綻しない。
     """
     if origin is None or origin == "null":
         return True
-    allowed = ("http://{0}:{1}".format(host, port), "http://localhost:{0}".format(port))
-    return origin in allowed
+    if not isinstance(origin, str) or not origin:
+        return False
+    try:
+        u = urllib.parse.urlsplit(origin)
+    except ValueError:
+        return False
+    # Origin は scheme://host[:port] だけ。パス等が付いていたら Origin ではない
+    if u.scheme != "http" or u.path or u.query or u.fragment:
+        return False
+    try:
+        if u.port != port:
+            return False
+    except ValueError:
+        return False
+    hostname = (u.hostname or "").lower()
+    if not hostname:
+        return False
+    if hostname == "localhost" or hostname == str(host).lower():
+        return True
+    try:
+        return ipaddress.ip_address(hostname).is_loopback
+    except ValueError:
+        return False
 
 
 # ---------------------------------------------------------------------------
@@ -2824,8 +2850,13 @@ def _run_server(port):
               （画面に色を返すだけ）。生成パイプラインには触れない。
             """
             # ① Origin(M-SEC-1)
-            if not is_allowed_origin(self.headers.get("Origin"), BRIDGE_HOST, port):
-                self._json(403, {"error": "許可されていないオリジンです"})
+            _origin = self.headers.get("Origin")
+            if not is_allowed_origin(_origin, BRIDGE_HOST, port):
+                # ★受け取った Origin を添える(KLK-084)。「許可されていない」だけでは
+                #   利用者も開発者も原因を追えない。相手が自分で送った値なので秘密ではない。
+                self._json(403, {"error": "許可されていないオリジンです（受信: {0}／期待: "
+                                          "このブリッジと同じ 127.0.0.1:{1} で開いた画面）".format(
+                                              str(_origin)[:120], port)})
                 return
             # ② サイズ上限(L-1)
             try:

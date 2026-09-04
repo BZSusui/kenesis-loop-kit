@@ -317,6 +317,41 @@ check(
     "記録=%s" % ("AI利用管理責任者" in SPEC),
 )
 
+# ===========================================================================
+# O群 — Origin 判定（KLK-084・理恵さんの実機で 403 になった不具合）
+# ===========================================================================
+_H = bridge.BRIDGE_HOST
+_ok = [("http://127.0.0.1:8765", 8765), ("http://localhost:8765", 8765),
+       ("http://[::1]:8765", 8765), ("http://127.0.0.2:8765", 8765),
+       ("http://localhost:9999", 9999), (None, 8765), ("null", 8765)]
+_ng = [("http://evil.example", 8765), ("http://evil.example/", 8765),
+       ("http://127.0.0.1:9999", 8765), ("https://127.0.0.1:8765", 8765),
+       ("", 8765), ("http://192.168.1.5:8765", 8765),
+       ("http://127.0.0.1:8765/", 8765), ("http://[::1]:9999", 8765)]
+_bad_ok = [o for o, pt in _ok if bridge.is_allowed_origin(o, _H, pt) is not True]
+_bad_ng = [o for o, pt in _ng if bridge.is_allowed_origin(o, _H, pt) is not False]
+check(
+    "O1 同じ端末のブリッジからの呼び出しを、綴りが違っても許可する（127.0.0.1 / localhost / [::1]）",
+    not _bad_ok,
+    "拒否されてしまった=%s" % (_bad_ok or "なし"),
+)
+check(
+    "O2 別オリジン・別ポート・https・LAN内の別端末は拒否する",
+    not _bad_ng,
+    "通ってしまった=%s" % (_bad_ng or "なし"),
+)
+check(
+    "O3 ループバック判定で見ている（文字列の完全一致に戻していない）",
+    "is_loopback" in BRIDGE_SRC.split("def is_allowed_origin")[1].split("\ndef ")[0],
+    "ループバック判定=%s"
+    % ("is_loopback" in BRIDGE_SRC.split("def is_allowed_origin")[1].split("\ndef ")[0]),
+)
+check(
+    "O4 403 の本文に受け取った Origin を添える（原因がその場で分かる）",
+    "許可されていないオリジンです（受信:" in BRIDGE_SRC,
+    "Origin の提示=%s" % ("許可されていないオリジンです（受信:" in BRIDGE_SRC),
+)
+
 print("=" * 78)
 print("KLK-083 見本サイトURLからの配色読み取り 静的チェック")
 print("=" * 78)
