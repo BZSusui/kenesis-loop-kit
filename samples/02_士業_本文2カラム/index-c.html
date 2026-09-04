@@ -44,7 +44,7 @@
   .m-hero .catch { font-size: 33px; font-weight: 800; letter-spacing: .04em; margin: 0 0 16px; line-height: 1.5; }
   .m-hero .lead { font-size: 15px; margin: 0 auto 24px; max-width: 560px; opacity: .94; }
   .m-hero .hero-cta { display: inline-block; background: var(--m-accent); color: #1a1a1a; padding: 13px 32px; font-size: 14px; font-weight: 700; border-radius: 26px; }
-  .m-hero[data-hero="panel-band"] .film-band { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 4px; width: 100%; }
+  .m-hero[data-hero="panel-band"] .film-band { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; width: 100%; }
   .m-hero[data-hero="panel-band"] .film-panel { aspect-ratio: 3 / 2; border-radius: 0; position: relative;
     background: linear-gradient(135deg, color-mix(in srgb, var(--m-main) 55%, #000), color-mix(in srgb, var(--m-accent) 40%, var(--m-main)));
     display: flex; align-items: flex-end; padding: 8px 10px; font-size: 10.5px; color: rgba(255,255,255,.9); }
@@ -154,7 +154,7 @@
     .m-nav .burger { display: block; }
     .m-hero[data-hero="panel-band"] { min-height: auto; }
     .m-hero .catch { font-size: 24px; }
-    .m-hero[data-hero="panel-band"] .film-band { grid-template-columns: repeat(3, 1fr); }
+    .m-hero[data-hero="panel-band"] .film-band { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); }
     .m-layout { grid-template-columns: 1fr; padding: 28px 18px; gap: 26px; }
     .m-aside { grid-column: 1; order: 1; }
     .m-main-col { grid-column: 1; order: 0; }

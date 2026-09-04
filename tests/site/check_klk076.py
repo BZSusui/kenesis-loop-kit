@@ -264,16 +264,27 @@ for p, html in sample_htmls():
         # `.m-hero[data-hero=panel-band]` 本体（子孫セレクタを含まない）
         if re.fullmatch(r'["\']?\]?\s*', after) and decl(body, "padding"):
             hero_pad = decl(body, "padding")
-        if decl(body, BAND_PROP) and "repeat" in norm(decl(body, BAND_PROP)):
+        # 帯のルール＝1行を作る宣言（KLK-081 で auto-fit から grid-auto-flow:column へ）
+        if decl(body, "grid-auto-flow") or (
+            decl(body, BAND_PROP) and "repeat" in norm(decl(body, BAND_PROP))
+        ):
             band = (sel, body)
     if band is None:
         offenders.append("%s  帯の grid ルールが見つからない" % rel(p))
         continue
     band_found += 1
     sel, body = band
-    gtc = norm(decl(body, BAND_PROP))
-    if "auto-fit" not in gtc:
-        offenders.append("%s  auto-fit でない: %s" % (rel(p), gtc))
+    # ★契約更新（KLK-081）: auto-fit は**列数がパネル数と一致する保証がない**ため段落ちした
+    #   （1200〜1280px で 5列に6枚＝5+1 の2行・見本03 案Cで発生）。
+    #   要求するのは「どの幅でも1行」＝ grid-auto-flow:column で列をアイテム数だけ作ること。
+    flow = norm(decl(body, "grid-auto-flow") or "")
+    if flow != "column":
+        offenders.append(
+            "%s  1行が保証されていない（grid-auto-flow:column でない: %s）"
+            % (rel(p), flow or norm(decl(body, BAND_PROP) or ""))
+        )
+    if "auto-fit" in norm(decl(body, BAND_PROP) or ""):
+        offenders.append("%s  auto-fit が残っている（段落ちの原因）" % rel(p))
     if decl(body, "max-height"):
         offenders.append("%s  max-height が付いている: %s" % (rel(p), decl(body, "max-height")))
     # 全幅: hero に左右 padding があるなら margin-inline で相殺していること
@@ -288,7 +299,7 @@ for p, html in sample_htmls():
             "%s  hero の左右 padding %spx を相殺していない（帯が端に届かない）" % (rel(p), lr)
         )
 check(
-    "S4 panel-band の帯が MV 全幅・auto-fit・max-height 無し（§3.0.1）",
+    "S4 panel-band の帯が MV 全幅・1行保証・max-height 無し（§3.0.1・KLK-081）",
     band_found >= 1 and not offenders,
     "検査%d本 / 違反=%s" % (band_found, offenders or "なし"),
 )

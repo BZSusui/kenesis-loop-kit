@@ -199,8 +199,43 @@
 **守るべき結果は3つだけ:**
 
 1. 帯の左右端が **MV の左右端と一致**している（`.m-hero` の左右 padding の**内側で止まらない**）
-2. `grid-template-columns` は **`repeat(auto-fit, minmax(220px, 1fr))`**（列数を画面幅にあわせて可変にする）
+2. **どの画面幅でもパネルが1行に収まる**（段落ちさせない）。
+   そのために **`grid-auto-flow: column; grid-auto-columns: 1fr`** を使う
+   （列数がパネル数と一致することを**構造的に保証**する。パネルは幅にあわせて縮む）
 3. 帯にもコマにも **`max-height` を付けない**
+
+**★`repeat(auto-fit, minmax(220px, 1fr))` は使わない（KLK-081）**
+
+KLK-075 で auto-fit を採ったが、**列数がパネル数と一致する保証がない**ため段落ちする。
+実際に見本03 案Cで **5列に6枚＝5+1 の2行**になった（理恵さんの目視で発覚）。
+
+| 画面幅 | auto-fit の列数 | パネル6枚の収まり |
+|---|---|---|
+| 1024px | 4列 | **2行（4+2）** |
+| 1200px | 5列 | **2行（5+1）** |
+| 1280px | 5列 | **2行（5+1）** |
+| 1366px | 6列 | 1行 |
+| 1440px | 6列 | 1行 |
+
+**ノートPCで最も多い 1200〜1280px がちょうど段落ちする。**
+KLK-075 の「余りが出ない」という根拠は**右端の隙間**の話であって、
+「アイテム数が列数と一致しない場合」を見落としていた。
+`grid-auto-flow: column` なら列はアイテムの数だけ作られるので、この食い違いが起きない。
+
+**正しい書き方:**
+
+```css
+.m-hero[data-hero=panel-band] .film{
+  display:grid; grid-auto-flow:column; grid-auto-columns:1fr; gap:4px;
+  margin-inline:-30px; width:calc(100% + 60px);   /* MV の padding を相殺して全幅 */
+}
+.m-hero[data-hero=panel-band] .film .cell{ aspect-ratio:3/2; border-radius:0; }
+```
+
+これで 1024px→112px高 / 1200px→131px / 1366px→150px / 1440px→158px と、
+KLK-043 の「MV の約1/3」を保ったまま**必ず1行**になる。
+モバイル（`max-width:640px`）だけは `grid-auto-flow:row; grid-template-columns:repeat(3,1fr)` の
+上書きで3列×2行にしてよい（**均等な2行**なので段落ちではない）。
 
 **実装は次のどちらでもよい**（結果が上の3つを満たせば形は問わない）:
 
@@ -895,7 +930,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 2 | `band` | 下寄せ帯（`flex-end` / `flex-start` / `left`） |
 | 3 | `overlap`（KLK-037新・KLK-038/039調整） | せり出し横長画像＋白背景文言の重なり（`display:grid;grid-template-columns:1fr 2fr`＝**画像列を広め約2/3**・画像を右、白背景文言を左から `transform` で重ね・**画像は角丸なし＝直角でシャープ（`border-radius:0`）**）。**白背景ブロックの幅はキャッチコピーの改行位置にあわせて可変にする**（`width:max-content;max-width:<列幅>` 等・KLK-073）。固定幅にすると、`<br>` で意図した改行位置とブラウザの折り返しが二重にかかり「あなたの笑顔／を、／一生の健康と共／に。」のような**不格好な折り返し**になる（実際に見本で発生）。**整列＝`flex-start` / `center` / `left`（既存3型と非重複＝3案 distinct 維持）**。モバイルは重なり解除・縦積み |
 | 4 | `center-scroll`（KLK-040新・KLK-074調整） | 全面ビジュアル＋キャッチを上・スクロール誘導（↓）を下に（`display:flex;flex-direction:column`）。**スクロール誘導はクリックできること**（§4.3.1・KLK-074）。**整列＝`space-between` / `center` / `center`（上下分散・中央）**。モバイルは padding 縮小 |
-| 5 | `panel-band`（KLK-040新・KLK-041調整） | 全幅背景ビジュアル＋見出し（上〜中）＋**下部に横一列のフィルム風パネル群**（**`grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:4px`**・**`aspect-ratio:3/2` の横長**（KLK-043）・`border-radius:0` で直角＝フィルムのコマ風・縦幅広め `min-height:480px`）。**帯は MV の左右いっぱいまで伸ばす（KLK-075）**: `.m-hero` の左右 padding を`margin-inline:calc(-1 * <padding>);width:calc(100% + 2 * <padding>)` で相殺し、端まで届かせる。**`max-height` は付けない**。cat-0007/0019 の形。**整列＝`flex-end` / `center` / `center`**。モバイルはパネル3列<br>**なぜ `auto-fit` か（KLK-075）**: 旧実装は `repeat(6,1fr)` ＋ `max-height:150px` だった。`aspect-ratio:3/2` と `max-height` が組み合わさると**幅も 225px で頭打ち**になり、画面が広いほど余りが増えて**左右に大きなマージン**が出た（1680px 幅で余り270px）。`auto-fit` は列数を画面幅にあわせて増減させるので**余りが出ず、パネル幅も 224〜237px に揃う**（1200px→5列237px / 1366px→6列224px / 1440px→6列237px / 1680px→7列237px）。比率は 3/2 のままでこの範囲に収まるため変更不要（高さ150〜158px＝MV 460px の約1/3・KLK-043 の意図を維持） |
+| 5 | `panel-band`（KLK-040新・KLK-041調整） | 全幅背景ビジュアル＋見出し（上〜中）＋**下部に横一列のフィルム風パネル群**（**`grid-auto-flow:column;grid-auto-columns:1fr;gap:4px`＝どの幅でも必ず1行（KLK-081）**・**`aspect-ratio:3/2` の横長**（KLK-043）・`border-radius:0` で直角＝フィルムのコマ風・縦幅広め `min-height:480px`）。**帯は MV の左右いっぱいまで伸ばす（KLK-075）**: `.m-hero` の左右 padding を`margin-inline:calc(-1 * <padding>);width:calc(100% + 2 * <padding>)` で相殺し、端まで届かせる。**`max-height` は付けない**。cat-0007/0019 の形。**整列＝`flex-end` / `center` / `center`**。モバイルはパネル3列<br>**なぜ `grid-auto-flow:column` か（KLK-075→KLK-081 で訂正）**: 旧実装 `repeat(6,1fr)` ＋ `max-height:150px` は、`aspect-ratio:3/2` と `max-height` の組合せで**幅も 225px で頭打ち**になり左右に大きなマージンが出た（1680px 幅で余り270px）。KLK-075 はこれを `auto-fit` で直したが、**列数がパネル数と一致する保証がない**ため今度は**段落ち**した（1200〜1280px で 5列に6枚＝5+1 の2行・見本03 案Cで発生）。`grid-auto-flow:column` は**列をアイテムの数だけ作る**ので、余りも段落ちも構造的に起きない。高さは 1024px→112px / 1200px→131px / 1366px→150px / 1440px→158px（MV の約1/3・KLK-043 の意図を維持）。**★教訓: グリッドの列数を決めるときは、必ずアイテム数と突き合わせること。** |
 
 **ABOUT プール（`.m-about`・KLK-037）:**
 

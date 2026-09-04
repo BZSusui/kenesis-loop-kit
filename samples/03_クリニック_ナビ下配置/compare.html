@@ -190,27 +190,49 @@
       typeSel.disabled = false;
     }
 
+    // ★セレクタを「読み込み中…」のままにしない（KLK-081）
+    //   KLK-078 で番地を /sections から埋める方式にしたとき、
+    //   取得に失敗した場合の表示を作り忘れ、見本では固まったままになっていた。
+    function disableWith(label, message){
+      clear(sel);
+      sel.appendChild(opt('', label));
+      clear(typeSel);
+      typeSel.appendChild(opt('', '—'));
+      typeSel.disabled = true;
+      btn.disabled = true;
+      setMsg(message);
+    }
+
     // ★番地は焼き込まず、実ページから読む（KLK-078）
     //   焼き込むとセクション構成の変わるページと食い違い、
     //   「選べるのに 404」「実在するのに選べない」が起きる。
     function loadSections(){
+      // ブリッジは書き込み面を絞るため mockups/ 配下しか受け付けない。
+      // 見本（samples/）は対象外なので、呼ぶ前にそう伝える（KLK-081）。
+      if (folder.indexOf('mockups/') !== 0) {
+        disableWith('（見本では使えません）',
+          'これは見本です。セクション再生成はご自身の生成物（mockups/ の中）でお使いください。');
+        return Promise.resolve();
+      }
       var url = BASE + '/sections?folder=' + encodeURIComponent(folder)
               + '&letter=' + encodeURIComponent(currentLetter());
       return fetch(url)
         .then(function(r){ return r.ok ? r.json() : Promise.reject(); })
         .then(function(j){
           sections = j.sections || [];
+          if (!sections.length) {
+            disableWith('（セクションなし）', 'このページに再生成できるセクションが見つかりませんでした。');
+            return;
+          }
           clear(sel);
           sections.forEach(function(s){ sel.appendChild(opt(s.addr, s.addr)); });
           fillTypes();
-          btn.disabled = sections.length === 0;
-          setMsg(sections.length
-            ? 'ローカルブリッジ稼働中。番地と型を選んで再生成できます。'
-            : 'このページに再生成できるセクションが見つかりませんでした。');
+          btn.disabled = false;
+          setMsg('ローカルブリッジ稼働中。番地と型を選んで再生成できます。');
         })
         .catch(function(){
-          btn.disabled = true;
-          setMsg('セクション一覧を取得できませんでした。ローカルブリッジをご確認ください。');
+          disableWith('（取得できませんでした）',
+            'セクション一覧を取得できませんでした。ローカルブリッジをご確認ください。');
         });
     }
 
@@ -222,9 +244,8 @@
       .then(function(){ clearTimeout(to); loadSections(); })
       .catch(function(){
         clearTimeout(to);
-        btn.disabled = true;
-        typeSel.disabled = true;
-        setMsg('ローカルブリッジ未起動。python3 draft-gen/bridge.py を起動するか、Claude Code で /draft-regenerate ' + folder + ' {案の letter} {番地} {型} でも再生成できます。');
+        disableWith('（ブリッジ未起動）',
+          'ローカルブリッジ未起動。python3 draft-gen/bridge.py を起動するか、Claude Code で /draft-regenerate ' + folder + ' {案の letter} {番地} {型} でも再生成できます。');
       });
 
     sel.addEventListener('change', fillTypes);

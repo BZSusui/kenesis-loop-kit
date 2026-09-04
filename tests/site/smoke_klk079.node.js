@@ -99,6 +99,7 @@ function makeFetch(opts) {
       return opts.healthOk === false ? Promise.reject(new Error('down')) : json({ ok: true });
     }
     if (url.indexOf('/sections') >= 0) {
+      if (opts.sectionsFail) { return Promise.resolve({ ok: false, json: () => Promise.resolve({}) }); }
       const m = /letter=([abc])/.exec(url);
       return json({ letter: m ? m[1] : 'a', sections: sections[m ? m[1] : 'a'] || [] });
     }
@@ -114,13 +115,14 @@ function makeFetch(opts) {
 const tick = (n) => new Promise(r => setTimeout(r, n || 12));
 
 function runUi(opts) {
+  opts = opts || {};
   const src = fs.readFileSync(TARGET, 'utf8');
   const i = src.indexOf('<script>');
   const j = src.indexOf('</script>', i);
   if (i < 0 || j < 0) { console.error('[HARNESS ERROR] <script> を抽出できません'); process.exit(2); }
   const code = src.slice(i + '<script>'.length, j);
 
-  const dom = makeDom('mockups/2026-09-04_smoke');
+  const dom = makeDom(opts.folder || 'mockups/2026-09-04_smoke');
   const { fetchStub, calls } = makeFetch(opts || {});
   let reloaded = false;
   const sandbox = {
@@ -234,6 +236,32 @@ function runUi(opts) {
     after.length === before + 1 && /letter=b$/.test(after[after.length - 1].url)
       && ui.addr.optionValues.length === 1,
     '呼出数=' + after.length + ' 最後=' + (after[after.length - 1] || {}).url);
+
+  // --- 9) 見本（samples/）ではブリッジを呼ばず、使えないと明示する（KLK-081）----
+  ui = runUi({ folder: 'samples/03_クリニック_ナビ下配置' });
+  await tick(); await tick();
+  check('N11 見本では /sections を呼ばず「見本では使えません」と出す',
+    ui.calls.every(c => c.url.indexOf('/sections') < 0)
+      && ui.addr.optionLabels.join('') === '（見本では使えません）'
+      && ui.btn.disabled === true && ui.type.disabled === true
+      && ui.msg.textContent.indexOf('ご自身の生成物') >= 0,
+    'labels=' + JSON.stringify(ui.addr.optionLabels) + ' btn=' + ui.btn.disabled
+      + ' msg=' + JSON.stringify(ui.msg.textContent.slice(0, 30)));
+
+  // --- 10) /sections が失敗しても「読み込み中…」で固まらない ------------------
+  ui = runUi({ sectionsFail: true });
+  await tick(); await tick();
+  check('N12 /sections 失敗時に「読み込み中…」のまま固まらない',
+    ui.addr.optionLabels.join('') === '（取得できませんでした）'
+      && ui.btn.disabled === true,
+    'labels=' + JSON.stringify(ui.addr.optionLabels));
+
+  // --- 11) ブリッジ未起動でもセレクタが「読み込み中…」で固まらない ------------
+  ui = runUi({ healthOk: false });
+  await tick(); await tick();
+  check('N13 ブリッジ未起動でもセレクタが「読み込み中…」で固まらない',
+    ui.addr.optionLabels.join('') === '（ブリッジ未起動）',
+    'labels=' + JSON.stringify(ui.addr.optionLabels));
 
   // --- 出力 -----------------------------------------------------------------
   console.log('='.repeat(78));

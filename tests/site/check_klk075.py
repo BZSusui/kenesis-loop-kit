@@ -119,12 +119,22 @@ check(
 # ---------------------------------------------------------------------------
 _p = re.search(r"\|\s*5\s*\|\s*`panel-band`.*?\n", RULES)
 PANEL = _p.group(0) if _p else ""
+# ★契約更新（KLK-081）: KLK-075 は auto-fit を答えとしたが、**列数がパネル数と一致する保証がない**
+#   ため 1200〜1280px で 6枚が 5+1 に段落ちした（見本03 案Cで発生・理恵さんの目視で発覚）。
+#   KLK-075 が本当に守りたかったのは「**左右に余りを作らない**」であり、
+#   KLK-081 の `grid-auto-flow:column`（列をアイテム数だけ作る）はそれを満たしたうえで段落ちもしない。
+#   よってここは「auto-fit であること」ではなく「**1行が保証されること**」を検査する。
 check(
-    "C11 panel-band が auto-fit で列数可変になり、max-height を付けない",
-    bool(PANEL) and "auto-fit" in PANEL and "minmax(220px,1fr)" in PANEL
+    "C11 panel-band が1行を保証し（列＝パネル数）、max-height を付けない",
+    bool(PANEL) and "grid-auto-flow:column" in PANEL.replace(" ", "")
+    and "auto-fit" not in PANEL.split("**なぜ")[0]
     and "`max-height` は付けない" in PANEL,
-    "auto-fit=%s / minmax=%s / max-height撤廃=%s"
-    % ("auto-fit" in PANEL, "minmax(220px,1fr)" in PANEL, "`max-height` は付けない" in PANEL),
+    "1行保証=%s / 指示部分のauto-fit=%s / max-height撤廃=%s"
+    % (
+        "grid-auto-flow:column" in PANEL.replace(" ", ""),
+        "auto-fit" in PANEL.split("**なぜ")[0],
+        "`max-height` は付けない" in PANEL,
+    ),
 )
 check(
     "C12 panel-band が MV の左右いっぱいまで伸びる指示を持つ",
@@ -133,7 +143,7 @@ check(
 )
 # 「旧実装は … だった」という**経緯の説明**には旧の値が出てよい（むしろ再発防止に役立つ）。
 # 検査したいのは**指示部分**に旧実装が残っていないこと。説明部分（「なぜ auto-fit か」以降）を除いて見る。
-_j = PANEL.find("**なぜ `auto-fit` か")
+_j = PANEL.find("**なぜ `grid-auto-flow:column` か")
 PANEL_INSTR = PANEL[:_j] if _j > 0 else PANEL
 check(
     "C13 panel-band の**指示部分**に旧実装（repeat(6,1fr) / max-height:150px）が残っていない",
@@ -147,10 +157,16 @@ check(
     bool(PANEL) and re.search(r"aspect-ratio:\s*3\s*/\s*2", PANEL) is not None,
     "3/2 の維持=%s" % (re.search(r"aspect-ratio:\s*3\s*/\s*2", PANEL) is not None),
 )
+# ★契約更新（KLK-081）: 改善後の数値は auto-fit のもの（224〜237px）から
+#   grid-auto-flow:column のもの（1024→112px / 1440→158px）へ変わった。
+#   要求は変わらない＝「**何が悪くて何を直したのかが数値で残っていること**」。
+#   経緯を消すと同じ失敗を繰り返す（KLK-075 の余り270px も、KLK-081 の段落ちも残す）。
 check(
-    "C15 panel-band に余りが出た理由と改善後の数値が記録されている",
-    bool(PANEL) and "頭打ち" in PANEL and "余り270px" in PANEL and "224〜237px" in PANEL,
-    "原因=%s / 実測=%s" % ("頭打ち" in PANEL, "余り270px" in PANEL),
+    "C15 panel-band に余りが出た理由・段落ちの理由・改善後の数値が記録されている",
+    bool(PANEL) and "頭打ち" in PANEL and "余り270px" in PANEL
+    and "段落ち" in PANEL and "5+1" in PANEL and "1440px→158px" in PANEL.replace(" ", ""),
+    "余りの原因=%s / 段落ちの記録=%s / 改善後の実測=%s"
+    % ("頭打ち" in PANEL, "5+1" in PANEL, "1440px→158px" in PANEL.replace(" ", "")),
 )
 
 # ---------------------------------------------------------------------------
