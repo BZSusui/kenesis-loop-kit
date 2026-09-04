@@ -1,0 +1,295 @@
+/*
+ * KLK-087 動的スモーク（Node.js）— ページ構成（composition）の純ロジックと
+ * 構成リスト UI を、DOM シムの上で**実際に動かして**検証する（smoke_klk022/079 と同型）。
+ *
+ * なぜ必要か:
+ *   この機能の核は「**既存の使い方をしている限り出力が1バイトも変わらない**」こと。
+ *   静的な文字列一致では、それを確かめられない。実際に buildInstruction を呼んで突き合わせる。
+ *   UI も、並び替え・複製・削除・上限が本当に効くかは動かさないと分からない。
+ *
+ * Run: node tests/site/smoke_klk087.node.js
+ * exit 0 = all pass / 1 = fail / 2 = harness error。ネットワーク非使用・Node標準のみ。
+ */
+'use strict';
+const fs = require('fs');
+const path = require('path');
+
+const ROOT = path.dirname(path.dirname(__dirname));
+const src = fs.readFileSync(path.join(ROOT, 'draft-gen', 'index.html'), 'utf8');
+
+const START = 'const COLUMN_KEYS';
+const END = '\nfunction render() {';
+const iStart = src.indexOf(START);
+const iEnd = src.indexOf(END);
+const RC_START = '// KLK-087: ページ構成リスト。状態は compState';
+const RC_END = '// ---- イベント登録 ---';
+const rcStart = src.indexOf(RC_START);
+const rcEnd = src.indexOf(RC_END, rcStart);
+if (iStart < 0 || iEnd < 0 || rcStart < 0 || rcEnd < 0) {
+  console.error('[HARNESS ERROR] 純ロジック領域の抽出に失敗（マーカー不一致）');
+  process.exit(2);
+}
+const slice = src.slice(iStart, iEnd);
+const rc = src.slice(rcStart, rcEnd);
+
+const results = [];
+function check(name, passed, detail) { results.push([name, !!passed, detail]); }
+
+// --- 最小 DOM シム ---------------------------------------------------------
+class El {
+  constructor(t) {
+    this.tagName = (t || 'div').toUpperCase();
+    this.children = []; this.attrs = {}; this._t = '';
+    this.value = ''; this.disabled = false; this.dataset = {}; this.listeners = {};
+    this.type = ''; this.className = ''; this.title = ''; this.rows = 0;
+    this.maxLength = 0; this.placeholder = '';
+  }
+  get firstChild() { return this.children[0] || null; }
+  appendChild(c) { this.children.push(c); return c; }
+  removeChild(c) { this.children = this.children.filter(x => x !== c); return c; }
+  setAttribute(k, v) { this.attrs[k] = String(v); }
+  removeAttribute(k) { delete this.attrs[k]; }
+  getAttribute(k) { return Object.prototype.hasOwnProperty.call(this.attrs, k) ? this.attrs[k] : null; }
+  addEventListener(e, f) { (this.listeners[e] = this.listeners[e] || []).push(f); }
+  fire(e) { (this.listeners[e] || []).forEach(f => f({ target: this })); }
+  set textContent(v) { this._t = String(v); this.children = []; }
+  get textContent() { return this._t; }
+  querySelector() { return null; }
+  querySelectorAll() { return []; }
+}
+
+function makeEnv() {
+  const byId = { compList: new El(), compAddBtns: new El(), compCount: new El() };
+  const doc = {
+    getElementById: id => byId[id] || null,
+    createElement: t => new El(t),
+    querySelector: () => null,
+    querySelectorAll: () => [],
+  };
+  const env = { document: doc, render: () => {}, JSON, Object, Array, String, console };
+  const keys = Object.keys(env);
+  const api = new Function(...keys, 'return (function(){' + slice + '\n' + rc +
+    '\nreturn { get s(){return compState}, set s(v){compState=v},' +
+    ' set o(v){compOpenIdx=v}, renderComposition, buildInstruction,' +
+    ' normalizeComposition, isPlainComposition, normalizeCompositionEntry,' +
+    ' SECTION_TYPE_POOLS, SECTION_KEYS, maxInstancesFor, COMPOSITION_MAX_TOTAL };})()'
+  )(...keys.map(k => env[k]));
+  return { api, byId };
+}
+
+const { api, byId } = makeEnv();
+const BASE = {
+  projectName: 'テスト', industryPreset: '飲食店・カフェ・食関連', column: '1col',
+  colors: { mode: 'explicit' }, mainHex: '#2e7d6b', variants: 3, atari: 'standard',
+};
+const stable = o => { const c = JSON.parse(JSON.stringify(o)); c.meta.createdAt = 'X'; return JSON.stringify(c); };
+
+// ===========================================================================
+// P群 — ★後方互換（この機能の最重要不変条件）
+// ===========================================================================
+{
+  const legacy = api.buildInstruction(Object.assign({}, BASE, { sections: ['ABOUT', 'MENU', 'GALLERY'] }));
+  const viaComp = api.buildInstruction(Object.assign({}, BASE,
+    { composition: [{ key: 'ABOUT' }, { key: 'MENU' }, { key: 'GALLERY' }] }));
+  check('P1 従来の sections 指定と composition(既定相当)の出力が完全一致',
+    stable(legacy) === stable(viaComp) && !('composition' in viaComp),
+    '一致=' + (stable(legacy) === stable(viaComp)) + ' / composition キー=' + ('composition' in viaComp));
+}
+{
+  // 見出し・リードを付けても、並びが canonical・各1個・型なしなら従来スキーマのまま
+  const withText = api.buildInstruction(Object.assign({}, BASE, {
+    composition: [{ key: 'ABOUT', heading: 'あいさつ' }, { key: 'MENU', lead: '説明' }],
+  }));
+  check('P2 見出し/リードだけなら composition を出さず sectionOptions に載る（従来スキーマで表せる）',
+    !('composition' in withText)
+      && withText.sectionOptions.ABOUT.heading === 'あいさつ'
+      && withText.sectionOptions.MENU.lead === '説明',
+    'composition=' + ('composition' in withText) + ' / opts=' + JSON.stringify(withText.sectionOptions));
+}
+{
+  const noComp = api.buildInstruction(Object.assign({}, BASE, {}));
+  check('P3 composition も sections も無い入力は従来既定（ABOUT/MENU/GALLERY）',
+    JSON.stringify(noComp.sections) === '["ABOUT","MENU","GALLERY"]' && !('composition' in noComp),
+    'sections=' + JSON.stringify(noComp.sections));
+}
+
+// ===========================================================================
+// E群 — composition が要るときだけ出る
+// ===========================================================================
+{
+  const dup = api.buildInstruction(Object.assign({}, BASE,
+    { composition: [{ key: 'MENU' }, { key: 'ABOUT' }, { key: 'MENU' }] }));
+  check('E1 重複があれば composition を出し、sections は canonical 順の集合',
+    Array.isArray(dup.composition) && dup.composition.length === 3
+      && JSON.stringify(dup.sections) === '["ABOUT","MENU"]'
+      && dup.composition.map(e => e.key).join(',') === 'MENU,ABOUT,MENU',
+    'composition=' + JSON.stringify(dup.composition.map(e => e.key)) + ' sections=' + JSON.stringify(dup.sections));
+}
+{
+  const ord = api.buildInstruction(Object.assign({}, BASE,
+    { composition: [{ key: 'GALLERY' }, { key: 'ABOUT' }] }));
+  check('E2 並びが canonical と違えば composition を出す（並びを捨てない）',
+    Array.isArray(ord.composition) && ord.composition.map(e => e.key).join(',') === 'GALLERY,ABOUT',
+    JSON.stringify(ord.composition));
+}
+{
+  const ty = api.buildInstruction(Object.assign({}, BASE,
+    { composition: [{ key: 'ABOUT' }, { key: 'MENU', type: 'price-table' }, { key: 'GALLERY' }] }));
+  check('E3 型を指定すれば composition を出す（canonical 順・各1個でも）',
+    Array.isArray(ty.composition) && ty.composition[1].type === 'price-table',
+    JSON.stringify(ty.composition));
+}
+{
+  const real = api.buildInstruction(Object.assign({}, BASE, {
+    composition: [
+      { key: 'ABOUT', heading: '私たちについて' },
+      { key: 'MENU', heading: 'ランチ', type: 'pat-cards' },
+      { key: 'CTA' },
+      { key: 'MENU', heading: 'ディナー', type: 'price-table', moreLink: { label: 'メニュー一覧へ' } },
+      { key: 'CTA' },
+    ],
+  }));
+  check('E4 実案件を模した構成（MENU×2・CTA×2・任意並び）が保たれる',
+    real.composition.length === 5
+      && real.composition.map(e => e.key).join(',') === 'ABOUT,MENU,CTA,MENU,CTA'
+      && real.composition[3].moreLink.label === 'メニュー一覧へ',
+    JSON.stringify(real.composition.map(e => e.key)));
+  check('E5 第1インスタンスの見出しは sectionOptions にも載る（旧読み手への graceful degradation）',
+    real.sectionOptions.MENU.heading === 'ランチ' && real.sectionOptions.ABOUT.heading === '私たちについて'
+      && real.sectionOptions.CTA.purpose === 'contact',
+    JSON.stringify(real.sectionOptions));
+}
+
+// ===========================================================================
+// N群 — 正規化（上限・語彙・型・moreLink）
+// ===========================================================================
+const N = api.normalizeComposition;
+check('N1 複製できるものは各3個まで（超過分は落とす）',
+  N(new Array(5).fill({ key: 'MENU' })).entries.length === 3
+    && N(new Array(5).fill({ key: 'CTA' })).entries.length === 3,
+  'MENU=' + N(new Array(5).fill({ key: 'MENU' })).entries.length +
+  ' CTA=' + N(new Array(5).fill({ key: 'CTA' })).entries.length);
+check('N2 ACCESS / CONTACT / SEARCH は1個のみ',
+  ['ACCESS', 'CONTACT', 'SEARCH'].every(k => N(new Array(3).fill({ key: k })).entries.length === 1),
+  ['ACCESS', 'CONTACT', 'SEARCH'].map(k => k + '=' + N(new Array(3).fill({ key: k })).entries.length).join(' '));
+{
+  const many = [];
+  ['ABOUT', 'MENU', 'GALLERY', 'VOICE', 'FLOW'].forEach(k => { many.push({ key: k }, { key: k }, { key: k }); });
+  const r = N(many);
+  check('N3 本文合計は 12 個で打ち切り', r.entries.length === 12 && r.dropped === 3,
+    'entries=' + r.entries.length + ' dropped=' + r.dropped);
+}
+check('N4 語彙外・非オブジェクトは落とす（黙って通さない）',
+  N([{ key: 'ABOUT' }, { key: 'HACK' }, { key: '../etc' }, 'MENU', null, 123]).entries.length === 1,
+  JSON.stringify(N([{ key: 'ABOUT' }, { key: 'HACK' }, 'MENU', null]).entries));
+{
+  const r = N([{ key: 'MENU', type: 'pat-cards' }, { key: 'MENU', type: 'pat-grid' },
+               { key: 'MENU', type: '<script>' }, { key: 'CTA', type: 'pat-cards' }]);
+  check('N5 型は「そのKEYのプールに載っているか」で判定（別セクションの型・語彙外・CTA は付かない）',
+    r.entries[0].type === 'pat-cards' && !r.entries[1].type && !r.entries[2].type && !r.entries[3].type,
+    JSON.stringify(r.entries));
+}
+{
+  const r = N([{ key: 'MENU', moreLink: { label: '一覧', href: 'https://evil.example/' } },
+               { key: 'ABOUT', moreLink: { label: '詳しく', href: '/about' } },
+               { key: 'FAQ', moreLink: { label: '' } }]);
+  check('N6 moreLink は外部URLを落とし、相対パスは残し、空ラベルなら付けない（§4.3）',
+    !r.entries[0].moreLink.href && r.entries[1].moreLink.href === '/about' && !r.entries[2].moreLink,
+    JSON.stringify(r.entries.map(e => e.moreLink || null)));
+}
+{
+  let threw = null;
+  [null, undefined, 'x', 123, {}, [[]], [{ key: {} }]].forEach(v => { try { N(v); } catch (e) { threw = String(e); } });
+  check('N7 壊れた入力でも例外を投げない', threw === null, threw || 'なし');
+}
+
+// ===========================================================================
+// U群 — 構成リスト UI の実挙動
+// ===========================================================================
+{
+  const { api: a2, byId: b2 } = makeEnv();
+  a2.renderComposition();
+  const list = b2.compList;
+  const btns = i => list.children[i].children[0].children.filter(c => c.tagName === 'BUTTON');
+  check('U1 初期表示は従来と同じ ABOUT / MENU / GALLERY の3行',
+    a2.s.map(e => e.key).join(',') === 'ABOUT,MENU,GALLERY' && list.children.length === 3,
+    a2.s.map(e => e.key).join(',') + ' / 行数=' + list.children.length);
+  check('U2 先頭行の ↑ が無効・末尾行の ↓ が無効',
+    btns(0).find(b => b.textContent === '↑').disabled === true
+      && btns(2).find(b => b.textContent === '↓').disabled === true,
+    '先頭↑=' + btns(0).find(b => b.textContent === '↑').disabled);
+  btns(0).find(b => b.textContent === '↓').fire('click');
+  check('U3 ↓ で並びが入れ替わる', a2.s.map(e => e.key).join(',') === 'MENU,ABOUT,GALLERY',
+    a2.s.map(e => e.key).join(','));
+  btns(0).find(b => b.textContent === '複製').fire('click');
+  check('U4 複製で同じセクションがもう1つ増える', a2.s.map(e => e.key).join(',') === 'MENU,MENU,ABOUT,GALLERY',
+    a2.s.map(e => e.key).join(','));
+  btns(0).find(b => b.textContent === '削除').fire('click');
+  check('U5 削除でその行だけ消える', a2.s.map(e => e.key).join(',') === 'MENU,ABOUT,GALLERY',
+    a2.s.map(e => e.key).join(','));
+}
+{
+  const { api: a3, byId: b3 } = makeEnv();
+  a3.s = [{ key: 'MENU' }, { key: 'MENU' }, { key: 'MENU' }];
+  a3.renderComposition();
+  const addBtns = b3.compAddBtns.children;
+  const menuBtn = addBtns.find(b => b.textContent === 'MENU');
+  const aboutBtn = addBtns.find(b => b.textContent === 'ABOUT');
+  check('U6 上限に達したセクションの「追加」だけが無効になる',
+    menuBtn.disabled === true && aboutBtn.disabled === false,
+    'MENU=' + menuBtn.disabled + ' ABOUT=' + aboutBtn.disabled);
+  const dupBtn = b3.compList.children[0].children[0].children.filter(c => c.tagName === 'BUTTON')
+    .find(b => b.textContent === '複製');
+  check('U7 上限に達したら「複製」も無効になる', dupBtn.disabled === true, String(dupBtn.disabled));
+}
+{
+  const { api: a4, byId: b4 } = makeEnv();
+  a4.s = new Array(12).fill(0).map(() => ({ key: 'ABOUT' }));   // 正規化前の生状態
+  a4.renderComposition();
+  check('U8 合計が上限のとき件数表示が警告になる',
+    b4.compCount.getAttribute('data-full') === '1' && /12 \/ 12/.test(b4.compCount.textContent),
+    b4.compCount.textContent);
+}
+{
+  const { api: a5, byId: b5 } = makeEnv();
+  a5.s = [{ key: 'MENU' }];
+  a5.o = 0;              // 設定を開いた状態で描画
+  a5.renderComposition();
+  const body = b5.compList.children[0].children[1];
+  const sel = (function find(el) {
+    if (el.tagName === 'SELECT') return el;
+    for (const c of el.children) { const r = find(c); if (r) return r; }
+    return null;
+  })(body);
+  const opts = sel ? sel.children.map(o => o.value) : [];
+  check('U9 設定を開くと、そのセクションの型プールが選択肢に出る（先頭は自動）',
+    sel && opts[0] === '' && opts.slice(1).join(',') === a5.SECTION_TYPE_POOLS.MENU.join(','),
+    JSON.stringify(opts));
+}
+{
+  const { api: a6, byId: b6 } = makeEnv();
+  a6.s = [{ key: 'CTA' }];
+  a6.o = 0;
+  a6.renderComposition();
+  const body = b6.compList.children[0].children[1];
+  const hasSelect = (function find(el) {
+    if (el.tagName === 'SELECT') return true;
+    return el.children.some(find);
+  })(body);
+  check('U10 CTA には型の選択肢を出さない（§4.4 で自動整列するため）', hasSelect === false,
+    'select あり=' + hasSelect);
+}
+
+// --- 出力 -------------------------------------------------------------------
+console.log('='.repeat(78));
+console.log('KLK-087 ページ構成（composition）動的スモーク');
+console.log('='.repeat(78));
+let failed = 0;
+for (const [name, passed, detail] of results) {
+  if (!passed) failed++;
+  console.log('[' + (passed ? 'PASS' : 'FAIL') + '] ' + name);
+  console.log('        ' + detail);
+}
+console.log('-'.repeat(78));
+console.log(results.length + ' checks, ' + failed + ' failed');
+process.exit(failed ? 1 : 0);

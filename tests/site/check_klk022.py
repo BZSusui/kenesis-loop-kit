@@ -82,10 +82,18 @@ sec_boxes = [k for k in SECTION_KEYS
              if re.search(r'name="section"[^>]*value="%s"' % k, SCRSRC) is not None]
 cta_ui = ('id="ctaPurpose"' in SCRSRC) and ('id="ctaLabel"' in SCRSRC)
 cta_opts = all(('value="%s"' % p) in SCRSRC for p in CTA_PURPOSES)
+# ★契約更新（KLK-087）: 本文セクションの選び方が **チェックボックス14個 → ページ構成リスト**
+#   へ変わった（同じセクションを複数置けるようになったため、チェックボックスでは表せない）。
+#   守りたい能力は「**14種すべてを本文に入れられること**」で、そこは変わらない。
+#   いまは #compAddBtns が SECTION_KEYS から追加ボタンを作るので、
+#   検査対象を「14種の語彙が純ロジックにあり、リストUIがそれを描く」ことへ移す。
+comp_ui = ('id="compList"' in SCRSRC) and ('id="compAddBtns"' in SCRSRC)
+comp_render = ('function renderComposition' in SCRSRC) and ("SECTION_KEYS.forEach" in SCRSRC)
 check(
-    "S1 SCR-001 UI (navPosition ラジオ top/below-hero・本文14セクションcheck・CTA目的select+自由入力)",
-    nav_radio and len(sec_boxes) == 14 and cta_ui and cta_opts,
-    f"navラジオ={nav_radio}, セクションcheck={len(sec_boxes)}/14, CTA目的UI={cta_ui}, CTA目的値6={cta_opts}",
+    "S1 SCR-001 UI (navPosition ラジオ・本文14種を置けるページ構成リスト・CTA目的select+自由入力)",
+    nav_radio and comp_ui and comp_render and cta_ui and cta_opts,
+    f"navラジオ={nav_radio}, 構成リストUI={comp_ui}, 14種から追加={comp_render}, "
+    f"CTA目的UI={cta_ui}, CTA目的値6={cta_opts}",
 )
 
 # ===========================================================================

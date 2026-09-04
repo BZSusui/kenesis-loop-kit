@@ -178,6 +178,23 @@
     background: var(--color-bg-subtle); color: var(--color-text);
     font-family: ui-monospace, monospace; font-size: 12px;
   }
+  .comp-list{ display:flex; flex-direction:column; gap:6px; }
+  .comp-row{ border:1px solid #ddd9cf; border-radius:8px; background:#fff; }
+  .comp-head{ display:flex; align-items:center; gap:8px; padding:8px 10px; }
+  .comp-no{ width:1.6em; text-align:right; color:#8a8578; font-size:12px; }
+  .comp-key{ font-weight:700; font-size:13px; min-width:7.5em; }
+  .comp-desc{ font-size:11.5px; color:#8a8578; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .comp-btn{ border:1px solid #ddd9cf; background:#fbfaf7; border-radius:6px; font-size:12px;
+             padding:3px 8px; cursor:pointer; line-height:1.6; }
+  .comp-btn:disabled{ opacity:.35; cursor:not-allowed; }
+  .comp-body{ border-top:1px dashed #e8e4da; padding:10px; display:grid; gap:8px; }
+  .comp-body label{ font-size:11.5px; color:#6b6558; display:block; margin-bottom:3px; }
+  .comp-body input[type=text], .comp-body textarea, .comp-body select{ width:100%; font-size:12.5px; }
+  .comp-add{ display:flex; align-items:flex-start; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .comp-add-label{ font-size:12px; color:#6b6558; padding-top:4px; }
+  .comp-add-btns{ display:flex; flex-wrap:wrap; gap:6px; }
+  .comp-count{ font-size:11.5px; color:#8a8578; margin-top:8px; }
+  .comp-count[data-full="1"]{ color:#b4342b; font-weight:700; }
   .swatches{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
   .swatch{ display:flex; align-items:center; gap:7px; border:1px solid #ddd9cf; border-radius:8px;
            padding:5px 9px 5px 5px; font-size:11.5px; background:#fff; }
@@ -464,23 +481,14 @@
       <label><input type="radio" name="navPosition" value="below-hero"> メインビジュアルの下</label>
     </div>
 
-    <div class="subhead">本文に追加するセクション（複数選択可）</div>
-    <div class="chips" id="sectionChips">
-      <span class="chip"><input type="checkbox" name="section" value="ABOUT" id="secABOUT" checked><label for="secABOUT">ABOUT（会社案内・コンセプト）</label></span>
-      <span class="chip"><input type="checkbox" name="section" value="MENU" id="secMENU" checked><label for="secMENU">MENU（取扱カテゴリ・事業内容）</label></span>
-      <span class="chip"><input type="checkbox" name="section" value="GALLERY" id="secGALLERY" checked><label for="secGALLERY">GALLERY（作品・商品・実績）</label></span>
-      <span class="chip"><input type="checkbox" name="section" value="SEARCH" id="secSEARCH"><label for="secSEARCH">SEARCH（条件検索フォーム）</label></span>
-      <span class="chip"><input type="checkbox" name="section" value="CTA" id="secCTA"><label for="secCTA">CTA（誘導バナー）</label></span>
-      <span class="chip"><input type="checkbox" name="section" value="VOICE" id="secVOICE"><label for="secVOICE">VOICE（お客様の声）</label></span>
-      <span class="chip"><input type="checkbox" name="section" value="FAQ" id="secFAQ"><label for="secFAQ">FAQ（よくある質問）</label></span>
-      <span class="chip"><input type="checkbox" name="section" value="SNS" id="secSNS"><label for="secSNS">SNS（埋め込み枠）</label></span>
-      <span class="chip"><input type="checkbox" name="section" value="ACCESS" id="secACCESS"><label for="secACCESS">ACCESS（所在地・営業時間）</label></span>
-      <span class="chip"><input type="checkbox" name="section" value="CONTACT" id="secCONTACT"><label for="secCONTACT">CONTACT（お問い合わせ誘導）</label></span>
-      <span class="chip"><input type="checkbox" name="section" value="NEWS" id="secNEWS"><label for="secNEWS">NEWS（お知らせ・新着）</label></span>
-      <span class="chip"><input type="checkbox" name="section" value="PRICE" id="secPRICE"><label for="secPRICE">PRICE（料金・プラン表）</label></span>
-      <span class="chip"><input type="checkbox" name="section" value="FLOW" id="secFLOW"><label for="secFLOW">FLOW（ご利用の流れ）</label></span>
-      <span class="chip"><input type="checkbox" name="section" value="STAFF" id="secSTAFF"><label for="secSTAFF">STAFF（スタッフ・作家紹介）</label></span>
+    <div class="subhead">ページ構成 <span class="sub-inline">— 上から順にページへ並びます。同じセクションを複数置けます</span></div>
+    <div class="comp-list" id="compList"></div>
+    <div class="comp-add">
+      <span class="comp-add-label">追加：</span>
+      <span class="comp-add-btns" id="compAddBtns"></span>
     </div>
+    <p class="comp-count" id="compCount"></p>
+    <p class="note-oq" id="compPendingNote"><b>ご注意：並び順と複数配置は、現在まだ生成には反映されません（KLK-088 で対応）。</b>いまは指示書に記録されるところまでです。各セクションの見出し・リード文はこれまでどおり反映されます。</p>
 
     <div class="cta-purpose" id="ctaPurposeBox" style="margin-top:14px">
       <div class="subhead">CTA（誘導バナー）の誘導先 <span class="sub-inline">— CTAを選んだときに使います</span></div>
@@ -506,12 +514,6 @@
       <p class="note-oq">未入力の場合は業種・テイストに合わせてAIが文言を提案します（従来どおり）。入力した文言は<b>そのまま</b>反映され、複数案でも全案共通です。</p>
     </div>
 
-    <!-- KLK-027: セクション見出し・リード文の事前指定（選択中のセクションぶんだけ行を動的表示・値保持） -->
-    <div class="copy-spec" id="sectionCopyBox" style="margin-top:14px">
-      <div class="subhead">セクションの文言 <span class="sub-inline">— 見出し・リード文が決まっている場合（任意・選択中のセクションぶんだけ表示）</span></div>
-      <div id="sectionCopyList"></div>
-      <p class="note-oq">未入力の項目はAIが文言を提案します。入力した文言は<b>そのまま</b>各セクションの見出し・リード文に反映され、複数案でも全案共通です。</p>
-    </div>
   </section>
 
   <!-- ⑤ テイスト -->
@@ -754,6 +756,101 @@ const CTA_DEFAULT_LABEL = {
 };
 const SECTIONS_DEFAULT = ['ABOUT', 'MENU', 'GALLERY'];  // 無指定時の後方互換（従来6固定の本文3種）
 
+// KLK-086/087: ページ構成（composition）— 同一セクションの複数配置・並び順・エントリ個別設定。
+//  ★型プールの正は DRAFT_RULES §12.1.2/§12.1.3（および写しの bridge.py SECTION_TYPE_POOLS）。
+//    ここはその写し。食い違いは check_klk087 が検出する（KLK-078 の U2 と同じ方式）。
+//    CTA は型プールを持たない（§4.4 でボタン数と文字数から整列を自動決定するため選ばせる型がない）。
+const SECTION_TYPE_POOLS = {
+  NEWS: ['news-list', 'news-cards', 'news-media', 'news-timeline', 'news-table', 'news-accordion'],
+  ABOUT: ['img-left', 'img-right', 'img-top', 'img-overlap', 'img-circle', 'img-zigzag'],
+  MENU: ['pat-cards', 'pat-list', 'pat-zigzag', 'price-table', 'tab-switch', 'feature-large'],
+  PRICE: ['price-table', 'price-cards', 'price-featured', 'price-list', 'price-toggle', 'price-matrix'],
+  GALLERY: ['pat-grid', 'pat-wide', 'pat-mosaic', 'pat-slider', 'pat-masonry', 'pat-tab-grid'],
+  SEARCH: ['search-bar', 'search-keywords', 'search-filters', 'search-sidebar', 'search-header', 'search-hero'],
+  FLOW: ['flow-row', 'flow-timeline', 'flow-number-card', 'flow-arrow-band', 'flow-vertical-split', 'flow-zigzag'],
+  VOICE: ['voice-cards', 'voice-quote-stack', 'voice-feature', 'voice-two-col', 'voice-slider', 'voice-zigzag'],
+  STAFF: ['staff-grid', 'staff-hscroll', 'staff-feature', 'staff-list', 'staff-two-col', 'staff-zigzag'],
+  FAQ: ['faq-list', 'faq-accordion', 'faq-two-col', 'faq-cards', 'faq-category-tabs', 'faq-search'],
+  SNS: ['sns-grid', 'sns-slider', 'sns-cards', 'sns-masonry', 'sns-reels', 'sns-feed'],
+  ACCESS: ['map-side', 'map-top', 'map-overlay', 'map-hours', 'map-cards', 'map-steps'],
+  CONTACT: ['contact-cta', 'contact-form', 'contact-split', 'contact-methods', 'contact-banner', 'contact-steps'],
+};
+// 複製できる数（理恵さん決定・2026-09-04）。既定3、下記だけ1個のみ。
+//  ACCESS/CONTACT = ページに1つが自然。SEARCH = HERO/NAV へ埋め込む方式（§12.1.3(7)）で
+//  独立セクションを出さないため、そもそも並び順・複製の概念が効かない。
+//  CTA は「同一内容をページ上部と下部に置く」用途があるため複製可（理恵さんの指定）。
+const SECTION_MAX_INSTANCES = { ACCESS: 1, CONTACT: 1, SEARCH: 1 };
+const COMPOSITION_MAX_PER_KEY = 3;
+const COMPOSITION_MAX_TOTAL = 12;
+
+function maxInstancesFor(key) {
+  return Object.prototype.hasOwnProperty.call(SECTION_MAX_INSTANCES, key)
+    ? SECTION_MAX_INSTANCES[key] : COMPOSITION_MAX_PER_KEY;
+}
+
+// moreLink（§4.3）。label は制御文字除去＋40字。href は外部 http(s) を禁止（§1 外部依存ゼロ）。
+function normalizeMoreLink(v) {
+  if (!v || typeof v !== 'object') return null;
+  const label = sanitizeCopy(v.label, 40).replace(/\n/g, ' ').trim();
+  if (!label) return null;
+  const out = { label: label };
+  const href = String(v.href == null ? '' : v.href).replace(/[\u0000-\u001f]/g, '').trim();
+  if (href && !/^[a-z][a-z0-9+.-]*:/i.test(href)) out.href = href.slice(0, 200);
+  return out;
+}
+
+// エントリ1件の正規化。key が語彙外なら null（＝落とす）。
+function normalizeCompositionEntry(e) {
+  if (!e || typeof e !== 'object') return null;
+  const key = String(e.key == null ? '' : e.key).trim();
+  if (SECTION_KEYS.indexOf(key) < 0) return null;
+  const out = { key: key };
+  const heading = sanitizeCopy(e.heading, 40).replace(/\n/g, ' ').trim();
+  const lead = sanitizeCopy(e.lead, 200);
+  if (heading) out.heading = heading;
+  if (lead) out.lead = lead;
+  const ml = normalizeMoreLink(e.moreLink);
+  if (ml) out.moreLink = ml;
+  // 型は「そのKEYのプールに載っているか」の許可リスト判定（KLK-079 と同じ考え方）
+  const type = String(e.type == null ? '' : e.type).trim();
+  const pool = SECTION_TYPE_POOLS[key] || [];
+  if (type && pool.indexOf(type) >= 0) out.type = type;
+  return out;
+}
+
+// 構成リスト全体の正規化。上限を超えた分は落とす（黙って壊さず、UI 側で件数を出す）。
+// 返却: { entries, sections, dropped }（sections は entries のキー集合を canonical 順で）
+function normalizeComposition(list) {
+  const entries = [];
+  const count = {};
+  let dropped = 0;
+  (Array.isArray(list) ? list : []).forEach(function (raw) {
+    const e = normalizeCompositionEntry(raw);
+    if (!e) { dropped++; return; }
+    const n = count[e.key] || 0;
+    if (n >= maxInstancesFor(e.key) || entries.length >= COMPOSITION_MAX_TOTAL) { dropped++; return; }
+    count[e.key] = n + 1;
+    entries.push(e);
+  });
+  const set = {};
+  entries.forEach(function (e) { set[e.key] = true; });
+  const sections = SECTION_KEYS.filter(function (k) { return set[k]; });
+  return { entries: entries, sections: sections, dropped: dropped };
+}
+
+// ★後方互換の要: 従来スキーマで表せる構成なら composition を出力しない。
+//   「canonical 順・各1個・type/moreLink なし」であれば、sections + sectionOptions で
+//   まったく同じことが言える。ここで false を返す限り、既存利用の指示書はバイト不変。
+function isPlainComposition(entries, sections) {
+  if (entries.length !== sections.length) return false;          // 重複あり
+  for (let i = 0; i < entries.length; i++) {
+    if (entries[i].key !== sections[i]) return false;            // 並びが canonical でない
+    if (entries[i].type || entries[i].moreLink) return false;    // 従来スキーマで表せない設定
+  }
+  return true;
+}
+
+
 // 選択セクション配列を「SECTION_KEYS のみ・重複なし・canonical順」に整形する（純関数）。
 // 空/無効/未配列は後方互換の既定（ABOUT/MENU/GALLERY）にフォールバックする。
 function normalizeSections(list) {
@@ -859,7 +956,14 @@ function buildInstruction(input) {
 
   // KLK-022: ヘッダー位置・選択セクション・セクション個別設定（後方互換の既定つき）
   const navPosition = NAV_POSITIONS.indexOf(input.navPosition) >= 0 ? input.navPosition : 'top';
-  const sections = normalizeSections(input.sections);
+  // KLK-087: composition があればそれが本文構成の正。無ければ従来どおり sections から。
+  //  ★composition が「canonical順・各1個・type/moreLink なし」なら **composition を出力しない**。
+  //    従来スキーマ（sections + sectionOptions）で同じことが言えるので、
+  //    既存の使い方をしている限り出力はバイト不変になる（後方互換の要）。
+  const _comp = (input.composition != null) ? normalizeComposition(input.composition) : null;
+  const sections = _comp ? _comp.sections : normalizeSections(input.sections);
+  const emitComposition = !!(_comp && _comp.entries.length
+    && !isPlainComposition(_comp.entries, _comp.sections));
   const sectionOptions = {};
   if (sections.indexOf('CTA') >= 0) {
     const purposeIn = String((input.ctaPurpose != null ? input.ctaPurpose : '')).trim();
@@ -871,9 +975,16 @@ function buildInstruction(input) {
   // KLK-027: セクション見出し/リードの事前指定（選択セクションのみ・指定があるときのみキー出力＝後方互換）。
   // heading は改行をスペースへ畳んで1行化（最大40字）・lead は改行保持（最大200字・生成側で <br> 化・§4.2）。
   // CTA は purpose/label と同一オブジェクトへマージされる。sections に無い KEY の指定は無視する。
+  //  composition があるときは「各KEYの第1インスタンス」の見出し/リードを従来キーへも載せる。
+  //  ★意図的な冗長: composition を知らない読み手（旧スキル等）でも、
+  //    並びと重複は失うが文言は生きる＝壊れ方をゆるやかにするため（graceful degradation）。
   const texts = (input.sectionTexts && typeof input.sectionTexts === 'object') ? input.sectionTexts : {};
+  const firstOf = {};
+  if (_comp) {
+    _comp.entries.forEach(function (e) { if (!firstOf[e.key]) firstOf[e.key] = e; });
+  }
   sections.forEach(function (key) {
-    const t = texts[key] || {};
+    const t = _comp ? (firstOf[key] || {}) : (texts[key] || {});
     const heading = sanitizeCopy(t.heading, 40).replace(/\n/g, ' ').trim();
     const lead = sanitizeCopy(t.lead, 200);
     if (heading || lead) {
@@ -948,6 +1059,9 @@ function buildInstruction(input) {
     if (mvCatch) out.copy.mvCatch = mvCatch;
     if (mvLead) out.copy.mvLead = mvLead;
   }
+  // KLK-087: 従来スキーマで表せない構成のときだけ composition を載せる（additive・mvPhoto/copy と同型）。
+  //  plain（canonical順・各1個・type/moreLink なし）なら載せない＝既存利用の出力はバイト不変。
+  if (emitComposition) { out.composition = _comp.entries; }
   return out;
 }
 
@@ -1045,18 +1159,20 @@ function collectInput() {
     return i.value.trim();
   }).filter(function (s) { return s.length > 0; }).slice(0, 2);
   const navEl = document.querySelector('input[name=navPosition]:checked');
-  const sections = Array.prototype.map.call(
-    document.querySelectorAll('input[name=section]:checked'), function (el) { return el.value; });
   const ctaPurposeEl = document.getElementById('ctaPurpose');
   const ctaLabelEl = document.getElementById('ctaLabel');
   const mvCatchEl = document.getElementById('mvCatch');
   const mvLeadEl = document.getElementById('mvLead');
-  // KLK-027: セクション文言行（選択中セクションぶんだけ描画される）から見出し/リードを収集
-  const sectionTexts = {};
-  document.querySelectorAll('#sectionCopyList [data-sec-key]').forEach(function (row) {
-    const h = row.querySelector('.sec-copy-heading');
-    const l = row.querySelector('.sec-copy-lead');
-    sectionTexts[row.dataset.secKey] = { heading: h ? h.value : '', lead: l ? l.value : '' };
+  // KLK-087: ページ構成リストから composition を収集（順序＝DOM順＝ページの並び）。
+  //  値は各行の入力欄から読む。正規化（上限・語彙・型の許可リスト）は buildInstruction が行う。
+  const composition = compState.map(function (e) {
+    return {
+      key: e.key,
+      heading: e.heading || '',
+      lead: e.lead || '',
+      type: e.type || '',
+      moreLink: e.moreLabel ? { label: e.moreLabel, href: e.moreHref || '' } : null,
+    };
   });
   return {
     projectName: document.getElementById('projectName').value.trim(),
@@ -1064,12 +1180,11 @@ function collectInput() {
     industryCustom: document.getElementById('industryCustom').value,
     column: colEl ? colEl.value : null,
     navPosition: navEl ? navEl.value : 'top',
-    sections: sections,
+    composition: composition,
     ctaPurpose: ctaPurposeEl ? ctaPurposeEl.value : null,
     ctaLabel: ctaLabelEl ? ctaLabelEl.value : null,
     mvCatch: mvCatchEl ? mvCatchEl.value : null,   // KLK-024: 指定コピー（未入力は buildInstruction が copy キー自体を省く）
     mvLead: mvLeadEl ? mvLeadEl.value : null,
-    sectionTexts: sectionTexts,   // KLK-027: セクション見出し/リード（未入力は buildInstruction がキーを省く）
     taste: tasteEl ? tasteEl.dataset.label : null,
     colors: {
       main: document.getElementById('hex-main').value,
@@ -1564,39 +1679,159 @@ async function setupThumbPicker() {
   applyThumbFilter();
 }
 
-// KLK-027: 選択中セクションの文言入力行を #sectionCopyList に描画する。
-// 再描画の前に既入力値を退避し、選択が続くセクションへ復元する（チェック増減で入力が消えない）。
-// 行ラベルは既存チェックボックスの label テキストを再利用。動的組立ては createElement / textContent のみ（注入なし）。
-function renderSectionCopyRows() {
-  var host = document.getElementById('sectionCopyList');
+// KLK-087: ページ構成リスト。状態は compState（配列）が持ち、DOM は毎回そこから描き直す。
+//  ★DOM を状態の置き場にしない: 並び替え・複製・削除で DOM を直接動かすと、入力値の対応づけが
+//    崩れやすい（KLK-027 の旧実装は「再描画で入力が消えないよう退避する」細工が要った）。
+//    配列を正とし、入力のたびに配列へ書き戻す方式にすると、その細工が要らなくなる。
+const SECTION_LABELS = {
+  ABOUT: 'ABOUT（会社案内・コンセプト）', MENU: 'MENU（取扱カテゴリ・事業内容）',
+  GALLERY: 'GALLERY（作品・商品・実績）', SEARCH: 'SEARCH（条件検索フォーム）',
+  CTA: 'CTA（誘導バナー）', VOICE: 'VOICE（お客様の声）', FAQ: 'FAQ（よくある質問）',
+  SNS: 'SNS（埋め込み枠）', ACCESS: 'ACCESS（所在地・営業時間）',
+  CONTACT: 'CONTACT（お問い合わせ誘導）', NEWS: 'NEWS（お知らせ・新着）',
+  PRICE: 'PRICE（料金・プラン表）', FLOW: 'FLOW（ご利用の流れ）', STAFF: 'STAFF（スタッフ・作家紹介）',
+};
+// 既定＝従来と同じ ABOUT/MENU/GALLERY（この状態では composition を出力しない＝出力バイト不変）
+let compState = [{ key: 'ABOUT' }, { key: 'MENU' }, { key: 'GALLERY' }];
+let compOpenIdx = -1;   // 「設定」を開いている行
+
+function compCountOf(key) {
+  return compState.filter(function (e) { return e.key === key; }).length;
+}
+function compCanAdd(key) {
+  return compState.length < COMPOSITION_MAX_TOTAL && compCountOf(key) < maxInstancesFor(key);
+}
+function compSummary(e) {
+  const bits = [];
+  if (e.heading) bits.push('見出し: ' + e.heading);
+  if (e.type) bits.push('型: ' + e.type);
+  if (e.moreLabel) bits.push('ボタン: ' + e.moreLabel);
+  if (e.lead) bits.push('リード文あり');
+  return bits.join(' / ');
+}
+function mkBtn(text, title, onClick, disabled) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'comp-btn'; b.textContent = text; b.title = title;
+  if (disabled) { b.disabled = true; } else { b.addEventListener('click', onClick); }
+  return b;
+}
+function mkField(labelText, el) {
+  const wrap = document.createElement('div');
+  const lb = document.createElement('label');
+  lb.textContent = labelText;
+  wrap.appendChild(lb); wrap.appendChild(el);
+  return wrap;
+}
+
+function renderComposition() {
+  const host = document.getElementById('compList');
   if (!host) return;
-  var prev = {};
-  host.querySelectorAll('[data-sec-key]').forEach(function (row) {
-    var h = row.querySelector('.sec-copy-heading');
-    var l = row.querySelector('.sec-copy-lead');
-    prev[row.dataset.secKey] = { heading: h ? h.value : '', lead: l ? l.value : '' };
-  });
-  var checked = Array.prototype.map.call(
-    document.querySelectorAll('input[name=section]:checked'), function (el) { return el.value; });
   host.textContent = '';
-  checked.forEach(function (key) {
-    var row = document.createElement('div');
-    row.className = 'sec-copy-row';
-    row.dataset.secKey = key;
-    var name = document.createElement('div');
-    name.className = 'sec-copy-name';
-    var lbl = document.querySelector('label[for=sec' + key + ']');
-    name.textContent = lbl ? lbl.textContent : key;
-    var h = document.createElement('input');
-    h.type = 'text'; h.className = 'sec-copy-heading'; h.maxLength = 40;
-    h.placeholder = '見出し（任意）';
-    var l = document.createElement('input');
-    l.type = 'text'; l.className = 'sec-copy-lead'; l.maxLength = 200;
-    l.placeholder = 'リード文（見出しの下の説明・任意）';
-    if (prev[key]) { h.value = prev[key].heading || ''; l.value = prev[key].lead || ''; }
-    row.appendChild(name); row.appendChild(h); row.appendChild(l);
+  compState.forEach(function (e, idx) {
+    const row = document.createElement('div');
+    row.className = 'comp-row';
+    row.dataset.compKey = e.key;
+
+    const head = document.createElement('div');
+    head.className = 'comp-head';
+    const no = document.createElement('span'); no.className = 'comp-no'; no.textContent = (idx + 1) + '.';
+    const key = document.createElement('span'); key.className = 'comp-key';
+    key.textContent = SECTION_LABELS[e.key] ? e.key : e.key;
+    key.title = SECTION_LABELS[e.key] || e.key;
+    const desc = document.createElement('span'); desc.className = 'comp-desc';
+    desc.textContent = compSummary(e);
+    head.appendChild(no); head.appendChild(key); head.appendChild(desc);
+    head.appendChild(mkBtn(compOpenIdx === idx ? '設定 ▴' : '設定 ▾', 'このセクションの見出し・型などを設定',
+      function () { compOpenIdx = (compOpenIdx === idx ? -1 : idx); renderComposition(); }));
+    head.appendChild(mkBtn('↑', '上へ移動', function () {
+      const t = compState[idx - 1]; compState[idx - 1] = compState[idx]; compState[idx] = t;
+      compOpenIdx = -1; renderComposition(); render();
+    }, idx === 0));
+    head.appendChild(mkBtn('↓', '下へ移動', function () {
+      const t = compState[idx + 1]; compState[idx + 1] = compState[idx]; compState[idx] = t;
+      compOpenIdx = -1; renderComposition(); render();
+    }, idx === compState.length - 1));
+    head.appendChild(mkBtn('複製', 'この設定のまま同じセクションをもう1つ', function () {
+      const copy = JSON.parse(JSON.stringify(compState[idx]));
+      compState.splice(idx + 1, 0, copy);
+      compOpenIdx = -1; renderComposition(); render();
+    }, !compCanAdd(e.key)));
+    head.appendChild(mkBtn('削除', 'この行を外す', function () {
+      compState.splice(idx, 1); compOpenIdx = -1; renderComposition(); render();
+    }));
+    row.appendChild(head);
+
+    if (compOpenIdx === idx) {
+      const body = document.createElement('div');
+      body.className = 'comp-body';
+      const h = document.createElement('input');
+      h.type = 'text'; h.maxLength = 40; h.value = e.heading || '';
+      h.placeholder = '例：私たちについて';
+      h.addEventListener('input', function () { e.heading = h.value; desc.textContent = compSummary(e); render(); });
+      body.appendChild(mkField('見出し（任意・40字まで）', h));
+
+      const l = document.createElement('textarea');
+      l.rows = 2; l.maxLength = 200; l.value = e.lead || '';
+      l.placeholder = '見出しの下に入る短い説明（任意）';
+      l.addEventListener('input', function () { e.lead = l.value; desc.textContent = compSummary(e); render(); });
+      body.appendChild(mkField('リード文（任意・200字まで）', l));
+
+      const pool = SECTION_TYPE_POOLS[e.key] || [];
+      if (pool.length) {
+        const sel = document.createElement('select');
+        const auto = document.createElement('option');
+        auto.value = ''; auto.textContent = '自動（案ごとに振り分け）';
+        sel.appendChild(auto);
+        pool.forEach(function (t) {
+          const o = document.createElement('option'); o.value = t; o.textContent = t; sel.appendChild(o);
+        });
+        sel.value = e.type || '';
+        sel.addEventListener('change', function () { e.type = sel.value; desc.textContent = compSummary(e); render(); });
+        body.appendChild(mkField('レイアウト型（任意・選ぶと3案ともその型になります）', sel));
+      } else {
+        const note = document.createElement('div');
+        note.className = 'comp-desc';
+        note.textContent = e.key === 'CTA'
+          ? 'CTA はボタンの数と文字数から自動で整列します（型の選択はありません）。'
+          : 'このセクションに選べる型はありません。';
+        body.appendChild(note);
+      }
+
+      const ml = document.createElement('input');
+      ml.type = 'text'; ml.maxLength = 40; ml.value = e.moreLabel || '';
+      ml.placeholder = '例：メニュー一覧へ（空なら出しません）';
+      ml.addEventListener('input', function () { e.moreLabel = ml.value; desc.textContent = compSummary(e); render(); });
+      body.appendChild(mkField('詳細ページへの誘導ボタン（任意）', ml));
+
+      const mh = document.createElement('input');
+      mh.type = 'text'; mh.maxLength = 200; mh.value = e.moreHref || '';
+      mh.placeholder = '例：/menu/（空なら # になります・外部URLは使えません）';
+      mh.addEventListener('input', function () { e.moreHref = mh.value; render(); });
+      body.appendChild(mkField('そのボタンのリンク先（任意・サイト内のみ）', mh));
+
+      row.appendChild(body);
+    }
     host.appendChild(row);
   });
+
+  // 追加ボタン（上限に達したものは無効化）
+  const add = document.getElementById('compAddBtns');
+  if (add) {
+    add.textContent = '';
+    SECTION_KEYS.forEach(function (k) {
+      add.appendChild(mkBtn(k, SECTION_LABELS[k] || k, function () {
+        compState.push({ key: k }); compOpenIdx = compState.length - 1; renderComposition(); render();
+      }, !compCanAdd(k)));
+    });
+  }
+  const cnt = document.getElementById('compCount');
+  if (cnt) {
+    const full = compState.length >= COMPOSITION_MAX_TOTAL;
+    cnt.textContent = '本文セクション ' + compState.length + ' / ' + COMPOSITION_MAX_TOTAL + ' 個'
+      + (full ? '（上限です。減らすと追加できます）' : '')
+      + '　※メインビジュアルとフッターは常に入ります';
+    if (full) { cnt.setAttribute('data-full', '1'); } else { cnt.removeAttribute('data-full'); }
+  }
 }
 
 // ---- イベント登録 ----------------------------------------------------------
@@ -1613,14 +1848,11 @@ function init() {
   // KLK-020: MVフリー実写真の選択→ブリッジ /upload（REQ-104 b方式）
   document.getElementById('mvPhotoFile').addEventListener('change', handleMvPhotoChange);
 
-  // KLK-027: セクション選択の変化で文言入力行を再描画（値は保持）＋要約更新。ヘッダー位置も要約更新。
-  document.querySelectorAll('input[name=section]').forEach(function (el) {
-    el.addEventListener('change', function () { renderSectionCopyRows(); render(); });
-  });
+  // KLK-087: ページ構成リスト（追加・削除・複製・並び替え・個別設定）。ヘッダー位置は要約更新のみ。
   document.querySelectorAll('input[name=navPosition]').forEach(function (el) {
     el.addEventListener('change', render);
   });
-  renderSectionCopyRows();   // 初期表示（既定チェック ABOUT/MENU/GALLERY ぶんの行を描画）
+  renderComposition();   // 初期表示（既定 ABOUT/MENU/GALLERY ＝従来と同じ）
 
   // 方法①: 4色の swatch↔hex 同期
   // KLK-025: Safari は input[type=color] の input イベントが初回選択で発火しないことがあるため、

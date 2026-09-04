@@ -47,19 +47,27 @@ def section_block(html, key):
 
 
 # S1 SCR-001 UI（sectionCopyList・renderSectionCopyRows・値退避→復元・初期描画）
-u_box = 'id="sectionCopyList"' in SCRSRC and 'id="sectionCopyBox"' in SCRSRC
-u_fn = "function renderSectionCopyRows()" in SCRSRC
-u_keep = re.search(r"var prev = \{\};", SCRSRC) is not None \
-    and "prev[row.dataset.secKey] = { heading:" in SCRSRC \
-    and "if (prev[key]) { h.value = prev[key].heading || ''; l.value = prev[key].lead || ''; }" in SCRSRC
-u_init = "renderSectionCopyRows();   // 初期表示" in SCRSRC \
-    and re.search(r"el\.addEventListener\('change', function \(\) \{ renderSectionCopyRows\(\); render\(\); \}\);", SCRSRC) is not None
-check("S1 SCR-001 UI (sectionCopyList/renderSectionCopyRows・値退避→復元・チェック変化で再描画＋初期描画)",
+
+# ★契約更新（KLK-087）: 見出し・リードの入力場所が **専用の一覧（#sectionCopyList）→
+#   ページ構成リストの各行の「設定」パネル** へ移った。同じセクションを複数置けるように
+#   なったので、「KEY ごとに1行」という旧UIでは表せなくなったため。
+#   守りたい能力は「**各セクションに見出し・リードを入れられ、入力が消えないこと**」。
+#   旧実装は再描画で値が消えないよう退避→復元の細工をしていたが、
+#   新実装は **compState（配列）を状態の正**にしたので、その細工自体が不要になった
+#   （DOM を状態の置き場にしない）。検査もそれに合わせる。
+u_box = 'id="compList"' in SCRSRC
+u_fn = "function renderComposition()" in SCRSRC
+u_keep = "let compState = [" in SCRSRC \
+    and "e.heading = h.value;" in SCRSRC and "e.lead = l.value;" in SCRSRC
+u_init = "renderComposition();   // 初期表示" in SCRSRC
+check("S1 SCR-001 UI (構成リストの各行で見出し/リードを入力・状態は compState が持つ・初期描画)",
       u_box and u_fn and u_keep and u_init,
-      f"box={u_box}, fn={u_fn}, 値保持={u_keep}, 再描画/初期={u_init}")
+      f"構成リスト={u_box}, 描画関数={u_fn}, 状態を配列で保持={u_keep}, 初期描画={u_init}")
 
 # S2 純ロジック（buildInstruction: 選択セクションのみ・sanitize・指定時のみキー）
-p_gate = "const texts = (input.sectionTexts && typeof input.sectionTexts === 'object') ? input.sectionTexts : {};" in SCRSRC
+# composition があるときは各KEYの第1インスタンスから、無ければ従来どおり sectionTexts から
+p_gate = ("const texts = (input.sectionTexts && typeof input.sectionTexts === 'object') ? input.sectionTexts : {};" in SCRSRC
+          and "const t = _comp ? (firstOf[key] || {}) : (texts[key] || {});" in SCRSRC)
 p_loop = "sections.forEach(function (key) {" in SCRSRC
 p_heading = re.search(r"sanitizeCopy\(t\.heading, 40\)\.replace\(/\\n/g, ' '\)\.trim\(\)", SCRSRC) is not None
 p_lead = "sanitizeCopy(t.lead, 200)" in SCRSRC
@@ -68,11 +76,14 @@ check("S2 純ロジック (sectionTexts→選択セクションのみ・heading 
       p_gate and p_loop and p_heading and p_lead and p_cond,
       f"gate={p_gate}, loop={p_loop}, heading整形={p_heading}, lead整形={p_lead}, 条件付き={p_cond}")
 
-# S3 collectInput（[data-sec-key] 行から収集）
-c_ok = "querySelectorAll('#sectionCopyList [data-sec-key]')" in SCRSRC \
-    and "sectionTexts[row.dataset.secKey] = { heading: h ? h.value : '', lead: l ? l.value : '' };" in SCRSRC \
-    and "sectionTexts: sectionTexts," in SCRSRC
-check("S3 collectInput ([data-sec-key] 行から heading/lead を収集し input.sectionTexts へ)",
+# S3 collectInput（構成リストの各エントリから収集）
+# ★契約更新（KLK-087）: sectionTexts（KEY→文言の map）→ composition（順序つきエントリ列）。
+#   map では同じ KEY の2つ目を持てないため。エントリが heading/lead を直接持つ。
+c_ok = "const composition = compState.map(function (e) {" in SCRSRC \
+    and "heading: e.heading || ''," in SCRSRC \
+    and "lead: e.lead || ''," in SCRSRC \
+    and "composition: composition," in SCRSRC
+check("S3 collectInput (構成リストの各エントリから heading/lead を収集し input.composition へ)",
       c_ok, f"収集={c_ok}")
 
 # S4 DRAFT_RULES §4.2
