@@ -589,6 +589,238 @@ def read_section_marker(html, addr):
     return max(hits, key=len) if hits else None
 
 
+# 型入れ替え後の品質検査(KLK-080)—セクション容器のクラス名。番地の接頭辞→容器。
+# MV だけ `m-hero`(歴史的経緯)、他は `m-{小文字}` で規則的。
+SECTION_CONTAINERS = dict(
+    [(k, "m-" + k.lower()) for k in SECTION_TYPE_POOLS if k != "MV"] + [("MV", "m-hero")]
+)
+# §3.0 で許される比率。これ以外で 1.6 より平たいものは極端な横長とみなす。
+ALLOWED_RATIOS = ((4.0, 3.0), (1.0, 1.0), (3.0, 2.0))
+_CSS_COMMENT_RE = re.compile(r"/\*.*?\*/", re.S)
+_STYLE_RE = re.compile(r"<style[^>]*>(.*?)</style>", re.S)
+_RULE_RE = re.compile(r"([^{}]+)\{([^{}]*)\}")
+_ATARI_SEL_RE = re.compile(r"\.(?:[a-z0-9-]*atari|thumb|cell|tile)\b")
+# §8.1 の対象＝「カード内で画像と本文を左右に並べる」型だけ。
+# 2トラックの grid 全般を対象にすると、カード2枚並べ(faq-cards)や日付列(news-timeline)まで
+# 誤検出する(実装時に見本で6件出した)。check_klk076 の S6 と同じ範囲。
+SIDE_BY_SIDE_MARKERS = (
+    "voice-zigzag", "voice-two-col",
+    "flow-zigzag", "staff-zigzag",
+    "img-left", "img-right", "img-overlap", "img-circle", "img-zigzag",
+    "feature-large",
+)
+
+
+def _page_css(html):
+    """<style> の中身を連結して返す(コメント除去済み)。副作用なし。"""
+    return _CSS_COMMENT_RE.sub("", "\n".join(_STYLE_RE.findall(html or "")))
+
+
+def _decl(body, prop):
+    m = re.search(r"(?:^|;)\s*" + re.escape(prop) + r"\s*:\s*([^;]+)", body)
+    return m.group(1).strip() if m else None
+
+
+def _mobile_spans(css):
+    """@media ブロックの範囲(開始,終了)の一覧。モバイル上書きを除外するために使う。"""
+    out = []
+    for m in re.finditer(r"@media[^{]*\{", css):
+        depth, j = 0, m.end() - 1
+        while j < len(css):
+            if css[j] == "{":
+                depth += 1
+            elif css[j] == "}":
+                depth -= 1
+                if depth == 0:
+                    break
+            j += 1
+        out.append((m.start(), j))
+    return out
+
+
+def _rules_for(css, needles):
+    """セレクタに needles のいずれかを含む、@media の外側のルールを返す。"""
+    skip = _mobile_spans(css)
+    out = []
+    for m in _RULE_RE.finditer(css):
+        if any(a <= m.start() <= b for a, b in skip):
+            continue
+        sel = m.group(1).strip()
+        if sel.startswith("@"):
+            continue
+        if any(n in sel for n in needles):
+            out.append((sel, m.group(2)))
+    return out
+
+
+def _tile_sizes(block, css, marker):
+    """masonry / mosaic のタイル占有セルを返す(クラス指定・:nth-child(N) 指定の両対応)。
+
+    ★生成側は span を **`:nth-child(N)` で書くことがある**(KLK-079 の実機検証で判明)。
+      クラス指定しか読めないと**全部 1×1 に見えて**「空きセルあり」と誤検出する。
+    """
+    spans_cls, spans_nth = {}, {}
+    for sel, body in _rules_for(css, [marker]):
+        gc = re.sub(r"\s+", "", _decl(body, "grid-column") or "")
+        gr = re.sub(r"\s+", "", _decl(body, "grid-row") or "")
+        if not (gc.startswith("span") or gr.startswith("span")):
+            continue
+        sw = int(re.sub(r"\D", "", gc) or 1)
+        sh = int(re.sub(r"\D", "", gr) or 1)
+        nth = re.search(r":nth-child\(\s*(\d+)\s*\)", sel)
+        if nth:
+            spans_nth[int(nth.group(1))] = (sw, sh)
+        else:
+            spans_cls[sel.split(".")[-1].strip()] = (sw, sh)
+    tiles = re.findall(r'<div class="atari([^"]*)"', block)
+    sizes = []
+    for i, cls in enumerate(tiles):
+        w = h = 1
+        if (i + 1) in spans_nth:
+            w, h = spans_nth[i + 1]
+        for key, (sw, sh) in spans_cls.items():
+            if key and key in cls:
+                w, h = max(w, sw), max(h, sh)
+        sizes.append((w, h))
+    return sizes
+
+
+def _grid_holes(sizes, cols):
+    """dense 配置を模して、矩形に敷き詰めたときの空きセル数を返す。"""
+    grid = {}
+    for w, h in sizes:
+        r = 0
+        while True:
+            placed = False
+            for c in range(max(1, cols - w + 1)):
+                if all((r + dr, c + dc) not in grid for dr in range(h) for dc in range(w)):
+                    for dr in range(h):
+                        for dc in range(w):
+                            grid[(r + dr, c + dc)] = 1
+                    placed = True
+                    break
+            if placed:
+                break
+            r += 1
+    if not grid:
+        return 0
+    rows = max(r for r, _ in grid) + 1
+    return sum(1 for r in range(rows) for c in range(cols) if (r, c) not in grid)
+
+
+def find_quality_warnings(html, addr):
+    """対象セクションが横断ルールを守っているかを機械検査する(KLK-080)。副作用なし。
+
+    ★なぜ必要か: KLK-079 の後段検証は「型が変わったか」しか見ていない。
+      地図のアタリが 16/7 でも masonry に空白があっても「型にしました」と報告してしまう。
+      KLK-072〜076 で4回続けて起きたのは、まさにその手の違反だった。
+
+    返却: 人が読める警告文字列のリスト(空なら問題なし)。**判定できないものは黙る**(fail-open)。
+    """
+    warnings = []
+    pool = pool_for_addr(addr)
+    if not pool:
+        return warnings
+    start, end = find_target_section(html, addr)
+    if start is None:
+        return warnings
+    block = html[start:end]
+    css = _page_css(html)
+    marker = None
+    hits = read_section_markers(html, addr)
+
+    # (0) マーカー衛生 — 同じプールの型が2つ以上
+    if len(hits) >= 2:
+        warnings.append("{0}: 型マーカーが{1}個あります（{2}）。1つだけにしてください".format(
+            addr, len(hits), ", ".join(hits)))
+    if hits:
+        marker = max(hits, key=len)
+
+    container = SECTION_CONTAINERS.get(addr.rsplit("-", 1)[0])
+    # ★CSS の絞り込みは「容器名とマーカー」だけでは足りない(KLK-080 の実装時に判明)。
+    #   ACCESS の地図は `.map-atari` で、`m-access` も `map-side` も含まない。
+    #   そこで**そのセクションのブロックで実際に使われているクラス名**を needle にする。
+    #   構造だけの共通クラスは除く(全セクションに当たって騒がしくなるため)。
+    STRUCTURAL = {"sec", "addr", "pin", "reveal", "m-sec", "todo", "sec-head", "en"}
+    class_names = set()
+    for attr in re.findall(r'class="([^"]*)"', block):
+        class_names.update(c for c in attr.split() if c and c not in STRUCTURAL)
+    needles = sorted({("." + c) for c in class_names} | {n for n in (container, marker) if n})
+    if not needles:
+        return warnings
+
+    # (1)(2) §3.0 — 極端な横長比率 / min-height だけのアタリ
+    for sel, body in _rules_for(css, needles):
+        v = re.sub(r"\s+", "", _decl(body, "aspect-ratio") or "")
+        if v and v != "auto":
+            m = re.fullmatch(r"(\d+(?:\.\d+)?)(?:/(\d+(?:\.\d+)?))?", v)
+            if m:
+                w = float(m.group(1))
+                h = float(m.group(2)) if m.group(2) else 1.0
+                if (w, h) not in ALLOWED_RATIOS and h and w / h > 1.6:
+                    warnings.append(
+                        "{0}: 極端な横長比率です（{1} に aspect-ratio:{2}）。§3.0 の既定は 4/3".format(
+                            addr, sel.strip()[:60], v))
+        if (
+            _ATARI_SEL_RE.search(sel)
+            and "hero-atari" not in sel
+            and "hero-media" not in sel
+            and _decl(body, "min-height")
+            and not _decl(body, "aspect-ratio")
+        ):
+            warnings.append(
+                "{0}: min-height だけで高さを決めています（{1}）。§3.0 は aspect-ratio を求めます".format(
+                    addr, sel.strip()[:60]))
+
+    # (3) §12.1.3 — masonry / mosaic の大小混在と充填
+    if marker and ("masonry" in marker or "mosaic" in marker):
+        cols = None
+        for sel, body in _rules_for(css, [marker]):
+            gtc = re.sub(r"\s+", "", _decl(body, "grid-template-columns") or "")
+            mm = re.match(r"repeat\((\d+),", gtc)
+            if mm and sel.strip().endswith(marker):
+                cols = int(mm.group(1))
+        sizes = _tile_sizes(block, css, marker)
+        if cols and sizes:
+            if len(set(sizes)) < 2:
+                warnings.append(
+                    "{0}: タイルが全部同じ大きさです（{1} はベントー型＝大小混在が要件）".format(addr, marker))
+            holes = _grid_holes(sizes, cols)
+            if holes:
+                warnings.append(
+                    "{0}: 最終行に空きが {1} セルあります（{2}・§12.1.3 の構成A/B/Cから選んでください）".format(
+                        addr, holes, marker))
+
+    # (4) §8.1 — 狭い本文カラムで「画像＋本文の横並び」になっていないか
+    #     ★禁じているのは**カード内の画像と本文の横並び**であって、2トラックの grid 全般ではない。
+    #       カードを2枚並べる(`faq-cards`)・日付と本文(`news-timeline`)・番号バッジは対象外。
+    #       広く取ると誤検出だらけになる(実装時に見本で6件の誤検出を出した)。
+    #     ★HERO/NAV/FOOTER は本文カラムの外にあるので対象外。
+    root = re.search(r'data-columns="([^"]*)"', html)
+    section = addr.rsplit("-", 1)[0]
+    if (
+        root
+        and root.group(1).startswith(("2col", "3col"))
+        and section not in ("MV", "NAV", "FOOTER")
+    ):
+        for sel, body in _rules_for(css, [m for m in SIDE_BY_SIDE_MARKERS if m in (marker or "")]):
+            gtc = _decl(body, "grid-template-columns")
+            if not gtc:
+                continue
+            g = re.sub(r"\s+", "", gtc)
+            rep = re.fullmatch(r"repeat\((\d+),.*", g)
+            ntracks = int(rep.group(1)) if rep else len(gtc.split())
+            if ntracks < 2:
+                continue
+            px = re.findall(r"(\d+(?:\.\d+)?)px", g)
+            if px and all(float(x) <= 100 for x in px) and ntracks == 2:
+                continue   # 番号バッジ等の小さな固定幅は「画像と本文の横並び」ではない
+            warnings.append(
+                "{0}: 狭い本文カラムで画像と本文が横並びです（{1} → {2}）。§8.1 は縦積みを求めます".format(
+                    addr, sel.strip()[:50], gtc.strip()[:40]))
+    return warnings
+
+
 def build_regenerate_command(pending_path, allow_open=False):
     """/draft-regenerate のヘッドレス実行コマンド(list・shell=False 用)を構築する(U-5/最小権限)。
 
@@ -1184,6 +1416,18 @@ def _run_server(port):
         # ★型入れ替えの後段検証(KLK-079): 指示した型に実際になったかを実ファイルで確かめる
         type_applied = None
         got = None
+        quality = []
+        if addr:
+            # ★型指定の有無にかかわらず品質は見る(KLK-080)。
+            #   「型が変わったか」だけでは、16/7 のアタリも masonry の空白も素通りする。
+            try:
+                with open(abs_regen_target, encoding="utf-8") as fh:
+                    quality = find_quality_warnings(fh.read(), addr)
+            except OSError:
+                quality = []
+            if quality:
+                for w in quality:
+                    print("[bridge] 規約違反の疑い: {0}".format(w), file=sys.stderr)
         if desired and addr:
             hits = []
             try:
@@ -1216,11 +1460,15 @@ def _run_server(port):
         else:
             base = "再生成が完了しました。"
 
+        if quality:
+            base += "規約違反の疑いが {0} 件あります。".format(len(quality))
+
         with jobs_lock:
             jobs[job_id]["state"] = "done"
             jobs[job_id]["folder"] = folder
             jobs[job_id]["openTarget"] = open_target
             jobs[job_id]["typeApplied"] = type_applied
+            jobs[job_id]["warnings"] = quality
             jobs[job_id]["message"] = base + (
                 "{0} を開きました".format(open_target)
                 if opened
@@ -2322,6 +2570,7 @@ def _run_server(port):
                     "message": "再生成中…",
                     "desiredType": desired,
                     "typeApplied": None,   # 型指定なし=None / 適用済み=True / 反映されず=False
+                    "warnings": [],        # 規約違反の疑い(KLK-080)
                 }
 
             worker = threading.Thread(
@@ -2353,6 +2602,8 @@ def _run_server(port):
                         # 型入れ替え(KLK-079): None=型指定なし / True=適用 / False=反映されず
                         "typeApplied": job.get("typeApplied"),
                         "desiredType": job.get("desiredType"),
+                        # 規約違反の疑い(KLK-080)。型が変わっても、これが空でなければ成功と同じ顔をさせない
+                        "warnings": job.get("warnings") or [],
                     },
                 )
 

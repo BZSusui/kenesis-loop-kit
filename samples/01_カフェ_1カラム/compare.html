@@ -283,10 +283,13 @@
             .then(function(s2){
               if(s2.state === 'done'){
                 clearInterval(poll);
-                // ★型が反映されなかったときは成功と同じ見た目にしない（KLK-079）
-                if (s2.typeApplied === false) {
+                var warns = s2.warnings || [];
+                // ★型が反映されなかった / 規約違反の疑いがある ときは
+                //   成功と同じ見た目にしない（KLK-079 / KLK-080）
+                if (s2.typeApplied === false || warns.length) {
                   btn.disabled = false;
-                  msg.textContent = '⚠ ' + s2.message;
+                  msg.textContent = '⚠ ' + s2.message
+                    + (warns.length ? ' — ' + warns.join(' / ') : '');
                   msg.setAttribute('data-warn', '1');
                   return;
                 }
