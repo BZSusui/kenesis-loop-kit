@@ -208,15 +208,23 @@ check(
 # ---------------------------------------------------------------------------
 # S11-S12 mockups の整理と除外設定
 # ---------------------------------------------------------------------------
-MOCK = os.path.join(ROOT, "mockups")
-leftovers = []
-if os.path.isdir(MOCK):
-    leftovers = [n for n in os.listdir(MOCK)
-                 if os.path.isdir(os.path.join(MOCK, n)) and not n.startswith(".")]
+# ★契約更新（KLK-082）: 元は「作業ツリーの mockups/ が空であること」を要求していた。
+#   KLK-071 の時点ではリポジトリを片付ける作業だったので妥当だったが、
+#   **ツールが日常的に使われるようになると mockups/ には生成物があるのが普通**であり、
+#   利用者が自分のラフを作っただけでテストが落ちるのは誤り（実際に落ちた）。
+#   本当に守りたいのは「**配布物に**生成物を入れないこと」で、それは
+#   make-package.sh が空の mockups/ を作ることと、check_klk069/077 が
+#   実際に組み立てて中身を確認することで担保されている。
+#   ここでは **Git に生成物が入っていないこと**（案件名の流出防止・REQ-011/NFR-004）を見る。
+_tracked = subprocess.run(
+    ["git", "ls-files", "mockups/"],
+    capture_output=True, text=True, cwd=ROOT, timeout=60,
+).stdout.split()
+_tracked = [f for f in _tracked if not os.path.basename(f).startswith(".")]
 check(
-    "S11 mockups/ に開発中の生成物が残っていない（利用者の作業場として空で配る）",
-    not leftovers,
-    "残存=%d件 %s" % (len(leftovers), leftovers[:5] or "なし"),
+    "S11 mockups/ の生成物が Git に入っていない（案件名の流出防止・REQ-011）",
+    not _tracked,
+    "Git 追跡下の生成物=%d件 %s" % (len(_tracked), _tracked[:5] or "なし"),
 )
 check(
     "S12 .gitignore が samples/ を除外せず、mockups/ の除外は維持している",
