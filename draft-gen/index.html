@@ -178,6 +178,16 @@
     background: var(--color-bg-subtle); color: var(--color-text);
     font-family: ui-monospace, monospace; font-size: 12px;
   }
+  .swatches{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .swatch{ display:flex; align-items:center; gap:7px; border:1px solid #ddd9cf; border-radius:8px;
+           padding:5px 9px 5px 5px; font-size:11.5px; background:#fff; }
+  .swatch .chip{ width:22px; height:22px; border-radius:5px; border:1px solid rgba(0,0,0,.14); }
+  .swatch .meta{ line-height:1.35; }
+  .swatch .meta b{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-weight:600; }
+  .swatch .meta span{ color:#8a8578; }
+  .swatch.is-role{ border-color:#9fb08a; background:#f6f9f2; }
+  .read-colors-msg{ font-size:11.5px; color:#8a8578; margin-top:7px; }
+  .read-colors-msg[data-err="1"]{ color:#b4342b; }
   .paste-err {
     display: none; margin-top: 8px; padding: 8px 12px; font-size: 13px;
     background: #FFF0F3; border: 1px solid var(--color-accent); border-radius: 7px; color: #a1263f;
@@ -615,11 +625,20 @@
     <div class="field-row" style="margin-top:14px">
       <div class="col" style="flex-basis:100%">
         <label>見本サイトのURL（任意・最大2件）</label>
-        <input type="text" class="sample-url" placeholder="https://example.com/ （URLを控えておけます）">
-        <input type="text" class="sample-url" style="margin-top:8px" placeholder="https://example.org/ （2件目・任意）">
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" class="sample-url" id="sampleUrl1" placeholder="https://example.com/ （配色を読み取れます）" style="flex:1">
+          <button type="button" class="btn-ghost" id="readColorsBtn">配色を読み取る</button>
+        </div>
+        <input type="text" class="sample-url" style="margin-top:8px" placeholder="https://example.org/ （2件目・任意・控えのみ）">
+        <div class="read-colors-msg" id="readColorsMsg"></div>
+        <div class="swatches" id="readColorsSwatches" hidden></div>
+        <div id="readColorsApplyRow" hidden style="margin-top:8px">
+          <button type="button" class="btn-ghost" id="readColorsApply">この配色を使う</button>
+          <span class="note-oq" style="display:inline;margin-left:8px">配色欄に入ります。あとから自由に変えられます</span>
+        </div>
       </div>
     </div>
-    <p class="note-oq"><b>ご注意：入力したURLは現在まだ生成には反映されません（REQ-102・対応予定）。</b>控えとして保存されるだけで、配色や構成の読み取りは行いません。いま参考の雰囲気を反映させたい場合は、上の「参考にする素材」から実績サムネイルを選んでください（選んだ参考の配色・レイアウトは実際に生成へ反映されます）。</p>
+    <p class="note-oq"><b>1件目のURLは「配色を読み取る」で配色欄へ反映できます（REQ-102）。</b>読み取るのは<b>配色だけ</b>で、レイアウト構成は読み取りません（見た目の判断が要るため）。<b>構成も参考にしたいときは、そのサイトのスクリーンショットを実績カタログへ取り込んでから</b>「参考にする素材」で選んでください（配色とレイアウトの両方が生成に反映されます）。2件目は控えとして保存されるだけです。</p>
   </section>
 
   <!-- ⑦ アタリ画像 -->
@@ -1639,6 +1658,91 @@ function init() {
   });
 
   // 方法③: 貼り付け取り込み
+  // --- 見本サイトURLから配色を読み取る（KLK-083・REQ-102）-----------------
+  //  ★AI を通さない。ブリッジが CSS の色を数えて返すだけなので、同じページなら同じ結果。
+  //    読み取った色は**配色欄に入るだけ**で、生成パイプラインには触れない。
+  var readColorsResult = null;
+
+  function setReadColorsMsg(text, isError) {
+    const el = document.getElementById('readColorsMsg');
+    el.textContent = text || '';
+    if (isError) { el.setAttribute('data-err', '1'); } else { el.removeAttribute('data-err'); }
+  }
+
+  function renderSwatches(res) {
+    const wrap = document.getElementById('readColorsSwatches');
+    const applyRow = document.getElementById('readColorsApplyRow');
+    while (wrap.firstChild) { wrap.removeChild(wrap.firstChild); }
+    const colors = (res && res.colors) || [];
+    if (!colors.length) { wrap.hidden = true; applyRow.hidden = true; return; }
+    const sug = (res && res.suggestion) || {};
+    const roleLabel = { main: 'メイン', sub: 'サブ', accent: 'アクセント', bg: '背景' };
+    const byHex = {};
+    ROLE_KEYS.forEach(function (k) { if (sug[k]) { byHex[sug[k]] = roleLabel[k]; } });
+    colors.forEach(function (c) {
+      const box = document.createElement('div');
+      box.className = 'swatch' + (byHex[c.hex] ? ' is-role' : '');
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.style.background = c.hex;               // 値はブリッジが正規化した #rrggbb のみ
+      const meta = document.createElement('span');
+      meta.className = 'meta';
+      const b = document.createElement('b');
+      b.textContent = c.hex;                        // 動的値は textContent（注入対策）
+      const sp = document.createElement('span');
+      sp.textContent = ' ' + (c.category || '') +
+        (byHex[c.hex] ? '・' + byHex[c.hex] : '') +
+        ' ' + Math.round((c.ratio || 0) * 100) + '%';
+      meta.appendChild(b); meta.appendChild(sp);
+      box.appendChild(chip); box.appendChild(meta);
+      wrap.appendChild(box);
+    });
+    wrap.hidden = false;
+    applyRow.hidden = !ROLE_KEYS.some(function (k) { return sug[k]; });
+  }
+
+  document.getElementById('readColorsBtn').addEventListener('click', function () {
+    const btn = this;
+    const url = (document.getElementById('sampleUrl1').value || '').trim();
+    readColorsResult = null;
+    renderSwatches(null);
+    if (!url) { setReadColorsMsg('1件目のURLを入力してください。', true); return; }
+    if (!/^https?:\/\//i.test(url)) {
+      setReadColorsMsg('http と https のURLだけ読み取れます。', true); return;
+    }
+    btn.disabled = true;
+    setReadColorsMsg('読み取っています…');
+    fetch('http://' + BRIDGE_HOST + '/read-colors', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (res) {
+        btn.disabled = false;
+        const j = res.body || {};
+        if (!j.ok) { setReadColorsMsg(j.error || '読み取れませんでした。', true); return; }
+        readColorsResult = j;
+        renderSwatches(j);
+        setReadColorsMsg('よく使われている色を ' + (j.colors || []).length +
+          ' 色ひろいました（参照: ' + (j.sources || []).length + '件）。' +
+          '緑の枠は下書きの割り当てです。');
+      })
+      .catch(function () {
+        btn.disabled = false;
+        setReadColorsMsg('ローカルブリッジに接続できませんでした。起動しているかご確認ください。', true);
+      });
+  });
+
+  document.getElementById('readColorsApply').addEventListener('click', function () {
+    if (!readColorsResult) { return; }
+    const sug = readColorsResult.suggestion || {};
+    const applied = ROLE_KEYS.filter(function (k) { return sug[k]; });
+    applied.forEach(function (k) { setColorRole(k, sug[k]); });
+    colorMode = 'pasted';
+    render();
+    setReadColorsMsg('配色欄へ入れました（' + applied.join(' / ') + '）。必要に応じて直してください。');
+  });
+
   document.getElementById('pasteImport').addEventListener('click', function () {
     const res = parsePalette(document.getElementById('pasteBox').value);
     const err = document.getElementById('pasteError');

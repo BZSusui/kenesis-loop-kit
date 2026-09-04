@@ -20,12 +20,15 @@ Python標準ライブラリのみ・外部依存ゼロ。127.0.0.1 限定 bind �
 """
 
 import datetime
+import ipaddress
 import json
 import os
 import re
 import subprocess
 import sys
 import urllib.parse
+import urllib.request
+import socket
 
 # ============================================================================
 # 定数
@@ -819,6 +822,398 @@ def find_quality_warnings(html, addr):
                 "{0}: 狭い本文カラムで画像と本文が横並びです（{1} → {2}）。§8.1 は縦積みを求めます".format(
                     addr, sel.strip()[:50], gtc.strip()[:40]))
     return warnings
+
+
+# ---------------------------------------------------------------------------
+# 見本サイトURLからの配色読み取り(KLK-083・REQ-102)決定論コア — 純関数・副作用なし
+#
+# ★AI を通さない。CSS の色を数えて並べるだけなので、同じページなら同じ結果になる。
+#   生成パイプラインには触れない(配色欄に値が入るだけ)＝生成の決定性を壊さない。
+# ★このブリッジが**初めて外へ出る**機能なので、防御は厚くする(is_safe_external_url /
+#   is_public_ip)。利用者の端末で動く以上、社内ネットワークを覗く踏み台にしてはならない。
+# ---------------------------------------------------------------------------
+READ_COLORS_TIMEOUT_SEC = 8         # 1リクエストの上限
+READ_COLORS_MAX_BYTES = 2_000_000   # 取得サイズの上限(HTML/CSS 各1本あたり)
+READ_COLORS_MAX_CSS = 4             # 追加で取りに行く同一オリジンCSSの本数
+READ_COLORS_MAX_REDIRECTS = 3
+READ_COLORS_TOP = 8                 # 画面に出すスウォッチ数
+
+_HEX3_RE = re.compile(r"#([0-9a-fA-F]{3})\b")
+_HEX6_RE = re.compile(r"#([0-9a-fA-F]{6})\b")
+_RGB_RE = re.compile(
+    r"rgba?\(\s*(\d{1,3})\s*[, ]\s*(\d{1,3})\s*[, ]\s*(\d{1,3})\s*(?:[,/][^)]*)?\)", re.I
+)
+_STYLE_TAG_RE = re.compile(r"<style[^>]*>(.*?)</style>", re.S | re.I)
+_STYLE_ATTR_RE = re.compile(r'style\s*=\s*"([^"]*)"', re.I)
+_LINK_CSS_RE = re.compile(
+    r'<link\b[^>]*rel\s*=\s*["\']?stylesheet["\']?[^>]*>', re.I
+)
+_HREF_RE = re.compile(r'href\s*=\s*["\']([^"\']+)["\']', re.I)
+# CSS のコメントと、色に見えるが色ではないもの(id セレクタ等)を落とすため
+_CSS_COMMENT_RE2 = re.compile(r"/\*.*?\*/", re.S)
+
+
+def is_safe_external_url(url):
+    """外向きに取得してよい URL か(構文レベル・KLK-083)。副作用なし。
+
+    許すのはスキームが http と https のときだけ。資格情報つき(`利用者名:合言葉@ホスト`)は拒否する
+    (認証情報を第三者へ送る形を作らない)。ホスト名が無いものも拒否。
+    ★IP の素性は別途 is_public_ip で見る(名前解決が要るため分けている)。
+    """
+    if not isinstance(url, str) or len(url) > 2048:
+        return False
+    try:
+        u = urllib.parse.urlsplit(url.strip())
+    except ValueError:
+        return False
+    if u.scheme not in ("http", "https"):
+        return False
+    if not u.hostname:
+        return False
+    # 資格情報つき(`利用者名:合言葉@ホスト`)は拒否する。
+    # netloc に "@" があれば資格情報を含む形なので、それだけで弾く。
+    if "@" in (u.netloc or ""):
+        return False
+    return True
+
+
+def is_public_ip(addr):
+    """その IP が外部の公開アドレスか(SSRF ガードの本体・KLK-083)。副作用なし。
+
+    ループバック・プライベート・リンクローカル・共有(CGNAT)・予約・マルチキャストを拒否する。
+    ★ブリッジは利用者の端末で動くので、ループバックや社内セグメント宛の URL を
+      読ませると**社内ネットワークを覗く踏み台**になる。ここが最後の砦。
+    """
+    try:
+        ip = ipaddress.ip_address(addr)
+    except ValueError:
+        return False
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
+        ip = ip.ipv4_mapped
+    return not (
+        ip.is_loopback
+        or ip.is_private
+        or ip.is_link_local
+        or ip.is_multicast
+        or ip.is_reserved
+        or ip.is_unspecified
+    )
+
+
+def normalize_color_value(value):
+    """CSS の色指定を `#rrggbb`(小文字)へ正規化する(KLK-083)。読めなければ None。
+
+    受けるのは `#rgb` / `#rrggbb` / `rgb()` / `rgba()`。色名は扱わない
+    (`red` 等は数が少なく、拾うと `border` の既定値などで誤検出が増えるため)。
+    """
+    if not isinstance(value, str):
+        return None
+    t = value.strip().lower()
+    m = re.fullmatch(r"#([0-9a-f]{3})", t)
+    if m:
+        return "#" + "".join(c * 2 for c in m.group(1))
+    m = re.fullmatch(r"#([0-9a-f]{6})", t)
+    if m:
+        return "#" + m.group(1)
+    m = _RGB_RE.fullmatch(t)
+    if m:
+        vals = [int(m.group(i)) for i in (1, 2, 3)]
+        if all(0 <= v <= 255 for v in vals):
+            return "#%02x%02x%02x" % tuple(vals)
+    return None
+
+
+def extract_color_values(css_text):
+    """CSS/HTML の断片から色を数える(KLK-083)。返却: {hex: 出現回数}。副作用なし。"""
+    counts = {}
+    if not isinstance(css_text, str):
+        return counts
+    body = _CSS_COMMENT_RE2.sub("", css_text)
+    for m in _HEX6_RE.finditer(body):
+        hexv = normalize_color_value("#" + m.group(1))
+        if hexv:
+            counts[hexv] = counts.get(hexv, 0) + 1
+    for m in _HEX3_RE.finditer(body):
+        # 6桁として既に数えた分と二重に数えない
+        if _HEX6_RE.match(body, m.start()):
+            continue
+        hexv = normalize_color_value("#" + m.group(1))
+        if hexv:
+            counts[hexv] = counts.get(hexv, 0) + 1
+    for m in _RGB_RE.finditer(body):
+        hexv = normalize_color_value(m.group(0))
+        if hexv:
+            counts[hexv] = counts.get(hexv, 0) + 1
+    return counts
+
+
+def collect_page_colors(html):
+    """HTML 本体（<style> と style 属性）から色を数える(KLK-083)。副作用なし。"""
+    counts = {}
+    if not isinstance(html, str):
+        return counts
+    for chunk in _STYLE_TAG_RE.findall(html):
+        for k, v in extract_color_values(chunk).items():
+            counts[k] = counts.get(k, 0) + v
+    for chunk in _STYLE_ATTR_RE.findall(html):
+        for k, v in extract_color_values(chunk).items():
+            counts[k] = counts.get(k, 0) + v
+    return counts
+
+
+def same_origin_css_urls(html, base_url, limit=READ_COLORS_MAX_CSS):
+    """HTML から**同一オリジンの**スタイルシートURLを取り出す(KLK-083)。副作用なし。
+
+    ★同一オリジンに限るのは、1つのURL入力で任意のホストへ次々アクセスさせないため。
+      現代のサイトは色を外部CSSに置くことが多いので、ここを拾わないとほとんど何も取れない。
+    """
+    out = []
+    if not isinstance(html, str) or not is_safe_external_url(base_url):
+        return out
+    base = urllib.parse.urlsplit(base_url)
+    for tag in _LINK_CSS_RE.findall(html):
+        m = _HREF_RE.search(tag)
+        if not m:
+            continue
+        href = urllib.parse.urljoin(base_url, m.group(1).strip())
+        if not is_safe_external_url(href):
+            continue
+        u = urllib.parse.urlsplit(href)
+        if (u.scheme, u.hostname, u.port) != (base.scheme, base.hostname, base.port):
+            continue
+        if href not in out:
+            out.append(href)
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _hsl(hexv):
+    """#rrggbb → (h[0-360), s[0-1], l[0-1])。副作用なし。"""
+    r, g, b = (int(hexv[i:i + 2], 16) / 255.0 for i in (1, 3, 5))
+    mx, mn = max(r, g, b), min(r, g, b)
+    l = (mx + mn) / 2
+    if mx == mn:
+        return 0.0, 0.0, l
+    d = mx - mn
+    s = d / (2 - mx - mn) if l > 0.5 else d / (mx + mn)
+    if mx == r:
+        h = ((g - b) / d) % 6
+    elif mx == g:
+        h = (b - r) / d + 2
+    else:
+        h = (r - g) / d + 4
+    return h * 60.0, s, l
+
+
+def hex_to_category(hexv):
+    """hex を主配色16カテゴリ(§5.1・KLK-067)のどれかへ丸める(KLK-083)。副作用なし。
+
+    ★表示用の目安であり、生成には使わない。「この色はブルー系」と分かると
+      カタログ語彙（§5.1）と地続きに読めるので添える。
+    """
+    if not isinstance(hexv, str) or not re.fullmatch(r"#[0-9a-f]{6}", hexv):
+        return None
+    h, s, l = _hsl(hexv)
+    # ★境界は §5.1 の変換表(16カテゴリ→hex)の実測 HSL に合わせてある。
+    #   その15色を通すと**全部が自分のカテゴリへ戻る**（check_klk083 X1 が常時検査）。
+    #   「カラフル」は単色に対応しないので、ここからは返らない。
+    if s < 0.12:                                   # 無彩色
+        return "シルバー" if 0.42 <= l < 0.86 else "モノトーン"
+    if l >= 0.80 and 15 <= h < 60 and s < 0.60:    # 生成りやクリーム
+        return "ベージュ"
+    if h < 15 or h >= 345:
+        return "レッド"
+    if h < 33:
+        return "ブラウン" if l < 0.45 else "オレンジ"
+    if h < 43:
+        return "ベージュ" if s < 0.38 else "ゴールド"
+    if h < 60:
+        return "イエロー"
+    if h < 100:
+        return "イエローグリーン"
+    if h < 175:
+        return "グリーン"
+    if h < 197:
+        return "ミント・水色"
+    if h < 250:
+        return "ネイビー" if l < 0.32 else "ブルー"
+    if h < 300:
+        return "パープル"
+    return "ピンク"
+
+
+def rank_page_colors(counts, top=READ_COLORS_TOP):
+    """色を「使われている数」で並べる(KLK-083)。副作用なし。
+
+    同数のときは hex 昇順で決定的にする（同じページなら毎回同じ並び）。
+    """
+    items = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
+    total = sum(counts.values()) or 1
+    return [
+        {
+            "hex": hexv,
+            "count": n,
+            "ratio": round(n / total, 4),
+            "category": hex_to_category(hexv),
+        }
+        for hexv, n in items[:top]
+    ]
+
+
+def suggest_color_roles(ranked):
+    """並べた色から メイン/サブ/アクセント/背景 を当てはめる(KLK-083)。副作用なし。
+
+    あくまで**下書き**。人が画面で直す前提の、説明できる単純な規則にする。
+      背景  = 明るい色のうち最も多いもの（無ければ最も明るいもの）
+      メイン = 彩度のある色のうち最も多いもの
+      アクセント = メインと色相が離れていて、最も彩度が高いもの
+      サブ  = メインと同系で、メインより暗い/明るいもの
+    埋まらない役割は None のまま返す（**適当な色をでっち上げない**）。
+    """
+    roles = {"main": None, "sub": None, "accent": None, "bg": None}
+    if not ranked:
+        return roles
+    info = [(c["hex"], _hsl(c["hex"]), c["count"]) for c in ranked]
+
+    lights = [x for x in info if x[1][2] >= 0.85]
+    roles["bg"] = (lights[0][0] if lights
+                   else max(info, key=lambda x: x[1][2])[0])
+
+    chromatic = [x for x in info if x[1][1] >= 0.15 and x[0] != roles["bg"]]
+    if chromatic:
+        roles["main"] = chromatic[0][0]
+    if roles["main"]:
+        mh = [x for x in info if x[0] == roles["main"]][0][1][0]
+        far = [x for x in chromatic
+               if x[0] != roles["main"] and min(abs(x[1][0] - mh), 360 - abs(x[1][0] - mh)) >= 40]
+        if far:
+            roles["accent"] = max(far, key=lambda x: x[1][1])[0]
+        near = [x for x in chromatic
+                if x[0] not in (roles["main"], roles["accent"])
+                and min(abs(x[1][0] - mh), 360 - abs(x[1][0] - mh)) < 40]
+        if near:
+            ml = [x for x in info if x[0] == roles["main"]][0][1][2]
+            roles["sub"] = max(near, key=lambda x: abs(x[1][2] - ml))[0]
+    return roles
+
+
+def _resolve_public_addrs(host):
+    """ホスト名を解決し、**すべての解決先が公開アドレスか**を返す(KLK-083)。
+
+    返却: (ok, 解決したアドレスの一覧)。1つでも内部アドレスがあれば ok=False。
+    ★「1つでも」なのは、複数レコードのうち片方だけ内部を指す形で
+      ガードをすり抜けさせないため。名前解決に失敗したら ok=False（通さない）。
+    """
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except OSError:
+        return False, []
+    addrs = sorted({i[4][0] for i in infos})
+    if not addrs:
+        return False, []
+    return all(is_public_ip(a) for a in addrs), addrs
+
+
+def fetch_text(url, max_bytes=READ_COLORS_MAX_BYTES, timeout=READ_COLORS_TIMEOUT_SEC):
+    """外部URLを取得して本文テキストを返す(KLK-083)。返却: (text, error)。
+
+    ★リダイレクトは**自前で追う**。urllib に任せると、公開ホストからループバック宛への
+      転送で SSRF ガードをすり抜けられてしまう。各ホップで必ず再検査する。
+    """
+    seen = 0
+    current = url
+    while True:
+        if not is_safe_external_url(current):
+            return None, "たどれない URL です（http と https のみ・資格情報つきは不可）"
+        host = urllib.parse.urlsplit(current).hostname
+        ok, _addrs = _resolve_public_addrs(host)
+        if not ok:
+            return None, "外部の公開サイトではないため取得しません（社内・ローカル宛は対象外）"
+        req = urllib.request.Request(
+            current,
+            headers={"User-Agent": "kenesis-loop-kit/1.0 (color reader)",
+                     "Accept": "text/html,text/css,*/*"},
+            method="GET",
+        )
+        try:
+            opener = urllib.request.build_opener(_NoRedirect())
+            with opener.open(req, timeout=timeout) as res:
+                status = getattr(res, "status", 200)
+                if status in (301, 302, 303, 307, 308):
+                    loc = res.headers.get("Location")
+                    if not loc or seen >= READ_COLORS_MAX_REDIRECTS:
+                        return None, "転送が多すぎます"
+                    current = urllib.parse.urljoin(current, loc)
+                    seen += 1
+                    continue
+                raw = res.read(max_bytes + 1)
+        except Exception as exc:   # 通信全般(DNS/TLS/タイムアウト/HTTPエラー)
+            return None, "取得できませんでした（{0}）".format(type(exc).__name__)
+        if len(raw) > max_bytes:
+            raw = raw[:max_bytes]
+        charset = "utf-8"
+        try:
+            ct = res.headers.get("Content-Type") or ""
+            m = re.search(r"charset=([\w-]+)", ct, re.I)
+            if m:
+                charset = m.group(1)
+        except Exception:
+            pass
+        try:
+            return raw.decode(charset, errors="replace"), None
+        except LookupError:
+            return raw.decode("utf-8", errors="replace"), None
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """自動リダイレクトを止める(各ホップを自分で検査するため・KLK-083)。"""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+    def http_error_301(self, req, fp, code, msg, headers):
+        return fp
+
+    http_error_302 = http_error_303 = http_error_307 = http_error_308 = http_error_301
+
+
+def read_site_colors(url, fetcher=None):
+    """URL のページから配色を読み取る(KLK-083)。返却: dict（画面へそのまま返す形）。
+
+    fetcher を差し替えられるようにしてあるのは、**テストで第三者サイトへ出ないため**。
+    """
+    fetch = fetcher or fetch_text
+    html, err = fetch(url)
+    if err:
+        return {"ok": False, "error": err, "colors": [], "suggestion": {}, "sources": []}
+    counts = collect_page_colors(html)
+    sources = ["(ページ本体)"]
+    for css_url in same_origin_css_urls(html, url):
+        css, cerr = fetch(css_url)
+        if cerr or not css:
+            continue
+        add = extract_color_values(css)
+        if add:
+            sources.append(css_url)
+        for k, v in add.items():
+            counts[k] = counts.get(k, 0) + v
+    ranked = rank_page_colors(counts)
+    if not ranked:
+        return {
+            "ok": False,
+            # ★黙って空を返さない。JS で描くサイトは CSS が後から入るので拾えない。
+            "error": "このページからは色を読み取れませんでした（表示に JavaScript が必要なサイトなど）。"
+                     "スクリーンショットを実績カタログへ取り込む方法もお試しください",
+            "colors": [], "suggestion": {}, "sources": sources,
+        }
+    return {
+        "ok": True,
+        "error": None,
+        "colors": ranked,
+        "suggestion": suggest_color_roles(ranked),
+        "sources": sources,
+    }
 
 
 def build_regenerate_command(pending_path, allow_open=False):
@@ -1633,6 +2028,10 @@ def _run_server(port):
             if path == "/regenerate":
                 self._regenerate()
                 return
+            # 見本サイトURLからの配色読み取り(KLK-083・REQ-102)
+            if path == "/read-colors":
+                self._read_colors()
+                return
             if path == "/catalog-import":
                 self._catalog_import()
                 return
@@ -2413,6 +2812,51 @@ def _run_server(port):
             )
             worker.start()
             self._json(202, {"jobId": job_id})
+
+        def _read_colors(self):
+            """POST /read-colors — 見本サイトの配色を読み取る(KLK-083・REQ-102)。body={url}。
+
+            防御順: ①Origin(403) ②サイズ上限(413/400) ③JSON(400) ④URL 構文(400)
+            ⑤**SSRF ガード**（fetch_text の中で毎ホップ検査・内部宛は 400 相当のエラー文言）
+            ⑥取得・抽出 → 200。既存の /upload・/regenerate と同じ防御の並びに合わせている。
+
+            ★このエンドポイントは**外へ出る唯一の口**。読むだけで、取得内容は保存しない
+              （画面に色を返すだけ）。生成パイプラインには触れない。
+            """
+            # ① Origin(M-SEC-1)
+            if not is_allowed_origin(self.headers.get("Origin"), BRIDGE_HOST, port):
+                self._json(403, {"error": "許可されていないオリジンです"})
+                return
+            # ② サイズ上限(L-1)
+            try:
+                length = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length < 0:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length > MAX_BODY_BYTES:
+                self._json(413, {"error": "リクエストが大きすぎます"})
+                return
+            raw = self.rfile.read(length) if length else b""
+            # ③ JSON
+            try:
+                obj = json.loads(raw.decode("utf-8"))
+            except (ValueError, UnicodeDecodeError):
+                self._json(400, {"error": "リクエストJSONを解析できません"})
+                return
+            if not isinstance(obj, dict):
+                self._json(400, {"error": "リクエストがオブジェクトではありません"})
+                return
+            # ④ URL 構文
+            url = obj.get("url")
+            if not is_safe_external_url(url):
+                self._json(400, {"error": "URL が不正です（http と https のみ・資格情報つきは不可）"})
+                return
+            # ⑤⑥ 取得と抽出（SSRF ガードは fetch_text が毎ホップ行う）
+            result = read_site_colors(url)
+            self._json(200 if result.get("ok") else 400, result)
 
         def _sections(self):
             """GET /sections?folder=&letter= — 実ページの番地・現在の型・選べる型を返す(KLK-078)。
