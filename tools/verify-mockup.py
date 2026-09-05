@@ -12,7 +12,8 @@
   - §8.1  2カラム/3カラムでの画像と本文の横並び
   - 型マーカーが1セクションに2つ以上付いていないか
   - 番地の一意性（重複・特定できないブロック）
-  - 自己完結（外部URL・相対参照の欠損）＝ NFR-005
+  - 自己完結（外部URL・読み込む先の欠損）＝ NFR-005。※下層ページへの誘導リンク（§4.3 moreLink）は「これから作るページ」なので存在を求めない
+  - **composition との一致**（並び・連番・型・見出し）＝ KLK-088。併置 instruction.json と突き合わせる
 
 使い方:
   python3 tools/verify-mockup.py mockups/2026-09-04_案件名
@@ -22,6 +23,7 @@
 exit 0 = 問題なし / 1 = 違反あり / 2 = 使い方の誤り
 """
 import glob
+import json
 import os
 import re
 import sys
@@ -56,10 +58,94 @@ def check_file(path):
         if re.match(r"https?://(127\.0\.0\.1|localhost)(:|/)", u) or "w3.org" in u:
             continue
         out.append("外部URLがあります: %s" % u)
-    for u in re.findall(r'(?:src|href)="(?!https?:|#|data:|mailto:|tel:)([^"]+)"', html):
+    # ★実体が要るのは「いま読み込むもの」だけ（KLK-088 の実機検証で誤検出して気づいた）。
+    #   src= の画像・スクリプト、<link> のCSS、compare.html から各案への相対リンクは必ず在るべき。
+    #   一方 <a href="/menu/"> のような**下層ページへの誘導**（§4.3 の moreLink）は、
+    #   これから作るページを指すプレースホルダなので、存在しなくて当たり前。
+    #   ここを一律に「参照先がありません」と言うと、正しい生成物が毎回赤くなる。
+    for u in re.findall(r'src="(?!https?:|#|data:)([^"]+)"', html):
         target = os.path.normpath(os.path.join(os.path.dirname(path), u.split("?")[0]))
         if not os.path.exists(target):
-            out.append("参照先がありません: %s" % u)
+            out.append("読み込む先がありません（src）: %s" % u)
+    for tag in re.findall(r"<link\b[^>]*>", html, re.I):
+        m = re.search(r'href="(?!https?:|#|data:)([^"]+)"', tag)
+        if not m:
+            continue
+        target = os.path.normpath(os.path.join(os.path.dirname(path), m.group(1).split("?")[0]))
+        if not os.path.exists(target):
+            out.append("読み込む先がありません（link）: %s" % m.group(1))
+    # 同じフォルダの .html への相対リンク（compare.html → index-*.html 等）は在るべき
+    for u in re.findall(r'href="(?!https?:|#|data:|mailto:|tel:|/)([^"]+\.html)"', html):
+        target = os.path.normpath(os.path.join(os.path.dirname(path), u.split("?")[0]))
+        if not os.path.exists(target):
+            out.append("リンク先の生成物がありません: %s" % u)
+    return out
+
+
+def check_composition(folder, path, html):
+    """生成物が併置 instruction.json の composition どおりか照合する（KLK-088）。
+
+    ★ここがこの機能の「規約が効いたか」の判定。
+      並び・連番・個別設定は**指示書と突き合わせないと**確かめようがない。
+      composition の無い指示書・instruction.json が無いフォルダでは何も言わない（fail-open）。
+    """
+    out = []
+    ins = os.path.join(folder, "instruction.json")
+    if not os.path.isfile(ins):
+        return out
+    try:
+        with open(ins, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, ValueError):
+        return out
+    comp = data.get("composition")
+    if not isinstance(comp, list) or not comp:
+        return out
+
+    # 期待する番地列（出現順に -01 -02 -03）
+    seen = {}
+    expected = []
+    for e in comp:
+        k = (e or {}).get("key")
+        if not k:
+            continue
+        seen[k] = seen.get(k, 0) + 1
+        expected.append("%s-%02d" % (k, seen[k]))
+
+    addrs = bridge.list_page_addrs(html)
+    body = [a for a in addrs if a.rsplit("-", 1)[0] not in ("NAV", "MV", "FOOTER")]
+    # SEARCH は HERO/NAV へ埋め込む方式で独立セクションを出さない（§12.1.3(7)）
+    expected_wo_search = [a for a in expected if not a.startswith("SEARCH-")]
+
+    if body != expected_wo_search:
+        out.append("composition と並びが違う: 期待 %s / 実際 %s"
+                   % (",".join(expected_wo_search), ",".join(body)))
+        return out   # 並びが違うなら以降の照合は意味が薄い
+
+    # 番地の一意性（連番が重複すると 🔄 部分再生成が止まる）
+    dup = sorted({a for a in addrs if addrs.count(a) > 1})
+    if dup:
+        out.append("番地が重複している: %s" % ",".join(dup))
+
+    # エントリの type が実物のマーカーになっているか
+    for addr, e in zip(expected_wo_search, [x for x in comp if x.get("key") != "SEARCH"]):
+        want = (e or {}).get("type")
+        if not want:
+            continue
+        got = bridge.read_section_markers(html, addr)
+        if got != [want]:
+            out.append("%s の型が指定と違う: 指定 %s / 実際 %s" % (addr, want, got or "読めず"))
+
+    # エントリの heading が実物に出ているか（そのセクションの中に文字列があるか）
+    for addr, e in zip(expected_wo_search, [x for x in comp if x.get("key") != "SEARCH"]):
+        want = (e or {}).get("heading")
+        if not want:
+            continue
+        start, end = bridge.find_target_section(html, addr)
+        if start is None:
+            continue
+        if want not in html[start:end]:
+            out.append("%s に指定した見出しが無い: %s" % (addr, want))
     return out
 
 
@@ -76,6 +162,10 @@ def check_folder(folder):
     findings = []
     for f in files:
         for w in check_file(f):
+            findings.append((os.path.basename(f), w))
+        # KLK-088: composition との照合（指示書があるときだけ）
+        html = open(f, encoding="utf-8").read()
+        for w in check_composition(folder, f, html):
             findings.append((os.path.basename(f), w))
     return files, findings
 
