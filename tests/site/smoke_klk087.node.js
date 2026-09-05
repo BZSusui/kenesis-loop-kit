@@ -51,11 +51,24 @@ class El {
   removeAttribute(k) { delete this.attrs[k]; }
   getAttribute(k) { return Object.prototype.hasOwnProperty.call(this.attrs, k) ? this.attrs[k] : null; }
   addEventListener(e, f) { (this.listeners[e] = this.listeners[e] || []).push(f); }
-  fire(e) { (this.listeners[e] || []).forEach(f => f({ target: this })); }
+  fire(e, ev) { (this.listeners[e] || []).forEach(f => f(Object.assign({ target: this, preventDefault() {} }, ev || {}))); }
   set textContent(v) { this._t = String(v); this.children = []; }
   get textContent() { return this._t; }
   querySelector() { return null; }
   querySelectorAll() { return []; }
+  // KLK-091: ドラッグ&ドロップの検証に要る最小限
+  get classList() {
+    const self = this;
+    self._cls = self._cls || new Set();
+    return {
+      add: c => self._cls.add(c),
+      remove: (...cs) => cs.forEach(c => self._cls.delete(c)),
+      toggle: (c, on) => (on ? self._cls.add(c) : self._cls.delete(c)),
+      contains: c => self._cls.has(c),
+    };
+  }
+  // 行の高さ 40px・上端 idx*40 を模す（上半分/下半分の判定を試せる）
+  getBoundingClientRect() { return { top: this._top || 0, height: 40 }; }
 }
 
 function makeEnv() {
@@ -71,7 +84,7 @@ function makeEnv() {
   const api = new Function(...keys, 'return (function(){' + slice + '\n' + rc +
     '\nreturn { get s(){return compState}, set s(v){compState=v},' +
     ' set o(v){compOpenIdx=v}, renderComposition, buildInstruction,' +
-    ' normalizeComposition, isPlainComposition, normalizeCompositionEntry,' +
+    ' normalizeComposition, isPlainComposition, normalizeCompositionEntry, compMove,' +
     ' SECTION_TYPE_POOLS, SECTION_KEYS, maxInstancesFor, COMPOSITION_MAX_TOTAL };})()'
   )(...keys.map(k => env[k]));
   return { api, byId };
@@ -278,6 +291,124 @@ check('N4 語彙外・非オブジェクトは落とす（黙って通さない�
   })(body);
   check('U10 CTA には型の選択肢を出さない（§4.4 で自動整列するため）', hasSelect === false,
     'select あり=' + hasSelect);
+}
+
+// ===========================================================================
+// D群 — ドラッグ&ドロップ並べ替え（KLK-091・↑↓ と同じ compMove を通ること）
+// ===========================================================================
+function dndEnv(keys) {
+  const { api, byId } = makeEnv();
+  api.s = keys.map(k => ({ key: k }));
+  api.renderComposition();
+  const rows = byId.compList.children;
+  rows.forEach((r, i) => { r._top = i * 40; });
+  const grip = i => rows[i].children[0].children.find(c => c.className === 'comp-grip');
+  const dt = () => ({ effectAllowed: '', dropEffect: '', setData() {} });
+  // half: 'top' なら行の上半分（前に入れる）・'bottom' なら下半分（後ろに入れる）
+  const drag = (from, to, half) => {
+    grip(from).fire('dragstart', { dataTransfer: dt() });
+    const ev = { preventDefault() {}, dataTransfer: dt(),
+                 clientY: to * 40 + (half === 'top' ? 5 : 35) };
+    rows[to].listeners['dragover'].forEach(f => f(ev));
+    rows[to].listeners['drop'].forEach(f => f(ev));
+  };
+  return { api, byId, rows, grip, drag };
+}
+// El.fire は1引数しか渡さないので、dataTransfer 付きイベントを渡せるよう拡張
+{
+  const { rows } = dndEnv(['A']);
+  void rows;
+}
+
+{
+  const t = dndEnv(['ABOUT', 'MENU', 'GALLERY', 'CTA']);
+  check('D1 各行につまみ（draggable なグリップ）がある',
+    [0, 1, 2, 3].every(i => t.grip(i) && t.grip(i).getAttribute('draggable') === 'true'),
+    'グリップ=' + [0, 1, 2, 3].map(i => !!t.grip(i)).join(','));
+  check('D2 draggable はつまみだけ（行や設定パネルには付けない＝入力を邪魔しない）',
+    t.rows[0].getAttribute('draggable') === null,
+    '行の draggable=' + t.rows[0].getAttribute('draggable'));
+}
+{
+  const t = dndEnv(['ABOUT', 'MENU', 'GALLERY', 'CTA']);
+  t.drag(0, 2, 'bottom');   // ABOUT を GALLERY の下へ
+  check('D3 先頭を3番目の下へ落とすと、その位置へ移る',
+    t.api.s.map(e => e.key).join(',') === 'MENU,GALLERY,ABOUT,CTA',
+    t.api.s.map(e => e.key).join(','));
+}
+{
+  const t = dndEnv(['ABOUT', 'MENU', 'GALLERY', 'CTA']);
+  t.drag(3, 1, 'top');      // CTA を MENU の前へ
+  check('D4 末尾を2番目の前へ落とすと、その位置へ移る',
+    t.api.s.map(e => e.key).join(',') === 'ABOUT,CTA,MENU,GALLERY',
+    t.api.s.map(e => e.key).join(','));
+}
+{
+  const t = dndEnv(['ABOUT', 'MENU', 'GALLERY']);
+  t.drag(1, 1, 'top');
+  const a = t.api.s.map(e => e.key).join(',');
+  t.drag(1, 1, 'bottom');
+  const b = t.api.s.map(e => e.key).join(',');
+  check('D5 自分自身の上／下へ落としても並びが変わらない',
+    a === 'ABOUT,MENU,GALLERY' && b === 'ABOUT,MENU,GALLERY', a + ' / ' + b);
+}
+{
+  const t = dndEnv(['ABOUT', 'MENU', 'GALLERY']);
+  const ev = { preventDefault() {}, dataTransfer: { dropEffect: '' }, clientY: 5 };
+  t.rows[2].listeners['drop'].forEach(f => f(ev));   // dragstart 無しでいきなり drop
+  check('D6 ドラッグしていないのに drop が来ても何も起きない',
+    t.api.s.map(e => e.key).join(',') === 'ABOUT,MENU,GALLERY',
+    t.api.s.map(e => e.key).join(','));
+}
+{
+  const t = dndEnv(['ABOUT', 'MENU', 'GALLERY']);
+  t.grip(0).fire('dragstart', { dataTransfer: { effectAllowed: '', setData() {} } });
+  // 行1は top=40・高さ40 なので、下半分は y=60〜80。75 を指す。
+  const ev = { preventDefault() {}, dataTransfer: { dropEffect: '' }, clientY: 75 };
+  t.rows[1].listeners['dragover'].forEach(f => f(ev));
+  check('D7 dragover で落とす位置の目印が付く（上半分/下半分で切り替わる）',
+    t.rows[1].classList.contains('drop-after') && !t.rows[1].classList.contains('drop-before'),
+    'after=' + t.rows[1].classList.contains('drop-after')
+      + ' before=' + t.rows[1].classList.contains('drop-before'));
+  t.rows[1].listeners['dragleave'].forEach(f => f({}));
+  check('D8 dragleave で目印が消える',
+    !t.rows[1].classList.contains('drop-after') && !t.rows[1].classList.contains('drop-before'),
+    'after=' + t.rows[1].classList.contains('drop-after'));
+}
+{
+  // ★dragover で preventDefault を呼ばないと、ブラウザは drop を発火しない。
+  //   シムでは「呼んだかどうか」を記録して確かめる（呼び忘れは実機でしか出ない不具合になる）。
+  const t = dndEnv(['ABOUT', 'MENU', 'GALLERY']);
+  t.grip(0).fire('dragstart', { dataTransfer: { effectAllowed: '', setData() {} } });
+  let prevented = false;
+  const ev = { preventDefault() { prevented = true; }, dataTransfer: { dropEffect: '' }, clientY: 45 };
+  t.rows[1].listeners['dragover'].forEach(f => f(ev));
+  check('D11 dragover が preventDefault を呼ぶ（呼ばないとブラウザは drop を発火しない）',
+    prevented === true, 'preventDefault 呼び出し=' + prevented);
+  check('D12 dragover が dropEffect を move にする（カーソル表示が「移動」になる）',
+    ev.dataTransfer.dropEffect === 'move', 'dropEffect=' + ev.dataTransfer.dropEffect);
+}
+{
+  // ドラッグしていないときは dragover でも preventDefault しない（無関係なドロップを受けない）
+  const t = dndEnv(['ABOUT', 'MENU']);
+  let prevented = false;
+  t.rows[1].listeners['dragover'].forEach(f =>
+    f({ preventDefault() { prevented = true; }, dataTransfer: { dropEffect: '' }, clientY: 45 }));
+  check('D13 ドラッグしていないときは dragover を受け付けない',
+    prevented === false, 'preventDefault 呼び出し=' + prevented);
+}
+{
+  // ↑↓ とドラッグが同じ compMove を通ること（片方だけ壊れるのを防ぐ）
+  const { api: a } = makeEnv();
+  a.s = [{ key: 'A' }, { key: 'B' }, { key: 'C' }];
+  a.compMove(0, 3);
+  check('D9 ↑↓ とドラッグが共有する compMove の意味論（from を抜いて to へ挿す）',
+    a.s.map(e => e.key).join(',') === 'B,C,A', a.s.map(e => e.key).join(','));
+  a.s = [{ key: 'A' }, { key: 'B' }, { key: 'C' }];
+  check('D10 compMove は範囲外・移動なしのとき false を返す',
+    a.compMove(-1, 1) === false && a.compMove(9, 1) === false
+      && a.compMove(1, 1) === false && a.compMove(1, 2) === false,
+    '範囲外=' + a.compMove(-1, 1) + ' 同位置=' + a.compMove(1, 1));
 }
 
 // --- 出力 -------------------------------------------------------------------

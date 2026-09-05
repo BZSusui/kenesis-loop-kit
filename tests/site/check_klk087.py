@@ -179,6 +179,44 @@ check(
 )
 
 # ===========================================================================
+# M群 — 並べ替え（KLK-091・ドラッグ&ドロップ）
+# ===========================================================================
+check(
+    "M1 並べ替えの実処理が compMove 1本に集約されている（↑↓ とドラッグで別実装にしない）",
+    # compMove / renderComposition は render() より後（構成リストの描画側）にあるので INDEX で見る
+    "function compMove(from, to)" in INDEX
+    and INDEX.count("compMove(idx,") == 2          # ↑ と ↓
+    and "compMove(compDragFrom, to)" in INDEX,     # ドロップ
+    "compMove 定義=%s / ↑↓ からの呼び出し=%d箇所 / ドロップから=%s"
+    % ("function compMove(from, to)" in INDEX, INDEX.count("compMove(idx,"),
+       "compMove(compDragFrom, to)" in INDEX),
+)
+check(
+    "M2 つまみ（グリップ）だけが draggable（行や入力欄には付けない）",
+    "grip.setAttribute('draggable', 'true')" in INDEX
+    and "row.setAttribute('draggable'" not in INDEX,
+    "グリップに付与=%s / 行に付与=%s"
+    % ("grip.setAttribute('draggable', 'true')" in INDEX, "row.setAttribute('draggable'" in INDEX),
+)
+check(
+    "M3 dragover で preventDefault し dropEffect を move にする",
+    "ev.preventDefault();                       // これが無いと drop が起きない" in INDEX
+    and "ev.dataTransfer.dropEffect = 'move'" in INDEX,
+    "preventDefault=%s / dropEffect=%s"
+    % ("これが無いと drop が起きない" in INDEX, "ev.dataTransfer.dropEffect = 'move'" in INDEX),
+)
+check(
+    "M4 Firefox 対策で setData を呼んでいる（データが無いとドラッグが始まらない）",
+    "dataTransfer.setData('text/plain'" in INDEX,
+    "setData=%s" % ("dataTransfer.setData('text/plain'" in INDEX),
+)
+check(
+    "M5 ↑↓ ボタンは残っている（ドラッグが使えない場面の手段を消さない）",
+    "'↑', '上へ移動'" in INDEX and "'↓', '下へ移動'" in INDEX,
+    "↑↓=%s" % ("'↑', '上へ移動'" in INDEX),
+)
+
+# ===========================================================================
 # D群 — 実装中の正直さ（KLK-088 で消す注記）
 # ===========================================================================
 check(

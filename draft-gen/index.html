@@ -181,6 +181,12 @@
   .comp-list{ display:flex; flex-direction:column; gap:6px; }
   .comp-row{ border:1px solid #ddd9cf; border-radius:8px; background:#fff; }
   .comp-head{ display:flex; align-items:center; gap:8px; padding:8px 10px; }
+  .comp-grip{ cursor:grab; color:#b8b2a5; font-size:15px; line-height:1; user-select:none;
+              padding:0 2px; }
+  .comp-grip:active{ cursor:grabbing; }
+  .comp-row.is-dragging{ opacity:.45; }
+  .comp-row.drop-before{ box-shadow:0 -2px 0 0 #6b7f4e inset; }
+  .comp-row.drop-after{ box-shadow:0 2px 0 0 #6b7f4e inset; }
   .comp-no{ width:1.6em; text-align:right; color:#8a8578; font-size:12px; }
   .comp-key{ font-weight:700; font-size:13px; min-width:7.5em; }
   .comp-desc{ font-size:11.5px; color:#8a8578; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -1701,6 +1707,28 @@ function compCountOf(key) {
 function compCanAdd(key) {
   return compState.length < COMPOSITION_MAX_TOTAL && compCountOf(key) < maxInstancesFor(key);
 }
+// KLK-091: 並び替えの実処理。↑↓ ボタンもドラッグ&ドロップも**ここ1本**を通す。
+//  ★2通りの入口が別々の実装を持つと、片方だけ壊れても気づけない。
+//    from を抜いて to へ挿す、という1つの操作に集約する。
+// 行の上半分か下半分か。座標が取れない環境（テストのシム等）では「前に入れる」を既定にする。
+function compDropBefore(ev, row) {
+  if (!row || typeof row.getBoundingClientRect !== 'function') return true;
+  const r = row.getBoundingClientRect();
+  if (!r || !r.height) return true;
+  return (ev.clientY - r.top) < (r.height / 2);
+}
+
+function compMove(from, to) {
+  if (from < 0 || from >= compState.length) return false;
+  const at = Math.max(0, Math.min(to > from ? to - 1 : to, compState.length - 1));
+  if (at === from) return false;          // 同じ位置＝動いていない（自分の上下に落とした場合も含む）
+  const picked = compState.splice(from, 1)[0];
+  compState.splice(at, 0, picked);
+  return true;
+}
+
+let compDragFrom = -1;   // ドラッグ中の行（-1 = ドラッグしていない）
+
 function compSummary(e) {
   const bits = [];
   if (e.heading) bits.push('見出し: ' + e.heading);
@@ -1734,22 +1762,42 @@ function renderComposition() {
 
     const head = document.createElement('div');
     head.className = 'comp-head';
+    // KLK-091: つまみ（ここだけを draggable にする）。
+    //  ★行全体を draggable にすると、設定パネル内の入力欄で文字を選べなくなる。
+    //    つまみに限定すれば、入力・ボタン・テキスト選択はすべて従来どおり動く。
+    const grip = document.createElement('span');
+    grip.className = 'comp-grip';
+    grip.textContent = '⠿';
+    grip.title = 'ドラッグして並べ替え（↑↓ ボタンでも動かせます）';
+    grip.setAttribute('draggable', 'true');
+    grip.setAttribute('aria-label', '並べ替えのつまみ');
+    grip.addEventListener('dragstart', function (ev) {
+      compDragFrom = idx;
+      row.classList.add('is-dragging');
+      if (ev.dataTransfer) {
+        ev.dataTransfer.effectAllowed = 'move';
+        // Firefox はデータを載せないとドラッグが始まらない
+        try { ev.dataTransfer.setData('text/plain', String(idx)); } catch (_e) {}
+      }
+    });
+    grip.addEventListener('dragend', function () {
+      compDragFrom = -1;
+      renderComposition();
+    });
     const no = document.createElement('span'); no.className = 'comp-no'; no.textContent = (idx + 1) + '.';
     const key = document.createElement('span'); key.className = 'comp-key';
     key.textContent = SECTION_LABELS[e.key] ? e.key : e.key;
     key.title = SECTION_LABELS[e.key] || e.key;
     const desc = document.createElement('span'); desc.className = 'comp-desc';
     desc.textContent = compSummary(e);
-    head.appendChild(no); head.appendChild(key); head.appendChild(desc);
+    head.appendChild(grip); head.appendChild(no); head.appendChild(key); head.appendChild(desc);
     head.appendChild(mkBtn(compOpenIdx === idx ? '設定 ▴' : '設定 ▾', 'このセクションの見出し・型などを設定',
       function () { compOpenIdx = (compOpenIdx === idx ? -1 : idx); renderComposition(); }));
     head.appendChild(mkBtn('↑', '上へ移動', function () {
-      const t = compState[idx - 1]; compState[idx - 1] = compState[idx]; compState[idx] = t;
-      compOpenIdx = -1; renderComposition(); render();
+      compMove(idx, idx - 1); compOpenIdx = -1; renderComposition(); render();
     }, idx === 0));
     head.appendChild(mkBtn('↓', '下へ移動', function () {
-      const t = compState[idx + 1]; compState[idx + 1] = compState[idx]; compState[idx] = t;
-      compOpenIdx = -1; renderComposition(); render();
+      compMove(idx, idx + 2); compOpenIdx = -1; renderComposition(); render();
     }, idx === compState.length - 1));
     head.appendChild(mkBtn('複製', 'この設定のまま同じセクションをもう1つ', function () {
       const copy = JSON.parse(JSON.stringify(compState[idx]));
@@ -1760,6 +1808,28 @@ function renderComposition() {
       compState.splice(idx, 1); compOpenIdx = -1; renderComposition(); render();
     }));
     row.appendChild(head);
+
+    // KLK-091: 行の上半分に落とせば「この行の前」、下半分なら「この行の後ろ」へ入る。
+    row.addEventListener('dragover', function (ev) {
+      if (compDragFrom < 0) return;
+      ev.preventDefault();                       // これが無いと drop が起きない
+      if (ev.dataTransfer) { ev.dataTransfer.dropEffect = 'move'; }
+      const before = compDropBefore(ev, row);
+      row.classList.toggle('drop-before', before);
+      row.classList.toggle('drop-after', !before);
+    });
+    row.addEventListener('dragleave', function () {
+      row.classList.remove('drop-before', 'drop-after');
+    });
+    row.addEventListener('drop', function (ev) {
+      if (compDragFrom < 0) return;
+      ev.preventDefault();
+      const to = idx + (compDropBefore(ev, row) ? 0 : 1);
+      const moved = compMove(compDragFrom, to);
+      compDragFrom = -1; compOpenIdx = -1;
+      renderComposition();
+      if (moved) render();
+    });
 
     if (compOpenIdx === idx) {
       const body = document.createElement('div');
