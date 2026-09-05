@@ -36,16 +36,23 @@
   .m-nav .burger { display: none; font-size: 22px; }
 
   /* HERO center-scroll（案B・index4・整列: space-between / center / center） */
-  .m-hero { position: relative; }
+  .m-hero { position: relative;
+    padding-inline: 64px;
+  }
   .m-hero[data-hero="center-scroll"] { display: flex; flex-direction: column; justify-content: space-between; align-items: center;
-    text-align: center; min-height: 560px; padding: 60px 30px 34px; color: #fff;
+    text-align: center; min-height: 520px;
+    min-height: calc(100vh - 64px);
+    min-height: max(520px, calc(100svh - 64px)); padding: 60px 64px 34px; color: #fff;
     background: linear-gradient(160deg, color-mix(in srgb, var(--m-main) 88%, #000), color-mix(in srgb, var(--m-main) 55%, var(--m-accent))); }
   .m-hero[data-hero="center-scroll"] .hero-head { margin-top: 60px; }
   .m-hero .catch { font-size: 34px; font-weight: 700; letter-spacing: .08em; margin: 0 0 18px; line-height: 1.6; }
   .m-hero .lead { font-size: 15px; margin: 0 auto 26px; max-width: 560px; opacity: .92; }
   .m-hero .hero-cta { display: inline-block; background: var(--m-accent); color: #1a1a1a; padding: 13px 32px; font-size: 14px; font-weight: 700; border-radius: 2px; }
-  .m-hero .scroll-cue { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; color: #fff;
-    text-decoration: none; font-size: 11px; letter-spacing: .2em; opacity: .85; }
+  .m-hero .scroll-cue {
+    position: absolute; left: 18px; bottom: 24px; right: auto; top: auto; transform: none;
+    writing-mode: vertical-rl; display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; letter-spacing: .2em; text-decoration: none; opacity: .9;
+  }
   .m-hero .scroll-cue .arrow { font-size: 20px; animation: bob 1.6s ease-in-out infinite; }
   @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
   .atari-tag { position: absolute; right: 10px; bottom: 10px; background: rgba(0,0,0,.5); color: #fff;
@@ -138,23 +145,41 @@
   @media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
 
   @media print {
+    .m-hero { min-height: 320px; }   /* KLK-097: 全高のまま印刷すると1ページ空費する */
     body { background: #fff; }
     .mock { box-shadow: none; }
     .addr, .atari-tag, .anim-note { display: none !important; }
     .reveal { opacity: 1 !important; transform: none !important; }
-    .m-hero .scroll-cue { display: none !important; }
+    .m-hero .scroll-cue {
+    position: absolute; left: 18px; bottom: 24px; right: auto; top: auto; transform: none;
+    writing-mode: vertical-rl; display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; letter-spacing: .2em; text-decoration: none; opacity: .9;
+  }
   }
 
   @media (max-width: 640px) {
     .m-nav ul { display: none; }
     .m-nav .burger { display: block; }
-    .m-hero[data-hero="center-scroll"] { min-height: auto; padding: 40px 18px 24px; }
+    .m-hero[data-hero="center-scroll"] { min-height: 520px;
+    min-height: calc(100vh - 64px);
+    min-height: max(520px, calc(100svh - 64px)); padding: 40px 64px 24px; }
     .m-hero .catch { font-size: 25px; }
     .m-layout { grid-template-columns: 1fr; padding: 28px 18px; gap: 26px; }
     .m-aside { grid-column: 1; order: 1; }
     .m-main-col { grid-column: 1; order: 0; }
     .m-news.news-table { grid-template-columns: 88px 1fr; }
     .m-news.news-table .th:nth-child(2), .m-news.news-table .td.cat { display: none; }
+  }
+
+  /* KLK-097: SCROLL 誘導は縦組み。矢印だけ下向きを保つ（§4.3.2） */
+  .m-hero .scroll-cue .arrow { writing-mode: horizontal-tb; }
+  @media (max-width: 640px) {
+    .m-hero { padding-inline: 40px; }   /* 誘導の帯は狭めても残す */
+    .m-hero .scroll-cue {
+    position: absolute; left: 18px; bottom: 24px; right: auto; top: auto; transform: none;
+    writing-mode: vertical-rl; display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; letter-spacing: .2em; text-decoration: none; opacity: .9;
+  }
   }
 </style>
 </head>

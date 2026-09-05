@@ -146,6 +146,10 @@
   .m-nav .cta { background: var(--m-accent); color: #fff; padding: 6px 14px; border-radius: 4px; font-size: 12px; }
 
   /* mock: hero */
+  /* ★KLK-097: この画面は「3案を並べて見る」ワイヤーフレームなので hero は縮小プレビュー。
+     生成物(mockups/ samples/)の MV は、ここの min-height ではなく
+     DRAFT_RULES §4.3.3「MV はファーストビューを覆う縦幅にする」に従うこと。
+     ここの 340px をそのまま写したせいで、浅い MV が生成され続けた。 */
   .m-hero {
     position: relative; min-height: 340px; display: flex; flex-direction: column;
     align-items: center; justify-content: center; text-align: center; color: #fff; padding: 40px 20px;
@@ -155,6 +159,14 @@
   .m-hero .catch { font-size: 34px; font-weight: 700; letter-spacing: .08em; margin: 0 0 12px; text-shadow: 0 2px 8px rgba(0,0,0,.3); }
   .m-hero .lead { font-size: 15px; max-width: 520px; margin: 0 0 22px; }
   .m-hero .hero-cta { background: var(--m-accent); color: #fff; padding: 12px 30px; border-radius: 4px; font-size: 14px; letter-spacing:.05em; }
+  /* mock: SCROLL 誘導 — 左端に縦組み(DRAFT_RULES §4.3.2 / KLK-097)。
+     中央下(left:50%+translateX)へ戻すと hero-cta と重なる。右下は .atari-tag が占有。 */
+  .scroll-cue {
+    position: absolute; left: 18px; bottom: 24px; right: auto; top: auto; transform: none;
+    writing-mode: vertical-rl; display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; letter-spacing: .2em; text-decoration: none; color: #fff; opacity: .9;
+  }
+  .scroll-cue .arrow { writing-mode: horizontal-tb; }
   .atari-tag {
     position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,.55); color: #fff;
     font-size: 10px; padding: 3px 8px; border-radius: 4px; font-family: "Hiragino Sans", sans-serif;
@@ -216,6 +228,8 @@
     .m-nav ul { display: none; }
     .m-nav::after { content: "☰"; color: #fff; font-size: 20px; }
     .m-hero .catch { font-size: 24px; }
+    .m-hero { padding-inline: 40px; }          /* KLK-097: SCROLL 誘導の帯を残す */
+    .scroll-cue { left: 10px; bottom: 16px; }
     .m-about, .m-menu, .m-gallery { grid-template-columns: 1fr; }
     .m-gallery { grid-template-columns: repeat(2, 1fr); }
     .toolbar { gap: 8px; }

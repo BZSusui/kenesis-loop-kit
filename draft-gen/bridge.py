@@ -845,6 +845,66 @@ def find_quality_warnings(html, addr):
                 warnings.append(
                     "{0}: panel-band の帯に max-height が付いています（コマが切れます・§3.0.1）".format(addr))
 
+    # (3.6) §4.3.2/§4.3.3 — SCROLL 誘導が中央下に絶対配置されていないか（KLK-097）
+    #   ★中央下に置くと、MV は justify-content:center の縦積みなので
+    #     中身（キャッチ＋リード＋ボタン）が増えた時点でボタンと**必ず**重なる。
+    #     見本「サンプル和菓子店」案A で発生。縦幅を伸ばすだけでは中身が多い場合に再発するので、
+    #     「中央列から出ていること」と「帯が予約されていること」の両方を見る。
+    if addr.rsplit("-", 1)[0] == "MV" and re.search(r'class="[^"]*\bscroll-cue\b', block):
+        cue = [(sel, body) for sel, body in _rules_for(css, ["scroll-cue"])
+               if ".scroll-cue" in sel and " .arrow" not in sel]
+        centered = False
+        vertical = False
+        for sel, body in cue:
+            left = re.sub(r"\s+", "", _decl(body, "left") or "")
+            tr = re.sub(r"\s+", "", _decl(body, "transform") or "")
+            wm = re.sub(r"\s+", "", _decl(body, "writing-mode") or "")
+            if left == "50%" or "translateX(-50%)" in tr:
+                centered = True
+            if wm.startswith("vertical"):
+                vertical = True
+        if centered:
+            warnings.append(
+                "{0}: SCROLL 誘導が中央下に絶対配置されています（left:50%/translateX）。"
+                "ボタンと重なります。§4.3.2 は左端に縦組み".format(addr))
+        elif cue and not vertical:
+            warnings.append(
+                "{0}: SCROLL 誘導に writing-mode:vertical-rl がありません（§4.3.2 は縦組み）".format(addr))
+        # 帯の予約 — 誘導の左端 18px ＋ 幅 約20px ＋ 余白 ＝ 64px 以上
+        # ★素の `.m-hero`（型セレクタ無し）にも padding は効く。
+        #   marker 一致を要求すると `full` のように素のルールで書く型を素通りする（KLK-097 の実装時に判明）。
+        # ★**カスケード後**の値で判定する。生成側は素の `.m-hero` の shorthand を残したまま
+        #   後続ルールで `padding-inline:64px` を上書きする書き方をする（実際にそう生成された）。
+        #   ルールを1つずつ独立に見ると「30px だ」と誤報し、無視される警告になる。
+        hero_pads = []
+        for sel, body in _rules_for(css, ["m-hero"]):
+            # ★容器そのもののルールだけを見る。`.m-hero .hero-cta` のような**子孫**を拾うと
+            #   ボタンの padding:12px 32px を「帯が足りない」と誤報する（KLK-080 の見本で発生）。
+            #   誤報は無視される警告を生み、検査そのものを無力にする。
+            if not all(re.search(r"\.m-hero(\[[^\]]*\])?\s*$", p.strip())
+                       for p in sel.split(",") if p.strip()):
+                continue
+            pi = _decl(body, "padding-inline") or ""
+            pad = _decl(body, "padding") or ""
+            val = None
+            m = re.search(r"(\d+)px", pi)
+            if m:
+                val = int(m.group(1))
+            elif pad:
+                parts = pad.split()
+                if len(parts) >= 2:
+                    m = re.match(r"(\d+)px", parts[1])
+                    if m:
+                        val = int(m.group(1))
+            if val is not None:
+                hero_pads.append((sel, val))
+        if hero_pads and hero_pads[-1][1] < 64:
+            sel, val = hero_pads[-1]
+            warnings.append(
+                "{0}: MV の左右 padding が {1}px です（{2}）。"
+                "SCROLL 誘導の帯に本文が入り込みます。§4.3.2 は 64px 以上".format(
+                    addr, val, sel.strip()[:40]))
+
     # (4) §8.1 — 狭い本文カラムで「画像＋本文の横並び」になっていないか
     #     ★禁じているのは**カード内の画像と本文の横並び**であって、2トラックの grid 全般ではない。
     #       カードを2枚並べる(`faq-cards`)・日付と本文(`news-timeline`)・番号バッジは対象外。

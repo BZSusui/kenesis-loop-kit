@@ -47,14 +47,20 @@
   .m-nav .burger{display:none;font-size:22px;}
 
   /* HERO center-scroll（整列＝space-between / center / center・全面ビジュアル） */
-  .m-hero[data-hero=center-scroll]{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;min-height:500px;padding:56px 30px 30px;color:#fff;
+  .m-hero[data-hero=center-scroll]{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center;min-height: 520px;
+    min-height: calc(100vh - 64px);
+    min-height: max(520px, calc(100svh - 64px));padding: 56px 64px 30px;color:#fff;
     background:linear-gradient(rgba(18,51,58,.5),rgba(18,51,58,.62)),
       repeating-linear-gradient(135deg, color-mix(in srgb,var(--m-main) 88%,#000), color-mix(in srgb,var(--m-main) 88%,#000) 26px, color-mix(in srgb,var(--m-main) 70%,#000) 26px, color-mix(in srgb,var(--m-main) 70%,#000) 52px);}
   .m-hero[data-hero=center-scroll] .hero-copy{margin:auto 0;}
   .m-hero .catch{font-size:36px;line-height:1.5;letter-spacing:.05em;margin-bottom:16px;text-shadow:0 2px 14px rgba(0,0,0,.35);}
   .m-hero .lead{font-size:15px;opacity:.95;margin-bottom:24px;}
   .hero-cta{display:inline-block;background:var(--m-accent);color:#12333a;padding:12px 32px;border-radius:3px;font-weight:700;font-size:14px;}
-  .scroll-cue{display:inline-flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;letter-spacing:.24em;color:#fff;opacity:.9;text-decoration:none;}
+  .scroll-cue{
+    position: absolute; left: 18px; bottom: 24px; right: auto; top: auto; transform: none;
+    writing-mode: vertical-rl; display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; letter-spacing: .2em; text-decoration: none; opacity: .9;
+  }
   .scroll-cue .arrow{font-size:20px;animation:bob 1.6s ease-in-out infinite;}
   @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(6px);}}
   .hero-tag{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.5);color:#fff;font-size:10px;padding:4px 8px;border-radius:3px;}
@@ -147,11 +153,27 @@
 
   /* 印刷 */
   @media print{
-    .addr,.atari-tag,.hero-tag,.scroll-cue{display:none !important;}
+    .m-hero { min-height: 320px; }
+    .addr,.atari-tag,.hero-tag,.scroll-cue{
+    position: absolute; left: 18px; bottom: 24px; right: auto; top: auto; transform: none;
+    writing-mode: vertical-rl; display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; letter-spacing: .2em; text-decoration: none; opacity: .9;
+  }
     body{background:#fff;}
     .mock{box-shadow:none;}
     .reveal{opacity:1 !important;transform:none !important;}
     .m-nav{position:static;}
+  }
+
+  /* KLK-097: SCROLL 誘導は縦組み。矢印だけ下向きを保つ（§4.3.2） */
+  .m-hero .scroll-cue .arrow { writing-mode: horizontal-tb; }
+  @media (max-width: 640px) {
+    .m-hero { padding-inline: 40px; }   /* 誘導の帯は狭めても残す */
+    .m-hero .scroll-cue {
+    position: absolute; left: 18px; bottom: 24px; right: auto; top: auto; transform: none;
+    writing-mode: vertical-rl; display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; letter-spacing: .2em; text-decoration: none; opacity: .9;
+  }
   }
 </style>
 </head>

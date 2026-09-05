@@ -227,7 +227,7 @@
 | 例外 | 比率 | 理由 |
 |---|---|---|
 | STAFF のプロフィール写真・`sns-grid`・`sns-reels`・`img-circle` | `1 / 1`（正方・円） | 人物や SNS サムネは正方が自然。型の定義そのものが正方を前提にしている |
-| HERO の全面ビジュアル（`.hero-atari` 等・`full`/`center-scroll`/`overlap`/`split`/`band`） | 画面を覆う（`min-height` 可） | ファーストビューは画面いっぱいに見せるもので、比率で縛る対象ではない |
+| HERO の全面ビジュアル（`.hero-atari` 等・`full`/`center-scroll`/`overlap`/`split`/`band`） | 画面を覆う（`min-height` 可）**具体値は §4.3.3（KLK-097）** | ファーストビューは画面いっぱいに見せるもので、比率で縛る対象ではない。**「覆う」とだけ書いて数値を欠いたため 340〜360px の浅い MV が生成され続けた（KLK-097）** |
 | HERO `panel-band` のフィルム風パネル | `3 / 2`（KLK-043） | フィルムのコマ帯としてあえて横長にした型。4/3 にすると帯の見た目が崩れる。**ただし帯は MV の左右いっぱいまで伸ばし、`max-height` は付けない**（§3.0.1・KLK-076） |
 | ロゴ枠・アイコン枠など画像ではない飾り | 対象外 | 写真が入る想定の枠ではない |
 
@@ -458,6 +458,78 @@ HERO に置くスクロール誘導（`SCROLL ↓` / `.scroll-cue` / `.scrolldow
 - `text-decoration:none` を当て、リンクらしい下線が出ないようにする（見た目は従来どおり）。
 - **対象は `SCROLL ↓` を出すすべての型**（`center-scroll` のほか、HERO で同様の誘導を置いた型すべて）。
 
+#### 4.3.2 スクロール誘導は「画面端に縦組み」で置く（KLK-097）
+
+**誘導を中央下に絶対配置してはならない。** 左端（`.atari-tag` が使う右下を避ける）に
+**縦組み**で置き、MV は誘導のための帯を左右に予約する。
+
+**なぜ（実際に起きた重なり・KLK-097）**: 旧実装は
+`.scroll-cue{position:absolute;bottom:18px;left:50%;transform:translateX(-50%)}` ＝
+**中央列の最下部**。MV は `justify-content:center` の縦積みなので、
+中身（キャッチ＋リード＋ボタン）が増えると縦積みが底へ届き、**誘導とボタンが必ず重なる**。
+見本「サンプル和菓子店」案A（`full`）で発生。これは偶然ではなく**構造的な必然**であり、
+縦幅を伸ばすだけでは「中身が多い場合」に再発する。**中央列から外に出すことが解**。
+
+```css
+/* 誘導は左端・縦組み。中央列には構造的に入れない */
+.scroll-cue{
+  position:absolute; left:18px; bottom:24px; right:auto; top:auto; transform:none;
+  writing-mode:vertical-rl;               /* 縦組み */
+  display:inline-flex; align-items:center; gap:8px;
+  font-size:11px; letter-spacing:.2em; text-decoration:none; color:#fff; opacity:.9;
+}
+.scroll-cue .arrow{ writing-mode:horizontal-tb; }   /* ↓ は下向きのまま */
+
+/* ★重ならないことの保証: 誘導を置く型は左右 padding を 64px 以上にして帯を予約する
+   （左右対称にすること。片側だけだと中央寄せの中心がずれる） */
+.m-hero[data-hero=full],
+.m-hero[data-hero=split],
+.m-hero[data-hero=band],
+.m-hero[data-hero=center-scroll]{ padding-inline:64px; }
+
+@media (max-width:640px){
+  .m-hero{ padding-inline:40px; }         /* 帯は残す。誘導の幅は約20px */
+  .scroll-cue{ left:10px; bottom:16px; }
+}
+```
+
+| 守ること | 理由 |
+|---|---|
+| `left:50%` / `translateX(-50%)` を使わない | 中央列に戻ると重なりが再発する |
+| 置くのは**左**下（右下ではない） | 右下は `.atari-tag`（`bottom:8px;right:8px`）が常に占有している |
+| 左右 padding ≥ 64px（誘導の左端 18px ＋ 幅 約20px ＋ 余白 26px） | **本文が誘導の帯へ入れない**＝中身の量によらず重ならない |
+| `writing-mode:vertical-rl`（`.arrow` だけ `horizontal-tb`） | 縦組みでも矢印は下向きが自然 |
+| §4.3.1 のアンカーは維持 | 見た目を変えても**押せること**は不変 |
+
+#### 4.3.3 MV はファーストビューを覆う縦幅にする（KLK-097）
+
+§3.0 は HERO の全面ビジュアルを「画面を覆う」としていたが**具体的な数値が無く**、
+実際には構造の正（`docs/wireframes/SCR-002-compare.html`）の `min-height:340px` に引きずられ、
+生成物は 340〜360px の浅い MV になっていた。**規約の意図と実装が乖離していた**ので数値を定める。
+
+**対象は全面ビジュアル型のうち文言を重ねる4型**＝`full` / `split` / `band` / `center-scroll`。
+`overlap`（画像列と白背景ブロックの grid 構成）と `panel-band`（`min-height:480px` ＋ フィルム帯）は
+**それぞれ固有の比率を持つので対象外**。
+
+```css
+.m-hero[data-hero=full],
+.m-hero[data-hero=split],
+.m-hero[data-hero=band],
+.m-hero[data-hero=center-scroll]{
+  min-height:520px;                              /* ① svh も max() も無い環境 */
+  min-height:calc(100vh - 64px);                 /* ② svh 非対応（〜2022年）*/
+  min-height:max(520px, calc(100svh - 64px));    /* ③ 本命 */
+}
+@media print{ .m-hero{ min-height:320px; } }     /* 1ページを空費させない */
+```
+
+| 守ること | 理由 |
+|---|---|
+| `svh` を使う（`vh` ではなく） | モバイルの `100vh` はブラウザUIの分だけはみ出し、下端が切れる |
+| `vh` と固定 px のフォールバックを**3行重ねて**書く | `svh`/`max()` 非対応環境でも MV が潰れない |
+| 差し引く `64px` は**ナビの実高**（`padding` 上下＋行高＝概ね 56〜72px） | 「ヘッダー＋MV でファーストビューが埋まる」ため。ナビが HERO の下（`navPosition: below-hero`）なら差し引かず `100svh` |
+| 下限 `520px` を `max()` で置く | 縦の短いウィンドウでも MV が読めなくならない |
+| `@media print` で高さを戻す | 全高のままだと印刷時に MV だけで1ページを使ってしまう |
 ### 4.4 CTA マルチボタンと自動整列（KLK-058・`sectionOptions.CTA.buttons`・1〜4個・文字数で整列）
 
 CTA はレイアウト差異が小さいため §12.1.3 の6型プールは設けず、**ボタン数（1〜4）と文字数による整列**を可変点とする。基本構成（見出し＋説明文＋ボタン群）は不変。
@@ -1021,7 +1093,7 @@ archetype（§12.1/§12.1.1）が担う**並び順・区切り・整列シグネ
 | 1 | `split` | 左右分割（`space-between` / `center` / `left`） |
 | 2 | `band` | 下寄せ帯（`flex-end` / `flex-start` / `left`） |
 | 3 | `overlap`（KLK-037新・KLK-038/039調整） | せり出し横長画像＋白背景文言の重なり（`display:grid;grid-template-columns:1fr 2fr`＝**画像列を広め約2/3**・画像を右、白背景文言を左から `transform` で重ね・**画像は角丸なし＝直角でシャープ（`border-radius:0`）**）。**白背景ブロックの幅はキャッチコピーの改行位置にあわせて可変にする**（`width:max-content;max-width:<列幅>` 等・KLK-073）。固定幅にすると、`<br>` で意図した改行位置とブラウザの折り返しが二重にかかり「あなたの笑顔／を、／一生の健康と共／に。」のような**不格好な折り返し**になる（実際に見本で発生）。**整列＝`flex-start` / `center` / `left`（既存3型と非重複＝3案 distinct 維持）**。モバイルは重なり解除・縦積み |
-| 4 | `center-scroll`（KLK-040新・KLK-074調整） | 全面ビジュアル＋キャッチを上・スクロール誘導（↓）を下に（`display:flex;flex-direction:column`）。**スクロール誘導はクリックできること**（§4.3.1・KLK-074）。**整列＝`space-between` / `center` / `center`（上下分散・中央）**。モバイルは padding 縮小 |
+| 4 | `center-scroll`（KLK-040新・KLK-074調整） | 全面ビジュアル＋キャッチを上・スクロール誘導（↓）を下に（`display:flex;flex-direction:column`）。**スクロール誘導はクリックできること**（§4.3.1・KLK-074）。**誘導は中央下ではなく左端に縦組み**（§4.3.2・KLK-097）。**縦幅はファーストビューを覆う**（§4.3.3）。**整列＝`space-between` / `center` / `center`（上下分散・中央）**。モバイルは padding 縮小 |
 | 5 | `panel-band`（KLK-040新・KLK-041調整） | 全幅背景ビジュアル＋見出し（上〜中）＋**下部に横一列のフィルム風パネル群**（**`grid-auto-flow:column;grid-auto-columns:1fr;gap:4px`＝どの幅でも必ず1行（KLK-081）**・**`aspect-ratio:3/2` の横長**（KLK-043）・`border-radius:0` で直角＝フィルムのコマ風・縦幅広め `min-height:480px`）。**帯は MV の左右いっぱいまで伸ばす（KLK-075）**: `.m-hero` の左右 padding を`margin-inline:calc(-1 * <padding>);width:calc(100% + 2 * <padding>)` で相殺し、端まで届かせる。**`max-height` は付けない**。cat-0007/0019 の形。**整列＝`flex-end` / `center` / `center`**。モバイルはパネル3列<br>**なぜ `grid-auto-flow:column` か（KLK-075→KLK-081 で訂正）**: 旧実装 `repeat(6,1fr)` ＋ `max-height:150px` は、`aspect-ratio:3/2` と `max-height` の組合せで**幅も 225px で頭打ち**になり左右に大きなマージンが出た（1680px 幅で余り270px）。KLK-075 はこれを `auto-fit` で直したが、**列数がパネル数と一致する保証がない**ため今度は**段落ち**した（1200〜1280px で 5列に6枚＝5+1 の2行・見本03 案Cで発生）。`grid-auto-flow:column` は**列をアイテムの数だけ作る**ので、余りも段落ちも構造的に起きない。高さは 1024px→112px / 1200px→131px / 1366px→150px / 1440px→158px（MV の約1/3・KLK-043 の意図を維持）。**★教訓: グリッドの列数を決めるときは、必ずアイテム数と突き合わせること。** |
 
 **ABOUT プール（`.m-about`・KLK-037）:**
