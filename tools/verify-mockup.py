@@ -20,8 +20,13 @@
   python3 tools/verify-mockup.py mockups/2026-09-04_案件名
   python3 tools/verify-mockup.py samples/01_カフェ_1カラム --quiet
   python3 tools/verify-mockup.py mockups/*/          # 複数まとめて
+  python3 tools/verify-mockup.py mockups/x --strict  # 「注意」も違反として扱う（生成直後の検証用）
 
-exit 0 = 問題なし / 1 = 違反あり / 2 = 使い方の誤り
+exit 0 = 問題なし（「注意」だけなら 0）/ 1 = 違反あり / 2 = 使い方の誤り
+
+違反と注意の別:
+  違反 = 生成が壊れている（並び・連番・読み込む先・機能の欠落）
+  注意 = 指示書と食い違うが、生成後に 🔄 で変えたのなら正常なもの（型・見出し）
 """
 import glob
 import json
@@ -83,7 +88,7 @@ def check_file(path):
     return out
 
 
-def check_composition(folder, path, html):
+def check_composition(folder, path, html, notices=None):
     """生成物が併置 instruction.json の composition どおりか照合する（KLK-088）。
 
     ★ここがこの機能の「規約が効いたか」の判定。
@@ -91,6 +96,8 @@ def check_composition(folder, path, html):
       composition の無い指示書・instruction.json が無いフォルダでは何も言わない（fail-open）。
     """
     out = []
+    if notices is None:
+        notices = []
     ins = os.path.join(folder, "instruction.json")
     if not os.path.isfile(ins):
         return out
@@ -128,16 +135,22 @@ def check_composition(folder, path, html):
     if dup:
         out.append("番地が重複している: %s" % ",".join(dup))
 
-    # エントリの type が実物のマーカーになっているか
+    # ★型と見出しは「生成後に 🔄 で変えられる」ので、違反ではなく**注意**として出す（KLK-089）。
+    #   並び・連番は 🔄 では変わらないので違反のまま。
+    #   ここを一律「違反」にすると、意図的に型を入れ替えたフォルダが毎回赤くなり、
+    #   やがて警告そのものが信用されなくなる（KLK-080・KLK-088 と同じ学び）。
+    #   生成直後の検証で厳しく見たいときは --strict を使う。
     for addr, e in zip(expected_wo_search, [x for x in comp if x.get("key") != "SEARCH"]):
         want = (e or {}).get("type")
         if not want:
             continue
         got = bridge.read_section_markers(html, addr)
         if got != [want]:
-            out.append("%s の型が指定と違う: 指定 %s / 実際 %s" % (addr, want, got or "読めず"))
+            notices.append(
+                "%s の型が指示書と違う: 指示書 %s / 実際 %s"
+                "（生成後に 🔄 で変えたのなら正常。生成直後なら指示が無視されている）"
+                % (addr, want, got or "読めず"))
 
-    # エントリの heading が実物に出ているか（そのセクションの中に文字列があるか）
     for addr, e in zip(expected_wo_search, [x for x in comp if x.get("key") != "SEARCH"]):
         want = (e or {}).get("heading")
         if not want:
@@ -146,7 +159,9 @@ def check_composition(folder, path, html):
         if start is None:
             continue
         if want not in html[start:end]:
-            out.append("%s に指定した見出しが無い: %s" % (addr, want))
+            notices.append(
+                "%s に指示書の見出しが無い: %s"
+                "（生成後に 🔄 で作り直したのなら文言が変わることがある）" % (addr, want))
     return out
 
 
@@ -202,49 +217,69 @@ def check_folder(folder):
             files = [single]
     if not files:
         # 呼び出し側と形をそろえる（(ファイル名, 警告) のタプル）
-        return [], [("(フォルダ)", "生成物（index-*.html / index.html）が見つかりません")]
+        return [], [("(フォルダ)", "生成物（index-*.html / index.html）が見つかりません")], []
     findings = []
+    notices = []
     for f in files:
         for w in check_file(f):
             findings.append((os.path.basename(f), w))
         # KLK-088: composition との照合（指示書があるときだけ）
         html = open(f, encoding="utf-8").read()
-        for w in check_composition(folder, f, html):
+        n = []
+        for w in check_composition(folder, f, html, n):
             findings.append((os.path.basename(f), w))
+        for w in n:
+            notices.append((os.path.basename(f), w))
     # KLK-092: compare.html の機能同等性（フォルダ単位で1回）
     for w in check_compare(folder):
         findings.append(("compare.html", w))
-    return files, findings
+    return files, findings, notices
 
 
 def main(argv):
     args = [a for a in argv if not a.startswith("-")]
     quiet = "--quiet" in argv or "-q" in argv
+    # ★--strict: 「注意」も違反として扱う（KLK-089）。
+    #   生成直後の検証（見本の作り直し等）では、指示書との食い違いは
+    #   「スキルが指示を無視した」ことを意味するので厳しく見たい。
+    strict = "--strict" in argv
     if not args:
         print(__doc__)
         return 2
 
     total_files = 0
     total_findings = 0
+    total_notices = 0
     for folder in args:
         folder = folder.rstrip("/")
         if not os.path.isdir(folder):
             print("[SKIP] フォルダがありません: %s" % folder)
             continue
-        files, findings = check_folder(folder)
+        files, findings, notices = check_folder(folder)
+        if strict:
+            findings = findings + notices
+            notices = []
         n = len(files or [])
         total_files += n
         total_findings += len(findings)
+        total_notices += len(notices)
         head = "%s（%d ファイル）" % (folder, n)
         if findings:
             print("[NG] " + head)
-            for name, w in findings:
-                print("       %-14s %s" % (name, w))
+        elif notices:
+            print("[注意] " + head)
         elif not quiet:
             print("[OK] " + head)
+        for name, w in findings:
+            print("       %-14s %s" % (name, w))
+        for name, w in notices:
+            print("  (注意) %-14s %s" % (name, w))
 
     print("-" * 70)
-    print("%d ファイル / 違反 %d 件" % (total_files, total_findings))
+    tail = "%d ファイル / 違反 %d 件" % (total_files, total_findings)
+    if total_notices:
+        tail += " / 注意 %d 件（--strict で違反として扱えます）" % total_notices
+    print(tail)
     return 1 if total_findings else 0
 
 

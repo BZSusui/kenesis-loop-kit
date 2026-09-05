@@ -84,7 +84,14 @@ class TestKLK088CompositionMatcher(unittest.TestCase):
         shutil.rmtree(self.dir, ignore_errors=True)
 
     def _check(self, html):
+        """違反だけを返す（型・見出しの食い違いは注意なので含まれない）。"""
         return self.tool.check_composition(str(self.dir), str(self.dir / "index-a.html"), html)
+
+    def _notices(self, html):
+        """注意（生成後に 🔄 で変えたなら正常なもの）を返す。"""
+        n = []
+        self.tool.check_composition(str(self.dir), str(self.dir / "index-a.html"), html, n)
+        return n
 
     def test_correct_page_passes(self):
         html = _page(["ABOUT-01", "MENU-01", "MENU-02"],
@@ -97,17 +104,29 @@ class TestKLK088CompositionMatcher(unittest.TestCase):
         out = self._check(html)
         self.assertTrue(any("並びが違う" in w for w in out), out)
 
-    def test_wrong_type_is_caught(self):
+    def test_wrong_type_is_a_notice_not_a_violation(self):
+        """★型の食い違いは「注意」。生成後に 🔄 で変えたのなら正常な状態だから。
+
+        違反にすると、意図的に型を入れ替えたフォルダが毎回赤くなる（KLK-089 で実際に起きた）。
+        """
         html = _page(["ABOUT-01", "MENU-01", "MENU-02"],
                      ("pat-list", "price-table"), ("ランチ", ""))
-        out = self._check(html)
-        self.assertTrue(any("型が指定と違う" in w for w in out), out)
+        self.assertEqual(self._check(html), [], "型の食い違いを違反にしている")
+        self.assertTrue(any("型が指示書と違う" in w for w in self._notices(html)),
+                        self._notices(html))
 
-    def test_missing_heading_is_caught(self):
+    def test_missing_heading_is_a_notice(self):
         html = _page(["ABOUT-01", "MENU-01", "MENU-02"],
                      ("pat-cards", "price-table"), ("", ""))
-        out = self._check(html)
-        self.assertTrue(any("見出しが無い" in w for w in out), out)
+        self.assertEqual(self._check(html), [])
+        self.assertTrue(any("見出しが無い" in w for w in self._notices(html)),
+                        self._notices(html))
+
+    def test_order_is_still_a_violation(self):
+        """★並びの食い違いは違反のまま（🔄 は並びを変えないので、間違いでしかない）。"""
+        html = _page(["ABOUT-01", "MENU-02", "MENU-01"],
+                     ("pat-cards", "price-table"), ("ランチ", ""))
+        self.assertTrue(any("並びが違う" in w for w in self._check(html)), self._check(html))
 
     def test_duplicate_address_is_caught(self):
         """★連番が重複すると 🔄 部分再生成が止まるので、必ず捕まえる。"""

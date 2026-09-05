@@ -245,15 +245,28 @@ TOOL = os.path.join(ROOT, "tools", "verify-mockup.py")
 TOOL_SRC = io.open(TOOL, encoding="utf-8").read() if os.path.isfile(TOOL) else ""
 check(
     "V1 verify-mockup に composition 照合が入っている",
-    "def check_composition(" in TOOL_SRC and "check_composition(folder, f, html)" in TOOL_SRC,
+    "def check_composition(" in TOOL_SRC and "check_composition(folder, f, html, n)" in TOOL_SRC,
     "照合関数=%s" % ("def check_composition(" in TOOL_SRC),
 )
+# ★契約更新（KLK-089）: 型・見出しは **生成後に 🔄 で変えられる**ので、
+#   「違反」ではなく「注意」へ移した。並び・連番は 🔄 では変わらないので違反のまま。
+#   一律に違反とすると、意図的に型を入れ替えたフォルダが毎回赤くなり、
+#   やがて警告そのものが信用されなくなる（KLK-080・KLK-088 と同じ学び）。
+#   生成直後の厳密な検証は --strict で行う。
 check(
-    "V2 並び・連番・型・見出しの4点を照合する",
+    "V2 並び・連番は違反、型・見出しは注意として照合する（4点とも見ている）",
     all(t in TOOL_SRC for t in ("composition と並びが違う", "番地が重複している",
-                                "の型が指定と違う", "に指定した見出しが無い")),
-    "4点=%s" % all(t in TOOL_SRC for t in ("composition と並びが違う", "番地が重複している",
-                                          "の型が指定と違う", "に指定した見出しが無い")),
+                                "の型が指示書と違う", "に指示書の見出しが無い"))
+    and "notices.append(" in TOOL_SRC,
+    "4点=%s / 注意の分離=%s"
+    % (all(t in TOOL_SRC for t in ("composition と並びが違う", "番地が重複している",
+                                   "の型が指示書と違う", "に指示書の見出しが無い")),
+       "notices.append(" in TOOL_SRC),
+)
+check(
+    "V2b --strict で注意を違反として扱える（生成直後の検証用）",
+    'strict = "--strict" in argv' in TOOL_SRC and "findings = findings + notices" in TOOL_SRC,
+    "--strict=%s" % ('strict = "--strict" in argv' in TOOL_SRC),
 )
 check(
     "V3 composition の無い指示書・instruction.json が無いフォルダでは黙る（fail-open）",

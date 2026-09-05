@@ -339,7 +339,7 @@ class TestKLK079StallIsBounded(_LiveBase):
     実機検証中に `claude -p` が **0% CPU のまま34分無反応**になる事象を実際に踏んだ
     （ファイルは1バイトも変わらず、標準エラーも空）。原因は外部要因と見られるが、
     起きたときに何が返るかは**この経路の契約**なので固定しておく。
-    ブリッジは BRIDGE_TIMEOUT_SEC(900秒) で打ち切り、state=error を返す。
+    ブリッジは BRIDGE_TIMEOUT_SEC(1800秒・KLK-095 で 900 から延長) で打ち切り、state=error を返す。
     型指定つきでも typeApplied は None のまま＝「適用した」と言わない。
     """
 
@@ -349,7 +349,7 @@ class TestKLK079StallIsBounded(_LiveBase):
     def _make_stub(cls):
         def stub(cmd, *a, **kw):
             if isinstance(cmd, (list, tuple)) and cmd and cmd[0] == "claude":
-                raise subprocess.TimeoutExpired(cmd, kw.get("timeout") or 900)
+                raise subprocess.TimeoutExpired(cmd, kw.get("timeout") or 1800)
             return types.SimpleNamespace(returncode=0, stdout="", stderr="")
         return stub
 
