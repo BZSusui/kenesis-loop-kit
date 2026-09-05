@@ -181,6 +181,8 @@
   .comp-list{ display:flex; flex-direction:column; gap:6px; }
   .comp-row{ border:1px solid #ddd9cf; border-radius:8px; background:#fff; }
   .comp-head{ display:flex; align-items:center; gap:8px; padding:8px 10px; }
+  .thumbs-more{ display:flex; align-items:center; gap:10px; margin-top:10px; flex-wrap:wrap; }
+  .thumbs-count{ font-size:11.5px; color:#8a8578; }
   .comp-grip{ cursor:grab; color:#b8b2a5; font-size:15px; line-height:1; user-select:none;
               padding:0 2px; }
   .comp-grip:active{ cursor:grabbing; }
@@ -615,6 +617,7 @@
     <!-- 実績カタログ由来の動的カード（JS renderThumbs が描画）。器のHTMLソースには実案件名・
          画像タグのリテラルを一切書かない。ブリッジ非稼働／file:// では空＋案内文（機密・REQ-011/S13温存）。 -->
     <div class="thumbs" id="thumbs"></div>
+    <div class="thumbs-more" id="thumbsMore" hidden></div>
     <p class="note-oq" id="thumbNote" style="display:none"></p>
     <div class="thumbs-foot">
       <span>選択中: <b id="thumbCount">0 / 3枚</b>（推奨2〜3枚）</span>
@@ -1489,6 +1492,10 @@ function currentTasteCanonical() {
   return el ? el.dataset.taste : null;
 }
 
+// KLK-094: 絞り込み条件が変わったら段階表示を畳んだ状態へ戻す。
+//  展開したまま「すべての実績」へ切り替えると、106件が一気に出て元の木阿弥になる。
+function resetThumbsExpansion() { thumbsExpanded = false; }
+
 // #thumbFilter と業種/テイストに基づき対象を絞り、renderThumbs する。
 function applyThumbFilter() {
   var mode = document.getElementById('thumbFilter').value;
@@ -1556,6 +1563,30 @@ function showThumbNotice(text) {
 // 非稼働／空は案内文（実案件名は出さない）。再描画後に既選択 id を再適用する（§4.4）。
 // カード骨格は esc() 済みテンプレートを insertAdjacentHTML で挿入（HTML一括代入は非導入＝KLK-014 S5温存・
 // class="thumb"/data-id= リテラルを源へ残す＝S13温存。動的値は全て esc() で無害化）。
+// KLK-094: 参考サムネイルの段階表示。
+//  ★カタログが増えるとこの1項目だけでページを何度もスクロールすることになる
+//    （業種未選択だと matchesIndustry が全件 true を返すので、初回訪問時こそ全件が並ぶ）。
+//    既定18件に畳み、「さらに表示」で開く。
+//  ★選択済みは絶対に隠さない: 3枚選んだあと絞り込みを変えて選択が19番目以降に来ると、
+//    見えないのに選ばれている状態になり「なぜ3枚目が選べないのか」で詰まる。
+const THUMBS_COLLAPSED_LIMIT = 18;   // 6列×3行の目安（列数は画面幅で変わるので件数で切る）
+let thumbsExpanded = false;
+
+// 畳んだときに見せる分を決める（純関数）。
+//  返却: { visible, hiddenCount } — visible は「先頭 limit 件 ＋ 選択済み（順序は元のまま）」
+function visibleThumbs(list, selectedIds, limit, expanded) {
+  const all = Array.isArray(list) ? list : [];
+  if (expanded || all.length <= limit) {
+    return { visible: all.slice(), hiddenCount: 0 };
+  }
+  const sel = {};
+  (selectedIds || []).forEach(function (id) { sel[id] = true; });
+  const head = {};
+  all.slice(0, limit).forEach(function (e) { head[e.id] = true; });
+  const visible = all.filter(function (e) { return head[e.id] || sel[e.id]; });
+  return { visible: visible, hiddenCount: all.length - visible.length };
+}
+
 function renderThumbs(list, note) {
   var host = document.getElementById('thumbs');
   var noteEl = document.getElementById('thumbNote');
@@ -1575,8 +1606,10 @@ function renderThumbs(list, note) {
     return;
   }
 
+  // KLK-094: 畳んだ状態では先頭 18 件＋選択済みだけを描く
+  const shown = visibleThumbs(list, selectedIds, THUMBS_COLLAPSED_LIMIT, thumbsExpanded);
   host.textContent = '';
-  host.insertAdjacentHTML('beforeend', list.map(cardHtml).join(''));
+  host.insertAdjacentHTML('beforeend', shown.visible.map(cardHtml).join(''));
   // 実画像は createElement で後付け（器に画像タグのリテラルを残さない＝S13温存）。
   Array.prototype.forEach.call(host.querySelectorAll('.thumb'), function (card) {
     var file = card.dataset.file;
@@ -1595,12 +1628,46 @@ function renderThumbs(list, note) {
     if (selectedIds.indexOf(card.dataset.id) >= 0) card.classList.add('selected');
   });
   bindThumbs();
+  renderThumbsMore(list.length, shown);
   if (noteEl) {
     if (note) { noteEl.textContent = note; noteEl.style.display = 'block'; }
     else { noteEl.style.display = 'none'; noteEl.textContent = ''; }
   }
   updateThumbCount();
   render();
+}
+
+// KLK-094: 「さらに表示 / 折りたたむ」と件数表示。18件以下なら何も出さない。
+function renderThumbsMore(total, shown) {
+  const host = document.getElementById('thumbsMore');
+  if (!host) return;
+  host.textContent = '';
+  if (total <= THUMBS_COLLAPSED_LIMIT) { host.hidden = true; return; }
+  host.hidden = false;
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'btn-ghost';
+  btn.textContent = thumbsExpanded
+    ? '折りたたむ（先頭 ' + THUMBS_COLLAPSED_LIMIT + ' 件だけ表示）'
+    : 'さらに表示する（残り ' + shown.hiddenCount + ' 件）';
+  btn.addEventListener('click', function () {
+    thumbsExpanded = !thumbsExpanded;
+    applyThumbFilter();
+    // 畳んだときは一覧の先頭へ戻す（下の方にいたまま畳むと現在地を見失う）
+    if (!thumbsExpanded) {
+      const t = document.getElementById('thumbs');
+      if (t && t.scrollIntoView) { t.scrollIntoView({ block: 'nearest' }); }
+    }
+  });
+  host.appendChild(btn);
+
+  const cnt = document.createElement('span');
+  cnt.className = 'thumbs-count';
+  cnt.textContent = total + ' 件中 ' + shown.visible.length + ' 件を表示中'
+    + (shown.hiddenCount && shown.visible.length > THUMBS_COLLAPSED_LIMIT
+       ? '（選択中のものは常に表示します）' : '');
+  host.appendChild(cnt);
 }
 
 // 現在の .thumb 群へ選択トグル（最大3）＋拡大ハンドラを（再）登録。
@@ -2094,13 +2161,15 @@ function init() {
   // 参考サムネイル: 実績カタログ由来の動的カード（選択トグル最大3・拡大）は
   //   renderThumbs→bindThumbs が描画のたびに結線する（KLK-017）。
   // 絞り込み #thumbFilter と業種/テイストの変更で対象を再描画（既選択 id は保持）。
-  document.getElementById('thumbFilter').addEventListener('change', applyThumbFilter);
+  // KLK-094: 条件が変わったら段階表示を畳んだ状態へ戻してから描き直す
+  function refilterThumbs() { resetThumbsExpansion(); applyThumbFilter(); }
+  document.getElementById('thumbFilter').addEventListener('change', refilterThumbs);
   ['industrySelect', 'industryCustom'].forEach(function (id) {
-    document.getElementById(id).addEventListener('input', function () { if (catalogEntries.length) applyThumbFilter(); });
-    document.getElementById(id).addEventListener('change', function () { if (catalogEntries.length) applyThumbFilter(); });
+    document.getElementById(id).addEventListener('input', function () { if (catalogEntries.length) refilterThumbs(); });
+    document.getElementById(id).addEventListener('change', function () { if (catalogEntries.length) refilterThumbs(); });
   });
   document.querySelectorAll('input[name=taste]').forEach(function (el) {
-    el.addEventListener('change', function () { if (catalogEntries.length) applyThumbFilter(); });
+    el.addEventListener('change', function () { if (catalogEntries.length) refilterThumbs(); });
   });
   document.getElementById('modalClose').addEventListener('click', closeModal);
   document.getElementById('modalBack').addEventListener('click', function (e) {
