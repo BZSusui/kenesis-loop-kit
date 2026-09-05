@@ -827,6 +827,24 @@ def find_quality_warnings(html, addr):
                     "{0}: 最終行に空きが {1} セルあります（{2}・§12.1.3 の構成A/B/Cから選んでください）".format(
                         addr, holes, marker))
 
+    # (3.5) §3.0.1 — HERO panel-band の帯がどの幅でも1行に収まるか（KLK-096）
+    #   ★auto-fit は列数がパネル数と一致する保証がないため 1200〜1280px で段落ちした
+    #     （KLK-081・理恵さんの目視で発覚）。列をアイテム数だけ作る形になっているかを見る。
+    if marker == "panel-band":
+        for sel, body in _rules_for(css, ["panel-band"]):
+            gtc = re.sub(r"\s+", "", _decl(body, "grid-template-columns") or "")
+            flow = re.sub(r"\s+", "", _decl(body, "grid-auto-flow") or "")
+            if not (gtc or flow):
+                continue
+            if "auto-fit" in gtc:
+                warnings.append(
+                    "{0}: panel-band の帯が auto-fit です（{1}）。"
+                    "列数がパネル数と一致せず段落ちします。§3.0.1 は grid-auto-flow:column".format(
+                        addr, sel.strip()[:50]))
+            if _decl(body, "max-height"):
+                warnings.append(
+                    "{0}: panel-band の帯に max-height が付いています（コマが切れます・§3.0.1）".format(addr))
+
     # (4) §8.1 — 狭い本文カラムで「画像＋本文の横並び」になっていないか
     #     ★禁じているのは**カード内の画像と本文の横並び**であって、2トラックの grid 全般ではない。
     #       カードを2枚並べる(`faq-cards`)・日付と本文(`news-timeline`)・番号バッジは対象外。

@@ -8,6 +8,8 @@
 
 見るもの（機械検査できるものだけ・判定できないものは黙る）:
   - §3.0  極端な横長比率 / min-height だけで高さを決めたアタリ
+  - §3.0.1 HERO panel-band の帯が1行に収まるか（auto-fit・max-height の再発）
+  - §4.1.1 MV のキャッチ・リードが句点で改行されているか
   - §12.1.3 masonry・mosaic の大小混在と最終行の充填
   - §8.1  2カラム/3カラムでの画像と本文の横並び
   - 型マーカーが1セクションに2つ以上付いていないか
@@ -58,6 +60,20 @@ def check_file(path):
             out.append("%s: セクションのブロックを特定できません（%s）" % (addr, info))
             continue
         out.extend(bridge.find_quality_warnings(html, addr))
+
+    # §4.1.1 MV の文言の改行（KLK-096）
+    #   ★キャッチ・リードが2文以上あるのに <br> が無いと、幅によって毎回違う位置で切れ、
+    #     デザインラフとして見せられない（KLK-074/076 で2度踏んだ）。
+    #     セクション単位ではなくページ単位の話なので、ここで見る。
+    for cls in ("catch", "lead"):
+        m = re.search(r'<[^>]*class="[^"]*\b%s\b[^"]*"[^>]*>(.*?)</' % cls, html, re.S)
+        if not m:
+            continue
+        t = m.group(1).strip()
+        inner = t[:-1] if t.endswith("。") else t
+        if "。" in inner and "<br>" not in t:
+            out.append(
+                "MV の .%s が句点で改行されていません（§4.1.1）: %s" % (cls, t[:40]))
 
     # 自己完結（NFR-005）— localhost は例外（🔄 のブリッジ呼び出し）
     for u in re.findall(r'https?://[^"\'\s)]+', html):
