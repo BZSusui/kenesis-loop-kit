@@ -1697,6 +1697,34 @@ const SECTION_LABELS = {
   CONTACT: 'CONTACT（お問い合わせ誘導）', NEWS: 'NEWS（お知らせ・新着）',
   PRICE: 'PRICE（料金・プラン表）', FLOW: 'FLOW（ご利用の流れ）', STAFF: 'STAFF（スタッフ・作家紹介）',
 };
+// KLK-093: セクションごとの入力例。
+//  ★共通の例文（見出し「私たちについて」・ボタン「メニュー一覧へ」）を全セクションに出していたため、
+//    PRICE の見出し例が「私たちについて」、VOICE のボタン例が「メニュー一覧へ」になっていた。
+//    初見の人が「ここに何を書けばいいのか」を取り違える原因になる（理恵さんの指摘）。
+//  ★moreLink が無い（＝下層ページを持たないのが自然な）セクションは more を空にし、
+//    入力欄そのものは出すが例文で誘導しない。
+const SECTION_PLACEHOLDERS = {
+  NEWS:    { heading: 'お知らせ',        lead: '新着情報やお休みのご案内など',                more: 'お知らせ一覧へ',   href: '/news/' },
+  ABOUT:   { heading: '私たちについて',  lead: 'お店やサービスの成り立ち・大切にしていること', more: '私たちのこだわり', href: '/about/' },
+  MENU:    { heading: 'メニュー',        lead: '取り扱っている商品やサービスの紹介',          more: 'メニュー一覧へ',   href: '/menu/' },
+  PRICE:   { heading: '料金プラン',      lead: 'プランごとの内容と料金の目安',                more: '料金の詳細へ',     href: '/price/' },
+  GALLERY: { heading: 'ギャラリー',      lead: '施工事例・作品・店内の様子など',              more: '事例をもっと見る', href: '/works/' },
+  SEARCH:  { heading: '条件から探す',    lead: '条件を選んでお探しいただけます',              more: '',                 href: '' },
+  FLOW:    { heading: 'ご利用の流れ',    lead: 'お申し込みから完了までの手順',                more: '',                 href: '' },
+  VOICE:   { heading: 'お客様の声',      lead: 'ご利用いただいた方からの感想',                more: '感想をもっと読む', href: '/voice/' },
+  STAFF:   { heading: 'スタッフ紹介',    lead: '担当するスタッフのご紹介',                    more: 'スタッフ一覧へ',   href: '/staff/' },
+  FAQ:     { heading: 'よくあるご質問',  lead: 'お問い合わせの多いご質問をまとめました',      more: '質問一覧へ',       href: '/faq/' },
+  SNS:     { heading: '最新の投稿',      lead: 'SNS で日々の様子を発信しています',            more: '',                 href: '' },
+  ACCESS:  { heading: 'アクセス',        lead: '所在地・営業時間・駐車場のご案内',            more: '',                 href: '' },
+  CTA:     { heading: 'お気軽にご相談ください', lead: 'ご不明な点はお問い合わせください',      more: '',                 href: '' },
+  CONTACT: { heading: 'お問い合わせ',    lead: 'ご相談・ご予約はこちらから',                  more: '',                 href: '' },
+};
+// 語彙にない KEY が来ても壊れないよう、無難な既定を返す
+function placeholdersFor(key) {
+  return SECTION_PLACEHOLDERS[key]
+    || { heading: '見出し', lead: '見出しの下に入る短い説明', more: '', href: '' };
+}
+
 // 既定＝従来と同じ ABOUT/MENU/GALLERY（この状態では composition を出力しない＝出力バイト不変）
 let compState = [{ key: 'ABOUT' }, { key: 'MENU' }, { key: 'GALLERY' }];
 let compOpenIdx = -1;   // 「設定」を開いている行
@@ -1836,13 +1864,14 @@ function renderComposition() {
       body.className = 'comp-body';
       const h = document.createElement('input');
       h.type = 'text'; h.maxLength = 40; h.value = e.heading || '';
-      h.placeholder = '例：私たちについて';
+      const ph = placeholdersFor(e.key);
+      h.placeholder = '例：' + ph.heading;
       h.addEventListener('input', function () { e.heading = h.value; desc.textContent = compSummary(e); render(); });
       body.appendChild(mkField('見出し（任意・40字まで）', h));
 
       const l = document.createElement('textarea');
       l.rows = 2; l.maxLength = 200; l.value = e.lead || '';
-      l.placeholder = '見出しの下に入る短い説明（任意）';
+      l.placeholder = '例：' + ph.lead;
       l.addEventListener('input', function () { e.lead = l.value; desc.textContent = compSummary(e); render(); });
       body.appendChild(mkField('リード文（任意・200字まで）', l));
 
@@ -1869,13 +1898,16 @@ function renderComposition() {
 
       const ml = document.createElement('input');
       ml.type = 'text'; ml.maxLength = 40; ml.value = e.moreLabel || '';
-      ml.placeholder = '例：メニュー一覧へ（空なら出しません）';
+      // 下層ページを持たないのが自然なセクションでは例文で誘導しない（欄は出す）
+      ml.placeholder = ph.more ? ('例：' + ph.more + '（空なら出しません）')
+                               : '下層ページへ誘導するときだけ入力（空なら出しません）';
       ml.addEventListener('input', function () { e.moreLabel = ml.value; desc.textContent = compSummary(e); render(); });
       body.appendChild(mkField('詳細ページへの誘導ボタン（任意）', ml));
 
       const mh = document.createElement('input');
       mh.type = 'text'; mh.maxLength = 200; mh.value = e.moreHref || '';
-      mh.placeholder = '例：/menu/（空なら # になります・外部URLは使えません）';
+      mh.placeholder = (ph.href ? '例：' + ph.href : '例：/page/')
+                     + '（空なら # になります・外部URLは使えません）';
       mh.addEventListener('input', function () { e.moreHref = mh.value; render(); });
       body.appendChild(mkField('そのボタンのリンク先（任意・サイト内のみ）', mh));
 

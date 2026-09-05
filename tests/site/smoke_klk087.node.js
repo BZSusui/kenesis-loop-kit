@@ -85,7 +85,8 @@ function makeEnv() {
     '\nreturn { get s(){return compState}, set s(v){compState=v},' +
     ' set o(v){compOpenIdx=v}, renderComposition, buildInstruction,' +
     ' normalizeComposition, isPlainComposition, normalizeCompositionEntry, compMove,' +
-    ' SECTION_TYPE_POOLS, SECTION_KEYS, maxInstancesFor, COMPOSITION_MAX_TOTAL };})()'
+    ' SECTION_TYPE_POOLS, SECTION_KEYS, maxInstancesFor, COMPOSITION_MAX_TOTAL,' +
+    ' SECTION_PLACEHOLDERS, placeholdersFor };})()'
   )(...keys.map(k => env[k]));
   return { api, byId };
 }
@@ -409,6 +410,65 @@ function dndEnv(keys) {
     a.compMove(-1, 1) === false && a.compMove(9, 1) === false
       && a.compMove(1, 1) === false && a.compMove(1, 2) === false,
     '範囲外=' + a.compMove(-1, 1) + ' 同位置=' + a.compMove(1, 1));
+}
+
+// ===========================================================================
+// H群 — セクション別の入力例（KLK-093・理恵さんの指摘）
+// ===========================================================================
+{
+  const { api: a, byId: b } = makeEnv();
+  const inputsOf = (key) => {
+    a.s = [{ key }];
+    a.o = 0;
+    a.renderComposition();
+    const body = b.compList.children[0].children[1];
+    const found = [];
+    (function walk(el) {
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') found.push(el);
+      el.children.forEach(walk);
+    })(body);
+    return found;
+  };
+
+  // 全14セクションに例文が定義されていること
+  const missing = a.SECTION_KEYS.filter(k => !a.SECTION_PLACEHOLDERS[k]);
+  check('H1 14セクションすべてに専用の入力例がある', missing.length === 0,
+    '欠け=' + (missing.join(',') || 'なし'));
+
+  // 見出しの例がセクションごとに違うこと（共通の使い回しでない）
+  const heads = a.SECTION_KEYS.map(k => a.SECTION_PLACEHOLDERS[k].heading);
+  check('H2 見出しの例がセクションごとに異なる（全部同じ文言の使い回しでない）',
+    new Set(heads).size === heads.length,
+    '重複=' + heads.filter((h, i) => heads.indexOf(h) !== i).join(',') || 'なし');
+
+  // ★理恵さんが挙げた具体例
+  check('H3 PRICE の見出し例が「私たちについて」ではない（理恵さんの指摘）',
+    inputsOf('PRICE')[0].placeholder === '例：料金プラン',
+    'PRICE の見出し例=' + inputsOf('PRICE')[0].placeholder);
+  check('H4 VOICE の誘導ボタン例が「メニュー一覧へ」ではない（理恵さんの指摘）',
+    inputsOf('VOICE')[2].placeholder.indexOf('メニュー一覧へ') < 0,
+    'VOICE のボタン例=' + inputsOf('VOICE')[2].placeholder);
+  check('H5 ABOUT / MENU は従来どおりの例文が出る（もともと合っていたものは変えない）',
+    inputsOf('ABOUT')[0].placeholder === '例：私たちについて'
+      && inputsOf('MENU')[2].placeholder.indexOf('メニュー一覧へ') >= 0,
+    'ABOUT=' + inputsOf('ABOUT')[0].placeholder + ' / MENU=' + inputsOf('MENU')[2].placeholder);
+
+  // 下層ページを持たないのが自然なセクションでは、ボタン例で誘導しない
+  const noSub = ['FLOW', 'ACCESS', 'CONTACT', 'CTA', 'SNS', 'SEARCH'];
+  const wrong = noSub.filter(k => inputsOf(k)[2].placeholder.indexOf('例：') === 0);
+  check('H6 下層ページを持たないセクションはボタン例で誘導しない（欄は出す）',
+    wrong.length === 0 && inputsOf('FLOW')[2].placeholder.indexOf('誘導するときだけ') >= 0,
+    '誘導してしまう=' + (wrong.join(',') || 'なし'));
+
+  // リンク先の例もセクションに合っていること
+  check('H7 リンク先の例がセクションに合っている（PRICE は /price/）',
+    inputsOf('PRICE')[3].placeholder.indexOf('/price/') >= 0,
+    'PRICE のリンク例=' + inputsOf('PRICE')[3].placeholder);
+
+  // 語彙外の KEY でも壊れない
+  check('H8 語彙にない KEY でも既定の例文を返して壊れない',
+    a.placeholdersFor('NOPE').heading === '見出し',
+    JSON.stringify(a.placeholdersFor('NOPE')));
 }
 
 // --- 出力 -------------------------------------------------------------------
