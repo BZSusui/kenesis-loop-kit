@@ -17,8 +17,9 @@
   仮文言・スクロール出現アニメ）を非エンジニアが確認・印刷できる単一HTML。
 - 本スキルは生成指示書の **`output.variants`（1〜3）に応じて最大3案**を一括生成する（REQ-008）。各案は独立した
   単一HTML（`variants:1` は `index.html`、`variants≥2` は `index-a.html`/`index-b.html`/`index-c.html`）で、
-  **配色テーマとレイアウト原型（`data-archetype`）を両振りする**（振れ幅規約は §12/§12.1・カラム数や番地は全案共通）。複数案のときは案を切り替えて
-  見比べる**比較ハブ `compare.html`**（SCR-002・構造規約は §13）を併せて生成する（`variants:1` は比較ハブなし）。
+  **配色テーマとレイアウト原型（`data-archetype`）を両振りする**（振れ幅規約は §12/§12.1・カラム数や番地は全案共通）。
+  **`compare.html`（SCR-002・構造規約は §13）は案数によらず常に生成する**。複数案では案の切替に、
+  単案では**幅切替と 🔄 セクション再生成の置き場**として要る（KLK-092。作らないとその2機能が丸ごと失われる）。
 - 一部の案が失敗しても**成功案のみ**を保存・表示し、`compare.html` の `.partial-note` に失敗を焼き込んで通知する
   （REQ-008 失敗時挙動・§12・SKILL 手順4/5）。入力の写し `instruction.json` は常に保存する。
 - **別チケット（本スキルでは実装しない）**: 部分再生成 REQ-103（🔄 セクション単位の作り直し）・見本URL反映 REQ-102。
@@ -698,7 +699,7 @@ SCR-002 mock テーマ変数へ写す。**生成ルート要素（`.mock` 等）
 
   | `output.variants` | 生成ファイル |
   |---|---|
-  | `1`（後方互換） | `index.html`（デザインラフ本体・1案）＋ `instruction.json`。**`compare.html` は作らない** |
+  | `1` | `index.html`（デザインラフ本体・1案）＋ **`compare.html`（単案版・KLK-092）** ＋ `instruction.json` |
   | `2` | `index-a.html`・`index-b.html` ＋ `compare.html` ＋ `instruction.json` |
   | `3` | `index-a.html`・`index-b.html`・`index-c.html` ＋ `compare.html` ＋ `instruction.json` |
 
@@ -1331,9 +1332,15 @@ SCR-001 でカタログサムネイルを選んだ指示書では、**案Aを「
 
 ## 13. 比較画面 compare.html の構造規約（REQ-008 / REQ-009・U-B/U-H）
 
-`output.variants≥2` のとき、案を切り替えて見比べる**比較ハブ `compare.html`**（＝**単一ファイル・外部依存ゼロ**）を
+**`output.variants` の値によらず**、`compare.html`（＝**単一ファイル・外部依存ゼロ**）を
 `mockups/{…}/` に生成する。見た目の正は `docs/wireframes/SCR-002-compare.html` の chrome。技術制約に沿って作り直す
 （ワイヤーを本番へコピーしない）。
+
+- **`variants≥2`**: 案を切り替えて見比べる比較ハブ（従来どおり）。
+- **`variants:1`（KLK-092）**: 案が1つなので**案切替のセグメント・サムネイル列は出さない**。
+  それ以外（**画面幅プレビュー切替**・**🔄 セクション再生成**・原寸リンク・印刷導線）は**3案と同等**に出す。
+  ★**1案だからといって機能を落とさない**。幅切替も 🔄 も compare.html の上に載っているので、
+  compare.html を作らないと**それらが丸ごと失われる**（理恵さんの指摘で判明）。
 
 **骨格（上から）:**
 1. `<head><style>`: ツール chrome CSS ＋ 案切替 CSS ＋ `@media print`（chrome 非表示）。**外部CDN／Webフォント／
@@ -1369,8 +1376,32 @@ SCR-001 でカタログサムネイルを選んだ指示書では、**案Aを「
      `768px`＝PC版が狭まった状態、`全幅`＝通常、の3つで取りうる見え方を網羅できる。
      **任意幅の数値指定は行わない**（JS が必要になり「JS は原則不要」に反するため。任意幅はブラウザの
      開発者ツールで代替できる）。
-   - **`variants:1` には compare.html が無い**ため幅切替も無い。standalone はレスポンシブなので
-     ブラウザ幅を変えて確認する。
+   - **`variants:1` でも幅切替は出す（KLK-092）**。案切替が無いだけで、幅切替の隠しラジオ・
+     セグメント・CSS は3案とまったく同じものを置く（`.pane` が1つになるだけ）。
+     ~~`variants:1` には compare.html が無いため幅切替も無い~~ → **KLK-092 で撤回**。
+
+**単案（`variants:1`）の compare.html（KLK-092）:**
+
+3案版から**案切替に関わる部分だけ**を落とす。他は同じものを置く。
+
+| 部品 | `variants≥2` | `variants:1` |
+|---|---|---|
+| 隠しラジオ `name="variant"` | 案数ぶん | **出さない** |
+| `.seg`（案A/B/C セグメント） | 出す | **出さない** |
+| `.thumbstrip`（案別サムネ） | 出す | **出さない** |
+| 隠しラジオ `name="vw"`＋`.vwseg`（幅切替） | 出す | **出す（同じもの）** |
+| `.pane` ＋ `<iframe>` | 案数ぶん・CSS で切替 | **1つ**（常時表示・`src="index.html"`） |
+| 「原寸 ↗」 | `index-{letter}.html` | **`index.html`** |
+| 🖨 印刷導線 | `index-{letter}.html` | **`index.html`** |
+| 🔄 セクション再生成 | 出す | **出す** |
+
+- **ルート要素に `data-variants="1"` を焼き込む**。JS はこれを見て単案と判別する。
+- **🔄 が送る `letter` は空文字 `""`**（`index.html` を指す）。ブリッジは
+  `resolve_target_html(folder, "")` → `{folder}/index.html` と解決する（KLK-012 から対応済み）。
+  3案版の `currentLetter()` は checked ラジオから a/b/c を得るが、**単案ではラジオが無い**ので、
+  `data-variants="1"` のとき**必ず空文字を返す**ようにする（`'a'` を返すと `index-a.html` を探して 404 になる）。
+- 幅切替の CSS は3案版と同一（`#vw768:checked ~ .canvas .pane iframe{width:768px}` 等）。
+  `.pane` が1つでも兄弟結合子はそのまま効く。
 
 **依存・安全:**
 - iframe `src`・原寸リンク `href` とも**同ディレクトリの相対 `.html` のみ**（`index-a.html` 等）。`http(s)://` 参照 0 件

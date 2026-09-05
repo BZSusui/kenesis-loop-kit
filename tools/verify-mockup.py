@@ -13,6 +13,7 @@
   - 型マーカーが1セクションに2つ以上付いていないか
   - 番地の一意性（重複・特定できないブロック）
   - 自己完結（外部URL・読み込む先の欠損）＝ NFR-005。※下層ページへの誘導リンク（§4.3 moreLink）は「これから作るページ」なので存在を求めない
+  - **compare.html の機能同等性**（幅切替・🔄。1案でも落とさない）＝ KLK-092
   - **composition との一致**（並び・連番・型・見出し）＝ KLK-088。併置 instruction.json と突き合わせる
 
 使い方:
@@ -149,6 +150,49 @@ def check_composition(folder, path, html):
     return out
 
 
+def check_compare(folder):
+    """compare.html が案数に応じた機能を備えているか（KLK-092）。
+
+    ★1案でも幅切替と 🔄 は要る。compare.html を作らないと**その2機能が丸ごと失われる**
+      （理恵さんの指摘で判明）。ここは「機能を落としていないか」の番人。
+    """
+    out = []
+    single = os.path.isfile(os.path.join(folder, "index.html"))
+    multi = sorted(glob.glob(os.path.join(folder, "index-*.html")))
+    cmp_path = os.path.join(folder, "compare.html")
+    if not (single or multi):
+        return out
+    if not os.path.isfile(cmp_path):
+        out.append("compare.html がありません（幅切替と 🔄 セクション再生成が使えない状態）")
+        return out
+    html = open(cmp_path, encoding="utf-8").read()
+
+    # 幅切替（案数によらず要る）
+    for needle, label in (('name="vw"', "幅切替の隠しラジオ"),
+                          ("vw375", "375px プリセット"),
+                          ("vw768", "768px プリセット")):
+        if needle not in html:
+            out.append("compare.html に%sがありません" % label)
+    # 🔄 セクション再生成（案数によらず要る）
+    for needle, label in (('id="regen-addr"', "番地セレクタ"),
+                          ('id="regen-btn"', "再生成ボタン"),
+                          ("/sections?folder=", "セクション一覧の取得")):
+        if needle not in html:
+            out.append("compare.html に%sがありません（🔄 が使えない）" % label)
+
+    if single and not multi:
+        # 単案: 案切替は無し・index.html を指す・letter は空文字
+        if 'name="variant"' in html:
+            out.append("単案なのに案切替のラジオがあります")
+        if 'data-variants="1"' not in html:
+            out.append('単案なのに data-variants="1" がありません（JS が letter を誤る）')
+        if 'src="index.html"' not in html:
+            out.append("単案の iframe が index.html を指していません")
+        if "index-a.html" in html:
+            out.append("単案なのに index-a.html を参照しています（404 になる）")
+    return out
+
+
 def check_folder(folder):
     """フォルダ内の index-*.html / index.html を検査する。"""
     files = sorted(glob.glob(os.path.join(folder, "index-*.html")))
@@ -167,6 +211,9 @@ def check_folder(folder):
         html = open(f, encoding="utf-8").read()
         for w in check_composition(folder, f, html):
             findings.append((os.path.basename(f), w))
+    # KLK-092: compare.html の機能同等性（フォルダ単位で1回）
+    for w in check_compare(folder):
+        findings.append(("compare.html", w))
     return files, findings
 
 

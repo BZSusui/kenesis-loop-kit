@@ -14,9 +14,18 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
 サーバー・DBは使わない。
 
 - **成果物（`output.variants` による分岐・DRAFT_RULES §9）**:
-  - `variants:1`（後方互換）: `mockups/{YYYY-MM-DD}_{案件名}/index.html`（デザインラフ本体・1案）＋ `instruction.json`。
+  - `variants:1`: `mockups/{YYYY-MM-DD}_{案件名}/index.html`（デザインラフ本体・1案）
+    ＋ **`compare.html`（KLK-092・単案版）** ＋ `instruction.json`。
   - `variants≥2`: `index-a.html`／`index-b.html`／`index-c.html`（成功案ぶん・成功順 a→b→c）＋ 比較ハブ `compare.html`
     ＋ `instruction.json`（`compare.html` の構造規約は DRAFT_RULES §13）。
+- **★1案でも機能を落とさない（KLK-092・DRAFT_RULES §13「単案の compare.html」）**:
+  幅切替（375/768/全幅）と 🔄 セクション再生成は **compare.html の上に載っている**ので、
+  作らないと**それらが丸ごと失われる**。単案でも compare.html を出し、
+  **案切替のセグメント・サムネイル列だけを落とす**（切り替える先が無いため）。
+  - ルートに **`data-variants="1"`** を焼き込む。
+  - iframe と「原寸 ↗」「🖨 印刷」は **`index.html`** を指す（`index-a.html` ではない）。
+  - 🔄 が送る `letter` は **空文字 `""`**。`data-variants="1"` のとき `currentLetter()` は
+    **必ず空文字を返す**こと（`'a'` を返すと `index-a.html` を探して 404 になる）。
 - 各案の生成HTMLは単一ファイル・外部依存ゼロ・配色CSS変数・番地ラベル・アタリ画像（a方式）・業種に合った仮文言・
   スクロール出現アニメ・印刷時は補助表示を非表示（`@media print`）。案間の差は**配色テーマ主軸**で振る（DRAFT_RULES §12）。
 
@@ -189,7 +198,9 @@ DRAFT_RULES §9 に従い **Claude Code が Write** で保存する（保存分�
 - フォルダ: `mockups/{YYYY-MM-DD}_{案件名}/`（案件名＝`meta.project` をパス安全化: 前後空白除去 → 空白を `_` →
   `/ \ : * ? " < > |` と制御文字を除去。空なら `untitled`）。
 - **保存ファイル（`output.variants` 分岐・成功案のみ）**:
-  - `variants:1`（後方互換）: `mockups/{…}/index.html`＝デザインラフ本体（1案）。`compare.html` は作らない。
+  - `variants:1`: `mockups/{…}/index.html`＝デザインラフ本体（1案）＋ `mockups/{…}/compare.html`
+    （**単案版・KLK-092**。案切替のセグメント/サムネイルは出さず、幅切替と 🔄 は3案と同等に出す。
+    iframe・原寸・印刷は `index.html` を指し、ルートに `data-variants="1"`、🔄 の `letter` は空文字）。
   - `variants≥2`: 成功案ぶんの `mockups/{…}/index-a.html`／`index-b.html`／`index-c.html`（成功順 a→b→c）＋ 比較ハブ
     `mockups/{…}/compare.html`（DRAFT_RULES §13）。
 - `mockups/{…}/instruction.json`＝入力の生成指示書の写し（そのまま保存し、再実行・監査を可能にする）。**一部失敗時も
