@@ -45,6 +45,29 @@ except Exception as exc:  # pragma: no cover - 依存はローカルのみ
     sys.exit(2)
 
 
+def check_dev_ids(html):
+    """§4.1.2 開発側の記号（REQ-010 / SCR-001 等）が**画面に文字として**出ていないか。
+
+    ★生成物は提案資料として社外の方の目にも触れる（印刷・PDF化される）。
+      社内の管理記号がそこに出ていると、受け取った側には意味不明なノイズにしかならない。
+      実際に compare.html のボタン名へ「（SCR-001）」が混入した（見本01・02・KLK-085）。
+
+    HTML コメントは対象外（追跡に要るので残す）。番地ラベル（MV-01 等）も別物なので対象外。
+    """
+    out = []
+    vis = re.sub(r"<!--.*?-->", "", html, flags=re.S)
+    vis = re.sub(r"<script\b.*?</script>", "", vis, flags=re.S)
+    vis = re.sub(r"<style\b.*?</style>", "", vis, flags=re.S)
+    for chunk in re.sub(r"<[^>]+>", "\x00", vis).split("\x00"):
+        t = " ".join(chunk.split())
+        ids = re.findall(r"(?:REQ|KLK|SCR|NFR|OQ)-\d+", t)
+        if ids:
+            out.append(
+                "開発側の記号が画面に出ています（§4.1.2）: %s ← 「%s」"
+                % ("・".join(sorted(set(ids))), t[:56]))
+    return out
+
+
 def check_file(path):
     """1ファイルを検査して警告のリストを返す。"""
     out = []
@@ -74,6 +97,8 @@ def check_file(path):
         if "。" in inner and "<br>" not in t:
             out.append(
                 "MV の .%s が句点で改行されていません（§4.1.1）: %s" % (cls, t[:40]))
+
+    out.extend(check_dev_ids(html))
 
     # 自己完結（NFR-005）— localhost は例外（🔄 のブリッジ呼び出し）
     for u in re.findall(r'https?://[^"\'\s)]+', html):
@@ -249,6 +274,13 @@ def check_folder(folder):
     # KLK-092: compare.html の機能同等性（フォルダ単位で1回）
     for w in check_compare(folder):
         findings.append(("compare.html", w))
+    # §4.1.2 は compare.html にも当てる（KLK-085）。
+    #   ★compare.html は番地を持たないので check_file の対象外。
+    #     実際に混入したのはこのファイルのボタン名だったので、ここを見落とすと意味がない。
+    _cmp = os.path.join(folder, "compare.html")
+    if os.path.isfile(_cmp):
+        for w in check_dev_ids(open(_cmp, encoding="utf-8").read()):
+            findings.append(("compare.html", w))
     return files, findings, notices
 
 

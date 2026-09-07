@@ -373,7 +373,7 @@
 <body>
 
 <div class="info-bar">
-  <span>SCR-001 設定画面 | デザインラフ・ジェネレーター</span>
+  <span>設定画面 | デザインラフ・ジェネレーター</span><!-- SCR-001 -->
   <span>ローカル完結・外部送信なし</span>
 </div>
 
@@ -397,7 +397,7 @@
   <!-- ① 案件名 -->
   <section class="card">
     <div class="lbl"><span class="step">1</span><h2>案件名</h2><span class="req">必須</span>
-      <span class="reqid">保存フォルダ名に使用 / REQ-010</span></div>
+      <span class="reqid">保存フォルダ名に使用</span><!-- REQ-010 --></div>
     <input type="text" id="projectName" placeholder="例：サンプル美容室サイト">
     <p class="note-oq">生成物は <code>mockups/2026-07-07_（案件名）/</code> に保存される想定です（保存は後続の生成エンジンが担当）。</p>
   </section>
@@ -405,7 +405,7 @@
   <!-- ② 業種 -->
   <section class="card">
     <div class="lbl"><span class="step">2</span><h2>業種</h2><span class="req">必須</span>
-      <span class="reqid">REQ-001</span></div>
+      <!-- REQ-001 --></div>
     <p class="hint">一覧から選ぶか、当てはまるものがなければ自由に入力できます。</p>
     <div class="field-row">
       <div class="col">
@@ -442,7 +442,7 @@
   <!-- ③ カラム構成 -->
   <section class="card">
     <div class="lbl"><span class="step">3</span><h2>カラム構成</h2><span class="req">必須</span>
-      <span class="reqid">1つ選択 / REQ-002</span></div>
+      <span class="reqid">1つ選択</span><!-- REQ-002 --></div>
     <p class="hint">「全体2カラム」はサイドバーがページ全高（メインビジュアルの横にも回る）。「本文のみ2カラム」は上のメインビジュアルは全幅で、その下の本文だけを2分割します。図解の<b>上の帯</b>の見え方で系統が分かります。</p>
     <div class="colgrid">
       <div class="colcard">
@@ -493,7 +493,7 @@
   <!-- ④ 本文コンテンツ構成（KLK-022: ヘッダー位置＋本文セクション選択＋CTA目的） -->
   <section class="card">
     <div class="lbl"><span class="step">4</span><h2>本文コンテンツ構成</h2><span class="opt">できれば</span>
-      <span class="reqid">REQ-005 / KLK-022</span></div>
+      <!-- REQ-005 / KLK-022 --></div>
     <p class="hint">クライアントの簡易ワイヤーがある場合は、載せたい本文セクションを選びます。<b>メインビジュアルとフッターは常に入ります。</b>選ばなければ ABOUT・MENU・GALLERY で生成します（従来どおり）。</p>
 
     <div class="subhead">ヘッダー（グローバルナビ）の位置</div>
@@ -540,7 +540,7 @@
   <!-- ⑤ テイスト -->
   <section class="card">
     <div class="lbl"><span class="step">5</span><h2>デザインテイスト</h2><span class="opt">できれば</span>
-      <span class="reqid">1つ選択 / REQ-101</span></div>
+      <span class="reqid">1つ選択</span><!-- REQ-101 --></div>
     <p class="hint">仕上がりの方向性を1つだけ選びます（選ぶと生成結果がブレにくくなります）。</p>
     <div class="chips" id="tasteChips">
       <span class="chip"><input type="radio" name="taste" id="t1" data-label="シンプル・ミニマル" data-taste="シンプル"><label for="t1">シンプル・ミニマル</label></span>
@@ -561,7 +561,7 @@
   <!-- ⑤ 配色 -->
   <section class="card">
     <div class="lbl"><span class="step">6</span><h2>配色</h2><span class="req">必須</span>
-      <span class="reqid">REQ-003</span></div>
+      <!-- REQ-003 --></div>
     <p class="hint">3通りの決め方があります —— ①各色を直接入力／②メインだけ決めて残りを自動生成／③配色ジェネレーターの出力を貼り付け。いずれも下の4色に反映されます（メインが決まっていれば生成できます）。カラーコードは <b>#なし6桁（例 444850）でも入力できます</b>（Photoshopのスポイトでコピーした値をそのまま貼り付けOK）。</p>
 
     <!-- 方法①：4色を直接入力（swatch↔hex 同期） -->
@@ -617,7 +617,7 @@
   <!-- ⑥ 参考素材 -->
   <section class="card">
     <div class="lbl"><span class="step">7</span><h2>参考にする素材</h2><span class="opt">推奨</span>
-      <span class="reqid">実績2〜3枚 / REQ-004・102</span></div>
+      <span class="reqid">実績2〜3枚</span><!-- REQ-004・102 --></div>
     <p class="hint">選んだ業種に近い実績をまず表示します。「この雰囲気で」という参考を最大3枚選べます。🔍で拡大表示。</p>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
       <span class="industry-chip" id="industryChip">業種「（未選択）」に近い実績を表示中</span>
@@ -664,13 +664,13 @@
         </div>
       </div>
     </div>
-    <p class="note-oq"><b>1件目のURLは「配色を読み取る」で配色欄へ反映できます（REQ-102）。</b>読み取るのは<b>配色だけ</b>で、レイアウト構成は読み取りません（見た目の判断が要るため）。<b>構成も参考にしたいときは、そのサイトのスクリーンショットを実績カタログへ取り込んでから</b>「参考にする素材」で選んでください（配色とレイアウトの両方が生成に反映されます）。2件目は控えとして保存されるだけです。</p>
+    <p class="note-oq"><b>1件目のURLは「配色を読み取る」で配色欄へ反映できます。</b><!-- REQ-102 -->読み取るのは<b>配色だけ</b>で、レイアウト構成は読み取りません（見た目の判断が要るため）。<b>構成も参考にしたいときは、そのサイトのスクリーンショットを実績カタログへ取り込んでから</b>「参考にする素材」で選んでください（配色とレイアウトの両方が生成に反映されます）。2件目は控えとして保存されるだけです。</p>
   </section>
 
   <!-- ⑦ アタリ画像 -->
   <section class="card">
     <div class="lbl"><span class="step">8</span><h2>メインビジュアル アタリ画像の入れ方</h2>
-      <span class="reqid">REQ-006・104</span></div>
+      <!-- REQ-006・104 --></div>
     <div class="radio-inline">
       <label><input type="radio" name="atari" value="standard" checked> <span><b>標準</b>：色面＋内容説明＋ストック検索キーワード<span class="sub-inline">（権利的に安全）</span></span></label>
       <label><input type="radio" name="atari" value="free-photo"> <span>フリー実写真を使う<span class="sub-inline">（メインビジュアル限定・通信あり）</span></span></label>
@@ -704,19 +704,19 @@
   <!-- ⑧ 案数・スマホ -->
   <section class="card">
     <div class="lbl"><span class="step">9</span><h2>生成する案の数・オプション</h2>
-      <span class="reqid">REQ-008</span></div>
+      <!-- REQ-008 --></div>
     <div class="radio-inline" style="margin-bottom:12px">
       <label><input type="radio" name="variants" value="1"> 1案</label>
       <label><input type="radio" name="variants" value="3" checked> 3案（比較しやすい）</label>
     </div>
     <p class="note-oq" style="margin:0 0 12px">
-      スマホでの見え方は、生成後の<b>比較画面で表示幅を切り替えて</b>確認できます（全幅 / 768px / 375px・REQ-201）。
+      スマホでの見え方は、生成後の<b>比較画面で表示幅を切り替えて</b>確認できます（全幅 / 768px / 375px）。<!-- REQ-201 -->
       生成物はもともとレスポンシブなので、スマホ用に別ファイルを作る必要はありません。
     </p>
     <div class="toggle-line" style="margin-top:12px">
       <label><input type="checkbox" id="animOn" checked> 生成時アニメーション（読込フェードイン・スクロール出現）を付ける</label>
       <span class="sub-inline">既定ON。OFFにすると生成物は最初から全表示になります</span>
-      <span class="opt">REQ-002拡張 / REQ-005</span>
+      <!-- REQ-002拡張 / REQ-005 -->
     </div>
   </section>
 
@@ -744,7 +744,7 @@
       <div class="m-body">
         <h3 id="modalTitle">実績</h3>
         <p id="modalTags"></p>
-        <p class="note-oq">ブリッジ稼働時は同一オリジン配信の実績画像を表示します。実データ（画像・案件名）は Git 管理外フォルダにのみ置く方針で、非稼働時はプレースホルダになります（REQ-011）。</p>
+        <p class="note-oq">ブリッジ稼働時は同一オリジン配信の実績画像を表示します。実データ（画像・案件名）は Git 管理外フォルダにのみ置く方針で、非稼働時はプレースホルダになります。</p><!-- REQ-011 -->
       </div>
     </div>
   </div>
