@@ -1746,6 +1746,37 @@ def build_catalog_import_command(pending_spec_path, allow_open=False):
 MTIME_TOLERANCE_SEC = 2.0   # 再生成の mtime 更新判定の許容差(FS の秒切り詰め吸収・KLK-018 U2)
 
 
+def count_variant_files(abs_folder):
+    """フォルダにある案の HTML の本数を返す（副作用なし）。
+
+    index-a/b/c.html があればその数、無ければ index.html の有無（0 or 1）。
+    """
+    n = 0
+    for L in ("a", "b", "c"):
+        if os.path.isfile(os.path.join(abs_folder, "index-%s.html" % L)):
+            n += 1
+    if n:
+        return n
+    return 1 if os.path.isfile(os.path.join(abs_folder, "index.html")) else 0
+
+
+def variant_shortfall(abs_folder, requested):
+    """頼んだ案数に対して**何本足りないか**を返す（0 なら不足なし）。
+
+    ★なぜ要るか（KLK-104）: 以前は「compare.html があるか」で成功を判定していた。
+      KLK-103 で compare.html を**ブリッジ自身が書くようにした**ため、
+      その存在は「スキルが最後まで走った」証拠にならなくなった。
+      実際に**3案を頼んで2案しかできていないのに「生成が完了しました」と報告**した
+      （案C と instruction.json が無かった）。**案の本数で判定する。**
+    """
+    try:
+        want = int(requested)
+    except (TypeError, ValueError):
+        want = 1
+    want = max(1, min(3, want))
+    return max(0, want - count_variant_files(abs_folder))
+
+
 def is_job_success(returncode, artifact_ok):
     """終了コードに依存しない成否判定(KLK-018)。副作用なし・S群 import 対象。
 
@@ -1853,8 +1884,13 @@ def _run_server(port):
         open_target = select_open_target(folder, variants)
         abs_target = os.path.join(root, open_target)
 
-        # KLK-018: 終了コード単独ではなく成果物(表示物)の存在を優先して判定する
-        if not is_job_success(proc.returncode, os.path.exists(abs_target)):
+        # KLK-018: 終了コード単独ではなく成果物の存在を優先して判定する
+        # KLK-104: 「compare.html があるか」ではなく**案の HTML が何本できたか**で見る。
+        #   compare.html は KLK-103 でブリッジ自身が書くようになったので、
+        #   その存在はスキルが最後まで走った証拠にならない。
+        made = count_variant_files(abs_folder)
+        shortfall = variant_shortfall(abs_folder, variants)
+        if not is_job_success(proc.returncode, made > 0):
             # 診断はサーバコンソール(stderr)のみ。生JSONはブラウザ(message)に出さない
             print("[bridge] 生成 失敗 exit={0}".format(proc.returncode), file=sys.stderr)
             with jobs_lock:
@@ -1882,11 +1918,17 @@ def _run_server(port):
             jobs[job_id]["finished_at"] = _now()
             jobs[job_id]["folder"] = folder
             jobs[job_id]["openTarget"] = open_target
-            jobs[job_id]["message"] = (
-                "生成が完了しました。{0} を開きました".format(open_target)
-                if opened
-                else "生成が完了しました。{0} を開いてください".format(open_target)
+            # ★案が足りないときは「完了しました」と言わない（KLK-104）。
+            #   3案頼んで2案でも黙って成功と報告していた。利用者が気づけない。
+            head = ("生成が完了しました。" if shortfall == 0
+                    else "{0}案を指定しましたが{1}案しかできませんでした（残り{2}案は失敗）。"
+                         .format(variants, made, shortfall))
+            jobs[job_id]["message"] = head + (
+                "{0} を開きました".format(open_target) if opened
+                else "{0} を開いてください".format(open_target)
             )
+            jobs[job_id]["variantsMade"] = made
+            jobs[job_id]["variantsShortfall"] = shortfall
         _cleanup(pending_path)
 
     def _run_regen_job(job_id, pending_path, folder, target, started_at, addr=None, desired=None):

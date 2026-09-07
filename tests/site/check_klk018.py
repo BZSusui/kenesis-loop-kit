@@ -177,19 +177,28 @@ check(
 # ===========================================================================
 s4_folder = "build_folder(" in RUN_JOB
 s4_select = "select_open_target(" in RUN_JOB
-s4_exists = re.search(
-    r"is_job_success\(\s*proc\.returncode\s*,\s*os\.path\.exists\(\s*abs_target\s*\)\s*\)",
+# ★KLK-018 の要求は「**終了コード単独に頼らず、成果物の存在で判定する**」こと。
+#   その「成果物」は KLK-104 で `compare.html の存在` から `案の HTML の本数` へ変えた。
+#   compare.html は KLK-103 でブリッジ自身が書くようになり、**その存在は
+#   スキルが最後まで走った証拠ではなくなった**（3案頼んで2案でも「完了」と報告した）。
+#   したがってここは書き方を固定せず、**成果物ベースであること**を検査する。
+s4_artifact = re.search(
+    r"is_job_success\(\s*proc\.returncode\s*,\s*(?:made\s*>\s*0|os\.path\.exists\([^)]*\))\s*\)",
     RUN_JOB) is not None
-# 表示物パス構築が失敗判定より前（abs_target 定義 < is_job_success 呼び出し）
-i_abs = RUN_JOB.find("abs_target =")
+# ★退行防止: compare.html の存在を成功の根拠に戻していないこと（KLK-104）
+s4_not_compare = "os.path.exists(abs_target)" not in RUN_JOB
+# 成果物の集計が失敗判定より前（数えてから判定する）
+i_count = RUN_JOB.find("count_variant_files(")
 i_judge = RUN_JOB.find("is_job_success(")
-s4_order = 0 <= i_abs < i_judge
-s4 = s4_folder and s4_select and s4_exists and s4_order
+s4_order = 0 <= i_count < i_judge
+s4 = s4_folder and s4_select and s4_artifact and s4_not_compare and s4_order
 check(
-    "S4 生成の成功条件 (_run_job が build_folder/select_open_target で abs_target を構築し is_job_success(rc, os.path.exists(abs_target)) 判定・構築が判定の前)",
+    "S4 生成の成功条件 (_run_job が終了コード単独に頼らず**成果物の本数**で判定・"
+    "compare.html の存在を根拠に戻していない・集計が判定の前)",
     s4,
     f"build_folder={s4_folder}, select_open_target={s4_select}, "
-    f"is_job_success(rc,os.path.exists(abs_target))={s4_exists}, abs_target構築<判定={s4_order}",
+    f"成果物ベース={s4_artifact}, compare.html を根拠にしていない={s4_not_compare}, "
+    f"集計<判定={s4_order}",
 )
 
 # ===========================================================================

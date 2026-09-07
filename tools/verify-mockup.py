@@ -294,6 +294,30 @@ def check_folder(folder):
         for w in n:
             notices.append((os.path.basename(f), w))
     # KLK-092: compare.html の機能同等性（フォルダ単位で1回）
+    # ★指示書の案数と実際の案数を照合する（KLK-104）。
+    #   3案を指定したのに2案しかできていないのに「違反 0 件」と報告した。
+    #   compare.html は実在するファイルだけで組まれるので**見た目は整っており**、
+    #   ファイルの数を数えるだけでは気づけない。**頼んだ数と突き合わせる**。
+    _inst_path = os.path.join(folder, "instruction.json")
+    if os.path.isfile(_inst_path):
+        try:
+            with open(_inst_path, encoding="utf-8") as fh:
+                _inst = json.load(fh)
+            _out = _inst.get("output") if isinstance(_inst.get("output"), dict) else {}
+            _want = int(_out.get("variants", len(files)))
+            if _want != len(files):
+                findings.append((
+                    "(フォルダ)",
+                    "指示書は%d案ですが、実際は%d案しかありません（%s）。"
+                    "生成が途中で止まった可能性があります"
+                    % (_want, len(files), "・".join(sorted(os.path.basename(f) for f in files)))))
+        except (ValueError, OSError, TypeError):
+            pass          # 壊れた指示書で検査を止めない（fail-open）
+    else:
+        notices.append(("(フォルダ)",
+                        "instruction.json がありません。指示書との照合ができません"
+                        "（生成が途中で止まると残らないことがあります）"))
+
     _cn = []
     for w in check_compare(folder, _cn):
         findings.append(("compare.html", w))
