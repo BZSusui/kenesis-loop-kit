@@ -361,6 +361,26 @@ def build_folder(date_str, project):
     return "mockups/{0}_{1}".format(date_str, sanitize_project(project))
 
 
+def write_compare_html(abs_folder, rel_folder):
+    """compare.html をテンプレートから書き出す（KLK-103）。
+
+    ★import はこの中で行う（モジュール先頭に置かない）。
+      bridge.py は「import で bind/実行が起きない」設計で、テストは
+      spec_from_file_location で直接読み込む。先頭に隣のモジュールの import を置くと
+      **sys.path に draft-gen/ が無いローダーで丸ごと import できなくなる**
+      （実際に checker 10本が ModuleNotFoundError で落ちた・KLK-103 の実装時）。
+      自分の隣を明示的に解決してから読み込む。
+    """
+    import importlib.util
+
+    here = os.path.dirname(os.path.abspath(__file__))
+    spec = importlib.util.spec_from_file_location(
+        "klk_make_compare", os.path.join(here, "make_compare.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.write_compare(abs_folder, data_folder=rel_folder)
+
+
 def select_open_target(folder, variants):
     """開く対象を決定論的に選ぶ(U-5)。
 
@@ -1817,6 +1837,19 @@ def _run_server(port):
         # KLK-018: 表示物パス構築を失敗判定の前へ移動し、成果物の存在を主判定にする
         date_str = started_at.strftime("%Y-%m-%d")
         folder = build_folder(date_str, project)
+
+        # ★compare.html は**スキルに書かせず、ここでテンプレートから書き出す**（KLK-103）。
+        #   あの JS(約160行)はデザインではなく道具立てで、どの生成物でも中身は同じ。
+        #   毎回書き起こさせていたため KLK-079/080/081/092 の振る舞いが作り直しで落ちた
+        #   （見本の作り直しで6項目中4項目が欠落・KLK-102）。
+        #   案の HTML が出ていれば書ける。失敗しても生成そのものは殺さない（fail-soft）。
+        abs_folder = os.path.join(root, folder)
+        try:
+            if os.path.isdir(abs_folder):
+                write_compare_html(abs_folder, folder)
+        except Exception as exc:      # noqa: BLE001  テンプレート不整合でも生成は生かす
+            print("[bridge] compare.html の書き出しに失敗: {0}".format(exc), file=sys.stderr)
+
         open_target = select_open_target(folder, variants)
         abs_target = os.path.join(root, open_target)
 

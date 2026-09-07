@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>サンプルカフェ — デザインラフ比較（3案）</title>
+<title>{{PROJECT}} — デザインラフ比較{{TITLE_SUFFIX}}</title>
 <!--
   比較ハブ（compare.html）。**このファイルは生成しない**（KLK-103）。
   draft-gen/compare_template.html を draft-gen/make_compare.py が埋めて書き出す。
@@ -24,7 +24,7 @@
   make_compare.py が案の数だけ展開する。
 -->
 <style>
-:root{ --c-main:#6b7f4e; --c-sub:#4a5936; --c-accent:#c98a3c; --c-bg:#faf8f3; }
+:root{ --c-main:{{MAIN}}; --c-sub:{{SUB}}; --c-accent:{{ACCENT}}; --c-bg:{{BG}}; }
   /* ↑ 案件の配色。ここだけが案件ごとに変わる（KLK-103） */
   *{ box-sizing:border-box; }
   body{ margin:0; font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
@@ -115,44 +115,31 @@
 </style>
 </head>
 <body>
-<div class="mock-compare" data-folder="samples/01_カフェ_1カラム" data-variants="3">
+<div class="mock-compare" data-folder="{{FOLDER}}" data-variants="{{VARIANTS}}">
 
   <!-- 隠しラジオ（.canvas より前に配置・兄弟結合子で切替） -->
-  <input class="vswitch" type="radio" name="variant" id="ra" checked>
-  <input class="vswitch" type="radio" name="variant" id="rb">
-  <input class="vswitch" type="radio" name="variant" id="rc">
+{{RADIOS}}
   <input class="vwswitch" type="radio" name="vw" id="vwfull" checked>
   <input class="vwswitch" type="radio" name="vw" id="vw768">
   <input class="vwswitch" type="radio" name="vw" id="vw375">
 
   <div class="toolchrome">
     <div class="proj-head">
-      <span class="proj-name">サンプルカフェ</span>
-      <span class="proj-meta">生成日 2026-09-02 ／ 3案</span>
+      <span class="proj-name">{{PROJECT}}</span>
+      <span class="proj-meta">生成日 {{DATE}} ／ {{VARIANT_COUNT}}</span>
     </div>
     <div class="settings-chips">
-      <span class="chip">業種 <b>飲食店・カフェ・食関連</b></span>
-      <span class="chip">カラム <b>1col</b></span>
-      <span class="chip">テイスト <b>ナチュラル・あたたかい</b></span>
-      <span class="chip"><span class="sw" style="background:#6b7f4e"></span>配色 <b>#6b7f4e</b></span>
-      <span class="chip">アタリ <b>standard</b></span>
+      <span class="chip">業種 <b>{{INDUSTRY}}</b></span>
+      <span class="chip">カラム <b>{{COLUMNS}}</b></span>
+      <span class="chip">テイスト <b>{{TASTE}}</b></span>
+      <span class="chip"><span class="sw" style="background:{{MAIN}}"></span>配色 <b>{{MAIN}}</b></span>
+      <span class="chip">アタリ <b>{{ATARI}}</b></span>
     </div>
   </div>
 
   <div class="variant-bar">
-    <div class="seg">
-      <label for="ra">案A</label>
-      <label for="rb">案B</label>
-      <label for="rc">案C</label>
-    </div>
-    <div class="thumbstrip">
-      <div class="vthumb va"><label for="ra"><div class="mini"><div class="bar"></div><div class="body"></div></div></label>
-        <div class="cap"><span>案A</span><a href="index-a.html" target="_blank" class="full">原寸 ↗</a></div></div>
-      <div class="vthumb vb"><label for="rb"><div class="mini"><div class="bar"></div><div class="body"></div></div></label>
-        <div class="cap"><span>案B</span><a href="index-b.html" target="_blank" class="full">原寸 ↗</a></div></div>
-      <div class="vthumb vc"><label for="rc"><div class="mini"><div class="bar"></div><div class="body"></div></div></label>
-        <div class="cap"><span>案C</span><a href="index-c.html" target="_blank" class="full">原寸 ↗</a></div></div>
-    </div>
+{{SEG}}
+{{THUMBSTRIP}}
     <div class="vwseg">
       <label for="vwfull">全幅</label>
       <label for="vw768">768px</label>
@@ -161,9 +148,7 @@
   </div>
 
   <div class="toolbar">
-    <a class="tb-btn print-btn print-a" href="index-a.html" target="_blank">🖨 案Aを印刷 / PDFで保存</a>
-    <a class="tb-btn print-btn print-b" href="index-b.html" target="_blank">🖨 案Bを印刷 / PDFで保存</a>
-    <a class="tb-btn print-btn print-c" href="index-c.html" target="_blank">🖨 案Cを印刷 / PDFで保存</a>
+{{PRINT_BUTTONS}}
     <span class="tb-btn" style="background:transparent;border:0;color:#8a8578">← 設定を変えるには設定画面で作り直してください</span>
     <div class="regen-ctl">
       <span style="font-size:13px;color:#6b6558">🔄 セクション再生成</span>
@@ -177,9 +162,7 @@
   <div class="regen-msg" id="regen-msg">ローカルブリッジの状態を確認しています…</div>
 
   <div class="canvas">
-    <div class="pane" id="paneA"><iframe src="index-a.html" title="案A プレビュー"></iframe></div>
-    <div class="pane" id="paneB"><iframe src="index-b.html" title="案B プレビュー"></iframe></div>
-    <div class="pane" id="paneC"><iframe src="index-c.html" title="案C プレビュー"></iframe></div>
+{{PANES}}
   </div>
 
 </div>

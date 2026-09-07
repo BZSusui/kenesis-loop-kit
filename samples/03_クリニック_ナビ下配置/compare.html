@@ -1,103 +1,157 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>サンプル歯科クリニック｜デザインラフ 3案比較</title>
+<title>サンプル歯科クリニック — デザインラフ比較（3案）</title>
+<!--
+  比較ハブ（compare.html）。**このファイルは生成しない**（KLK-103）。
+  draft-gen/compare_template.html を draft-gen/make_compare.py が埋めて書き出す。
+
+  ★なぜ生成をやめたか: この JS（約160行）はデザインではなく道具立てで、
+    どの生成物でも中身は同じ。にもかかわらず毎回書き起こさせていたため、
+    KLK-079/080/081/092 で積み上げた振る舞いが**作り直しのたびに落ちた**
+    （2026-09-07 の見本作り直しで6項目中4項目が欠落・KLK-102）。
+    固定テンプレートにすれば、その種の欠落が構造的に起きない。
+
+  可変部はこれだけ（※二重波括弧で囲んだ名前。ここでは囲まずに列挙する。
+  囲むと、この説明文まで置換されてしまう＝実際にそうなった）:
+    PROJECT / DATE / VARIANT_COUNT / TITLE_SUFFIX
+    INDUSTRY / COLUMNS / TASTE / ATARI
+    MAIN / SUB / ACCENT / BG
+    FOLDER / VARIANTS（1 or 3）
+  繰り返し部（RADIOS / SEG / THUMBSTRIP / PRINT_BUTTONS / PANES）は
+  make_compare.py が案の数だけ展開する。
+-->
 <style>
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;color:#233;background:#eef2f3;}
-  a{color:inherit;}
-  input[name=variant],input[name=vw]{position:absolute;opacity:0;pointer-events:none;}
+:root{ --c-main:#3e9aa6; --c-sub:#2c6e77; --c-accent:#e08a5a; --c-bg:#f5fbfc; }
+  /* ↑ 案件の配色。ここだけが案件ごとに変わる（KLK-103） */
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+        background:#eceae4; color:#2c2c2c; }
 
-  .toolchrome{background:#fff;border-bottom:1px solid #dde5e7;padding:16px 24px;}
-  .proj-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;}
-  .proj-head .pj{font-size:18px;font-weight:800;color:#1f5560;}
-  .proj-head .meta{font-size:12px;color:#889;}
-  .settings-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
-  .settings-chips .chip{font-size:11.5px;background:#eef6f7;color:#2c6e77;border:1px solid #d6e6e8;border-radius:14px;padding:3px 11px;}
+  /* 隠しラジオ（案切替・幅切替とも CSS-only） */
+  .vswitch, .vwswitch{ position:absolute; opacity:0; pointer-events:none; }
 
-  .variant-bar{background:#fff;border-bottom:1px solid #dde5e7;padding:12px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
-  .seg{display:flex;gap:6px;}
-  .seg label{cursor:pointer;font-size:13px;font-weight:700;color:#678;border:1.5px solid #cdd8da;border-radius:20px;padding:6px 18px;background:#fff;}
-  #ra:checked ~ .variant-bar .seg label[for=ra],
-  #rb:checked ~ .variant-bar .seg label[for=rb],
-  #rc:checked ~ .variant-bar .seg label[for=rc]{background:#1f5560;color:#fff;border-color:#1f5560;}
+  /* toolchrome */
+  .toolchrome{ background:#fff; border-bottom:1px solid #e0ddd4; padding:18px 26px; }
+  .proj-head{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
+  .proj-head .proj-name{ font-size:20px; font-weight:800; letter-spacing:.03em; }
+  .proj-head .proj-meta{ font-size:12px; color:#8a8578; }
+  .settings-chips{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .chip{ background:#f2f0ea; border:1px solid #e2dfd6; border-radius:16px; padding:4px 12px; font-size:12px; color:#5b564a; }
+  .chip b{ color:var(--c-main); font-weight:700; }
+  .chip .sw{ display:inline-block; width:10px; height:10px; border-radius:50%; vertical-align:middle;
+    margin-right:5px; border:1px solid rgba(0,0,0,.15); }
 
-  .vwseg{display:flex;gap:6px;margin-left:auto;}
-  .vwseg label{cursor:pointer;font-size:12px;font-weight:600;color:#678;border:1.5px solid #cdd8da;border-radius:8px;padding:5px 12px;background:#fff;}
-  #vwfull:checked ~ .variant-bar .vwseg label[for=vwfull],
-  #vw768:checked ~ .variant-bar .vwseg label[for=vw768],
-  #vw375:checked ~ .variant-bar .vwseg label[for=vw375]{background:#3e9aa6;color:#fff;border-color:#3e9aa6;}
+  /* variant-bar */
+  .variant-bar{ display:flex; align-items:center; gap:22px; flex-wrap:wrap;
+    background:#fff; border-bottom:1px solid #e0ddd4; padding:14px 26px; }
+  .seg{ display:flex; gap:6px; }
+  .seg label{ cursor:pointer; font-size:13px; font-weight:700; color:#6b6558; padding:8px 18px;
+    border:1px solid #ddd9cf; border-radius:20px; background:#faf9f5; }
+  .vwseg{ display:flex; gap:6px; margin-left:auto; }
+  .vwseg label{ cursor:pointer; font-size:12px; font-weight:600; color:#6b6558; padding:7px 14px;
+    border:1px solid #ddd9cf; border-radius:16px; background:#faf9f5; }
 
-  .thumbstrip{display:flex;gap:14px;padding:14px 24px;background:#f6f9fa;border-bottom:1px solid #dde5e7;flex-wrap:wrap;}
-  .vthumb{width:120px;cursor:pointer;}
-  .vthumb .sw{height:66px;border-radius:8px;border:2px solid transparent;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);}
-  .vthumb .sw .bar{height:16px;}
-  .vthumb .sw .bd{flex:1;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:700;}
-  .vthumb.va .sw .bar{background:#2c6e77;} .vthumb.va .sw .bd{background:#3e9aa6;}
-  .vthumb.vb .sw .bar{background:#12333a;} .vthumb.vb .sw .bd{background:#1f5560;}
-  .vthumb.vc .sw .bar{background:#1f8a97;} .vthumb.vc .sw .bd{background:#2fb4c4;}
-  #ra:checked ~ .thumbstrip .vthumb.va .sw,
-  #rb:checked ~ .thumbstrip .vthumb.vb .sw,
-  #rc:checked ~ .thumbstrip .vthumb.vc .sw{border-color:#e08a5a;}
-  .vthumb .cap{font-size:11px;text-align:center;margin-top:6px;color:#556;}
-  .vthumb .cap .full{color:#2c6e77;font-weight:700;}
+  .thumbstrip{ display:flex; gap:12px; }
+  .vthumb{ width:96px; cursor:pointer; }
+  .vthumb .mini{ height:60px; border-radius:6px; border:2px solid transparent; overflow:hidden;
+    display:flex; flex-direction:column; }
+  .vthumb .mini .bar{ height:14px; }
+  .vthumb .mini .body{ flex:1; }
+  .vthumb .cap{ display:flex; align-items:center; justify-content:space-between; margin-top:5px; font-size:11px; color:#6b6558; }
+  .vthumb .cap a{ color:var(--c-accent); text-decoration:none; font-weight:700; }
+  .va .mini .bar{ background:var(--c-sub); } .va .mini .body{ background:linear-gradient(135deg,var(--c-main),var(--c-accent)); }
+  .vb .mini .bar{ background:#202815; } .vb .mini .body{ background:linear-gradient(135deg,#3a472b,#c6a15b); }
+  .vc .mini .bar{ background:#5e7439; } .vc .mini .body{ background:linear-gradient(135deg,#86a34e,#e39a3c); }
 
-  .toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 24px;background:#fff;border-bottom:1px solid #dde5e7;}
-  .toolbar .print-hint{font-size:12px;color:#788;}
-  .regen{display:flex;align-items:center;gap:8px;margin-left:auto;}
-  .regen select,.regen button{font-size:12.5px;padding:6px 10px;border-radius:8px;border:1.5px solid #cdd8da;background:#fff;font-family:inherit;}
-  .regen button{background:#3e9aa6;color:#fff;border-color:#3e9aa6;font-weight:700;cursor:pointer;}
-  .regen button:disabled{background:#c7d2d4;border-color:#c7d2d4;cursor:not-allowed;}
-  .regen .rg-msg{font-size:11px;color:#a66;max-width:280px;}
-
-  .canvas{padding:22px;}
-  .pane{display:none;background:#dbe4e6;border-radius:12px;padding:16px;}
-  .pane iframe{width:100%;height:1400px;border:0;background:#fff;border-radius:8px;display:block;margin:0 auto;box-shadow:0 6px 24px rgba(0,0,0,.12);}
-  #ra:checked ~ .canvas #paneA,
-  #rb:checked ~ .canvas #paneB,
-  #rc:checked ~ .canvas #paneC{display:block;}
-  #vw768:checked ~ .canvas .pane iframe{width:768px;}
-  #vw375:checked ~ .canvas .pane iframe{width:375px;}
-
-  @media print{
-    .toolchrome,.variant-bar,.thumbstrip,.toolbar,.vwseg{display:none !important;}
-    .pane iframe{box-shadow:none;}
-  }
+  /* toolbar */
+  .toolbar{ display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    background:#f7f6f1; border-bottom:1px solid #e0ddd4; padding:12px 26px; }
+  .toolbar a.tb-btn, .toolbar button.tb-btn{ font-size:13px; font-weight:700; text-decoration:none;
+    border-radius:20px; padding:9px 20px; border:1px solid #ddd9cf; background:#fff; color:#5b564a; cursor:pointer; }
+  .toolbar a.print-btn{ background:var(--c-main); color:#fff; border-color:var(--c-main); }
+  .print-a,.print-b,.print-c{ display:none; }
+  .regen-ctl{ display:flex; align-items:center; gap:8px; margin-left:auto; }
   [data-warn="1"]{ color:#b4342b !important; font-weight:700; }
   .regen-type{ font-size:11.5px; color:#8a8578; white-space:nowrap; }
+  .regen-ctl select{ font-size:13px; padding:8px 12px; border:1px solid #ddd9cf; border-radius:8px; background:#fff; }
+  .regen-ctl button[disabled]{ opacity:.5; cursor:not-allowed; }
+  .regen-msg{ font-size:11px; color:#8a8578; margin:6px 26px 0; }
+
+  /* canvas */
+  .canvas{ padding:24px; }
+  .pane{ display:none; background:#ded9cd; border-radius:8px; padding:16px; text-align:center; }
+  .pane iframe{ width:100%; height:1400px; border:0; background:#fff; display:block; margin:0 auto;
+    box-shadow:0 6px 24px rgba(0,0,0,.12); border-radius:4px; }
+
+  /* 案切替（CSS-only 兄弟結合子） */
+  #ra:checked ~ .canvas #paneA{ display:block; }
+  #rb:checked ~ .canvas #paneB{ display:block; }
+  #rc:checked ~ .canvas #paneC{ display:block; }
+  #ra:checked ~ .variant-bar label[for=ra],
+  #rb:checked ~ .variant-bar label[for=rb],
+  #rc:checked ~ .variant-bar label[for=rc]{ background:var(--c-main); color:#fff; border-color:var(--c-main); }
+  #ra:checked ~ .variant-bar .va .mini,
+  #rb:checked ~ .variant-bar .vb .mini,
+  #rc:checked ~ .variant-bar .vc .mini{ border-color:var(--c-main); }
+  #ra:checked ~ .toolbar .print-a,
+  #rb:checked ~ .toolbar .print-b,
+  #rc:checked ~ .toolbar .print-c{ display:inline-block; }
+
+  /* 幅切替（CSS-only・name=vw なので案切替と独立） */
+  #vw768:checked ~ .canvas .pane iframe{ width:768px; }
+  #vw375:checked ~ .canvas .pane iframe{ width:375px; }
+  #vwfull:checked ~ .variant-bar label[for=vwfull],
+  #vw768:checked ~ .variant-bar label[for=vw768],
+  #vw375:checked ~ .variant-bar label[for=vw375]{ background:var(--c-sub); color:#fff; border-color:var(--c-sub); }
+
+  @media print{
+    .toolchrome, .variant-bar, .toolbar, .vwseg, .regen-msg{ display:none !important; }
+    .canvas{ padding:0; }
+    .pane iframe{ box-shadow:none; }
+  }
 </style>
 </head>
-<body data-folder="samples/03_クリニック_ナビ下配置">
+<body>
+<div class="mock-compare" data-folder="samples/03_クリニック_ナビ下配置" data-variants="3">
 
-  <input type="radio" name="variant" id="ra" checked>
-  <input type="radio" name="variant" id="rb">
-  <input type="radio" name="variant" id="rc">
-  <input type="radio" name="vw" id="vwfull" checked>
-  <input type="radio" name="vw" id="vw768">
-  <input type="radio" name="vw" id="vw375">
+  <!-- 隠しラジオ（.canvas より前に配置・兄弟結合子で切替） -->
+  <input class="vswitch" type="radio" name="variant" id="ra" checked>
+  <input class="vswitch" type="radio" name="variant" id="rb">
+  <input class="vswitch" type="radio" name="variant" id="rc">
+  <input class="vwswitch" type="radio" name="vw" id="vwfull" checked>
+  <input class="vwswitch" type="radio" name="vw" id="vw768">
+  <input class="vwswitch" type="radio" name="vw" id="vw375">
 
   <div class="toolchrome">
     <div class="proj-head">
-      <span class="pj">サンプル歯科クリニック</span>
-      <span class="meta">生成日 2026-09-03 ／ 3案 ／ デザインラフ（実在の医院ではありません）</span>
+      <span class="proj-name">サンプル歯科クリニック</span>
+      <span class="proj-meta">生成日 2026-09-02 ／ 3案</span>
     </div>
     <div class="settings-chips">
-      <span class="chip">業種: クリニック・病院・介護リハビリ</span>
-      <span class="chip">カラム: 1col</span>
-      <span class="chip">ナビ位置: ヒーロー下</span>
-      <span class="chip">テイスト: 清潔・安心</span>
-      <span class="chip">主色: #3e9aa6</span>
-      <span class="chip">アタリ: a方式（色面）</span>
+      <span class="chip">業種 <b>クリニック・病院・介護リハビリ</b></span>
+      <span class="chip">カラム <b>1col</b></span>
+      <span class="chip">テイスト <b>清潔・安心</b></span>
+      <span class="chip"><span class="sw" style="background:#3e9aa6"></span>配色 <b>#3e9aa6</b></span>
+      <span class="chip">アタリ <b>standard</b></span>
     </div>
   </div>
 
   <div class="variant-bar">
     <div class="seg">
-      <label for="ra">案A ベース</label>
-      <label for="rb">案B 濃色・上質</label>
-      <label for="rc">案C 明色・ポップ</label>
+      <label for="ra">案A</label>
+      <label for="rb">案B</label>
+      <label for="rc">案C</label>
+    </div>
+    <div class="thumbstrip">
+      <div class="vthumb va"><label for="ra"><div class="mini"><div class="bar"></div><div class="body"></div></div></label>
+        <div class="cap"><span>案A</span><a href="index-a.html" target="_blank" class="full">原寸 ↗</a></div></div>
+      <div class="vthumb vb"><label for="rb"><div class="mini"><div class="bar"></div><div class="body"></div></div></label>
+        <div class="cap"><span>案B</span><a href="index-b.html" target="_blank" class="full">原寸 ↗</a></div></div>
+      <div class="vthumb vc"><label for="rc"><div class="mini"><div class="bar"></div><div class="body"></div></div></label>
+        <div class="cap"><span>案C</span><a href="index-c.html" target="_blank" class="full">原寸 ↗</a></div></div>
     </div>
     <div class="vwseg">
       <label for="vwfull">全幅</label>
@@ -106,33 +160,21 @@
     </div>
   </div>
 
-  <div class="thumbstrip">
-    <div class="vthumb va">
-      <label for="ra"><div class="sw"><div class="bar"></div><div class="bd">案A</div></div></label>
-      <div class="cap">案A ／ <a class="full" href="index-a.html" target="_blank">原寸 ↗</a></div>
-    </div>
-    <div class="vthumb vb">
-      <label for="rb"><div class="sw"><div class="bar"></div><div class="bd">案B</div></div></label>
-      <div class="cap">案B ／ <a class="full" href="index-b.html" target="_blank">原寸 ↗</a></div>
-    </div>
-    <div class="vthumb vc">
-      <label for="rc"><div class="sw"><div class="bar"></div><div class="bd">案C</div></div></label>
-      <div class="cap">案C ／ <a class="full" href="index-c.html" target="_blank">原寸 ↗</a></div>
-    </div>
-  </div>
-
   <div class="toolbar">
-    <span class="print-hint">🖨 高品質なPDFは、各案の「原寸 ↗」で開いた画面から印刷（PDFで保存）してください。</span>
-    <div class="regen">
-      <label for="regen-addr" style="font-size:12px;color:#678;">🔄 セクション再生成</label>
+    <a class="tb-btn print-btn print-a" href="index-a.html" target="_blank">🖨 案Aを印刷 / PDFで保存</a>
+    <a class="tb-btn print-btn print-b" href="index-b.html" target="_blank">🖨 案Bを印刷 / PDFで保存</a>
+    <a class="tb-btn print-btn print-c" href="index-c.html" target="_blank">🖨 案Cを印刷 / PDFで保存</a>
+    <span class="tb-btn" style="background:transparent;border:0;color:#8a8578">← 設定を変えるには設定画面で作り直してください</span>
+    <div class="regen-ctl">
+      <span style="font-size:13px;color:#6b6558">🔄 セクション再生成</span>
       <select id="regen-addr">
         <option value="">読み込み中…</option>
       </select>
       <select id="regen-type" class="regen-type" disabled></select>
-      <button id="regen-btn" disabled>このセクションを再生成</button>
-      <span class="rg-msg" id="regen-msg"></span>
+      <button class="tb-btn" id="regen-btn" disabled>このセクションを再生成</button>
     </div>
   </div>
+  <div class="regen-msg" id="regen-msg">ローカルブリッジの状態を確認しています…</div>
 
   <div class="canvas">
     <div class="pane" id="paneA"><iframe src="index-a.html" title="案A プレビュー"></iframe></div>
@@ -140,9 +182,10 @@
     <div class="pane" id="paneC"><iframe src="index-c.html" title="案C プレビュー"></iframe></div>
   </div>
 
+</div>
 <script>
   (function () {
-    var root = document.querySelector('body');
+    var root = document.querySelector('.mock-compare');
     var folder = root.getAttribute('data-folder');
     var btn = document.getElementById('regen-btn');
     var sel = document.getElementById('regen-addr');

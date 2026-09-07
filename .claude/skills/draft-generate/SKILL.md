@@ -177,21 +177,39 @@ KLK-006 で確定した**生成指示書JSON**（`schema:"design-draft-instructi
   `@media (max-width:640px)`・モバイルファーストで `.m-aside` を本文の後ろに畳む §8）。
 - **成否の把握（一部失敗・U-G）**: 各案の生成が成立したかを案ごとに把握する。成功した案のみ letter を成功順に a→b→c で
   確定し、**失敗案は保存も参照もしない**。失敗があれば手順4で `compare.html` の `.partial-note` に焼き込み、手順5で報告する。
-- **比較ハブ `compare.html`（`variants≥2` のみ・DRAFT_RULES §13）**: 成功案が2件以上のとき、案切替（隠しラジオ
-  `type="radio" name="variant"` ＋ 兄弟結合子 `#ra:checked ~ .canvas #paneA{display:block}` の **CSS-only**）・各 `.pane` の
-  相対 `<iframe src="index-{letter}.html">`・サムネイル `.thumbstrip`/`.vthumb`・原寸別タブ
-  `<a href="index-{letter}.html" target="_blank">`・`@media print`（chrome 非表示）を備えた**単一ファイル・外部依存ゼロ**の
-  比較ハブを書く。iframe・原寸リンクとも**同ディレクトリ相対 `.html` のみ**（外部URL 0）。`variants:1` では作らない。
-  - **画面幅プレビュー切替（REQ-201・KLK-062・DRAFT_RULES §13 骨格8）**: variant-bar に `.vwseg`（全幅 / 768px / 375px）を置き、
-    第2の隠しラジオ群 `type="radio" name="vw"`（`vwfull` 既定 checked / `vw768` / `vw375`）＋兄弟結合子
-    `#vw375:checked ~ .canvas .pane iframe{width:375px}` で iframe の幅を切り替える。**CSS-only・追加 JS なし**。
-    `@media print` で `.vwseg` を隠す。案切替（`name="variant"`）とは `name` が異なるため独立して機能する。
-    **スマホ表示版を別ファイルで二重生成してはならない**（生成物は §8 によりレスポンシブ）。
-  - **🔄 セクション再生成コントロール（REQ-103・KLK-012・additive）**: `compare.html` の toolbar 近傍に、番地 `<select>`＋
-    「🔄 このセクションを再生成」ボタンと、ルート要素の `data-folder="mockups/{日付}_{案件名}"`、`</body>` 直前の health-gated
-    インライン fetch（`GET /health` 約800ms → 成功で checked ラジオの letter＋番地を `POST http://127.0.0.1:8765/regenerate` へ・
-    非稼働時は無効化して手動 `/draft-regenerate` を案内・localhost fetch のみで外部URL 0）を焼き込む（DRAFT_RULES §13/§14）。
-    既存の隠しラジオ／iframe／サムネイル／`@media print` 構造は変えない（additive）。
+- **★比較ハブ `compare.html` は書かない（KLK-103・DRAFT_RULES §13.0）**: 案の HTML を書き終えたら、
+  次を**実行するだけ**でよい。手で書いてはならない。
+
+  ```bash
+  python3 draft-gen/make_compare.py mockups/{YYYY-MM-DD}_{案件名}
+  ```
+
+  `draft-gen/compare_template.html` を `draft-gen/make_compare.py` が埋めて書き出す。
+  **案の数（1 or 3）はフォルダの中身から自動判別**するので、引数はフォルダだけでよい。
+  **ローカルブリッジ経由の生成ではブリッジが自動実行する**ので、その場合は何もしなくてよい。
+
+  **なぜ書かせないのか**: あの JS（約160行）は**デザインではなく道具立て**で、どの生成物でも
+  中身は同じ。毎回書き起こさせていたため、KLK-079/080/081/092 で積み上げた振る舞いが
+  **作り直しのたびに落ちた**（見本の作り直しで6項目中4項目が欠落・KLK-102）。
+  幅切替・🔄 セクション再生成・見本ガード・型セレクタは、すべてテンプレート側が持っている。
+  **★教訓: 毎回同じものを書かせるな。固定できるものは固定する。**
+
+- **成否の把握（一部失敗・U-G）**: 失敗案のファイルは作らない。`make_compare.py` は
+  **実在するファイルだけ**を見て compare.html を組むので、失敗案は自動的に参照されない。
+  失敗があれば手順5で報告する。
+
+- **★スマホ表示版を別ファイルで二重生成してはならない**（REQ-201・KLK-062）。
+  これは `compare.html` の話ではなく**案の HTML の話**なので、テンプレート化とは無関係に守る。
+  生成物は §8 によりレスポンシブで、スマホでの見え方は
+  **compare.html の画面幅プレビュー切替**（`name="vw"`・全幅 / 768px / 375px）で確認する。
+  その切替は**テンプレートが持っている**ので、生成側は何もしなくてよい。
+  `index-mobile.html` のような別ファイルを作ると、直すべき箇所が2倍になる。
+
+- **テンプレートが提供する機能（生成側は書かないが、あることを知っておく）**:
+  **画面幅プレビュー切替**（`name="vw"`）／**🔄 セクション再生成**（番地 `<select>`＋型 `<select>`＋
+  `POST /regenerate`・health-gated・`data-folder` をルートに焼き込み・非稼働時は無効化して
+  手動 `/draft-regenerate` を案内・localhost fetch のみで外部URL 0）／原寸リンク／印刷導線／
+  見本ガード。**すべて `compare_template.html` 側にあり、案件ごとに変わるのは配色4色だけ。**
 
 ### 4. 保存とフォルダ自動オープン
 
