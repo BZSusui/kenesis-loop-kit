@@ -1,0 +1,850 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kenesis Loop Kit 使い方マニュアル</title>
+<!--
+  KLK-098 使い方マニュアル。
+  ★不変条件（チケット AC1/AC3/AC5）:
+    - 単一HTML・外部依存ゼロ（外部CSS・外部JS・外部URLの参照を一切置かない）
+    - 図解は CSS/SVG のみ。ラスタ画像を埋め込まない
+    - 実在のカタログ内容（案件名・業種・エントリ名・画像）を一切載せない
+      ＝ このマニュアルはクライアント説明にも使う想定のため
+  記述は実物（draft-gen/index.html・bridge.py・見本の compare.html）から取ること。
+  テスト: tests/site/check_klk098.py が上記を機械検査する。
+-->
+<style>
+  :root{
+    --ink:#1f2328; --muted:#5b6875; --line:#dfe3e8; --bg:#ffffff; --panel:#f6f8fa;
+    --accent:#2f6f4f; --accent-soft:#e8f2ec; --warn:#8a5a00; --warn-soft:#fff6e5;
+    --nav-w:264px; --maxw:820px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+    line-height:1.85; font-size:15px;
+  }
+
+  /* ===== サイドナビ ===== */
+  .layout{display:grid; grid-template-columns:var(--nav-w) 1fr; min-height:100vh}
+  .side{
+    position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+    border-right:1px solid var(--line); background:var(--panel); padding:22px 0 40px;
+  }
+  .side .brand{padding:0 20px 14px; border-bottom:1px solid var(--line); margin-bottom:12px}
+  .side .brand b{display:block; font-size:14px; letter-spacing:.02em}
+  .side .brand span{display:block; font-size:11px; color:var(--muted); margin-top:2px}
+  .side nav{font-size:13px}
+  .side .part{
+    padding:14px 20px 4px; font-size:11px; letter-spacing:.12em; color:var(--muted);
+    text-transform:none;
+  }
+  .side a{
+    display:block; padding:5px 20px 5px 22px; color:var(--ink); text-decoration:none;
+    border-left:3px solid transparent;
+  }
+  .side a:hover{background:#eef1f4}
+  .side a.on{border-left-color:var(--accent); background:var(--accent-soft); font-weight:700}
+
+  /* ===== 本文 ===== */
+  main{padding:40px 44px 120px; max-width:calc(var(--maxw) + 88px)}
+  h1{font-size:27px; letter-spacing:.02em; margin:0 0 6px}
+  .sub{color:var(--muted); margin:0 0 34px; font-size:13.5px}
+  section{scroll-margin-top:24px; padding-top:14px}
+  h2{
+    font-size:20px; margin:44px 0 14px; padding-bottom:8px;
+    border-bottom:2px solid var(--accent);
+  }
+  h3{font-size:15.5px; margin:26px 0 8px}
+  p{margin:0 0 13px}
+  ul,ol{margin:0 0 14px; padding-left:1.4em}
+  li{margin-bottom:5px}
+  code{
+    background:var(--panel); border:1px solid var(--line); border-radius:3px;
+    padding:1px 5px; font-family:"SF Mono",Menlo,Consolas,monospace; font-size:12.5px;
+  }
+  pre{
+    background:var(--panel); border:1px solid var(--line); border-radius:6px;
+    padding:12px 14px; overflow-x:auto; font-size:12.5px; line-height:1.7; margin:0 0 15px;
+  }
+  pre code{background:none; border:none; padding:0}
+  table{border-collapse:collapse; width:100%; margin:0 0 16px; font-size:13.5px}
+  th,td{border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top}
+  th{background:var(--panel); font-weight:700; white-space:nowrap}
+  .note,.warn{
+    border-left:4px solid var(--accent); background:var(--accent-soft);
+    padding:11px 15px; margin:0 0 16px; border-radius:0 5px 5px 0; font-size:13.5px;
+  }
+  .warn{border-left-color:var(--warn); background:var(--warn-soft)}
+  .note b,.warn b{display:block; margin-bottom:3px}
+  figure{margin:0 0 20px}
+  figure svg{
+    display:block; width:100%; height:auto; border:1px solid var(--line);
+    border-radius:6px; background:#fff;
+  }
+  figcaption{font-size:12px; color:var(--muted); margin-top:6px; text-align:center}
+  .steps{counter-reset:s; list-style:none; padding-left:0}
+  .steps>li{
+    counter-increment:s; position:relative; padding-left:34px; margin-bottom:11px;
+  }
+  .steps>li::before{
+    content:counter(s); position:absolute; left:0; top:2px;
+    width:23px; height:23px; border-radius:50%; background:var(--accent); color:#fff;
+    font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;
+  }
+  .kbd{
+    display:inline-block; border:1px solid #c6ccd2; border-bottom-width:2px; border-radius:4px;
+    padding:0 6px; background:#fff; font-size:12px; font-family:inherit;
+  }
+  .totop{
+    display:inline-block; margin-top:8px; font-size:12px; color:var(--muted);
+    text-decoration:none;
+  }
+  .totop:hover{color:var(--accent)}
+
+  /* ===== 印刷 ===== */
+  @media print{
+    .layout{display:block}
+    .side{display:none}
+    main{padding:0; max-width:none}
+    body{font-size:11pt; line-height:1.7}
+    h2{page-break-after:avoid}
+    figure,table,pre,.note,.warn{page-break-inside:avoid}
+    a{color:inherit; text-decoration:none}
+  }
+  @media (max-width:860px){
+    .layout{grid-template-columns:1fr}
+    .side{position:static; height:auto; border-right:none; border-bottom:1px solid var(--line)}
+    main{padding:28px 20px 80px}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside class="side">
+  <div class="brand">
+    <b>Kenesis Loop Kit</b>
+    <span>使い方マニュアル</span>
+  </div>
+  <nav id="toc">
+    <div class="part">0 このツールについて</div>
+    <a href="#what">何をするツールか</a>
+    <a href="#cando">できること・できないこと</a>
+    <div class="part">1 はじめる</div>
+    <a href="#need">必要なもの</a>
+    <a href="#start">起動する</a>
+    <div class="part">2 ラフを作る</div>
+    <a href="#screen1">生成画面の全体像</a>
+    <a href="#columns">カラム構成を選ぶ</a>
+    <a href="#composition">ページ構成を組み立てる</a>
+    <a href="#colors">配色を決める</a>
+    <a href="#refs">参考にする素材</a>
+    <a href="#mv">メインビジュアル</a>
+    <a href="#variants">案の数とオプション</a>
+    <div class="part">3 できたラフを見る</div>
+    <a href="#compare">3案を見比べる</a>
+    <a href="#regen">型を入れ替える</a>
+    <a href="#print">印刷・PDFにする</a>
+    <div class="part">4 型のカタログ</div>
+    <a href="#pools">セクション14種 × 各6型</a>
+    <div class="part">5 困ったとき</div>
+    <a href="#trouble">つまずいたら</a>
+  </nav>
+</aside>
+
+<main>
+<h1>Kenesis Loop Kit 使い方マニュアル</h1>
+<p class="sub">デザインラフ（ワイヤーフレーム）を3案まとめて作るためのツールです。このマニュアルは画面ごとの操作を説明します。導入・トラブル対応は同梱の <code>README.md</code> をご覧ください。</p>
+
+<section id="what">
+<h2>何をするツールか</h2>
+
+<p>デザインの<b>たたき台</b>を、ブラウザ上で条件を選ぶだけで作ります。業種・カラム構成・載せるセクション・配色を指定すると、<b>3案ぶんのラフが一度に</b>できあがります。</p>
+
+<p>できあがるのは<b>1枚のHTMLファイル</b>です。ブラウザで開くだけで見られ、そのまま印刷やPDF化ができます。写真の部分は「アタリ枠」（どんな写真がどの大きさで入るかを示す枠）になっていて、実写真は入りません。</p>
+
+<figure>
+<svg viewBox="0 0 800 190" role="img" aria-label="全体の流れ図">
+  <defs>
+    <marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#5b6875"/>
+    </marker>
+  </defs>
+  <g font-family="Hiragino Sans, sans-serif" font-size="12" fill="#1f2328">
+    <rect x="14" y="52" width="132" height="66" rx="6" fill="#f6f8fa" stroke="#dfe3e8"/>
+    <text x="80" y="79" text-anchor="middle" font-size="11.5" font-weight="700">① 起動する</text>
+    <text x="80" y="98" text-anchor="middle" font-size="10.5" fill="#5b6875">起動.command</text>
+
+    <rect x="176" y="38" width="160" height="94" rx="6" fill="#e8f2ec" stroke="#2f6f4f"/>
+    <text x="256" y="66" text-anchor="middle" font-size="11.5" font-weight="700">② 生成画面</text>
+    <text x="256" y="85" text-anchor="middle" font-size="10.5" fill="#5b6875">業種・カラム構成</text>
+    <text x="256" y="101" text-anchor="middle" font-size="10.5" fill="#5b6875">ページ構成・配色</text>
+    <text x="256" y="117" text-anchor="middle" font-size="10.5" fill="#5b6875">を選ぶ</text>
+
+    <rect x="366" y="52" width="120" height="66" rx="6" fill="#f6f8fa" stroke="#dfe3e8"/>
+    <text x="426" y="79" text-anchor="middle" font-size="11.5" font-weight="700">③ 生成</text>
+    <text x="426" y="98" text-anchor="middle" font-size="10.5" fill="#5b6875">数分待つ</text>
+
+    <rect x="516" y="38" width="160" height="94" rx="6" fill="#e8f2ec" stroke="#2f6f4f"/>
+    <text x="596" y="66" text-anchor="middle" font-size="11.5" font-weight="700">④ 比較画面</text>
+    <text x="596" y="85" text-anchor="middle" font-size="10.5" fill="#5b6875">3案を見比べる</text>
+    <text x="596" y="101" text-anchor="middle" font-size="10.5" fill="#5b6875">幅を切り替える</text>
+    <text x="596" y="117" text-anchor="middle" font-size="10.5" fill="#5b6875">型を入れ替える</text>
+
+    <rect x="706" y="52" width="80" height="66" rx="6" fill="#f6f8fa" stroke="#dfe3e8"/>
+    <text x="746" y="79" text-anchor="middle" font-size="11.5" font-weight="700">⑤ 印刷</text>
+    <text x="746" y="98" text-anchor="middle" font-size="10.5" fill="#5b6875">PDF保存</text>
+
+    <path d="M148,85 L172,85" stroke="#5b6875" stroke-width="1.4" marker-end="url(#ar)"/>
+    <path d="M338,85 L362,85" stroke="#5b6875" stroke-width="1.4" marker-end="url(#ar)"/>
+    <path d="M488,85 L512,85" stroke="#5b6875" stroke-width="1.4" marker-end="url(#ar)"/>
+    <path d="M678,85 L702,85" stroke="#5b6875" stroke-width="1.4" marker-end="url(#ar)"/>
+
+    <path d="M596,136 L596,158 L256,158 L256,136" stroke="#2f6f4f" stroke-width="1.3"
+          fill="none" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+    <text x="426" y="174" text-anchor="middle" font-size="10.5" fill="#2f6f4f">条件を変えて作り直すこともできます</text>
+  </g>
+</svg>
+<figcaption>起動から印刷までの流れ</figcaption>
+</figure>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="cando">
+<h2>できること・できないこと</h2>
+
+<h3>できること</h3>
+<ul>
+  <li>条件を選ぶだけで、<b>3案ぶんのデザインラフ</b>が一度にできる</li>
+  <li>載せるセクション（MV・ABOUT・MENU など）を<b>好きな順番に並べ</b>、<b>同じセクションを複数回</b>置ける</li>
+  <li>できあがったあとで、<b>セクションごとにレイアウトの型を入れ替え</b>られる</li>
+  <li>PC幅・タブレット幅・スマホ幅で<b>見え方を切り替え</b>られる</li>
+  <li>そのまま<b>印刷・PDF保存</b>できる</li>
+</ul>
+
+<h3>できないこと</h3>
+<ul>
+  <li><b>実写真は入りません。</b>写真は「アタリ枠」（どんな写真が入るかの説明つきの枠）になります。例外としてメインビジュアルだけは1枚アップロードできます</li>
+  <li><b>本番のコードにはなりません。</b>あくまでデザインを決めるためのたたき台です</li>
+  <li><b>フォームは動きません。</b>問い合わせフォームなども見た目だけです</li>
+</ul>
+
+<div class="note">
+<b>アタリ枠とは</b>
+「ここに横長の写真が入る」「ここに丸いスタッフ写真が3枚入る」といった、<b>写真の位置と大きさを示す枠</b>のことです。枠のなかに「どんな写真を用意すればよいか」の説明が書かれているので、そのまま撮影指示や素材集めに使えます。
+</div>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="need">
+<h2>必要なもの</h2>
+
+<table>
+<tr><th>もの</th><th>用途</th></tr>
+<tr><td>ブラウザ</td><td>画面の操作と、できあがったラフの表示</td></tr>
+<tr><td>Python 3</td><td>ブラウザとツールをつなぐ小さなプログラム（ブリッジ）を動かす</td></tr>
+<tr><td>Claude Code</td><td>ラフの生成本体</td></tr>
+</table>
+
+<p>入っているかの確認方法、入っていないときの対処は <code>README.md</code> の「動かすのに必要なもの」「困ったときは」に書いてあります。</p>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="start">
+<h2>起動する</h2>
+
+<ol class="steps">
+  <li>受け取ったフォルダを、書き込みができる場所（デスクトップや書類フォルダ）に置きます</li>
+  <li>フォルダのなかの <code>draft-gen</code> を開きます</li>
+  <li><b>Mac</b> なら <code>起動.command</code>、<b>Windows</b> なら <code>起動.bat</code> をダブルクリックします</li>
+  <li>黒い画面（ターミナル）が出て、そのままブラウザに生成画面が開きます</li>
+</ol>
+
+<div class="warn">
+<b>黒い画面は閉じないでください</b>
+この画面がブラウザとツールをつないでいます。閉じると生成ができなくなります。作業が終わったらウィンドウを閉じて構いません。
+</div>
+
+<p>ダブルクリックしても開かないときは <code>README.md</code> の「困ったときは」をご覧ください。</p>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="screen1">
+<h2>生成画面の全体像</h2>
+
+<p>上から順に埋めていく形です。すべてを埋める必要はありません。<b>案件名</b>と<b>業種</b>だけでも生成できます。</p>
+
+<table>
+<tr><th>節</th><th>何を決めるか</th><th>省略</th></tr>
+<tr><td>案件名</td><td>保存先フォルダの名前になります</td><td>必須</td></tr>
+<tr><td>業種</td><td>文言やセクションの選び方の土台になります</td><td>必須</td></tr>
+<tr><td>カラム構成</td><td>ページ全体の骨組み（1カラム／2カラム／3カラム）</td><td>可</td></tr>
+<tr><td>本文コンテンツ構成</td><td>載せるセクションと<b>並び順</b>。同じセクションを複数置けます</td><td>可</td></tr>
+<tr><td>デザインテイスト</td><td>雰囲気の方向づけ</td><td>可</td></tr>
+<tr><td>配色</td><td>4色。直接入力・自動生成・ジェネレーター・見本サイトURLの4通り</td><td>可</td></tr>
+<tr><td>参考にする素材</td><td>登録済みのラフから「こういう感じ」を指定します</td><td>可</td></tr>
+<tr><td>メインビジュアル アタリ画像の入れ方</td><td>実写真を1枚だけ入れられます</td><td>可</td></tr>
+<tr><td>生成する案の数・オプション</td><td>1案か3案か</td><td>既定は3案</td></tr>
+</table>
+
+<p>いちばん下に<b>生成指示書</b>（選んだ内容がまとまったテキスト）が出ます。ふだんは見なくて構いません。「生成」ボタンを押せば、この内容がそのまま生成に使われます。</p>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="columns">
+<h2>カラム構成を選ぶ</h2>
+
+<p>ページ全体の骨組みです。6種類あります。</p>
+
+<figure>
+<svg viewBox="0 0 800 260" role="img" aria-label="カラム構成6種の模式図">
+  <g font-family="Hiragino Sans, sans-serif" font-size="10.5" fill="#1f2328">
+    <!-- 1col -->
+    <rect x="20" y="24" width="112" height="86" fill="#fff" stroke="#dfe3e8"/>
+    <rect x="20" y="24" width="112" height="13" fill="#5b6875"/>
+    <rect x="26" y="43" width="100" height="24" fill="#c9d3cd"/>
+    <rect x="26" y="72" width="100" height="14" fill="#eef1f4"/>
+    <rect x="26" y="90" width="100" height="14" fill="#eef1f4"/>
+    <text x="76" y="126" text-anchor="middle" font-weight="700">1カラム</text>
+    <text x="76" y="141" text-anchor="middle" font-size="9.5" fill="#5b6875">いちばん素直</text>
+
+    <!-- 2col-body-left -->
+    <rect x="164" y="24" width="112" height="86" fill="#fff" stroke="#dfe3e8"/>
+    <rect x="164" y="24" width="112" height="13" fill="#5b6875"/>
+    <rect x="170" y="43" width="100" height="24" fill="#c9d3cd"/>
+    <rect x="170" y="72" width="30" height="32" fill="#e8f2ec" stroke="#2f6f4f" stroke-width=".8"/>
+    <rect x="205" y="72" width="65" height="32" fill="#eef1f4"/>
+    <text x="220" y="126" text-anchor="middle" font-weight="700">本文2カラム（左）</text>
+    <text x="220" y="141" text-anchor="middle" font-size="9.5" fill="#5b6875">MVは全幅・本文だけ2列</text>
+
+    <!-- 2col-body-right -->
+    <rect x="308" y="24" width="112" height="86" fill="#fff" stroke="#dfe3e8"/>
+    <rect x="308" y="24" width="112" height="13" fill="#5b6875"/>
+    <rect x="314" y="43" width="100" height="24" fill="#c9d3cd"/>
+    <rect x="314" y="72" width="65" height="32" fill="#eef1f4"/>
+    <rect x="384" y="72" width="30" height="32" fill="#e8f2ec" stroke="#2f6f4f" stroke-width=".8"/>
+    <text x="364" y="126" text-anchor="middle" font-weight="700">本文2カラム（右）</text>
+    <text x="364" y="141" text-anchor="middle" font-size="9.5" fill="#5b6875">同上・サイドバーが右</text>
+
+    <!-- 2col-full-left -->
+    <rect x="452" y="24" width="112" height="86" fill="#fff" stroke="#dfe3e8"/>
+    <rect x="452" y="24" width="30" height="86" fill="#e8f2ec" stroke="#2f6f4f" stroke-width=".8"/>
+    <rect x="487" y="24" width="77" height="13" fill="#5b6875"/>
+    <rect x="490" y="43" width="71" height="24" fill="#c9d3cd"/>
+    <rect x="490" y="72" width="71" height="32" fill="#eef1f4"/>
+    <text x="508" y="126" text-anchor="middle" font-weight="700">全体2カラム（左）</text>
+    <text x="508" y="141" text-anchor="middle" font-size="9.5" fill="#5b6875">サイドバーが上から下まで</text>
+
+    <!-- 2col-full-right -->
+    <rect x="596" y="24" width="112" height="86" fill="#fff" stroke="#dfe3e8"/>
+    <rect x="678" y="24" width="30" height="86" fill="#e8f2ec" stroke="#2f6f4f" stroke-width=".8"/>
+    <rect x="596" y="24" width="77" height="13" fill="#5b6875"/>
+    <rect x="599" y="43" width="71" height="24" fill="#c9d3cd"/>
+    <rect x="599" y="72" width="71" height="32" fill="#eef1f4"/>
+    <text x="652" y="126" text-anchor="middle" font-weight="700">全体2カラム（右）</text>
+    <text x="652" y="141" text-anchor="middle" font-size="9.5" fill="#5b6875">同上・右側</text>
+
+    <!-- 3col -->
+    <rect x="20" y="168" width="112" height="60" fill="#fff" stroke="#dfe3e8"/>
+    <rect x="20" y="168" width="112" height="13" fill="#5b6875"/>
+    <rect x="24" y="187" width="32" height="35" fill="#e8f2ec" stroke="#2f6f4f" stroke-width=".8"/>
+    <rect x="60" y="187" width="32" height="35" fill="#eef1f4"/>
+    <rect x="96" y="187" width="32" height="35" fill="#e8f2ec" stroke="#2f6f4f" stroke-width=".8"/>
+    <text x="76" y="244" text-anchor="middle" font-weight="700">3カラム</text>
+
+    <text x="180" y="192" font-size="11" fill="#5b6875">緑色の細い列がサイドバーです。</text>
+    <text x="180" y="212" font-size="11" fill="#5b6875">迷ったら「1カラム」で構いません。</text>
+    <text x="180" y="232" font-size="11" fill="#5b6875">あとから条件を変えて作り直せます。</text>
+  </g>
+</svg>
+<figcaption>カラム構成6種</figcaption>
+</figure>
+
+<div class="note">
+<b>狭い列に入るセクションは自動で縦積みになります</b>
+2カラム・3カラムを選ぶと本文の列が狭くなります。「画像と文章を左右に並べる」タイプのセクションは、狭い列では自動的に<b>上下に積み直され</b>ます。潰れた見た目にはなりません。
+</div>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="composition">
+<h2>ページ構成を組み立てる</h2>
+
+<p>「本文コンテンツ構成」の節です。<b>載せるセクションを選び、上から並べたい順に並べる</b>ところです。このツールでいちばんよく触る場所です。</p>
+
+<h3>できること</h3>
+<ul>
+  <li>載せたいセクションを<b>追加</b>する</li>
+  <li>並び順を<b>入れ替える</b></li>
+  <li><b>同じセクションを複数回</b>置く（例: MENU を「ランチ」と「ディナー」で2つ）</li>
+  <li>行ごとに<b>見出し・リード文・レイアウト型・詳細ページ誘導ボタン</b>を指定する</li>
+  <li>いらない行を<b>削除</b>する</li>
+</ul>
+
+<h3>並べ替えかた — 2通りあります</h3>
+
+<p>各行の左端に <b><span class="kbd">⠿</span></b> という点々のマークがあります。<b>これを掴んだまま動かす（ドラッグする）</b>と、行を好きな位置へ移動できます。</p>
+
+<ol class="steps">
+  <li><span class="kbd">⠿</span> の上にマウスカーソルを置きます</li>
+  <li><b>マウスの左ボタンを押したまま</b>、上下に動かします</li>
+  <li>入れたい位置まで来たら<b>ボタンを離します</b></li>
+</ol>
+
+<p>ドラッグが使いにくいときは、各行の <span class="kbd">↑</span> <span class="kbd">↓</span> ボタンでも1つずつ動かせます。どちらを使っても結果は同じです。</p>
+
+<figure>
+<svg viewBox="0 0 800 250" role="img" aria-label="⠿を掴んでドラッグする操作の図">
+  <defs>
+    <marker id="ar2" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#2f6f4f"/>
+    </marker>
+  </defs>
+  <g font-family="Hiragino Sans, sans-serif" font-size="11" fill="#1f2328">
+
+    <text x="26" y="24" font-size="11.5" font-weight="700" fill="#5b6875">押したまま動かす前</text>
+    <g>
+      <rect x="26" y="36" width="230" height="30" rx="4" fill="#fff" stroke="#dfe3e8"/>
+      <text x="42" y="55" font-size="13" fill="#8a94a0">⠿</text>
+      <text x="64" y="55">ABOUT</text>
+      <rect x="26" y="72" width="230" height="30" rx="4" fill="#fff" stroke="#dfe3e8"/>
+      <text x="42" y="91" font-size="13" fill="#8a94a0">⠿</text>
+      <text x="64" y="91">MENU</text>
+      <rect x="26" y="108" width="230" height="30" rx="4" fill="#fff" stroke="#2f6f4f" stroke-width="1.6"/>
+      <text x="42" y="127" font-size="13" fill="#2f6f4f" font-weight="700">⠿</text>
+      <text x="64" y="127" font-weight="700">GALLERY</text>
+      <rect x="26" y="144" width="230" height="30" rx="4" fill="#fff" stroke="#dfe3e8"/>
+      <text x="42" y="163" font-size="13" fill="#8a94a0">⠿</text>
+      <text x="64" y="163">CONTACT</text>
+    </g>
+    <text x="26" y="196" font-size="10.5" fill="#2f6f4f">↑ GALLERY の ⠿ を押さえる</text>
+
+    <path d="M282,105 L336,105" stroke="#2f6f4f" stroke-width="1.6" marker-end="url(#ar2)"/>
+    <text x="309" y="96" text-anchor="middle" font-size="10" fill="#2f6f4f">上へ動かす</text>
+
+    <text x="360" y="24" font-size="11.5" font-weight="700" fill="#5b6875">ボタンを離したあと</text>
+    <g>
+      <rect x="360" y="36" width="230" height="30" rx="4" fill="#fff" stroke="#dfe3e8"/>
+      <text x="376" y="55" font-size="13" fill="#8a94a0">⠿</text>
+      <text x="398" y="55">ABOUT</text>
+      <rect x="360" y="72" width="230" height="30" rx="4" fill="#e8f2ec" stroke="#2f6f4f" stroke-width="1.6"/>
+      <text x="376" y="91" font-size="13" fill="#2f6f4f" font-weight="700">⠿</text>
+      <text x="398" y="91" font-weight="700">GALLERY</text>
+      <rect x="360" y="108" width="230" height="30" rx="4" fill="#fff" stroke="#dfe3e8"/>
+      <text x="376" y="127" font-size="13" fill="#8a94a0">⠿</text>
+      <text x="398" y="127">MENU</text>
+      <rect x="360" y="144" width="230" height="30" rx="4" fill="#fff" stroke="#dfe3e8"/>
+      <text x="376" y="163" font-size="13" fill="#8a94a0">⠿</text>
+      <text x="398" y="163">CONTACT</text>
+    </g>
+    <text x="360" y="196" font-size="10.5" fill="#2f6f4f">↑ GALLERY が MENU の上に移動した</text>
+
+    <rect x="616" y="36" width="164" height="138" rx="5" fill="#f6f8fa" stroke="#dfe3e8"/>
+    <text x="632" y="58" font-size="11" font-weight="700">⠿ が使いにくいときは</text>
+    <text x="632" y="80" font-size="10.5" fill="#5b6875">各行の ↑ ↓ ボタンでも</text>
+    <text x="632" y="97" font-size="10.5" fill="#5b6875">1つずつ動かせます。</text>
+    <text x="632" y="124" font-size="10.5" fill="#5b6875">結果はドラッグと同じです。</text>
+    <text x="632" y="151" font-size="10.5" fill="#5b6875">好きなほうをお使いください。</text>
+  </g>
+</svg>
+<figcaption><span class="kbd">⠿</span> を押したまま動かして並べ替える</figcaption>
+</figure>
+
+<h3>同じセクションを複数置く</h3>
+
+<p>MENU を2つ置いて、片方を「ランチ」、もう片方を「ディナー」にする、といった使い方ができます。行ごとの「設定」で見出しとリード文を変えてください。</p>
+
+<table>
+<tr><th>制限</th><th>数</th></tr>
+<tr><td>置ける本文セクションの合計</td><td>12個まで</td></tr>
+<tr><td>同じセクションを置ける数</td><td>3個まで</td></tr>
+<tr><td>ACCESS・CONTACT・SEARCH</td><td>1個まで</td></tr>
+</table>
+
+<h3>行ごとの「設定」</h3>
+
+<table>
+<tr><th>項目</th><th>指定すると</th><th>省略すると</th></tr>
+<tr><td>見出し</td><td>その行の見出しになります</td><td>業種に合わせて自動で決まります</td></tr>
+<tr><td>リード文</td><td>見出しの下の説明文になります</td><td>自動で決まります</td></tr>
+<tr><td>レイアウト型</td><td><b>3案ともその型</b>になります</td><td>案ごとに違う型が割り当てられます</td></tr>
+<tr><td>詳細ページ誘導ボタン</td><td>「くわしく見る ＞」のようなボタンが付きます</td><td>付きません</td></tr>
+</table>
+
+<div class="note">
+<b>並び順を指定すると3案とも同じ並びになります</b>
+順番を自分で決めた場合、3案は<b>同じ順番</b>で作られます。案ごとの違いは<b>配色とレイアウトの型</b>で出ます。「並び順そのものを見比べたい」ときは、並び順を指定せずに生成してください。
+</div>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="colors">
+<h2>配色を決める</h2>
+
+<p>色は<b>4色</b>で決まります。この4色がページ全体に行きわたります。</p>
+
+<figure>
+<svg viewBox="0 0 800 172" role="img" aria-label="4色がページのどこに効くかの図">
+  <g font-family="Hiragino Sans, sans-serif" font-size="11" fill="#1f2328">
+    <rect x="24" y="20" width="188" height="132" fill="#fff" stroke="#dfe3e8"/>
+    <rect x="24" y="20" width="188" height="17" fill="#4c3926"/>
+    <text x="118" y="32" text-anchor="middle" font-size="8.5" fill="#fff">ナビ</text>
+    <rect x="24" y="37" width="188" height="42" fill="#7a5c3e"/>
+    <text x="118" y="55" text-anchor="middle" font-size="9" fill="#fff">メインビジュアル</text>
+    <rect x="86" y="60" width="64" height="13" rx="2" fill="#b7833d"/>
+    <text x="118" y="70" text-anchor="middle" font-size="7.5" fill="#fff">ボタン</text>
+    <rect x="24" y="79" width="188" height="73" fill="#f7f5f3"/>
+    <rect x="38" y="90" width="160" height="7" fill="#d8d2cb"/>
+    <rect x="38" y="102" width="130" height="7" fill="#e4dfd9"/>
+    <rect x="38" y="114" width="145" height="7" fill="#e4dfd9"/>
+    <rect x="86" y="130" width="64" height="13" rx="2" fill="#b7833d"/>
+
+    <g font-size="11.5">
+      <rect x="264" y="24" width="20" height="20" fill="#7a5c3e" stroke="#dfe3e8"/>
+      <text x="296" y="38" font-weight="700">メイン</text>
+      <text x="380" y="38" fill="#5b6875" font-size="10.5">いちばん広い面・メインビジュアルの背景</text>
+
+      <rect x="264" y="56" width="20" height="20" fill="#4c3926" stroke="#dfe3e8"/>
+      <text x="296" y="70" font-weight="700">濃色</text>
+      <text x="380" y="70" fill="#5b6875" font-size="10.5">ナビゲーション・フッターなど締める場所</text>
+
+      <rect x="264" y="88" width="20" height="20" fill="#b7833d" stroke="#dfe3e8"/>
+      <text x="296" y="102" font-weight="700">アクセント</text>
+      <text x="380" y="102" fill="#5b6875" font-size="10.5">ボタン・リンク・強調したい部分</text>
+
+      <rect x="264" y="120" width="20" height="20" fill="#f7f5f3" stroke="#dfe3e8"/>
+      <text x="296" y="134" font-weight="700">背景</text>
+      <text x="380" y="134" fill="#5b6875" font-size="10.5">本文の下地。ほぼ白〜淡い色</text>
+    </g>
+  </g>
+</svg>
+<figcaption>4色がページのどこに効くか</figcaption>
+</figure>
+
+<h3>決め方は4通りあります</h3>
+
+<table>
+<tr><th>やり方</th><th>向いている場面</th></tr>
+<tr><td><b>① 4色を直接入力する</b></td><td>色がもう決まっている</td></tr>
+<tr><td><b>② メインだけ決めて残りを自動生成</b></td><td>メインの色だけ決まっている</td></tr>
+<tr><td><b>③ 配色ジェネレーターで作る</b></td><td>ゼロから決めたい。別画面で色を作り、出力を貼り付けます</td></tr>
+<tr><td><b>④ 見本サイトのURLから読み取る</b></td><td>「このサイトみたいな色で」という参考がある</td></tr>
+</table>
+
+<h3>④ 見本サイトのURLから読み取る</h3>
+
+<ol class="steps">
+  <li>参考にしたいサイトのURLを入力します</li>
+  <li>「配色を読み取る」を押します</li>
+  <li>そのサイトでよく使われている色が<b>色見本として並びます</b></li>
+  <li>よければ「反映」を押すと、4色に入ります</li>
+</ol>
+
+<div class="warn">
+<b>読み取るのは色だけです</b>
+サイトの<b>色以外は何も取り込みません</b>（文章・画像・レイアウトは取得しません）。読み取った内容の保存もしません。<br>
+なお、この機能は<b>外部のサイトへアクセスします</b>。社内の規程で外部アクセスに制限がある場合は、使う前にご確認ください。
+</div>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="refs">
+<h2>参考にする素材</h2>
+
+<p>過去に作ったラフを登録しておくと、「こういう感じで」と<b>参考を指定して</b>生成できます。指定すると、その参考の<b>配色の組み立て方</b>と<b>セクションの並べ方</b>を踏まえた案が作られます。</p>
+
+<h3>選びかた</h3>
+
+<ol class="steps">
+  <li>業種やテイストで絞り込みます</li>
+  <li>サムネイル（小さな見本画像）が並ぶので、参考にしたいものをクリックして選びます</li>
+  <li>最初は<b>18件</b>だけ表示されます。もっと見たいときは「さらに表示する」を押してください</li>
+</ol>
+
+<div class="note">
+<b>選ばなくても生成できます</b>
+参考を指定しない場合は、業種とテイストから自動で組み立てられます。まずは指定せずに1回作ってみて、方向性を変えたいときに使うのがおすすめです。
+</div>
+
+<h3>素材を追加する</h3>
+
+<p>画面から画像をドラッグ&amp;ドロップすると、業種・テイスト・配色などを自動で推定して提案します。<b>そのまま登録はされません。</b>内容を確認して、直すところがあれば直してから登録してください。</p>
+
+<div class="warn">
+<b>登録する画像の取り扱いにご注意ください</b>
+登録した画像とその情報は、ツールのフォルダのなかに保存されます。<b>取り扱いに制限のある画像を登録してよいかは、社内の規程に従ってご判断ください。</b>判断に迷う場合は、AI利用管理責任者にご確認ください。
+</div>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="mv">
+<h2>メインビジュアル</h2>
+
+<p>ページのいちばん上の大きな部分です。ここだけは<b>実写真を1枚アップロードできます</b>。</p>
+
+<table>
+<tr><th>選択肢</th><th>結果</th></tr>
+<tr><td>アタリ枠のまま</td><td>「どんな写真が入るか」の説明つきの枠になります（既定）</td></tr>
+<tr><td>写真をアップロード</td><td>その写真がメインビジュアルに入ります</td></tr>
+</table>
+
+<p>ほかのセクションの写真は、つねにアタリ枠になります。</p>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="variants">
+<h2>案の数とオプション</h2>
+
+<table>
+<tr><th>案の数</th><th>できるもの</th></tr>
+<tr><td><b>3案</b>（おすすめ）</td><td><code>index-a.html</code> / <code>index-b.html</code> / <code>index-c.html</code> と、3つを並べて見る <code>compare.html</code></td></tr>
+<tr><td><b>1案</b></td><td><code>index.html</code> と <code>compare.html</code>。1案でも幅切替・型入れ替えは同じように使えます</td></tr>
+</table>
+
+<p>選び終えたら<b>「生成」</b>を押します。数分かかります（内容によって前後します）。終わると比較画面が自動で開きます。</p>
+
+<div class="note">
+<b>できあがったものはどこにありますか</b>
+<code>mockups/</code> フォルダのなかに、<code>日付_案件名</code> という名前のフォルダができます。そのなかの <code>compare.html</code> をブラウザで開けば、いつでも見返せます。過去のぶんもここに残ります。
+</div>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="compare">
+<h2>3案を見比べる</h2>
+
+<p><code>compare.html</code> が比較画面です。3案が横に並び、同じ位置までまとめてスクロールします。</p>
+
+<h3>幅を切り替える</h3>
+
+<p>画面上部で表示幅を切り替えられます。<b>同じラフがスマホでどう見えるか</b>をその場で確認できます。</p>
+
+<figure>
+<svg viewBox="0 0 800 176" role="img" aria-label="幅切替3種の図">
+  <g font-family="Hiragino Sans, sans-serif" font-size="11" fill="#1f2328">
+    <rect x="40" y="26" width="200" height="110" fill="#fff" stroke="#dfe3e8"/>
+    <rect x="40" y="26" width="200" height="12" fill="#4c3926"/>
+    <rect x="46" y="44" width="188" height="34" fill="#c9d3cd"/>
+    <rect x="46" y="84" width="90" height="46" fill="#eef1f4"/>
+    <rect x="144" y="84" width="90" height="46" fill="#eef1f4"/>
+    <text x="140" y="154" text-anchor="middle" font-weight="700">全幅</text>
+    <text x="140" y="169" text-anchor="middle" font-size="9.5" fill="#5b6875">PCで見たとき</text>
+
+    <rect x="316" y="26" width="128" height="110" fill="#fff" stroke="#dfe3e8"/>
+    <rect x="316" y="26" width="128" height="12" fill="#4c3926"/>
+    <rect x="322" y="44" width="116" height="34" fill="#c9d3cd"/>
+    <rect x="322" y="84" width="55" height="46" fill="#eef1f4"/>
+    <rect x="383" y="84" width="55" height="46" fill="#eef1f4"/>
+    <text x="380" y="154" text-anchor="middle" font-weight="700">768px</text>
+    <text x="380" y="169" text-anchor="middle" font-size="9.5" fill="#5b6875">タブレット</text>
+
+    <rect x="530" y="26" width="70" height="110" fill="#fff" stroke="#dfe3e8"/>
+    <rect x="530" y="26" width="70" height="12" fill="#4c3926"/>
+    <rect x="535" y="44" width="60" height="30" fill="#c9d3cd"/>
+    <rect x="535" y="80" width="60" height="24" fill="#eef1f4"/>
+    <rect x="535" y="108" width="60" height="22" fill="#eef1f4"/>
+    <text x="565" y="154" text-anchor="middle" font-weight="700">375px</text>
+    <text x="565" y="169" text-anchor="middle" font-size="9.5" fill="#5b6875">スマホ</text>
+
+    <text x="640" y="70" font-size="10.5" fill="#5b6875">横並びだったものが</text>
+    <text x="640" y="88" font-size="10.5" fill="#5b6875">狭い幅では縦に</text>
+    <text x="640" y="106" font-size="10.5" fill="#5b6875">積み直されます。</text>
+  </g>
+</svg>
+<figcaption>幅切替（全幅 / 768px / 375px）</figcaption>
+</figure>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="regen">
+<h2>型を入れ替える</h2>
+
+<p>できあがったあとで、<b>セクション単位でレイアウトを作り直せます</b>。全部を生成し直す必要はありません。</p>
+
+<ol class="steps">
+  <li>比較画面の <b>🔄 セクション再生成</b> を押します</li>
+  <li>作り直したい<b>セクション</b>を選びます（<code>MV-01</code> のような番地で表示されます）</li>
+  <li>したい<b>型</b>を選びます。「今と同じ」を選べば、同じ型のまま別案になります</li>
+  <li>実行すると、そのセクションだけが作り直されます。<b>ほかのセクション・配色・並び順はそのまま</b>です</li>
+</ol>
+
+<div class="note">
+<b>番地（<code>MV-01</code>・<code>MENU-02</code>）とは</b>
+各セクションの左上に付いている小さなラベルです。同じセクションを複数置いたとき、<b>どちらのことか</b>を指すために使います。上から順に <code>-01</code>、<code>-02</code> と付きます。
+</div>
+
+<div class="warn">
+<b>同梱の見本では使えません</b>
+<code>samples/</code> フォルダの見本は<b>読み取り専用</b>です。🔄 は自分で作ったラフ（<code>mockups/</code> のなか）で使ってください。見本で押すと「見本では使えません」と表示されます。
+</div>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="print">
+<h2>印刷・PDFにする</h2>
+
+<p>比較画面に <b>🖨 案Aを印刷 / PDFで保存</b> のようなボタンがあります。押すとブラウザの印刷画面が開きます。</p>
+
+<ul>
+  <li><b>紙に出す</b> — そのまま印刷してください</li>
+  <li><b>PDFにする</b> — 印刷画面で送信先を「PDFに保存」（Mac は「PDFとして保存」）に変えます</li>
+</ul>
+
+<p>印刷すると、画面用のツール（番地ラベル・アタリ枠の説明・操作ボタン）は<b>自動で消えます</b>。デザインだけが出ます。</p>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="pools">
+<h2>セクション14種 × 各6型</h2>
+
+<p>使えるセクションは<b>14種類</b>で、それぞれに<b>6通りのレイアウト</b>が用意されています。型を指定しなければ、案ごとに違う型が自動で割り当てられます。</p>
+
+<figure>
+<svg viewBox="0 0 800 150" role="img" aria-label="同じセクションでも型で見た目が変わる例">
+  <g font-family="Hiragino Sans, sans-serif" font-size="10" fill="#1f2328">
+    <text x="14" y="18" font-size="11" font-weight="700" fill="#5b6875">同じ「ABOUT」でも、型が違うとこれだけ変わります</text>
+
+    <rect x="14" y="30" width="118" height="76" fill="#fff" stroke="#dfe3e8"/>
+    <rect x="20" y="36" width="48" height="64" fill="#c9d3cd"/>
+    <rect x="74" y="42" width="52" height="6" fill="#8a94a0"/>
+    <rect x="74" y="54" width="52" height="4" fill="#e4dfd9"/>
+    <rect x="74" y="62" width="44" height="4" fill="#e4dfd9"/>
+    <text x="73" y="121" text-anchor="middle">img-left</text>
+
+    <rect x="152" y="30" width="118" height="76" fill="#fff" stroke="#dfe3e8"/>
+    <rect x="216" y="36" width="48" height="64" fill="#c9d3cd"/>
+    <rect x="158" y="42" width="52" height="6" fill="#8a94a0"/>
+    <rect x="158" y="54" width="52" height="4" fill="#e4dfd9"/>
+    <rect x="158" y="62" width="44" height="4" fill="#e4dfd9"/>
+    <text x="211" y="121" text-anchor="middle">img-right</text>
+
+    <rect x="290" y="30" width="118" height="76" fill="#fff" stroke="#dfe3e8"/>
+    <rect x="296" y="36" width="106" height="32" fill="#c9d3cd"/>
+    <rect x="296" y="74" width="70" height="6" fill="#8a94a0"/>
+    <rect x="296" y="86" width="106" height="4" fill="#e4dfd9"/>
+    <text x="349" y="121" text-anchor="middle">img-top</text>
+
+    <rect x="428" y="30" width="118" height="76" fill="#fff" stroke="#dfe3e8"/>
+    <rect x="434" y="36" width="78" height="52" fill="#c9d3cd"/>
+    <rect x="470" y="60" width="70" height="40" fill="#fff" stroke="#8a94a0"/>
+    <rect x="476" y="70" width="52" height="5" fill="#8a94a0"/>
+    <rect x="476" y="81" width="46" height="4" fill="#e4dfd9"/>
+    <text x="487" y="121" text-anchor="middle">img-overlap</text>
+
+    <rect x="566" y="30" width="118" height="76" fill="#fff" stroke="#dfe3e8"/>
+    <circle cx="600" cy="66" r="26" fill="#c9d3cd"/>
+    <rect x="636" y="52" width="42" height="6" fill="#8a94a0"/>
+    <rect x="636" y="64" width="42" height="4" fill="#e4dfd9"/>
+    <rect x="636" y="72" width="34" height="4" fill="#e4dfd9"/>
+    <text x="625" y="121" text-anchor="middle">img-circle</text>
+
+    <rect x="704" y="30" width="82" height="76" fill="#fff" stroke="#dfe3e8"/>
+    <rect x="710" y="36" width="32" height="28" fill="#c9d3cd"/>
+    <rect x="746" y="40" width="34" height="4" fill="#e4dfd9"/>
+    <rect x="746" y="48" width="28" height="4" fill="#e4dfd9"/>
+    <rect x="748" y="70" width="32" height="28" fill="#c9d3cd"/>
+    <rect x="710" y="74" width="34" height="4" fill="#e4dfd9"/>
+    <rect x="710" y="82" width="28" height="4" fill="#e4dfd9"/>
+    <text x="745" y="121" text-anchor="middle">img-zigzag</text>
+
+    <text x="14" y="142" font-size="10" fill="#5b6875">型の名前は「行ごとの設定」と「🔄 セクション再生成」の選択肢に出てきます。</text>
+  </g>
+</svg>
+<figcaption>ABOUT の6型（ほかのセクションにも同じように6型あります）</figcaption>
+</figure>
+
+<h3>一覧</h3>
+
+<table>
+<tr><th>セクション</th><th>内容</th><th>6つの型</th></tr>
+<tr><td><code>MV</code></td><td>メインビジュアル</td><td>full / split / band / overlap / center-scroll / panel-band</td></tr>
+<tr><td><code>ABOUT</code></td><td>紹介・私たちについて</td><td>img-left / img-right / img-top / img-overlap / img-circle / img-zigzag</td></tr>
+<tr><td><code>MENU</code></td><td>メニュー・商品</td><td>pat-cards / pat-list / pat-zigzag / price-table / tab-switch / feature-large</td></tr>
+<tr><td><code>GALLERY</code></td><td>写真ギャラリー</td><td>pat-grid / pat-wide / pat-mosaic / pat-slider / pat-masonry / pat-tab-grid</td></tr>
+<tr><td><code>PRICE</code></td><td>料金</td><td>price-table / price-cards / price-featured / price-list / price-toggle / price-matrix</td></tr>
+<tr><td><code>VOICE</code></td><td>お客様の声</td><td>voice-cards / voice-quote-stack / voice-feature / voice-two-col / voice-slider / voice-zigzag</td></tr>
+<tr><td><code>STAFF</code></td><td>スタッフ紹介</td><td>staff-grid / staff-hscroll / staff-feature / staff-list / staff-two-col / staff-zigzag</td></tr>
+<tr><td><code>FLOW</code></td><td>ご利用の流れ</td><td>flow-row / flow-timeline / flow-number-card / flow-arrow-band / flow-vertical-split / flow-zigzag</td></tr>
+<tr><td><code>FAQ</code></td><td>よくある質問</td><td>faq-list / faq-accordion / faq-two-col / faq-cards / faq-category-tabs / faq-search</td></tr>
+<tr><td><code>NEWS</code></td><td>お知らせ</td><td>news-list / news-cards / news-media / news-timeline / news-table / news-accordion</td></tr>
+<tr><td><code>SNS</code></td><td>SNS連携</td><td>sns-grid / sns-slider / sns-cards / sns-masonry / sns-reels / sns-feed</td></tr>
+<tr><td><code>ACCESS</code></td><td>アクセス・地図</td><td>map-side / map-top / map-overlay / map-hours / map-cards / map-steps</td></tr>
+<tr><td><code>CONTACT</code></td><td>お問い合わせ</td><td>contact-cta / contact-form / contact-split / contact-methods / contact-banner / contact-steps</td></tr>
+<tr><td><code>SEARCH</code></td><td>サイト内検索</td><td>search-bar / search-keywords / search-filters / search-sidebar / search-header / search-hero</td></tr>
+</table>
+
+<div class="note">
+<b>型の名前を覚える必要はありません</b>
+指定しなければ自動で割り当てられます。3案を見比べて「案Bのこの形がいい」と思ったら、🔄 でその型を選べば十分です。
+</div>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="trouble">
+<h2>つまずいたら</h2>
+
+<table>
+<tr><th>症状</th><th>見るところ</th></tr>
+<tr><td>ブラウザに画面が出ない／「ブリッジ未起動」と出る</td><td><code>README.md</code>「ブラウザに画面が出ない」</td></tr>
+<tr><td>「python3 が見つかりません」「claude が見つかりません」</td><td><code>README.md</code>「python3 が見つかりません」</td></tr>
+<tr><td>ポートが使われていると言われる</td><td><code>README.md</code>「ポートが使われている」</td></tr>
+<tr><td>生成が途中で止まる／失敗する</td><td><code>README.md</code>「生成が途中で止まる」</td></tr>
+<tr><td>素材の取り込みで一覧が出てこない</td><td><code>README.md</code>「取り込みを実行しても一覧が出てこない」</td></tr>
+</table>
+
+<h3>まず試すこと</h3>
+<ol class="steps">
+  <li><b>黒い画面（ターミナル）が開いたままか</b>確認する。閉じていたら起動しなおす</li>
+  <li>ブラウザを<b>再読み込み</b>する</li>
+  <li>それでも直らなければ、黒い画面を閉じて<b>起動しなおす</b></li>
+</ol>
+
+<div class="note">
+<b>作ったものは消えません</b>
+生成したラフは <code>mockups/</code> のフォルダに残ります。起動しなおしても失われません。
+</div>
+<a class="totop" href="#what">▲</a>
+</section>
+
+</main>
+</div>
+
+<script>
+/* サイドナビの現在位置表示。外部依存なし。 */
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var map = {};
+  links.forEach(function (a) {
+    var id = a.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el) { map[id] = a; }
+  });
+  var ids = Object.keys(map);
+  if (!ids.length || !('IntersectionObserver' in window)) { return; }
+
+  function setOn(id) {
+    links.forEach(function (a) { a.classList.remove('on'); });
+    if (map[id]) { map[id].classList.add('on'); }
+  }
+
+  var visible = {};
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      visible[e.target.id] = e.isIntersecting;
+    });
+    /* いちばん上に見えている節を現在位置とする */
+    for (var i = 0; i < ids.length; i++) {
+      if (visible[ids[i]]) { setOn(ids[i]); return; }
+    }
+  }, { rootMargin: '-10% 0px -70% 0px', threshold: 0 });
+
+  ids.forEach(function (id) { io.observe(document.getElementById(id)); });
+  setOn(ids[0]);
+})();
+</script>
+</body>
+</html>

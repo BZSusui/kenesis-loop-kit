@@ -71,7 +71,7 @@ mkdir -p "$DEST" || { echo "【エラー】出力先を作成できませんで�
 for d in draft-gen palette .claude agents docs samples; do
   [ -d "$d" ] && cp -R "$d" "$DEST/" && echo "  含めた: $d/"
 done
-for f in README.md CLAUDE.md CHANGELOG.md LICENSE; do
+for f in README.md 使い方マニュアル.html CLAUDE.md CHANGELOG.md LICENSE; do
   [ -f "$f" ] && cp "$f" "$DEST/" && echo "  含めた: $f"
 done
 
@@ -137,7 +137,8 @@ echo
 echo "渡した相手には次を伝えてください:"
 echo "  1. このフォルダを好きな場所（デスクトップ等）に置く"
 echo "  2. draft-gen/起動.command をダブルクリック"
-echo "  3. 使い方は README.md"
+echo "  3. 画面ごとの使い方は 使い方マニュアル.html（ダブルクリックで開く）
+  4. 置き方・起動・困ったときは README.md"
 
 if [ "$WITH_CATALOG" -eq 1 ]; then
   echo
