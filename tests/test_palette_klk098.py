@@ -220,5 +220,56 @@ class TestKLK098ManualIsActuallyServed(unittest.TestCase):
         self.assertEqual(cm.exception.code, 404)
 
 
+class TestKLK101ScreenLinksOpenInNewTab(unittest.TestCase):
+    """生成画面から別画面へ渡るリンクは、すべて別タブで開くこと（理恵さんのご指示）。
+
+    設定を途中まで入力した状態で同じタブに遷移すると、**入力が失われる**。
+    マニュアル・配色ジェネレーターは別タブだったのに、実績カタログだけ
+    同じタブで開いていた（KLK-101）。1本ずつ直していては揃わないので、
+    画面上のローカルリンクを列挙して**全部**に要求する。
+    """
+
+    def _links(self):
+        ui = (ROOT / "draft-gen" / "index.html").read_text(encoding="utf-8")
+        skip = ("http://", "https://", "mailto:", "javascript:", "data:", "#")
+        out = []
+        for m in re.finditer(r"<a\b[^>]*?>", ui, re.S):
+            tag = m.group(0)
+            href = re.search(r'href="([^"]+)"', tag)
+            if not href or href.group(1).startswith(skip):
+                continue
+            out.append((href.group(1), tag))
+        return out
+
+    def test_links_found(self):
+        self.assertTrue(self._links(), "画面にローカルリンクが無い（検査が空振りしている）")
+
+    def test_all_open_in_new_tab(self):
+        for href, tag in self._links():
+            with self.subTest(href):
+                self.assertIn('target="_blank"', tag,
+                              "%s が別タブで開かない。入力途中の設定が失われます" % href)
+
+    def test_all_have_noopener(self):
+        """別タブで開くリンクには rel="noopener" を付ける（開いた側から元タブを触らせない）。"""
+        for href, tag in self._links():
+            with self.subTest(href):
+                self.assertIn("noopener", tag, "%s に rel=noopener が無い" % href)
+
+    def test_js_does_not_strip_target(self):
+        """ブリッジ稼働時に href を差し替える JS が、target を消していないこと。
+
+        `catalogLink` は probeHealth 成功時に href を `/catalog` へ差し替える。
+        そのとき target まで書き換えると、別タブ指定が静かに失われる。
+        """
+        ui = (ROOT / "draft-gen" / "index.html").read_text(encoding="utf-8")
+        self.assertNotRegex(
+            ui, r"catalogLink[^;]*?\.target\s*=",
+            "JS が catalogLink の target を書き換えている（別タブ指定が失われます）")
+        for bad in (".target = ''", '.target = ""', ".removeAttribute('target')",
+                    '.removeAttribute("target")'):
+            self.assertNotIn(bad, ui, "JS が target を外している: %s" % bad)
+
+
 if __name__ == "__main__":
     unittest.main()
