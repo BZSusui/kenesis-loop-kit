@@ -40,6 +40,15 @@
 
   header.hd h1 { font-size: 22px; margin: 8px 0 4px; }
   header.hd p { margin: 0 0 4px; color: var(--color-text-sub); font-size: 14px; }
+  /* KLK-098: 見出し脇の使い方マニュアルリンク。初めて開いた人がまず気づく位置に置く。 */
+  header.hd .hd-top { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  header.hd .manual-link {
+    display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+    font-size: 13px; text-decoration: none; color: var(--color-accent, #2f6f4f);
+    border: 1px solid var(--color-border, #dfe3e8); border-radius: 999px;
+    padding: 3px 13px; background: #fff;
+  }
+  header.hd .manual-link:hover { background: var(--color-bg-sub, #f6f8fa); text-decoration: underline; }
 
   /* 生成前バリデーション通知（不足時のみ表示） */
   .valid-note {
@@ -370,8 +379,12 @@
 
 <div class="page">
   <header class="hd">
-    <h1>モック生成 — 設定</h1>
-    <p>業種・カラム・配色・参考素材を指定して、デザインラフ（ワイヤーフレームとモックの中間の案）の生成指示書を作ります。上から順に埋めてください。</p>
+    <div class="hd-top">
+      <h1>モック生成 — 設定</h1>
+      <a class="manual-link" href="../使い方マニュアル.html" target="_blank" rel="noopener"
+         title="画面ごとの使い方・レイアウトの形の一覧（別タブで開きます）">📖 使い方マニュアル</a>
+    </div>
+    <p>業種・カラム・配色・参考素材を指定して、デザインラフ（ワイヤーフレームとモックの中間の案）の生成指示書を作ります。上から順に埋めてください。<b>はじめての方は <a href="../使い方マニュアル.html" target="_blank" rel="noopener">使い方マニュアル</a> をどうぞ。</b></p>
   </header>
 
   <!-- 生成前バリデーション（不足時のみ表示） -->

@@ -221,6 +221,31 @@ check("C29 印刷時にサイドナビを隠す指定がある",
       % (len(_print_block),
          bool(_print_block) and re.search(r"\.side\s*\{\s*display:\s*none", _print_block) is not None))
 
+# ---------------------------------------------------------------------------
+# 生成画面からマニュアルへの導線（理恵さんのご要望・大見出しの近く）
+# ---------------------------------------------------------------------------
+# ★リンク切れは何も言わずに壊れる。相対パスが**実際に解決するか**まで見る。
+_href = re.findall(r'<a[^>]*href="([^"]*使い方マニュアル\.html)"', UI)
+check("C30 生成画面にマニュアルへのリンクがある", bool(_href), "リンク %d 本" % len(_href))
+
+_h1 = UI.find("<h1>モック生成 — 設定</h1>")
+_near = _h1 >= 0 and "使い方マニュアル.html" in UI[max(0, _h1 - 400):_h1 + 900]
+check("C31 リンクが大見出し「モック生成 — 設定」の近くにある", _near,
+      "見出しの位置=%d / 近傍にリンク=%s" % (_h1, _near))
+
+_broken = []
+for _p in set(_href):
+    _abs = os.path.normpath(os.path.join(ROOT, "draft-gen", _p))
+    if not os.path.isfile(_abs):
+        _broken.append(_p)
+check("C32 リンク先が実在する（draft-gen/ からの相対パスが解決する）",
+      not _broken, "切れているリンク=%s" % (_broken or "なし"))
+
+# パッケージでも同じ位置関係が保たれるか（マニュアルは root・画面は draft-gen/）
+check("C33 パッケージ内でもリンクが成立する（マニュアルは root に置かれる）",
+      "使い方マニュアル.html" in PKG and all(p.startswith("../") for p in _href),
+      "同梱=%s / 相対パス=%s" % ("使い方マニュアル.html" in PKG, sorted(set(_href))))
+
 print("=" * 78)
 print("KLK-098 使い方マニュアル（HTML）チェック")
 print("=" * 78)
