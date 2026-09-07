@@ -1796,6 +1796,7 @@ def _run_server(port):
         except subprocess.TimeoutExpired:
             with jobs_lock:
                 jobs[job_id]["state"] = "error"
+                jobs[job_id]["finished_at"] = _now()
                 jobs[job_id]["message"] = (
                     "生成がタイムアウトしました({0}秒)。設定を見直して再実行してください".format(
                         BRIDGE_TIMEOUT_SEC
@@ -1806,6 +1807,7 @@ def _run_server(port):
         except Exception as exc:  # 起動失敗(claude 不在など)
             with jobs_lock:
                 jobs[job_id]["state"] = "error"
+                jobs[job_id]["finished_at"] = _now()
                 jobs[job_id]["message"] = "生成の起動に失敗しました: {0}".format(exc)
             _cleanup(pending_path)
             return
@@ -1824,6 +1826,7 @@ def _run_server(port):
             print("[bridge] 生成 失敗 exit={0}".format(proc.returncode), file=sys.stderr)
             with jobs_lock:
                 jobs[job_id]["state"] = "error"
+                jobs[job_id]["finished_at"] = _now()
                 jobs[job_id]["message"] = "生成できませんでした。もう一度お試しください。解決しない場合は Claude Code（claude）が起動しているかご確認ください"
             _cleanup(pending_path)
             return
@@ -1843,6 +1846,7 @@ def _run_server(port):
 
         with jobs_lock:
             jobs[job_id]["state"] = "done"
+            jobs[job_id]["finished_at"] = _now()
             jobs[job_id]["folder"] = folder
             jobs[job_id]["openTarget"] = open_target
             jobs[job_id]["message"] = (
@@ -1875,6 +1879,7 @@ def _run_server(port):
         except subprocess.TimeoutExpired:
             with jobs_lock:
                 jobs[job_id]["state"] = "error"
+                jobs[job_id]["finished_at"] = _now()
                 jobs[job_id]["message"] = (
                     "再生成がタイムアウトしました({0}秒)。もう一度お試しください".format(
                         BRIDGE_TIMEOUT_SEC
@@ -1885,6 +1890,7 @@ def _run_server(port):
         except Exception as exc:  # 起動失敗(claude 不在など)
             with jobs_lock:
                 jobs[job_id]["state"] = "error"
+                jobs[job_id]["finished_at"] = _now()
                 jobs[job_id]["message"] = "再生成の起動に失敗しました: {0}".format(exc)
             _cleanup(pending_path)
             return
@@ -1904,6 +1910,7 @@ def _run_server(port):
             print("[bridge] 再生成 失敗 exit={0}".format(proc.returncode), file=sys.stderr)
             with jobs_lock:
                 jobs[job_id]["state"] = "error"
+                jobs[job_id]["finished_at"] = _now()
                 jobs[job_id]["message"] = "再生成できませんでした。もう一度お試しください。解決しない場合は Claude Code（claude）が起動しているかご確認ください"
             _cleanup(pending_path)
             return
@@ -1977,6 +1984,7 @@ def _run_server(port):
 
         with jobs_lock:
             jobs[job_id]["state"] = "done"
+            jobs[job_id]["finished_at"] = _now()
             jobs[job_id]["folder"] = folder
             jobs[job_id]["openTarget"] = open_target
             jobs[job_id]["typeApplied"] = type_applied
@@ -2016,6 +2024,7 @@ def _run_server(port):
         except subprocess.TimeoutExpired:
             with jobs_lock:
                 jobs[job_id]["state"] = "error"
+                jobs[job_id]["finished_at"] = _now()
                 jobs[job_id]["message"] = (
                     "取り込みがタイムアウトしました({0}秒)。もう一度お試しください".format(
                         BRIDGE_TIMEOUT_SEC
@@ -2026,6 +2035,7 @@ def _run_server(port):
         except Exception as exc:  # 起動失敗(claude 不在など)
             with jobs_lock:
                 jobs[job_id]["state"] = "error"
+                jobs[job_id]["finished_at"] = _now()
                 jobs[job_id]["message"] = "取り込みの起動に失敗しました: {0}".format(exc)
             _cleanup(pending_spec_path)
             return
@@ -2043,6 +2053,7 @@ def _run_server(port):
             print("[bridge] 取り込み 失敗 exit={0}".format(proc.returncode), file=sys.stderr)
             with jobs_lock:
                 jobs[job_id]["state"] = "error"
+                jobs[job_id]["finished_at"] = _now()
                 jobs[job_id]["message"] = "取り込みできませんでした。もう一度お試しください。解決しない場合は Claude Code（claude）が起動しているかご確認ください"
             _cleanup(pending_spec_path)
             return
@@ -2060,6 +2071,7 @@ def _run_server(port):
         )
         with jobs_lock:
             jobs[job_id]["state"] = "done"
+            jobs[job_id]["finished_at"] = _now()
             jobs[job_id]["message"] = msg
         _cleanup(pending_spec_path)
 
@@ -3182,7 +3194,12 @@ def _run_server(port):
                 if job is None:
                     self._json(404, {"error": "ジョブが見つかりません"})
                     return
-                elapsed = int((_now() - job["started_at"]).total_seconds())
+                # ★終わったジョブの経過時間は**終了時刻で止める**（KLK-104）。
+                #   問い合わせた瞬間で計算していたため完了後も増え続け、
+                #   12分で終わった生成が「3334秒」と表示された（所要時間を誤らせる）。
+                #   タイムアウト(1800秒)の妥当性もこの値で判断しているので正しさが要る。
+                _end = job.get("finished_at") or _now()
+                elapsed = int((_end - job["started_at"]).total_seconds())
                 self._json(
                     200,
                     {

@@ -1511,8 +1511,55 @@ SCR-001 でカタログサムネイルを選んだ指示書では、**案Aを「
 
 - **ルート要素に `data-folder="mockups/{YYYY-MM-DD}_{案件名}"` を焼き込む**（保存先フォルダの相対パス。`compare.html` は既に
   `meta.project` を表示しており、フォルダパスは新たな機密ではない・`mockups/` はGit除外）。JS はこれを読んで `folder` を得る。
-- **コントロール本体**: 「🔄 セクション再生成」＝番地 `<select id="regen-addr">` ＋ 現在型ラベル `<span id="regen-type">`
-  ＋「このセクションを再生成」`<button id="regen-btn">`。既定は無効化しておく。
+- **コントロール本体の `id` は下記のとおり固定（KLK-102）。** 名前を変えてはならない。
+  検査（`tools/verify-mockup.py`）と将来の道具がこの `id` を手掛かりにするので、
+  **生成ごとに名前が変わると契約として成立しない**。骨格をそのまま写すこと:
+
+  ```html
+  <div class="regen-ctl">
+    <span style="font-size:13px;color:#6b6558">🔄 セクション再生成</span>
+    <select id="regen-addr"><option value="">読み込み中…</option></select>
+    <select id="regen-type" class="regen-type" disabled></select>
+    <button class="tb-btn" id="regen-btn" disabled>このセクションを再生成</button>
+  </div>
+  <div class="regen-msg" id="regen-msg">ローカルブリッジの状態を確認しています…</div>
+  ```
+
+  **`regen-type` は `<select>`（型の指定そのもの）である。** ラベルではない。
+  `<span>` にしたり、別に `regen-desired` のような `<select>` を作ってはならない。
+
+  **★実際に間違えた例（KLK-102）**: `regenAddr` / `regenBtn` / `regenType` / `regenStatus` と
+  **camelCase で生成された**（見本01の作り直し時）。ページ内では整合していて動くが、
+  規約の `id` と違うため検査に落ちた。**`regen-` で始まるケバブケース**が正。
+  `regen-msg`（状態表示）を `regenStatus` のように言い換えるのも不可。
+- **★`mockups/` の外に置かれた場合に固まらせないこと（KLK-081→KLK-103 で規約化）。**
+  ブリッジは書き込み面を絞るため **`mockups/` 配下しか受け付けない**。
+  ところが `compare.html` は**あとから別の場所へ移されることがある**（同梱する見本は
+  `samples/` へ移して配る）。移された先で 🔄 を押すと `GET /sections` が弾かれ、
+  画面は「読み込み中…」のまま**固まる**。実際にそうなった（理恵さんの目視で発覚・KLK-081）。
+  **`data-folder` が `mockups/` で始まらないときは、ブリッジを呼ぶ前に無効化して理由を出す**:
+
+  ```js
+  function disableWith(label, message){
+    addrSel.innerHTML = '<option value="">' + label + '</option>';
+    addrSel.disabled = true; btn.disabled = true; msg.textContent = message;
+  }
+  function loadSections(){
+    // ブリッジは mockups/ 配下しか受け付けない。見本（samples/）は対象外なので、
+    // 呼ぶ前にそう伝える（固まらせない）。
+    if (folder.indexOf('mockups/') !== 0) {
+      disableWith('（見本では使えません）',
+        'これは見本です。セクション再生成はご自身の生成物（mockups/ の中）でお使いください。');
+      return Promise.resolve();
+    }
+    …通常の取得…
+  }
+  ```
+
+  **★なぜ規約に書くのか（KLK-103 の教訓）**: KLK-081 ではこのガードを**見本のファイルへ手で足しただけ**で、
+  規約には書かなかった。その結果、**見本を作り直したら丸ごと失われた**（作り直し時に発覚）。
+  **成果物を手で直したら、必ず規約へ書き戻すこと。**書き戻さない修正は、次の生成で消える。
+
   **★番地は焼き込まない（KLK-078）**: `<option>` は `<option value="">読み込み中…</option>` の1つだけを出力し、
   中身は **`GET /sections` の結果で埋める**。ユーザー自由入力は作らない（＝注入面を作らない）点は不変。
 

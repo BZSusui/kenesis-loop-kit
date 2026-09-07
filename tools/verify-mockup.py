@@ -206,7 +206,7 @@ def check_composition(folder, path, html, notices=None):
     return out
 
 
-def check_compare(folder):
+def check_compare(folder, notices=None):
     """compare.html が案数に応じた機能を備えているか（KLK-092）。
 
     ★1案でも幅切替と 🔄 は要る。compare.html を作らないと**その2機能が丸ごと失われる**
@@ -221,6 +221,24 @@ def check_compare(folder):
     if not os.path.isfile(cmp_path):
         out.append("compare.html がありません（幅切替と 🔄 セクション再生成が使えない状態）")
         return out
+
+    # ★mockups/ の外へ移されたときに固まらないためのガード（§13・KLK-103）。
+    #   ブリッジは mockups/ 配下しか受け付けないので、samples/ に置かれた compare.html で
+    #   🔄 を押すと「読み込み中…」のまま固まる（KLK-081 で実際に起きた）。
+    #   **警告の重みは置き場所で変える**。mockups/ の中ではガードは発火しないので、
+    #   そこで違反にすると理恵さんの作業物すべてが赤くなり、警告が信用されなくなる。
+    #     - mockups/ の外（＝見本）→ 違反
+    #     - mockups/ の中          → 注意（--strict で違反。見本を作る前に気づける）
+    _cmp_src = open(cmp_path, encoding="utf-8").read()
+    _guard = ("indexOf('mockups/')" in _cmp_src or 'indexOf("mockups/")' in _cmp_src)
+    # ★**ガードが効く場所でだけ**言う。mockups/ の中では発火しないので何も言わない。
+    #   当初は mockups/ でも「注意」を出したが、--strict がそれを違反へ昇格させ、
+    #   ガード規約より前に作られた生成物すべてが落ちた（KLK-103 の実装時に判明）。
+    #   検査は「いま実害があるか」で鳴らす。予防的に鳴らすと、鳴っても直せない警告が積む。
+    _outside = "mockups" not in os.path.normpath(os.path.abspath(folder)).split(os.sep)
+    if not _guard and _outside:
+        out.append("compare.html に見本ガードがありません（§13）。"
+                   "mockups/ の外に置かれているので 🔄 が「読み込み中…」のまま固まります")
     html = open(cmp_path, encoding="utf-8").read()
 
     # 幅切替（案数によらず要る）
@@ -230,7 +248,11 @@ def check_compare(folder):
         if needle not in html:
             out.append("compare.html に%sがありません" % label)
     # 🔄 セクション再生成（案数によらず要る）
+    # ★4つすべて見る（KLK-102）。addr と btn だけ見ていたので、
+    #   `regen-type` / `regen-msg` が別名になっていても素通りしていた。
     for needle, label in (('id="regen-addr"', "番地セレクタ"),
+                          ('<select id="regen-type"', "型セレクタ"),
+                          ('id="regen-msg"', "状態表示"),
                           ('id="regen-btn"', "再生成ボタン"),
                           ("/sections?folder=", "セクション一覧の取得")):
         if needle not in html:
@@ -272,8 +294,11 @@ def check_folder(folder):
         for w in n:
             notices.append((os.path.basename(f), w))
     # KLK-092: compare.html の機能同等性（フォルダ単位で1回）
-    for w in check_compare(folder):
+    _cn = []
+    for w in check_compare(folder, _cn):
         findings.append(("compare.html", w))
+    for w in _cn:
+        notices.append(("compare.html", w))
     # §4.1.2 は compare.html にも当てる（KLK-085）。
     #   ★compare.html は番地を持たないので check_file の対象外。
     #     実際に混入したのはこのファイルのボタン名だったので、ここを見落とすと意味がない。

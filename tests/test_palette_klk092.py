@@ -21,6 +21,13 @@ GOOD_SINGLE_COMPARE = '''<html><body data-variants="1">
 <input type="radio" name="vw" id="vw768"><input type="radio" name="vw" id="vw375">
 <div class="vwseg"><label for="vwfull">全幅</label></div>
 <select id="regen-addr"></select><select id="regen-type"></select><button id="regen-btn"></button>
+<div id="regen-msg"></div>
+<script>
+// §13 の見本ガード。mockups/ の外へ移されたとき固まらせない（KLK-103）。
+// 「良い例」の fixture なのだから、規約が要求するものは満たしておく。
+function disableWith(l,m){}
+if (folder.indexOf('mockups/') !== 0) { disableWith('（見本では使えません）','これは見本です。'); }
+</script>
 <div class="canvas"><div class="pane"><iframe src="index.html"></iframe></div></div>
 <a href="index.html">原寸</a>
 <script>fetch(BASE+'/sections?folder='+folder)</script></body></html>'''

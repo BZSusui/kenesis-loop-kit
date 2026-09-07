@@ -17,6 +17,7 @@ Run: python3 tests/site/check_klk092.py
 """
 import io
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -138,7 +139,10 @@ check(
 # ===========================================================================
 check(
     "T1 verify-mockup に compare.html の機能同等性チェックがある",
-    "def check_compare(" in TOOL and "check_compare(folder)" in TOOL,
+    # ★呼び出しの引数を固定しない（KLK-103 で notices を渡す形に変えたら落ちた）。
+    #   見たいのは「関数があり、check_folder から呼ばれていること」であって、
+    #   引数の並びではない。書き方を縛ると、正しい変更で検査が落ちる。
+    "def check_compare(" in TOOL and re.search(r"check_compare\(\s*folder", TOOL) is not None,
     "関数=%s" % ("def check_compare(" in TOOL),
 )
 check(
