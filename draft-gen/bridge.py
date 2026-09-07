@@ -1755,6 +1755,12 @@ def _run_server(port):
     index_path = os.path.join(root, "draft-gen", "index.html")
     # 配色ジェネレーター(KLK-019・REQ-003)。外部依存ゼロの単一HTMLを固定1ファイル配信
     palette_index_path = os.path.join(root, "palette", "index.html")
+    # 使い方マニュアル(KLK-098/099)。生成画面の見出し脇のリンクから開く。
+    #  ★画面はブリッジが `/` で配信しているので、`../使い方マニュアル.html` は
+    #    `http://127.0.0.1:<port>/使い方マニュアル.html` に解決する。**配信口が要る**。
+    #    ファイルとして直接開いた場合(file://)は同じ href がそのままファイルに解決するので、
+    #    URL を1本に保てる(理恵さんの環境で 404 になったのはこの口が無かったため)。
+    manual_path = os.path.join(root, "使い方マニュアル.html")
     pending_dir = os.path.join(root, "mockups", ".pending")
     # MVフリー実写真(KLK-020・REQ-104)のアップロード先ステージング。mockups/ 除外に内包され自動Git除外
     # (§3.4・.gitignore 変更不要)。保存名はサーバ生成(upl-<uuid>.<ext>)＝traversal 面ゼロ。
@@ -2103,7 +2109,11 @@ def _run_server(port):
                 self._status(path[len("/status/"):])
                 return
             # 実績カタログ(KLK-013・SCR-004・§4.3)
-            if path == "/catalog":
+            #  ★`/catalog.html` も受ける(KLK-100)。生成画面のリンクは `catalog.html`＝
+            #    ファイルとして開いたときに解決する形なので、ブリッジ経由では `/catalog.html` に
+            #    なる。この口が無く、「もっと探す → 実績カタログを開く」が 404 になっていた。
+            #    href を1本に保つため、ファイル名つきの形もここで受ける。
+            if path in ("/catalog", "/catalog.html"):
                 self._serve_catalog_html()
                 return
             if path == "/catalog-proposal":
@@ -2128,6 +2138,10 @@ def _run_server(port):
             # 配色ジェネレーター(KLK-019・REQ-003)。ブリッジ配信時 ../palette/index.html は /palette/index.html に解決
             if path in ("/palette", "/palette/", "/palette/index.html"):
                 self._serve_palette()
+                return
+            # 日本語ファイル名はブラウザが percent-encode して送ってくるので unquote して照合する
+            if urllib.parse.unquote(path) in ("/使い方マニュアル.html", "/manual", "/manual/"):
+                self._serve_manual()
                 return
             self._json(404, {"error": "not found"})
 
@@ -2167,6 +2181,24 @@ def _run_server(port):
                     body = fh.read()
             except OSError:
                 self._json(500, {"error": "index.html を読み込めません"})
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self._cors()
+            self.end_headers()
+            self.wfile.write(body)
+
+        def _serve_manual(self):
+            """GET /使い方マニュアル.html | /manual — 使い方マニュアルを配信(KLK-099)。
+
+            _serve_index / _serve_palette と同型・固定1ファイル決め打ち(traversal 面ゼロ)。
+            """
+            try:
+                with open(manual_path, "rb") as fh:
+                    body = fh.read()
+            except OSError:
+                self._json(500, {"error": "使い方マニュアル.html を読み込めません"})
                 return
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")

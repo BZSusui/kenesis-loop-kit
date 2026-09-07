@@ -85,5 +85,140 @@ class TestKLK098DocumentRoles(unittest.TestCase):
                       "マニュアルがパッケージに含まれていない")
 
 
+class TestKLK098ManualIsActuallyServed(unittest.TestCase):
+    """★ブリッジを実際に起動して、マニュアルへのリンクが**本当に開けるか**を確かめる。
+
+    最初の実装はファイルシステム上のパスだけを見ており、
+    実運用（ブリッジが `/` で画面を配信する）を検証していなかったため、
+    理恵さんの環境でリンクが `{"error": "not found"}` になった。
+    ルーティング表の静的検査だけでは（書き方を変えれば）すり抜けるので、
+    ここでは**実際に HTTP で取りに行く**。
+    """
+
+    PORT = 8794
+
+    @classmethod
+    def setUpClass(cls):
+        import os
+        import subprocess
+        import time
+        import urllib.error
+        import urllib.request
+        env = dict(os.environ, KLK_BRIDGE_PORT=str(cls.PORT))
+        cls.proc = subprocess.Popen(
+            ["python3", str(ROOT / "draft-gen" / "bridge.py")],
+            cwd=str(ROOT), env=env,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        cls.up = False
+        for _ in range(50):                      # 最大5秒待つ
+            try:
+                urllib.request.urlopen(
+                    "http://127.0.0.1:%d/health" % cls.PORT, timeout=0.4).read()
+                cls.up = True
+                break
+            except (urllib.error.URLError, OSError):
+                time.sleep(0.1)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.proc.terminate()
+        try:
+            cls.proc.wait(timeout=5)
+        except Exception:
+            cls.proc.kill()
+
+    def _get(self, path):
+        """ブラウザと同じく **percent-encode して** 取りに行く。
+
+        日本語を含むパスは、ブラウザが必ず encode して送る。生の UTF-8 では
+        urllib が送信そのものに失敗するので、ここは encode が正しい形であり、
+        同時にブリッジ側の unquote 経路を通す検査にもなっている。
+        """
+        import urllib.parse
+        import urllib.request
+        url = "http://127.0.0.1:%d%s" % (self.PORT, urllib.parse.quote(path))
+        with urllib.request.urlopen(urllib.request.Request(url), timeout=5) as r:
+            return r.status, r.headers.get("Content-Type", ""), r.read()
+
+    def test_bridge_started(self):
+        self.assertTrue(self.up, "ブリッジが起動しなかった（この検査自体が空振りしている）")
+
+    def test_manual_link_opens_through_bridge(self):
+        """生成画面に書いてある href が、ブリッジ経由で本当に 200 を返すこと。"""
+        if not self.up:
+            self.skipTest("ブリッジ未起動")
+        ui = (ROOT / "draft-gen" / "index.html").read_text(encoding="utf-8")
+        hrefs = set(re.findall(r'<a[^>]*href="([^"]*使い方マニュアル\.html)"', ui))
+        self.assertTrue(hrefs, "生成画面にマニュアルへのリンクが無い")
+        for h in hrefs:
+            # 画面は `/` で配信されるので `../x` は `/x` に解決する
+            url = "/" + h.lstrip("./")
+            with self.subTest(url):
+                status, ctype, body = self._get(url)
+                self.assertEqual(status, 200, "%s が %d を返した" % (url, status))
+                self.assertIn("text/html", ctype)
+                self.assertIn("<title>Kenesis Loop Kit 使い方マニュアル</title>",
+                              body.decode("utf-8", "replace"),
+                              "%s がマニュアルの中身を返していない" % url)
+
+    def test_every_local_link_on_the_screen_opens(self):
+        """★生成画面のローカルリンク**すべて**が、ブリッジ経由で開けること。
+
+        マニュアルのリンクを直したとき、同じ形の壊れ方が
+        「もっと探す → 実績カタログを開く」(`catalog.html`) にも残っていた。
+        **1本ずつ検査を足していては同じ穴を繰り返す**ので、
+        画面上のローカルリンクを列挙して全部叩く。
+        """
+        if not self.up:
+            self.skipTest("ブリッジ未起動")
+        ui = (ROOT / "draft-gen" / "index.html").read_text(encoding="utf-8")
+        skip = ("http://", "https://", "mailto:", "javascript:", "data:", "#")
+        links = sorted({h for h in re.findall(r'href="([^"]+)"', ui)
+                        if not h.startswith(skip)})
+        self.assertTrue(links, "画面にローカルリンクが無い（検査が空振りしている）")
+        for h in links:
+            url = "/" + h.lstrip("./") if not h.startswith("/") else h
+            with self.subTest(h):
+                status, ctype, _ = self._get(url)
+                self.assertEqual(
+                    status, 200,
+                    "画面のリンク %s（→ %s）がブリッジ経由で %d を返した。"
+                    "ブリッジに配信口が必要です" % (h, url, status))
+                self.assertIn("text/html", ctype)
+
+    def test_every_local_link_exists_as_a_file(self):
+        """同じリンクが、ファイルとして開いた場合(file://)にも解決すること。
+
+        href は1本で両方の経路に耐えなければならない。
+        """
+        ui = (ROOT / "draft-gen" / "index.html").read_text(encoding="utf-8")
+        skip = ("http://", "https://", "mailto:", "javascript:", "data:", "#")
+        import os
+        for h in sorted({h for h in re.findall(r'href="([^"]+)"', ui)
+                         if not h.startswith(skip)}):
+            with self.subTest(h):
+                p = os.path.normpath(os.path.join(str(ROOT), "draft-gen", h))
+                self.assertTrue(os.path.isfile(p),
+                                "画面のリンク %s がファイルとして解決しない（%s）" % (h, p))
+
+    def test_ascii_alias_also_opens(self):
+        """ASCII だけの別名 /manual も開けること（encode に依存しない逃げ道）。"""
+        if not self.up:
+            self.skipTest("ブリッジ未起動")
+        status, ctype, body = self._get("/manual")
+        self.assertEqual(status, 200)
+        self.assertIn("Kenesis Loop Kit 使い方マニュアル", body.decode("utf-8", "replace"))
+
+    def test_unknown_path_still_404(self):
+        """配信口を足したことで、他のパスの 404 が壊れていないこと。"""
+        if not self.up:
+            self.skipTest("ブリッジ未起動")
+        import urllib.error
+        with self.assertRaises(urllib.error.HTTPError) as cm:
+            self._get("/klk098-does-not-exist")
+        self.assertEqual(cm.exception.code, 404)
+
+
 if __name__ == "__main__":
     unittest.main()

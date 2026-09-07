@@ -135,7 +135,10 @@ check(
 s5_root = re.search(r'path in \("/", "/index\.html"\)', DO_GET_SEG) is not None
 s5_health = re.search(r'path == "/health"', DO_GET_SEG) is not None
 s5_status = re.search(r'path\.startswith\("/status/"\)', DO_GET_SEG) is not None
-s5_catalog = re.search(r'path == "/catalog"', DO_GET_SEG) is not None
+# ★記法に依存しない（KLK-100 で `/catalog.html` を別名に足したら落ちた）。
+#   見たいのは「ルートが消えていないこと」であって、書き方の固定ではない。
+s5_catalog = re.search(
+    r'path\s*(?:==\s*"/catalog"|in\s*\([^)]*"/catalog"[^)]*\))', DO_GET_SEG) is not None
 s5_catalog_json = re.search(r'path == "/catalog\.json"', DO_GET_SEG) is not None
 s5_catalog_img = re.search(r'path\.startswith\("/catalog/img/"\)', DO_GET_SEG) is not None
 s5_404 = 'self._json(404, {"error": "not found"})' in DO_GET_SEG

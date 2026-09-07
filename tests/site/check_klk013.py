@@ -267,7 +267,11 @@ check(
 # ===========================================================================
 # S8 ブリッジ配信エンドポイント（静的・GET /catalog・/catalog.json・/catalog/img/・POST /catalog-import）
 # ===========================================================================
-s8_get_catalog = re.search(r'path\s*==\s*["\']/catalog["\']', BRIDGE_SRC) is not None
+# ★記法に依存しない。`path == "/catalog"` でも `path in ("/catalog", "/catalog.html")` でも
+#   「/catalog が do_GET のルートとして生きている」ことを見たい（KLK-100 で別名を足して落ちた）。
+s8_get_catalog = re.search(
+    r'path\s*(?:==\s*["\']/catalog["\']|in\s*\([^)]*["\']/catalog["\'][^)]*\))',
+    BRIDGE_SRC) is not None
 s8_get_json = re.search(r'path\s*==\s*["\']/catalog\.json["\']', BRIDGE_SRC) is not None
 s8_get_img = re.search(r'path\.startswith\(\s*["\']/catalog/img/["\']\s*\)', BRIDGE_SRC) is not None
 s8_post = re.search(r'path\s*==\s*["\']/catalog-import["\']', BRIDGE_SRC) is not None

@@ -233,16 +233,34 @@ _near = _h1 >= 0 and "使い方マニュアル.html" in UI[max(0, _h1 - 400):_h1
 check("C31 リンクが大見出し「モック生成 — 設定」の近くにある", _near,
       "見出しの位置=%d / 近傍にリンク=%s" % (_h1, _near))
 
-_broken = []
+# ★ここは一度間違えた。**ファイルとして開いた場合**しか見ておらず、
+#   実際の運用（ブリッジが `/` で配信する）を検証していなかったため、
+#   理恵さんの環境で `{"error": "not found"}` になった。
+#   リンクは2つの経路の**両方**で解決しなければならない。
+_broken_file = []
 for _p in set(_href):
     _abs = os.path.normpath(os.path.join(ROOT, "draft-gen", _p))
     if not os.path.isfile(_abs):
-        _broken.append(_p)
-check("C32 リンク先が実在する（draft-gen/ からの相対パスが解決する）",
-      not _broken, "切れているリンク=%s" % (_broken or "なし"))
+        _broken_file.append(_p)
+check("C32 ファイルとして開いた場合にリンクが解決する（file:// 経路）",
+      not _broken_file, "切れているリンク=%s" % (_broken_file or "なし"))
 
-# パッケージでも同じ位置関係が保たれるか（マニュアルは root・画面は draft-gen/）
-check("C33 パッケージ内でもリンクが成立する（マニュアルは root に置かれる）",
+# ブリッジ経由の経路: 画面は `/` で配信されるので `../x` は `/x` へ解決する。
+# その `/x` を**ブリッジが配信しているか**をルーティング表で確かめる。
+BRIDGE = io.open(os.path.join(ROOT, "draft-gen", "bridge.py"), encoding="utf-8").read()
+_served = []
+for _p in set(_href):
+    _url = "/" + _p.lstrip("./")            # ../使い方マニュアル.html → /使い方マニュアル.html
+    _served.append((_url, ('"%s"' % _url) in BRIDGE))
+check("C33 ★ブリッジ経由でもリンクが解決する（配信口がある）",
+      all(ok for _, ok in _served),
+      "経路=%s" % [(u, "配信あり" if ok else "★配信口が無い") for u, ok in _served])
+
+check("C34 ブリッジが日本語URLを unquote して照合している（percent-encode 対策）",
+      "urllib.parse.unquote(path)" in BRIDGE,
+      "unquote=%s" % ("urllib.parse.unquote(path)" in BRIDGE))
+
+check("C35 パッケージ内でも位置関係が保たれる（マニュアルは root・画面は draft-gen/）",
       "使い方マニュアル.html" in PKG and all(p.startswith("../") for p in _href),
       "同梱=%s / 相対パス=%s" % ("使い方マニュアル.html" in PKG, sorted(set(_href))))
 
