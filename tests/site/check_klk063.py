@@ -91,18 +91,41 @@ _FULL = BRIDGE_SRC[_i:BRIDGE_SRC.find("def _pending_names_count")] if _i >= 0 el
 # （docstring を含めると説明文の出現位置で順序判定が狂う）。
 _ds_end = _FULL.find('"""', _FULL.find('"""') + 3)
 UPBODY = _FULL[_ds_end + 3:] if _ds_end > 0 else _FULL
-order = [
-    ("is_allowed_origin", UPBODY.find("is_allowed_origin(")),
-    ("size-limit(413)", UPBODY.find("> CATALOG_UPLOAD_MAX_BODY_BYTES")),
-    ("sniff_catalog_image_ext", UPBODY.find("sniff_catalog_image_ext(raw")),
-    ("save(wb)", UPBODY.find('"wb"')),
-    ("_json(200", UPBODY.find("_json(200")),
+# ★位置の大小比較だけでは足りない（KLK-107 で判明）。
+#   マジックバイト判定を保存の**後ろ**へ動かしても、
+#   その呼び出しが別の場所に1つでもあれば `find` がそれを拾い、順序判定を通り抜ける。
+#   実際に「保存してからマジックバイトを見る」改悪を見逃した。
+#   → **保存より前に必要な検査が在るか**を、保存位置を基準にして個別に見る。
+_save = UPBODY.find('"wb"')
+_gates = [
+    ("is_allowed_origin", "is_allowed_origin("),
+    ("size-limit(413)", "> CATALOG_UPLOAD_MAX_BODY_BYTES"),
+    ("sniff_catalog_image_ext", "sniff_catalog_image_ext(raw"),
 ]
-positions = [p for _, p in order]
+# ★さらに: マジックバイト判定は「呼ばれている」だけでは不十分で、
+#   **その結果で弾いている**必要がある。呼び出しを保存の後ろへ動かし、
+#   `ext = ".jpg"` と決め打ちにする改悪を、位置だけ見る検査は通してしまった。
+#   `ext` が判定結果から来ていること・None なら 400 で返すことまで見る。
+_ext_from_sniff = "ext = sniff_catalog_image_ext(raw" in UPBODY
+_ext_guard = ("if ext is None:" in UPBODY
+              and UPBODY.find("if ext is None:") < UPBODY.find('"wb"'))
+
+_before, _missing = {}, []
+for _label, _needle in _gates:
+    _p = UPBODY.find(_needle)
+    _before[_label] = _p
+    if _p < 0 or _p > _save:
+        _missing.append(_label)
+# 保存に成功した経路の応答は保存の後（重複時の早期 200 は保存前でよい）
+_resp_ok = UPBODY.rfind("_json(200") > _save >= 0
 check(
-    "U4 _catalog_upload の防御順が Origin(403)→サイズ上限(413/400)→マジックバイト(400)→保存→200 である",
-    bool(UPBODY) and all(p >= 0 for p in positions) and positions == sorted(positions),
-    "位置=%s" % ({k: v for k, v in order}),
+    "U4 _catalog_upload の防御が**保存より前**に揃っている"
+    "（Origin(403)→サイズ上限(413/400)→マジックバイト(400)→保存→200）",
+    bool(UPBODY) and _save >= 0 and not _missing and _resp_ok
+    and _ext_from_sniff and _ext_guard,
+    "保存位置=%s / 保存より前=%s / 保存後に無い検査=%s / 応答が保存の後=%s"
+    " / ext は判定結果=%s / None なら弾く=%s"
+    % (_save, _before, _missing or "なし", _resp_ok, _ext_from_sniff, _ext_guard),
 )
 check(
     "U5 保存名がサーバ生成（uuid）で、クライアント由来の名前を保存パスに使っていない",

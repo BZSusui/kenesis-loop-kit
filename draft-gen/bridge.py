@@ -20,6 +20,7 @@ Python標準ライブラリのみ・外部依存ゼロ。127.0.0.1 限定 bind �
 """
 
 import datetime
+import hashlib
 import ipaddress
 import json
 import os
@@ -414,6 +415,52 @@ def build_claude_command(instruction_path, allow_open=False):
     if allow_open:
         cmd += ["--allowedTools", "Bash(open *)"]
     return cmd
+
+
+def find_duplicate_pending(pending_dir, raw_bytes):
+    """同じ内容の画像がすでに取り込み待ちにあれば、そのファイル名を返す（KLK-107）。
+
+    ★ファイル名では判定できない。保存名はサーバが uuid で作るので、同じ画像でも毎回違う。
+      **内容のハッシュ**で照合する。副作用なし（読むだけ）。
+    """
+    try:
+        want = hashlib.sha256(raw_bytes).hexdigest()
+    except Exception:
+        return None
+    try:
+        names = sorted(os.listdir(pending_dir))
+    except OSError:
+        return None
+    for n in names:
+        if not catalog_import_ext_ok(n):
+            continue
+        p = os.path.join(pending_dir, n)
+        try:
+            if os.path.getsize(p) != len(raw_bytes):
+                continue                       # 先にサイズで弾く（大きい画像を無駄に読まない）
+            with open(p, "rb") as fh:
+                if hashlib.sha256(fh.read()).hexdigest() == want:
+                    return n
+        except OSError:
+            continue
+    return None
+
+
+def is_bridge_already_running(host, port, timeout=0.4):
+    """そのポートで**このブリッジが**すでに動いているかを返す（KLK-107）。
+
+    ★ただ bind を試すだけでは足りない。他のアプリが同じポートを使っている場合と
+      区別できないと、案内が嘘になる。`GET /health` の応答で自分自身か確かめる。
+
+    副作用は localhost への短い HTTP 接続のみ（外部通信なし・NFR-005）。
+    """
+    try:
+        req = urllib.request.Request("http://{0}:{1}/health".format(host, port))
+        with urllib.request.urlopen(req, timeout=timeout) as res:
+            body = json.loads(res.read().decode("utf-8", "replace"))
+        return bool(body.get("ok")) and body.get("name") == "klk-draft-bridge"
+    except Exception:
+        return False
 
 
 def build_open_command(target_path, platform):
@@ -1683,6 +1730,39 @@ def validate_delete_request(obj):
     return (len(errors) == 0), errors
 
 
+def split_import_batch(pending_dir, names,
+                       max_files=None, max_bytes=None):
+    """今回処理する分と、次に回す分に分ける（KLK-107・副作用なし）。
+
+    返却: (今回の names, 次回に残る names, 今回の合計バイト数)
+
+    ★「多すぎるので止める」ではなく「**先頭から入るだけ処理する**」設計にする。
+      止めるだけだと、利用者は自分で選び直す羽目になる（何枚なら通るかも分からない）。
+      分けて処理すれば、押すだけで最後まで終わる。
+    ★1枚がひとりで上限を超える場合でも、**その1枚は必ず処理対象に入れる**
+      （でないと永久に取り込めない画像ができる）。
+    """
+    if max_files is None:
+        max_files = CATALOG_IMPORT_MAX_FILES
+    if max_bytes is None:
+        max_bytes = CATALOG_IMPORT_MAX_BYTES
+    take, rest, total = [], [], 0
+    for n in names:
+        if len(take) >= max_files:
+            rest.append(n)
+            continue
+        try:
+            size = os.path.getsize(os.path.join(pending_dir, n))
+        except OSError:
+            size = 0
+        if take and (total + size) > max_bytes:
+            rest.append(n)
+            continue
+        take.append(n)
+        total += size
+    return take, rest, total
+
+
 def validate_import_request(obj):
     """POST /catalog-import のボディを検証する(注入対策・§4.2)。
 
@@ -1742,6 +1822,20 @@ def build_catalog_import_command(pending_spec_path, allow_open=False):
     cmd += ["--allowedTools", ",".join(tools)]
     return cmd
 
+
+# ---- カタログ取り込みの1回あたりの上限（KLK-107）-----------------------------
+# ★なぜ上限が要るか（実際に起きたこと）
+#   取り込みは **.pending にある全部を1回の AI セッションで処理**する。
+#   1枚ずつ視覚認識するため、枚数と容量にそのまま比例してコンテキストと時間を食う。
+#   理恵さんの環境では 10枚・25MB が溜まり、取り込みが失敗し続けた。
+#   失敗しても画像は残るので、再試行のたびに対象が増えて**さらに失敗しやすくなる**。
+#
+# ★数字の根拠（実測）
+#   0.3MB 1枚 = 107秒。既存カタログの画像は中央値 5.0MB・最大 18.7MB と大きい。
+#   タイムアウトは 1800秒。失敗の代償（30分待って何も残らない）は
+#   「何回かに分けて押す手間」より遥かに大きいので、**安全側に寄せる**。
+CATALOG_IMPORT_MAX_FILES = 3          # 1回に処理する枚数
+CATALOG_IMPORT_MAX_BYTES = 16 << 20   # 1回に処理する合計サイズ(16 MiB)
 
 MTIME_TOLERANCE_SEC = 2.0   # 再生成の mtime 更新判定の許容差(FS の秒切り詰め吸収・KLK-018 U2)
 
@@ -2434,6 +2528,10 @@ def _run_server(port):
                 self._json(404, {"error": "取り込み対象の画像がありません(catalog/.pending/ に JPG / PNG / WebP を置いてください)"})
                 return
 
+            # ★1回に処理する量を絞る（KLK-107）。多すぎると AI セッションが持たず、
+            #   30分待って何も残らない。**入るだけ処理して、残りは次回へ回す**。
+            names, deferred, batch_bytes = split_import_batch(catalog_pending_dir, names)
+
             # ⑥ jobId 発行 → 検証済みジョブ仕様を pending へ書き worker 起動(プロンプトは pending パスのみ)
             job_id = uuid.uuid4().hex
             os.makedirs(catalog_pending_dir, exist_ok=True)
@@ -2464,7 +2562,12 @@ def _run_server(port):
                     "started_at": started_at,
                     "folder": None,
                     "openTarget": None,
-                    "message": "取り込み中…",
+                    "message": ("取り込み中…（{0}枚）".format(len(names)) if not deferred
+                                else "取り込み中…（{0}枚。残り{1}枚は次回）".format(
+                                    len(names), len(deferred))),
+                    # 分割したことを画面へ伝える（利用者が「全部やった」と誤解しないため）
+                    "batchFiles": len(names),
+                    "deferredFiles": len(deferred),
                 }
 
             worker = threading.Thread(
@@ -2473,7 +2576,12 @@ def _run_server(port):
                 daemon=True,
             )
             worker.start()
-            self._json(202, {"jobId": job_id})
+            self._json(202, {
+                "jobId": job_id,
+                "batchFiles": len(names),
+                "deferredFiles": len(deferred),
+                "batchBytes": batch_bytes,
+            })
 
         def _upload(self):
             """POST /upload — MVフリー実写真の生バイナリ直POST受信(KLK-020・§4.3・§3.2/3.3/3.4)。
@@ -2561,6 +2669,20 @@ def _run_server(port):
             ext = sniff_catalog_image_ext(raw[:16])
             if ext is None:
                 self._json(400, {"error": "画像として認識できません(JPEG/PNG/WebP のみ)"})
+                return
+            # ★同じ画像が二重に入るのを防ぐ（KLK-107）。
+            #   取り込みに失敗すると画像は .pending/ に残る。そこへ同じものを入れ直すと
+            #   **同じ画像が2枚**になり、次の取り込みはさらに重くなって失敗しやすくなる。
+            #   実際に同じ5枚が2回ぶん（計10枚・25MB）溜まっていた（理恵さんの環境）。
+            #   内容のハッシュで照合する（ファイル名では判定できない＝保存名はサーバ生成のため）。
+            dup = find_duplicate_pending(catalog_pending_dir, raw)
+            if dup:
+                self._json(200, {
+                    "savedName": dup,
+                    "duplicate": True,
+                    "pendingCount": self._pending_names_count()[1],
+                    "message": "同じ画像がすでに取り込み待ちにあります（重ねて追加しませんでした）",
+                })
                 return
             # ⑤ 保存(保存名はサーバ生成＝安全名・basename・危険文字なし)
             saved_name = "pnd-" + uuid.uuid4().hex + ext
@@ -3288,11 +3410,42 @@ def _run_server(port):
                         "desiredType": job.get("desiredType"),
                         # 規約違反の疑い(KLK-080)。型が変わっても、これが空でなければ成功と同じ顔をさせない
                         "warnings": job.get("warnings") or [],
+                        # 取り込みを分割したときの残り（KLK-107）。画面が「まだ残っている」と出す
+                        "batchFiles": job.get("batchFiles"),
+                        "deferredFiles": job.get("deferredFiles"),
                     },
                 )
 
-    httpd = ThreadingHTTPServer((BRIDGE_HOST, port), Handler)
     url = "http://{0}:{1}/".format(BRIDGE_HOST, port)
+
+    # ★すでに動いていたら、二重に起動しない（KLK-107）。
+    #   旧実装は bind に失敗して **Python の生のトレースバック**を吐いて落ちていた
+    #   （`OSError: [Errno 48] Address already in use`）。利用者には何が起きたか分からず、
+    #   何度も起動しなおすことになり、そのたびに設定画面のタブが増えた（理恵さんの報告）。
+    if is_bridge_already_running(BRIDGE_HOST, port):
+        sys.stderr.write(
+            "\n"
+            "[bridge] すでに起動しています（{0}）。\n"
+            "         二重に起動する必要はありません。このウィンドウは閉じて構いません。\n"
+            "         画面が見当たらないときは、ブラウザで次を開いてください:\n"
+            "           {1}\n"
+            "\n".format(port, url)
+        )
+        # 画面が行方不明のときのために1度だけ開く（タブは増やさない＝この分岐では開かない）
+        return 0
+
+    try:
+        httpd = ThreadingHTTPServer((BRIDGE_HOST, port), Handler)
+    except OSError as exc:
+        # 起動直前に他が取った等の競合。ここでもトレースバックは見せない。
+        sys.stderr.write(
+            "\n[bridge] ポート {0} を使えませんでした（{1}）。\n"
+            "         すでに起動していないかご確認ください。\n"
+            "         別のポートで動かすには: KLK_BRIDGE_PORT=8766 で起動してください。\n\n"
+            .format(port, exc)
+        )
+        return 1
+
     sys.stderr.write("[bridge] listening on {0} (Ctrl+C で停止)\n".format(url))
     try:
         subprocess.run(build_open_command(url, sys.platform), capture_output=True, timeout=15)
