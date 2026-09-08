@@ -96,7 +96,22 @@ fi
 
 # ---- 任意: 実績カタログ（社外秘） -------------------------------------------
 if [ "$WITH_CATALOG" -eq 1 ]; then
-  [ -d catalog/img ] && cp -R catalog/img "$DEST/catalog/"
+  # ★配布用に画像を軽くする（KLK-110）。**元画像は catalog/img/ に温存**する。
+  #   実測: 167枚 773MB → 217MB（72%減・約50秒）。
+  #   767MB のままだとメール添付は不可で、共有フォルダ経由が前提になる。
+  #   横幅1600px を上限にし、PNG は JPEG へ入れ替える（容量の94%が PNG だった）。
+  #   ★「長辺」ではなく「横幅」基準。実績画像は縦長のフルページで、
+  #     167枚のうち118枚が縦が横の3倍以上（最大17.2倍）。長辺で揃えると
+  #     横幅が93〜194px まで潰れて実績が読めなくなる。
+  if [ -d catalog/img ]; then
+    echo "  カタログ画像を配布用に軽くしています（元画像は触りません）…"
+    if python3 tools/shrink-catalog-images.py "$DEST/catalog/img" --src=catalog/img; then
+      :
+    else
+      echo "  【注意】軽量化に失敗したため、元のサイズでコピーします"
+      cp -R catalog/img "$DEST/catalog/"
+    fi
+  fi
   [ -f catalog/catalog.json ] && cp catalog/catalog.json "$DEST/catalog/"
   echo "  含めた: catalog/img/ catalog/catalog.json（--with-catalog）"
   # README を「空から始める」前提から「最初から入っている」前提へ差し替える。

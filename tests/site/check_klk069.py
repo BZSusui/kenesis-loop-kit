@@ -103,14 +103,43 @@ check(
     % ("WITH_CATALOG=0" in SCRIPT, "--with-catalog" in SCRIPT,
        'if [ "$WITH_CATALOG" -eq 1 ]' in SCRIPT),
 )
-check(
-    "R8 --with-catalog のときだけ catalog/img と catalog.json をコピーする",
-    re.search(r'if \[ "\$WITH_CATALOG" -eq 1 \];[\s\S]{0,400}catalog/img', SCRIPT) is not None
-    and re.search(r'if \[ "\$WITH_CATALOG" -eq 1 \];[\s\S]{0,400}catalog\.json', SCRIPT) is not None,
-    "img=%s / json=%s"
-    % (re.search(r'if \[ "\$WITH_CATALOG" -eq 1 \];[\s\S]{0,400}catalog/img', SCRIPT) is not None,
-       re.search(r'if \[ "\$WITH_CATALOG" -eq 1 \];[\s\S]{0,400}catalog\.json', SCRIPT) is not None),
-)
+# --with-catalog の分岐ブロックを取り出す（次の `fi` までを1つの塊として見る）
+_i = SCRIPT.find('if [ "$WITH_CATALOG" -eq 1 ]')
+_WITH_CATALOG_BLOCK = ""
+if _i >= 0:
+    _depth = 0
+    for _line in SCRIPT[_i:].split("\n"):
+        _WITH_CATALOG_BLOCK += _line + "\n"
+        _st = _line.strip()
+        if _st.startswith("if ") or _st.startswith("if["):
+            _depth += 1
+        elif _st == "fi" or _st.startswith("fi "):
+            _depth -= 1
+            if _depth <= 0:
+                break
+
+# ★R8: 文字列の有無では足りない（KLK-110 で判明）。
+#   分岐ブロックに "catalog.json" があるかを見ていたが、**コメントにも残る**ので
+#   コピー行を外しても素通りした。**実際に --with-catalog で作って中身を見る。**
+if not (os.path.isfile(SCRIPT_PATH) and shutil.which("bash")
+        and os.path.isdir(os.path.join(ROOT, "catalog"))):
+    check("R8 --with-catalog で catalog/img と catalog.json が入る [SKIP]",
+          True, "bash / catalog が無い環境")
+else:
+    _t = tempfile.mkdtemp(prefix="klk069c-")
+    _o = os.path.join(_t, "pkg")
+    try:
+        _r = subprocess.run(["bash", SCRIPT_PATH, _o, "--with-catalog"],
+                            capture_output=True, text=True, cwd=ROOT, timeout=600)
+        _img = os.path.join(_o, "catalog", "img")
+        _json = os.path.join(_o, "catalog", "catalog.json")
+        _n = len(os.listdir(_img)) if os.path.isdir(_img) else 0
+        check("R8 ★--with-catalog で実際に catalog/img と catalog.json が入る",
+              _r.returncode == 0 and _n > 0 and os.path.isfile(_json),
+              "exit=%s / img=%d 枚 / json=%s"
+              % (_r.returncode, _n, os.path.isfile(_json)))
+    finally:
+        shutil.rmtree(_t, ignore_errors=True)
 # 危険な丸ごとコピーをしていないこと
 check(
     "R9 リポジトリ全体を丸ごとコピーしていない（mockups・tickets の中身・.git を持っていかない）",
