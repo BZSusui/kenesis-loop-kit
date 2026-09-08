@@ -113,9 +113,16 @@ with tempfile.TemporaryDirectory() as _wd:
         for fn in ("起動.command", "起動.bat", GUIDE_NAME, "使い方マニュアル.html", "README.md"):
             if not os.path.isfile(os.path.join(_dest, fn)):
                 _pkg_missing.append(fn)
-        if os.path.isfile(os.path.join(_dest, "起動.command")) and not os.access(
-                os.path.join(_dest, "起動.command"), os.X_OK):
+        _cmd = os.path.join(_dest, "起動.command")
+        if os.path.isfile(_cmd) and not os.access(_cmd, os.X_OK):
             _pkg_missing.append("起動.command（実行権限なし）")
+        # ★出来上がったパッケージにアイコンが**実際に付いているか**まで見る。
+        #   Git はリソースフォークを保存しないので、作業ツリーを見ても意味がない。
+        #   make-package.sh が毎回付け直しているかは、成果物でしか確かめられない。
+        if sys.platform == "darwin" and os.path.isfile(_cmd):
+            _rsrc = os.path.join(_cmd, "..namedfork", "rsrc")
+            if not (os.path.isfile(_rsrc) and os.path.getsize(_rsrc) > 1000):
+                _pkg_missing.append("起動.command（アイコンなし）")
 check("K ★実際に作ったパッケージの**最上位**に、起動と手引きが在る",
       _pkg_err is None and not _pkg_missing,
       "作成エラー=%s / 欠落=%s" % (_pkg_err or "なし", _pkg_missing or "なし"))
@@ -139,10 +146,15 @@ TOOL = (io.open(os.path.join(ROOT, "tools", "set-mac-icon.py"), encoding="utf-8"
 check("O ツールが ZIP の注意（ditto でないとアイコンが消える）を記録している",
       "ditto" in TOOL and "zip -r" in TOOL,
       "記録=%s" % ("ditto" in TOOL))
-check("P make-package.sh が ZIP 手順を案内し、アイコンの有無を確かめる",
-      "ditto -c -k --sequesterRsrc" in PKG and "GetFileInfo" in PKG,
-      "ZIP案内=%s / アイコン確認=%s"
-      % ("ditto -c -k --sequesterRsrc" in PKG, "GetFileInfo" in PKG))
+check("P make-package.sh が ZIP 手順を案内する（ditto でないと消える）",
+      "ditto -c -k --sequesterRsrc" in PKG, "ZIP案内=%s" % ("ditto -c -k --sequesterRsrc" in PKG))
+
+# ★Git はリソースフォークを保存しない。clone 直後はアイコンも実行ビットも失われる
+#   （実測で確認）。**作業ツリーのアイコンを当てにせず、毎回 SVG から付け直す**こと。
+check("P2 ★make-package.sh が毎回アイコンを付け直す（clone した環境でも付く）",
+      "set-mac-icon.py" in PKG and "assets/icons/起動アイコン.svg" in PKG,
+      "道具の呼び出し=%s / 元データの参照=%s"
+      % ("set-mac-icon.py" in PKG, "assets/icons/起動アイコン.svg" in PKG))
 
 # 実際にアイコンが付いているか（macOS でのみ判定・他OSでは素通り）
 if sys.platform == "darwin" and os.path.isfile(os.path.join(ROOT, "起動.command")):
