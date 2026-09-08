@@ -1,13 +1,13 @@
 # KLK-014 生成導線の改善（ワンクリック起動ランチャー＋フォールバック文言の正確化・SCR-001）の
 # テストを unittest スイートへ束ねるラッパー（tester所有）。
 # - S群（静的/コア）: tests/site/check_klk014.py（S1-S10・Python標準のみ・
-#   対象＝draft-gen/index.html(静的) / draft-gen/起動.command(静的・**実行しない**)）。
+#   対象＝draft-gen/index.html(静的) / 起動.command(静的・**実行しない**)）。
 # - D群（動的）:
 #   - D1: check_klk014.py を subprocess 実行し exit 0（S群 束ね）。
 #   - D2: `python3 -m unittest discover -s tests` の回帰全緑（NFR-006）は
 #     スイート全体の実行そのものが担保する。ここでは S群 subprocess 実行を束ねる
 #     （特に文言変更で check_klk010 S7 が PASS 維持であることをスイート全体で回帰確認）。
-#   - D3: `bash -n draft-gen/起動.command` が exit 0（**構文解析のみ・実行しない**＝
+#   - D3: `bash -n 起動.command` が exit 0（**構文解析のみ・実行しない**＝
 #     ブリッジ起動の副作用なし。bash 不在時 skip）。
 #
 # 【重要】起動.command は決して実行しない（ブリッジが起動してしまう）。D3 は `bash -n`
@@ -23,7 +23,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 STATIC_CHECKER = ROOT / "tests" / "site" / "check_klk014.py"
-LAUNCHER = ROOT / "draft-gen" / "起動.command"
+# ★KLK-105: 起動スクリプトは最上位へ移した（フォルダを開いてすぐ押せるように）
+LAUNCHER = ROOT / "起動.command"
 
 
 class TestKLK014Static(unittest.TestCase):

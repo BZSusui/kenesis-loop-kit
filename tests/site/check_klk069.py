@@ -80,7 +80,7 @@ check(
 REFERENCED = ["draft-gen/bridge.py", "palette/index.html", "docs/SPEC.md",
               "CLAUDE.md", "tickets/Templates/"]
 absent = [p for p in REFERENCED if p in README and not os.path.exists(os.path.join(ROOT, p))]
-kigou = os.path.join(ROOT, "draft-gen", "起動.command")
+kigou = os.path.join(ROOT, "起動.command")
 check(
     "R5 README の手順に出てくるコマンド・パスが実在する",
     not absent and "起動.command" in README and os.path.exists(kigou),
@@ -142,7 +142,7 @@ else:
         proc = subprocess.run(["bash", SCRIPT_PATH, out],
                               capture_output=True, text=True, cwd=ROOT, timeout=180)
         must = ["draft-gen/bridge.py", "draft-gen/index.html", "draft-gen/catalog.html",
-                "draft-gen/起動.command", "palette/index.html", "README.md", "CLAUDE.md",
+                "起動.command", "palette/index.html", "README.md", "CLAUDE.md",
                 "agents/orchestrator.md", "docs/SPEC.md", "tickets/Templates/ticket.md",
                 ".claude/skills/draft-generate/SKILL.md"]
         must_missing = [p for p in must if not os.path.exists(os.path.join(out, p))]
@@ -152,7 +152,7 @@ else:
         mock_files = os.listdir(mock) if os.path.isdir(mock) else ["(mockups が無い)"]
         act = os.path.join(out, "tickets", "active")
         act_files = [n for n in (os.listdir(act) if os.path.isdir(act) else []) if n != ".gitkeep"]
-        exec_ok = os.access(os.path.join(out, "draft-gen", "起動.command"), os.X_OK)
+        exec_ok = os.access(os.path.join(out, "起動.command"), os.X_OK)
         ok = (proc.returncode == 0 and not must_missing and not forbidden_present
               and not mock_files and not act_files and exec_ok)
         check(

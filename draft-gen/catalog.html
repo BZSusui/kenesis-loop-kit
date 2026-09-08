@@ -514,7 +514,7 @@
     if (zone) zone.classList.toggle("disabled", !alive);
     if (input) input.disabled = !alive;
     if (!alive) {
-      setUploadStatus("ローカルブリッジ未起動のため画像を追加できません。draft-gen/起動.command をダブルクリック、またはターミナルで python3 draft-gen/bridge.py を実行してください。");
+      setUploadStatus("ローカルブリッジ未起動のため画像を追加できません。起動.command をダブルクリック、またはターミナルで python3 draft-gen/bridge.py を実行してください。");
     }
     var banner = document.getElementById("bridgeState");
     var btn = document.getElementById("importBtn");
@@ -847,7 +847,7 @@
     var files = Array.prototype.slice.call(fileList || []);
     if (!files.length) return;
     if (!bridgeAlive) {
-      setUploadStatus("ローカルブリッジ未起動のためアップロードできません。draft-gen/起動.command をダブルクリック、またはターミナルで python3 draft-gen/bridge.py を実行してください。");
+      setUploadStatus("ローカルブリッジ未起動のためアップロードできません。起動.command をダブルクリック、またはターミナルで python3 draft-gen/bridge.py を実行してください。");
       return;
     }
     var okCount = 0, failures = [];

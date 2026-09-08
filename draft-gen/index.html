@@ -696,7 +696,7 @@
       </p>
       <p class="note-oq mv-bridge-need" id="mvBridgeNeed" style="display:none">
         実写真のアップロードにはローカルブリッジの起動が必要です（生成と同じ仕組み）。
-        draft-gen/起動.command をダブルクリック、またはターミナルで python3 draft-gen/bridge.py を実行してください。
+        起動.command をダブルクリック、またはターミナルで python3 draft-gen/bridge.py を実行してください。
       </p>
     </div>
   </section>
@@ -1284,7 +1284,7 @@ function showManualGuidance() {
   setBridgeStatus('guide',
     '生成指示書をクリップボードにコピーしました（ローカルブリッジ未起動）。\n' +
     'いますぐ生成するには、Claude Code のチャット欄にそのまま貼り付けて Enter（コマンドは自動判定されます）。\n' +
-    '次回からワンクリックにするには、draft-gen/起動.command をダブルクリック（またはターミナルで python3 draft-gen/bridge.py）でブリッジを起動してください。',
+    '次回からワンクリックにするには、起動.command をダブルクリック（またはターミナルで python3 draft-gen/bridge.py）でブリッジを起動してください。',
     false);
 }
 function showLoading(sec) {
@@ -1299,7 +1299,7 @@ function showBridgeError(msg) {
   setBridgeStatus('error',
     'エラー：' + msg + '\n' +
     '生成指示書はクリップボードにコピー済みです。Claude Code のチャット欄にそのまま貼り付けて Enter で生成できます（コマンドは自動判定）。\n' +
-    'ワンクリックで生成するには、draft-gen/起動.command をダブルクリック（またはターミナルで python3 draft-gen/bridge.py）でブリッジを起動してください。',
+    'ワンクリックで生成するには、起動.command をダブルクリック（またはターミナルで python3 draft-gen/bridge.py）でブリッジを起動してください。',
     false);
 }
 
@@ -1724,7 +1724,7 @@ function showCatalogGuidance(alive) {
       a.textContent = BRIDGE_ORIGIN + '/';
       p.appendChild(a);
     } else {
-      p.textContent = '実績カタログを表示するには draft-gen/起動.command をダブルクリック'
+      p.textContent = '実績カタログを表示するには 起動.command をダブルクリック'
         + '（またはターミナルで python3 draft-gen/bridge.py を実行）し、'
         + '表示される ' + BRIDGE_ORIGIN + '/ からこの画面を開いてください。起動を自動で再確認しています…';
     }

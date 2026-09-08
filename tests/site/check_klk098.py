@@ -176,9 +176,13 @@ check("C20 サムネイルの既定表示数が実装と一致",
 
 # 起動スクリプト名が実在すること
 for fn in ("起動.command", "起動.bat"):
+    # ★KLK-105: 起動スクリプトは**最上位**へ移した（フォルダを開いてすぐ押せるように）。
+    #   置き場所が変わっても「実在すること」を見たいので、両方の場所を許す。
+    _found = (os.path.isfile(os.path.join(ROOT, fn))
+              or os.path.isfile(os.path.join(ROOT, "draft-gen", fn)))
     check("C21 %s が実在し、マニュアルの記載と一致" % fn,
-          os.path.isfile(os.path.join(ROOT, "draft-gen", fn)) and fn in M,
-          "実在=%s / 記載=%s" % (os.path.isfile(os.path.join(ROOT, "draft-gen", fn)), fn in M))
+          _found and fn in M,
+          "実在=%s / 記載=%s" % (_found, fn in M))
 
 # ---------------------------------------------------------------------------
 # AC2 / AC7 / AC8 / AC9 構成・役割分担・同梱・印刷

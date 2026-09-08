@@ -2,7 +2,7 @@
 # tools/make-package.sh — 配布用フォルダを組み立てる (KLK-069)
 #
 # 配布方式: Git ではなく**フォルダを手渡し**する。受け取った人はフォルダを好きな場所へ置き、
-# draft-gen/起動.command をダブルクリックするだけで動く。
+# 起動.command をダブルクリックするだけで動く。
 #
 # なぜスクリプトにするか:
 #   配布のたびに「どのフォルダを含めるか」を人が判断すると必ずどこかで間違える。
@@ -71,7 +71,7 @@ mkdir -p "$DEST" || { echo "【エラー】出力先を作成できませんで�
 for d in draft-gen palette .claude agents docs samples; do
   [ -d "$d" ] && cp -R "$d" "$DEST/" && echo "  含めた: $d/"
 done
-for f in README.md 使い方マニュアル.html CLAUDE.md CHANGELOG.md LICENSE; do
+for f in 起動.command 起動.bat はじめにお読みください.txt README.md 使い方マニュアル.html CLAUDE.md CHANGELOG.md LICENSE; do
   [ -f "$f" ] && cp "$f" "$DEST/" && echo "  含めた: $f"
 done
 
@@ -123,7 +123,21 @@ find "$DEST" -name '.DS_Store' -delete 2>/dev/null
 echo "  取り除いた: .DS_Store $DS_N 個（Finder のメタデータ）"
 
 # ---- 実行権限を戻す（cp で失われる環境があるため） --------------------------
-[ -f "$DEST/draft-gen/起動.command" ] && chmod +x "$DEST/draft-gen/起動.command"
+[ -f "$DEST/起動.command" ] && chmod +x "$DEST/起動.command"
+
+# ---- カスタムアイコンを付け直す（KLK-106）----------------------------------
+# ★毎回ここで付ける。作業ツリーのアイコンを当てにしない。
+#   Git は**リソースフォークを保存しない**ので、clone した環境では
+#   アイコンも実行ビットも失われる（実測で確認：clone 直後は両方なし）。
+#   元データ（SVG）から組み立てれば、どの環境で作っても同じものが出る。
+if [ -f "$DEST/起動.command" ] && [ -f assets/icons/起動アイコン.svg ]; then
+  if python3 tools/set-mac-icon.py assets/icons/起動アイコン.svg "$DEST/起動.command" >/dev/null 2>&1; then
+    echo "  アイコン: 起動.command に設定しました"
+  else
+    # macOS 以外や道具が無い環境では付かない。**それだけで配布を止めない**（見た目の話）
+    echo "  アイコン: 設定できませんでした（macOS 以外では付きません。動作には影響しません）"
+  fi
+fi
 [ -f "$DEST/tools/make-package.sh" ] && chmod +x "$DEST/tools/make-package.sh"
 
 echo
@@ -136,9 +150,19 @@ echo "  サイズ: $(du -sh "$DEST" 2>/dev/null | cut -f1)"
 echo
 echo "渡した相手には次を伝えてください:"
 echo "  1. このフォルダを好きな場所（デスクトップ等）に置く"
-echo "  2. draft-gen/起動.command をダブルクリック"
-echo "  3. 画面ごとの使い方は 使い方マニュアル.html（ダブルクリックで開く）
-  4. 置き方・起動・困ったときは README.md"
+echo "  2. まず はじめにお読みください.txt を開く（セットアップ手順）"
+echo "  3. 起動.command（Windows は 起動.bat）をダブルクリック"
+echo "  4. 画面ごとの使い方は 使い方マニュアル.html（ダブルクリックで開く）"
+echo "  5. 困ったときは README.md"
+echo ""
+echo "★ZIP にして渡すときは Finder の「圧縮」（またはターミナルで下記）を使ってください。"
+echo "   起動.command のアイコンはリソースフォークに入っており、"
+echo "   'zip -r' で固めると**アイコンが消えます**（実測で確認済み・KLK-106）。"
+echo ""
+echo "   ditto -c -k --sequesterRsrc --keepParent \"$DEST\" \"$DEST.zip\""
+echo ""
+echo "   受け取った方は Finder でダブルクリックして展開してください"
+echo "   （'unzip' コマンドではアイコンが復元されません）。"
 
 if [ "$WITH_CATALOG" -eq 1 ]; then
   echo

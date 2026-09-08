@@ -6,7 +6,7 @@ Verifies W1-W13 from docs/designs/KLK-070.md §4.5 / §9:
 Windows 対応（起動.bat / hook の両OS化 / webp の非macOSフォールバック / README の両OS化）。
 あわせて catalog-import SKILL の手順2-0 と 手順3' の矛盾解消も検証する。
 
-  縦串 起動      draft-gen/起動.bat（Windows）・起動.command（macOS）
+  縦串 起動      起動.bat（Windows）・起動.command（macOS）
   縦串 hook      .claude/settings.json（python3 が無い環境でも動くか）
   縦串 スキル    catalog-import/SKILL.md（変換先・id 採番・非macOS の skip）
   縦串 README    README.md（両OS の手順）
@@ -27,8 +27,9 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-BAT_PATH = os.path.join(ROOT, "draft-gen", "起動.bat")
-CMD_PATH = os.path.join(ROOT, "draft-gen", "起動.command")
+# ★KLK-105: 起動スクリプトは**最上位**へ移した（フォルダを開いてすぐ押せるように）
+BAT_PATH = os.path.join(ROOT, "起動.bat")
+CMD_PATH = os.path.join(ROOT, "起動.command")
 BAT = open(BAT_PATH, encoding="utf-8").read() if os.path.exists(BAT_PATH) else ""
 SETTINGS = json.load(open(os.path.join(ROOT, ".claude", "settings.json"), encoding="utf-8"))
 SKILL = open(os.path.join(ROOT, ".claude", "skills", "catalog-import", "SKILL.md"), encoding="utf-8").read()
@@ -46,14 +47,14 @@ def check(name, passed, detail):
 # W1-W4 起動.bat
 # ---------------------------------------------------------------------------
 check(
-    "W1 draft-gen/起動.bat が存在し、macOS 版 起動.command も残っている",
+    "W1 起動.bat が存在し、macOS 版 起動.command も残っている",
     os.path.isfile(BAT_PATH) and os.path.isfile(CMD_PATH),
     "起動.bat=%s / 起動.command=%s" % (os.path.isfile(BAT_PATH), os.path.isfile(CMD_PATH)),
 )
 check(
-    "W2 起動.bat が %~dp0.. でルートへ移動し bridge.py を起動する",
-    '%~dp0..' in BAT and "draft-gen\\bridge.py" in BAT,
-    "ルート移動=%s / bridge起動=%s" % ('%~dp0..' in BAT, "draft-gen\\bridge.py" in BAT),
+    "W2 起動.bat が %~dp0 でルートへ移動し bridge.py を起動する（KLK-105 で最上位へ移動）",
+    '%~dp0' in BAT and "draft-gen\\bridge.py" in BAT,
+    "ルート移動=%s / bridge起動=%s" % ('%~dp0' in BAT, "draft-gen\\bridge.py" in BAT),
 )
 check(
     "W3 起動.bat が Python を py -3 → python の順で探す（Windows の実情）",

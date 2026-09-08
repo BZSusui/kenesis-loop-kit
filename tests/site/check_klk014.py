@@ -7,7 +7,7 @@ docs/designs/KLK-014.md §9（S群）against 生成導線の改善（ワンク�
 ＋フォールバック文言の正確化・SCR-001）:
 
   設定画面(静的検証)      draft-gen/index.html
-  起動ランチャー(静的検証) draft-gen/起動.command
+  起動ランチャー(静的検証) 起動.command
 
 Source of truth = 設計書 KLK-014 §9（S群 S1-S10）。check_klk010/013.py と同型
 （正規表現・文字列検索・tester所有・exit 0/1・Python3標準ライブラリのみ・
@@ -27,7 +27,8 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 INDEX_PATH = os.path.join(ROOT, "draft-gen", "index.html")
-LAUNCHER_REL = os.path.join("draft-gen", "起動.command")
+# ★KLK-105: 起動スクリプトは最上位へ移した（フォルダを開いてすぐ押せるように）
+LAUNCHER_REL = "起動.command"
 LAUNCHER_PATH = os.path.join(ROOT, LAUNCHER_REL)
 
 INDEX = open(INDEX_PATH, encoding="utf-8").read()
@@ -173,7 +174,7 @@ _first_line = LAUNCHER.splitlines()[0] if LAUNCHER else ""
 s6_shebang = _first_line in ("#!/bin/bash", "#!/usr/bin/env bash")
 s6 = s6_exists and s6_shebang
 check(
-    "S6 ランチャー存在＋shebang (draft-gen/起動.command が存在し先頭行が #!/bin/bash または #!/usr/bin/env bash)",
+    "S6 ランチャー存在＋shebang (起動.command が存在し先頭行が #!/bin/bash または #!/usr/bin/env bash)",
     s6,
     f"存在={s6_exists}, shebang={_first_line!r}",
 )
@@ -198,7 +199,10 @@ check(
 # S8 ランチャーがブリッジ起動（二重 open しない・受入1）
 # ===========================================================================
 s8_exec = "exec python3 draft-gen/bridge.py" in LAUNCHER
-s8_cd = 'cd "$(dirname "$0")/.."' in LAUNCHER
+# ★KLK-105: 最上位へ移したので `/..` は付かない。見たいのは
+#   「**自分の場所を基準に**フォルダへ移る」こと（cwd に依存しない）であって、
+#   階層の数ではない。cd 無し・絶対パス決め打ちなら落とす。
+s8_cd = 'cd "$(dirname "$0")"' in LAUNCHER
 # ブラウザを二重に open しない（open http / URLを開く行が無い）。
 s8_no_open_url = re.search(r"\bopen\s+[\"']?https?://", LAUNCHER) is None
 s8_no_open_bin = re.search(r"(?m)^\s*open\s", LAUNCHER) is None  # `open ...` 単体呼出も無い
@@ -260,7 +264,7 @@ check(
 # ===========================================================================
 print("=" * 78)
 print("KLK-014 static/core acceptance checks (docs/designs/KLK-014.md §9 S群 S1-S10 を正とする)")
-print("対象: draft-gen/index.html(静的) + draft-gen/起動.command(静的・**実行しない**)")
+print("対象: draft-gen/index.html(静的) + 起動.command(静的・**実行しない**)")
 print("=" * 78)
 failed = 0
 for name, passed, detail in results:
@@ -275,7 +279,7 @@ print()
 print("D群（test_palette_klk014.py で束ね）:")
 print("  - D1 check_klk014.py が exit 0（S群 束ね）")
 print("  - D2 python3 -m unittest discover -s tests 全緑（既存 KLK-006〜013 回帰なし・特に check_klk010 S7）")
-print("  - D3 bash -n draft-gen/起動.command が exit 0（構文解析のみ・実行しない）")
+print("  - D3 bash -n 起動.command が exit 0（構文解析のみ・実行しない）")
 print()
 print("M群（環境制約で静的検証外 = 人間[臼井さん]が実機で手動確認しチケットのログへ記録）:")
 print("  - M1 起動.command ダブルクリック→Terminal→ブリッジ稼働→設定画面が自動でブラウザに開く")

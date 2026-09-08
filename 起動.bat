@@ -1,11 +1,12 @@
 @echo off
-rem draft-gen\起動.bat - ローカルブリッジ ワンクリック起動 (KLK-070 / Windows)
+rem 起動.bat - ローカルブリッジ ワンクリック起動 (KLK-070 / Windows)
+rem ★KLK-105: フォルダを開いてすぐ押せるよう**最上位**へ置く（旧: draft-gen\ 配下）。
 rem macOS 版は 起動.command。中身は同じことをしている。
 chcp 65001 > nul
 setlocal
 
-rem このバッチの場所を基準にリポジトリのルートへ移動する（起動.bat は draft-gen\ 配下）
-cd /d "%~dp0.." || (
+rem このバッチの場所を基準にリポジトリのルートへ移動する（起動.bat はリポジトリ直下）
+cd /d "%~dp0" || (
   echo 【エラー】リポジトリのフォルダへ移動できませんでした。
   pause
   exit /b 1

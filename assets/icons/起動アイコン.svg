@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="112" fill="#ffffff"/>
+  <rect x="8" y="8" width="496" height="496" rx="106" fill="none" stroke="#e6e2d8" stroke-width="10"/>
+  <!-- 紙面 -->
+  <rect x="96" y="72" width="252" height="330" rx="16" fill="#f7f5f0" stroke="#ddd7c9" stroke-width="4"/>
+  <rect x="96" y="72" width="252" height="40" rx="16" fill="#3f4a3a"/><rect x="96" y="96" width="252" height="16" fill="#3f4a3a"/>
+  <rect x="124" y="136" width="196" height="80" rx="8" fill="#d9ddd0"/>
+  <path d="M124 202 l44 -34 36 28 32 -24 84 52 v4 a8 8 0 0 1 -8 8 H132 a8 8 0 0 1 -8 -8 z" fill="#b6bfa6"/>
+  <rect x="124" y="234" width="196" height="12" rx="6" fill="#e4e7dd"/>
+  <rect x="124" y="258" width="150" height="12" rx="6" fill="#e4e7dd"/>
+  <rect x="124" y="292" width="88" height="56" rx="7" fill="#eceee7"/>
+  <rect x="232" y="292" width="88" height="56" rx="7" fill="#eceee7"/>
+  <!-- 起動の丸ボタン -->
+  <circle cx="366" cy="366" r="94" fill="#6b7f4e"/>
+  <circle cx="366" cy="366" r="94" fill="none" stroke="#ffffff" stroke-width="12"/>
+  <path d="M344 326 l62 40 -62 40 z" fill="#ffffff"/>
+</svg>

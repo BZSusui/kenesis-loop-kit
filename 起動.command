@@ -1,10 +1,11 @@
 #!/bin/bash
-# draft-gen/起動.command — ローカルブリッジ ワンクリック起動 (KLK-014 / macOS)
+# 起動.command — ローカルブリッジ ワンクリック起動 (KLK-014 / macOS)
+# ★KLK-105: フォルダを開いてすぐ押せるよう**最上位**へ置く（旧: draft-gen/ 配下）。
 # ダブルクリックで開けない場合は、ターミナルで一度だけ次を実行してください:
-#   chmod +x draft-gen/起動.command
+#   chmod +x 起動.command
 
-# このスクリプトの場所を基準にリポジトリのルートへ移動する（起動.command は draft-gen/ 配下）
-cd "$(dirname "$0")/.." || { echo "リポジトリのフォルダへ移動できませんでした。" >&2; exit 1; }
+# このスクリプトの場所を基準にリポジトリのルートへ移動する（起動.command はリポジトリ直下）
+cd "$(dirname "$0")" || { echo "フォルダへ移動できませんでした。" >&2; exit 1; }
 
 # 必須ツールの存在チェック（黙って失敗しない＝受入条件2）
 if ! command -v python3 >/dev/null 2>&1; then
