@@ -40,12 +40,17 @@ class TestKLK098SelfContained(unittest.TestCase):
         for pat, label in (
             (r'<link\b[^>]*\bhref=', "<link href>"),
             (r'<script\b[^>]*\bsrc=', "<script src>"),
-            (r"https?://", "外部URL"),
             (r"<(iframe|object|embed)\b", "埋め込み要素"),
         ):
             with self.subTest(label):
                 self.assertIsNone(re.search(pat, m, re.I),
                                   "マニュアルに %s がある（外部依存ゼロに違反）" % label)
+        # ★localhost は「外部」ではない（ブリッジの画面を開く案内で本文に出る）。
+        #   守りたいのは「外のネットワークへ出て行かないこと」。
+        #   ここを一緒に弾くと、正しい案内が書けなくなる（実際に落ちた）。
+        outside = [u for u in re.findall(r"https?://[^\s\"'<>]+", m)
+                   if not re.match(r"https?://(127\.0\.0\.1|localhost)(:|/|$)", u)]
+        self.assertFalse(outside, "マニュアルに外部URLがある: %s" % outside[:3])
 
 
 class TestKLK098NoConfidentialContent(unittest.TestCase):

@@ -54,7 +54,11 @@ check("C0 マニュアルが存在する", True, os.path.basename(MANUAL))
 ext_link = re.findall(r'<link\b[^>]*\bhref=', M, re.I)
 ext_script = re.findall(r'<script\b[^>]*\bsrc=', M, re.I)
 # 外部URL: http(s) で始まる参照。説明文中の「https://」も配布物では避ける
-ext_url = re.findall(r'https?://[^\s"\'<>]+', M)
+# ★localhost は「外部」ではない（ブリッジの画面を開く案内で本文に出る）。
+#   守りたいのは「**外のネットワークへ出て行かないこと**」なので、
+#   127.0.0.1 / localhost は除く。ここを一緒に弾くと、正しい案内が書けなくなる。
+ext_url = [u for u in re.findall(r'https?://[^\s"\'<>]+', M)
+           if not re.match(r'https?://(127\.0\.0\.1|localhost)(:|/|$)', u)]
 check("C1 <link href> が無い（外部CSSを読まない）", not ext_link, "件数=%d" % len(ext_link))
 check("C2 <script src> が無い（外部JSを読まない）", not ext_script, "件数=%d" % len(ext_script))
 check("C3 外部URLが1件も無い", not ext_url, "検出=%s" % (ext_url[:4] or "なし"))
