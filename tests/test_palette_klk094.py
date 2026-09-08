@@ -55,9 +55,17 @@ class TestKLK094AgainstRealCatalog(unittest.TestCase):
         )
 
     def test_industry_filtered_lists_mostly_fit(self):
-        """業種で絞った結果は、たいてい閾値に収まること（毎回ボタンを押させない）。
+        """業種で絞った結果が、**たいてい**閾値に収まること。
 
-        既定の絞り込みは「近い業種のみ」。ここが常に溢れていたら閾値が小さすぎる。
+        ★この主張は当初「1つも溢れないこと」だったが、それは過剰だった（KLK-109）。
+          カタログが 86→167 件に増えた時点で「スクール・教室 22件」「不動産・建築 19件」が
+          18 を超えて落ちた。だが 18 は理恵さんのご要望（6列×3行）で決めた数で、
+          **カタログが増えたから閾値を上げるのは筋が違う**。
+          そして実際の画面は業種だけでなく**テイスト・配色も併せて絞れる**ので、
+          業種単独が溢れても実害は出ない（22件の業種もテイストを足せば最大7件）。
+
+          守りたいのは「**大半の業種は1画面に収まる**」こと。
+          そこが崩れたら閾値か語彙の粒度がおかしい、という信号にする。
         """
         counts = {}
         for e in self.entries:
@@ -65,10 +73,39 @@ class TestKLK094AgainstRealCatalog(unittest.TestCase):
             counts[k] = counts.get(k, 0) + 1
         limit = self._limit()
         over = {k: v for k, v in counts.items() if v > limit}
+        ratio = len(over) / max(1, len(counts))
+        self.assertLessEqual(
+            ratio, 0.30,
+            "閾値 %d を超える業種が %d/%d（%.0f%%）ある。"
+            "3割を超えたら、閾値か業種語彙の粒度を見直すべき: %s"
+            % (limit, len(over), len(counts), ratio * 100, over),
+        )
+
+    def test_over_limit_industries_are_narrowable_by_taste(self):
+        """★閾値を超えた業種が、テイストを足せば収まること。
+
+        「業種で溢れても実害なし」と言えるのは、次の絞り込み軸が効くからである。
+        そこが効かないなら、溢れは本当の使いにくさになる。
+        """
+        counts = {}
+        for e in self.entries:
+            counts.setdefault(e.get("industry") or "(未設定)", []).append(e)
+        limit = self._limit()
+        stuck = {}
+        for k, group in counts.items():
+            if len(group) <= limit:
+                continue
+            tastes = {}
+            for e in group:
+                tastes.setdefault(e.get("taste") or "(未設定)", 0)
+                tastes[e.get("taste") or "(未設定)"] += 1
+            worst = max(tastes.values())
+            if worst > limit:
+                stuck[k] = worst
         self.assertFalse(
-            over,
-            "業種で絞っても閾値 %d を超える業種がある（毎回「さらに表示」を押すことになる）: %s"
-            % (limit, over),
+            stuck,
+            "業種で溢れたうえ、テイストで絞っても閾値 %d を超える: %s"
+            % (limit, stuck),
         )
 
     def test_limit_is_a_sane_grid(self):

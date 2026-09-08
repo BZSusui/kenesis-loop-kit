@@ -44,7 +44,7 @@
 | `entries[].file` | 安全名(`..`/`/`/`\` 不可) | ✓ | `catalog/img/` 内の実体ファイル名(移動後の名前) |
 | `entries[].title` | string | - | 表示ラベル。**社外秘可**(＝`catalog/` 配下にのみ置く) |
 | `entries[].industry` | string(自由文字列可) | - | 業種フィルタのキー。**カタログの推奨業種語彙(17区分・§3 業種)を叩き台に**最も近い1つ。自由文字列許容(ハード enum 強制はしない＝後方互換)。KLK-032 で8→17区分へ拡充 |
-| `entries[].taste` | string(単一) | - | テイスト語彙(暫定7種・自由文字列で前進) |
+| `entries[].taste` | string(単一) | - | テイスト語彙(**10種**・§3 テイストが正。自由文字列も許容＝後方互換) |
 | `entries[].colors` | string配列・各値は下記16カテゴリ。**第1主配色が必須(1件以上)・最大3件**。カラフルは単独指定 | ✓ | 主配色(第1必須・第2/第3は任意)。**16カテゴリ外の値を入れない** |
 | `entries[].source` | `"own"` \| `"ref"` | ✓ | own=自社実績(緑バッジ)/ref=収集見本(橙バッジ・第三者著作物) |
 | `entries[].columns` | `1col`/`2col-full-left`/`2col-full-right`/`2col-body-left`/`2col-body-right`/`3col` | - | カラム構成ヒント(DRAFT_RULES §8) |
