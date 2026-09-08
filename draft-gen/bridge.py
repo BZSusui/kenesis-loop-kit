@@ -1953,7 +1953,7 @@ def _run_server(port):
             with jobs_lock:
                 jobs[job_id]["state"] = "error"
                 jobs[job_id]["finished_at"] = _now()
-                jobs[job_id]["message"] = "生成の起動に失敗しました: {0}".format(exc)
+                jobs[job_id]["message"] = "生成を始められませんでした（{0}）。Claude Code（claude）が入っていない・パスが通っていない可能性があります。ターミナルで claude --version が表示されるかご確認ください".format(exc)
             _cleanup(pending_path)
             return
 
@@ -2060,7 +2060,7 @@ def _run_server(port):
             with jobs_lock:
                 jobs[job_id]["state"] = "error"
                 jobs[job_id]["finished_at"] = _now()
-                jobs[job_id]["message"] = "再生成の起動に失敗しました: {0}".format(exc)
+                jobs[job_id]["message"] = "再生成を始められませんでした（{0}）。Claude Code（claude）が入っていない・パスが通っていない可能性があります。ターミナルで claude --version が表示されるかご確認ください".format(exc)
             _cleanup(pending_path)
             return
 
@@ -2205,7 +2205,7 @@ def _run_server(port):
             with jobs_lock:
                 jobs[job_id]["state"] = "error"
                 jobs[job_id]["finished_at"] = _now()
-                jobs[job_id]["message"] = "取り込みの起動に失敗しました: {0}".format(exc)
+                jobs[job_id]["message"] = "取り込みを始められませんでした（{0}）。Claude Code（claude）が入っていない・パスが通っていない可能性があります。ターミナルで claude --version が表示されるかご確認ください".format(exc)
             _cleanup(pending_spec_path)
             return
 
