@@ -106,14 +106,50 @@ check(
 # ===========================================================================
 # T5 機密 (REQ-011: 実カタログ実タイトルが器に焼き込まれていない)
 # ===========================================================================
-SECRET_TITLES = ["アミュール", "大村クリニック", "日原果樹園", "日原", "ひはら",
-                 "オーダージュエリー", "CADスクール", "tamonten"]
-leaked = [t for t in SECRET_TITLES if t in HTML]
-check(
-    "T5 機密 (実カタログのタイトル・実案件名が index.html に焼き込まれていない・同一オリジン fetch のみ)",
-    not leaked,
-    f"焼き込み検出={leaked or 'なし'}",
-)
+# ★KLK-108: 実タイトルを**この検査ファイルへ直書きしない**。
+#   ここは「実タイトルが器へ漏れていないか」を見る検査なのに、
+#   直書きした瞬間に**この検査ファイル自身が漏洩源**になる（Git 追跡・配布対象）。
+#   実データ（catalog/catalog.json・Git 除外）から**実行時に読む**。
+#   利点は3つ:
+#     ・秘密を追跡ファイルへ置かない
+#     ・**いま登録されている全タイトル**を見る（直書き8語より広い）
+#     ・カタログを増やしても検査を直さなくてよい
+#   catalog.json が無い環境（clone 直後・配布先）では照合できないので素通りする（fail-open）。
+def _catalog_titles():
+    import json
+    p = os.path.join(ROOT, "catalog", "catalog.json")
+    if not os.path.isfile(p):
+        return None
+    try:
+        with open(p, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (ValueError, OSError):
+        return None
+    out = set()
+    for e in data.get("entries", []):
+        if not isinstance(e, dict):
+            continue
+        for key in ("title", "client", "name"):
+            v = e.get(key)
+            if isinstance(v, str) and len(v.strip()) >= 3:
+                out.add(v.strip())
+    return sorted(out)
+
+
+_titles = _catalog_titles()
+if _titles is None:
+    check(
+        "T5 機密 (実カタログのタイトル・実案件名が index.html に焼き込まれていない・同一オリジン fetch のみ)",
+        True,
+        "catalog.json が無い環境（照合不能・素通り）",
+    )
+else:
+    leaked = [t for t in _titles if t in HTML]
+    check(
+        "T5 機密 (実カタログのタイトル・実案件名が index.html に焼き込まれていない・同一オリジン fetch のみ)",
+        not leaked,
+        f"照合 {len(_titles)} 件 / 焼き込み検出={leaked or 'なし'}",
+    )
 
 # ===========================================================================
 # T6 フォールバック案内文 (非稼働/file:///空カタログで案内・生成はブロックしない)
