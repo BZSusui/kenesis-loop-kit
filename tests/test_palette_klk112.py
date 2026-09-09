@@ -139,6 +139,16 @@ class TestFactsAgainstRealData(unittest.TestCase):
         self.assertIn("全部で%d個" % (dads + kit), self.text)
         self.assertIn("うち%d個がデジタル庁の配布物" % dads, self.text)
 
+    def test_no_mock_generator_reference(self):
+        """2026-09-09 方針: モック生成とは別案件。マニュアルは言及しない。
+
+        妨害注入で、言及が復活したら検知できることまで確かめる。"""
+        for w in ("モック生成", "使い方マニュアル.html", "デザインラフ", "draft-gen"):
+            self.assertNotIn(w, self.text, "モック生成への言及が復活している: %s" % w)
+        sabotaged = self.text + "\n詳しくはモック生成の使い方マニュアル.html を参照。"
+        self.assertTrue([w for w in ("モック生成", "使い方マニュアル.html") if w in sabotaged],
+                        "言及の混入を検知できない")
+
     def test_no_fabricated_dads_color(self):
         import re
         self.assertEqual(

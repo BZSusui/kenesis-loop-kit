@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>デザインシステムの使い方 — Kenesis Loop Kit</title>
+<title>デザインシステムの使い方</title>
 <!--
   KLK-112 デザインシステム（DADS）の使い方マニュアル。
   ★不変条件:
@@ -12,6 +12,8 @@
     - 図解は CSS/SVG のみ。ラスタ画像を埋め込まない
     - DADSに存在しない値を「DADSが定める」と書かない（色のhexは資料に無い）
     - 実在のカタログ内容（案件名・業種）を載せない
+    - モック生成システムに言及しない（2026-09-09 方針: 両者は別案件として進める。
+      配布パッケージも分ける）
   記述は実物（docs/design-system/ の原文・_REFERENCE_GUIDE.md・_ATTRIBUTION.md・
   CLAUDE.md・agents/*.md）から取ること。
   テスト: tests/site/check_klk112.py が上記を機械検査する。
@@ -145,10 +147,9 @@
   <nav id="toc">
     <div class="part">0 はじめに</div>
     <a href="#what">デザインシステムって何ですか</a>
-    <a href="#why">なぜキットに入っているのか</a>
+    <a href="#when">どんなときに使うのか</a>
     <div class="part">1 使う前に</div>
     <a href="#notin">入っているもの・いないもの</a>
-    <a href="#separate">モック生成とは別物です</a>
     <div class="part">2 使ってみる</div>
     <a href="#where">どこに何があるか</a>
     <a href="#ask">Claude Code への頼み方</a>
@@ -163,19 +164,18 @@
     <div class="part">5 困ったとき</div>
     <a href="#trouble">よくあるつまずき</a>
   </nav>
-  <p class="other">モック生成のほうの使い方は<br><a href="使い方マニュアル.html">使い方マニュアル.html</a> にあります。</p>
 </aside>
 
 <main>
 <h1>デザインシステムの使い方</h1>
-<p class="sub">公共サイトの作法にのっとってUIを作るための資料が、このキットに入っています。ここでは、その引き方と守り方を説明します。デザインのたたき台を3案作るモック生成システムについては、別冊の <a href="使い方マニュアル.html">使い方マニュアル.html</a> をご覧ください。</p>
+<p class="sub">公共サイトの作法にのっとってUIを作るための資料が、<code>docs/design-system/</code> に入っています。ここでは、その引き方と守り方を説明します。はじめての方は上から順に、慣れてきたら左の目次から必要なところだけ読んでください。</p>
 
 <section id="what">
 <h2>デザインシステムって何ですか</h2>
 
 <p>言葉は少し大げさですが、中身は<b>「作り方の決めごとを書いた資料集」</b>です。ボタンはどのくらいの大きさなら押しやすいか、文字と背景はどれだけ明暗を離せば読めるか、入力欄でエラーが出たときは何を見せるか——これまで経験と勘で決めていたことが、読める文章になっている、と思ってください。</p>
 
-<p>このキットに入っているのは、デジタル庁が公開している<b>デジタル庁デザインシステム</b>のドキュメントです。頭文字をとって DADS と呼ばれます。国の行政サービスのために作られたものですが、条件を守れば誰でも使えます。UIの部品は49種類ぶん収録されていて、ボタン、入力欄、チェックボックス、モーダル、テーブル、カードといった、だいたいの画面に出てくるものは揃っています。</p>
+<p>ここに入っているのは、デジタル庁が公開している<b>デジタル庁デザインシステム</b>のドキュメントです。頭文字をとって DADS と呼ばれます。国の行政サービスのために作られたものですが、条件を守れば誰でも使えます。UIの部品は49種類ぶん収録されていて、ボタン、入力欄、チェックボックス、モーダル、テーブル、カードといった、だいたいの画面に出てくるものは揃っています。</p>
 
 <p>使うと何がうれしいか。大きく3つあります。</p>
 
@@ -187,14 +187,19 @@
 <a class="totop" href="#what">▲</a>
 </section>
 
-<section id="why">
-<h2>なぜキットに入っているのか</h2>
+<section id="when">
+<h2>どんなときに使うのか</h2>
 
-<p>正直にお話しすると、この導入は一度失敗しています。別の環境で組み込もうとしたところ、モック生成システムの配色設定とぶつかってしまい、いったん取り消しました。</p>
+<p>UIを作る場面なら、いつ開いてもらっても構いません。とくに次のようなときに効きます。</p>
 
-<p>原因ははっきりしていて、ワイヤーフレームの生成ルールにDADSの決めごとを混ぜてしまったことでした。生成ルールのほうは独自の配色の決まりを持っているので、そこへ別の基準が入り込むと、どちらが正しいのか分からなくなります。</p>
+<ul>
+  <li><b>新しい画面を作るとき。</b>ボタンやフォームの作法をゼロから考えずに済みます</li>
+  <li><b>既存の画面を直すとき。</b>「なんとなく古い」で終わらせず、どこが基準から外れているかを言葉にできます</li>
+  <li><b>アクセシビリティを問われたとき。</b>明暗差やキーボード操作の根拠を、資料の該当箇所ごと示せます</li>
+  <li><b>公共・自治体系の案件。</b>発注側も同じものを見ているので、話が早いです</li>
+</ul>
 
-<p>そこで入れ直すときは、<b>置き場所も役割もきっぱり分ける</b>ことにしました。DADSは「実際に作るUIの基準」として設計・実装・レビューの工程だけが参照し、モック生成には一切関わりません。くわしくは<a href="#separate">次の節</a>で説明します。</p>
+<p>逆に、厳密に合わせなくてよい場面もあります。検証のために作る使い捨ての画面や、一度見せて消えるものまで律儀に揃える必要はありません。迷ったときは「これは誰かが実際に操作するものか」で考えると、だいたい判断がつきます。</p>
 <a class="totop" href="#what">▲</a>
 </section>
 
@@ -208,7 +213,7 @@
   <tr><td>部品の用途・構造・状態・アクセシビリティ要件</td><td><b>ある</b></td><td><code>components/{部品名}/index.md</code></td></tr>
   <tr><td>色の考え方と、明暗差の下限</td><td><b>ある</b></td><td><code>foundations/color/index.md</code></td></tr>
   <tr><td>余白の組み方</td><td><b>ある</b></td><td><code>foundations/spacing/index.md</code></td></tr>
-  <tr><td>色のコード（<code>#0f41af</code> のような値）</td><td><b>ない</b></td><td>Figmaやコードスニペット側（このキットには未収録）</td></tr>
+  <tr><td>色のコード（<code>#0f41af</code> のような値）</td><td><b>ない</b></td><td>Figmaやコードスニペット側（この一式には未収録）</td></tr>
   <tr><td>フォントの実ファイル</td><td><b>ない</b></td><td>別途調達</td></tr>
   <tr><td>そのまま貼れる実装コード</td><td><b>ない</b></td><td>コードスニペット側（同上）</td></tr>
 </table>
@@ -219,49 +224,6 @@
 </div>
 
 <p>ですので、設計書やコードに「DADSが定める色 <code>#xxxxxx</code>」と書いてしまうのは間違いです。そんな値はどこにも書かれていないので、書いた時点で事実と違うことになります。レビューでも見られる項目です。</p>
-<a class="totop" href="#what">▲</a>
-</section>
-
-<section id="separate">
-<h2>モック生成とは別物です</h2>
-
-<p>このキットには、性格の違う2つの仕組みが同居しています。どちらも「デザイン」にまつわる話なので、念のためはっきり分けておきます。</p>
-
-<figure>
-<svg viewBox="0 0 800 216" role="img" aria-label="モック生成システムとデザインシステムは別物であることを示す図">
-  <g font-family="Hiragino Sans, Yu Gothic, sans-serif">
-    <rect x="24" y="16" width="340" height="176" rx="8" fill="#f6f8fa" stroke="#dfe3e8"/>
-    <text x="194" y="46" text-anchor="middle" font-size="14" font-weight="700">モック生成システム</text>
-    <text x="194" y="72" text-anchor="middle" font-size="11.5" fill="#5b6875">デザインのたたき台を3案つくる</text>
-    <line x1="52" y1="88" x2="336" y2="88" stroke="#dfe3e8"/>
-    <text x="52" y="112" font-size="11.5">配色は独自ルール（生成規約 §5）</text>
-    <text x="52" y="136" font-size="11.5">draft-gen / palette / 生成スキル</text>
-    <text x="52" y="160" font-size="11.5" fill="#5b6875">DADSは参照しません</text>
-    <text x="52" y="180" font-size="11" fill="#5b6875">→ 使い方マニュアル.html</text>
-
-    <rect x="436" y="16" width="340" height="176" rx="8" fill="#e8f2ec" stroke="#2f6f4f"/>
-    <text x="606" y="46" text-anchor="middle" font-size="14" font-weight="700">デザインシステム（DADS）</text>
-    <text x="606" y="72" text-anchor="middle" font-size="11.5" fill="#5b6875">実際に作るUIの基準</text>
-    <line x1="464" y1="88" x2="748" y2="88" stroke="#c3ddcf"/>
-    <text x="464" y="112" font-size="11.5">色は「原則と下限」だけ（値は無し）</text>
-    <text x="464" y="136" font-size="11.5">docs/design-system/（49種）</text>
-    <text x="464" y="160" font-size="11.5" fill="#5b6875">設計・実装・レビューが参照</text>
-    <text x="464" y="180" font-size="11" fill="#5b6875">→ このマニュアル</text>
-
-    <line x1="400" y1="16" x2="400" y2="192" stroke="#8a5a00" stroke-width="1.4" stroke-dasharray="5 4"/>
-    <rect x="366" y="94" width="68" height="22" rx="11" fill="#fff6e5" stroke="#8a5a00"/>
-    <text x="400" y="109" text-anchor="middle" font-size="11.5" font-weight="700" fill="#8a5a00">混ぜない</text>
-  </g>
-</svg>
-<figcaption>ひとつのキットに入っていますが、行き来はしません</figcaption>
-</figure>
-
-<p>混ぜると、前回と同じことが起きます。そこで、うっかり混ざらないように機械的な見張りを付けました。生成システム側のファイル（<code>draft-gen/</code>・<code>palette/</code>・生成スキル・見本）に「デジタル庁」「DADS」「design-system」という文字が入り込むと、テストが落ちます。</p>
-
-<div class="note">
-<b>モック生成画面にこのマニュアルへのリンクを置いていない理由</b>
-いま書いた見張りに引っかかる、というのもありますが、それ以前に、リンクがあると「モック生成もDADSに準拠しているんだ」と受け取られてしまいます。実際には準拠していません。誤解のもとになるので、あえて置いていません。
-</div>
 <a class="totop" href="#what">▲</a>
 </section>
 
@@ -280,7 +242,7 @@
 ├ introduction/        ← はじめに、利用条件
 └ webaccessibility/    ← アクセシビリティ試験の実施例</code></pre>
 
-<p>ファイルは全部で127個あります。うち125個がデジタル庁の配布物そのままで、<code>_</code> で始まる2つだけがこのキット側で足した案内です。中身に手は加えていません。</p>
+<p>ファイルは全部で127個あります。うち125個がデジタル庁の配布物そのままで、<code>_</code> で始まる2つだけが、こちらで足した案内です。中身に手は加えていません。</p>
 
 <p>目次にあたるのが <code>MANIFEST.md</code> です。日本語のタイトルと一行説明つきで全ファイルが並んでいるので、「探している部品がどのファイルか」はここを見ればわかります。部品名がうろ覚えでも、<code>_REFERENCE_GUIDE.md</code> に49種の一覧（日本語名とパス）があるので、そちらでも引けます。</p>
 <a class="totop" href="#what">▲</a>
@@ -294,6 +256,34 @@
 <pre class="say"><code>UIは docs/design-system/ の仕様に従ってください。</code></pre>
 
 <p>これだけで、Claude Code は目次を見て、必要なところだけを読みにいきます。</p>
+
+<figure>
+<svg viewBox="0 0 800 152" role="img" aria-label="目次で当たりをつけて必要なファイルだけを読む流れの図">
+  <defs>
+    <marker id="a5" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#5b6875"/>
+    </marker>
+  </defs>
+  <g font-family="Hiragino Sans, Yu Gothic, sans-serif">
+    <rect x="24" y="38" width="204" height="72" rx="7" fill="#f6f8fa" stroke="#dfe3e8"/>
+    <text x="126" y="70" text-anchor="middle" font-size="13" font-weight="700">125ファイル</text>
+    <text x="126" y="90" text-anchor="middle" font-size="11" fill="#5b6875">全部は読ませない</text>
+
+    <rect x="298" y="38" width="204" height="72" rx="7" fill="#e8f2ec" stroke="#2f6f4f"/>
+    <text x="400" y="70" text-anchor="middle" font-size="13" font-weight="700">MANIFEST.md</text>
+    <text x="400" y="90" text-anchor="middle" font-size="11" fill="#5b6875">目次で当たりをつける</text>
+
+    <rect x="572" y="38" width="204" height="72" rx="7" fill="#f6f8fa" stroke="#dfe3e8"/>
+    <text x="674" y="70" text-anchor="middle" font-size="13" font-weight="700">必要な1〜5ファイル</text>
+    <text x="674" y="90" text-anchor="middle" font-size="11" fill="#5b6875">これだけ開いて実装する</text>
+
+    <path d="M232,74 L292,74" stroke="#5b6875" stroke-width="1.4" marker-end="url(#a5)"/>
+    <path d="M506,74 L566,74" stroke="#5b6875" stroke-width="1.4" marker-end="url(#a5)"/>
+    <text x="400" y="136" text-anchor="middle" font-size="11" fill="#2f6f4f">読ませる範囲を絞るのが、うまく使うコツです</text>
+  </g>
+</svg>
+<figcaption>目次を経由して、必要なぶんだけ読む</figcaption>
+</figure>
 
 <p>もう少し具体的に、ファイルまで指定すると精度が上がります。こんな頼み方です。</p>
 
@@ -479,7 +469,7 @@ DADSの下限（本文4.5:1）を満たしているか教えてください。</
 
 <pre><code>python3 tests/site/check_klk111.py</code></pre>
 
-<p>見ているのは大きく4点です。49種の部品がそろっているか、目次のリンクが全部つながるか、モック生成側にDADSが混ざっていないか、配布用パッケージに出典ごと入るか。最後に <code>0 failed</code> と出れば大丈夫です。</p>
+<p>見ているのは、49種の部品がそろっているか、目次のリンクが全部つながるか、配布物に出典ごと入るか、といったところです。最後に <code>0 failed</code> と出れば大丈夫です。</p>
 
 <p>どこかが <code>FAIL</code> になったら、その行に何が起きたかが書かれています。読んでもピンとこないときは、その出力をそのまま Claude Code に貼って「これを直して」と頼んでください。</p>
 <a class="totop" href="#what">▲</a>
@@ -493,9 +483,6 @@ DADSの下限（本文4.5:1）を満たしているか教えてください。</
 
 <h3 class="faq">読み込みに時間がかかる／回答がぼんやりしている</h3>
 <p>全件読ませている可能性が高いです。「デザインシステムを全部読んで」ではなく、「button と input-text の仕様に従って」のように、部品を名指しで頼んでください。1〜5ファイルで足ります。</p>
-
-<h3 class="faq">モック生成の配色にもDADSを反映させたい</h3>
-<p>いまの仕組みでは反映されません。意図的にそうしています。どうしても必要になったら、既存の見本とテストを壊さない形で、別のチケットとして慎重に進めてください。思いつきで生成ルールに書き足すと、前回と同じことが起きます。</p>
 
 <h3 class="faq">作りたい部品が49種の中にない</h3>
 <p>その場合は <code>foundations/</code>（色・余白・文字・レイアウトなど）の考え方だけを借りて自作します。似ている部品があれば、状態の持たせ方やキーボード操作の作法はそこから拝借できます。出典表記は同じように必要です。</p>
