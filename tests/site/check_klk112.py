@@ -235,13 +235,22 @@ if "--fast" not in sys.argv:
               "rc=%d / 同梱=%s" % (r.returncode, os.path.isfile(built)))
         if os.path.isfile(built):
             body = io.open(built, encoding="utf-8").read()
+            # (a) 配布される実物が原本と同一か（コピーで欠けていないか）
+            same = body == HTML
+            # (b) 出典行が配布物に残っているか（デジタル庁の利用条件は配布物にかかる）
+            has_credit = ATTRIBUTION_LINE in strip_non_text(body)
+            # (c) ローカルリンクがあればパッケージ内で解決するか
+            #     （2026-09-09 現在はリンク0本。将来足したときに効く）
             pkg_local = [h for h in re.findall(r'href="([^"#]+)"', body)
                          if not h.startswith(("http://", "https://", "mailto:"))]
             broken = [h for h in pkg_local if not os.path.exists(os.path.join(dest, h))]
-            check("G2 ★パッケージ内でもリンクが切れない",
-                  not broken, "切れ=%s" % (broken or "なし"))
+            check("G2 ★配布される実物が原本と同一で、出典行が残り、リンクが切れない",
+                  same and has_credit and not broken,
+                  "原本と同一=%s 出典行=%s ローカルリンク%d本 切れ=%s" % (
+                      same, has_credit, len(pkg_local), broken or "なし"))
         else:
-            check("G2 ★パッケージ内でもリンクが切れない", False, "同梱されていない")
+            check("G2 ★配布される実物が原本と同一で、出典行が残り、リンクが切れない",
+                  False, "同梱されていない")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 

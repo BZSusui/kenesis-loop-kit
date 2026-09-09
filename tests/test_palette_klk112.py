@@ -40,7 +40,13 @@ class TestKLK112StaticChecker(unittest.TestCase):
         self.assertIn(", 0 failed", p.stdout)
         # 実ビルド部（G）が省略されずに走ったことまで確認する
         self.assertIn("G1 ★実際に作ったパッケージへ同梱される", p.stdout)
-        self.assertIn("G2 ★パッケージ内でもリンクが切れない", p.stdout)
+        self.assertIn("G2 ★配布される実物が原本と同一で、出典行が残り、リンクが切れない",
+                      p.stdout)
+        # G2 が「原本と同一」「出典行あり」まで見ていることを確認する。
+        # KLK-113 でマニュアルからローカルリンクが無くなり、リンク検査だけでは
+        # 何も守らない空検査になっていたため作り直した経緯がある
+        self.assertIn("原本と同一=True", p.stdout)
+        self.assertIn("出典行=True", p.stdout)
 
 
 class TestContrastMath(unittest.TestCase):
