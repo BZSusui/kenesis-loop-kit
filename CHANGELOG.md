@@ -21,14 +21,10 @@ Kenesis Loop Kitのすべての変更はこのファイルに記録されます�
 - `agents/architect.md` / `implementer.md` / `reviewer.md` にDADSの参照ルール・遵守基準・レビュー観点を追加
 
 ### Changed（KLK-111）
-- `WIREFRAME_RULES.md` セクション5を「カラーパレットと余白（DADS準拠）」へ全面改訂。コントラスト下限（テキスト4.5:1 / 非テキスト3:1）を明記し、既定パレットを下限充足を実測した値へ差し替え。8 CSS px基準の余白スケール5段階、フォーカスインジケーターのYellow-300+Black2重構造、出典表記を追加
-- `WIREFRAME_RULES.md` セクション10を「アクセシビリティ（DADS基準）」へ改訂（`outline: none` 禁止・色以外の手がかり・alt・コンポーネント仕様の参照）
-- `WIREFRAME_RULES.md` セクション2の冒頭コメントテンプレートに出典行を追加
-- `.claude/skills/wireframe-gen/SKILL.md` の参照ファイル表にDADSの3系統を追加
 - README.md: 「開発ループを回す人へ」の表にデザインシステムの行、ライセンス節に同梱第三者コンテンツの出典を追加
 
-### Fixed（KLK-111）
-- ワイヤーフレーム既定パレットのアクセシビリティ不適合を解消。旧値は白背景に対し `--color-main-deep #2E8BC9` が3.72:1（白文字を載せるとテキスト4.5:1未満）、`--color-accent #FF4568` が3.33:1（エラー文字用途で4.5:1未満）、`--color-border #D6E9F5` が1.25:1（非テキスト3:1未満）だった
+> 既存の生成規約（`WIREFRAME_RULES.md` / `DRAFT_RULES.md`）と `palette/` はDADS導入の対象外とし、
+> 変更していない。配色の正は従来どおり各規約側にある。
 
 ### Added（KLK-061〜106・2026-09-02〜09-08）
 

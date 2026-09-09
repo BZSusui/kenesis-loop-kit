@@ -131,7 +131,12 @@ DADSを参照した成果物には出典記載が必要である。
 | architect | 設計時に該当コンポーネント仕様を参照し、`docs/designs/{ID}.md` に参照パスと出典行を記載する |
 | implementer | 実装前に `components/{slug}/index.md` を読み、状態・アクセシビリティ要件を満たす |
 | reviewer | DADS準拠とコントラスト基準の充足、出典表記の有無を確認する |
-| wireframe-gen | パレット・余白をDADS基準で組む（`WIREFRAME_RULES.md` セクション5） |
+
+> **本ルールの適用範囲**: 現時点でDADSを参照するのは上記3エージェント（設計・実装・レビュー）のみ。
+> ワイヤーフレーム生成規約（`.claude/skills/wireframe-gen/templates/WIREFRAME_RULES.md`）と
+> デザインラフ生成規約（`.claude/skills/draft-generate/templates/DRAFT_RULES.md`）は
+> **既存の配色規約を正として維持**しており、DADS基準の反映は行っていない。
+> これらへの適用が必要になった場合は、既存の配色・golden testを壊さない形で別チケットとして扱う。
 
 ---
 
@@ -251,7 +256,7 @@ CLAUDE.mdで定義したポリシーは、それを実行する責任者（エ�
 | cancelledステータス | CLAUDE.md | orchestrator | orchestrator.md 委譲テーブル / tickets/_index.md クエリ |
 | リトライ上限 | CLAUDE.md | orchestrator | orchestrator.md Responsibilities |
 | チケット状態の不変条件 | CLAUDE.md（ステータス定義 / リトライ上限） | PreToolUse + Stop hook（自動強制） | .claude/hooks/validate_ticket_state.py / check_loop_integrity.py |
-| DADS準拠・出典表記 | CLAUDE.md | architect / implementer / reviewer / wireframe-gen | agents/architect.md / agents/implementer.md / agents/reviewer.md / .claude/skills/wireframe-gen/templates/WIREFRAME_RULES.md |
+| DADS準拠・出典表記 | CLAUDE.md | architect / implementer / reviewer | agents/architect.md / agents/implementer.md / agents/reviewer.md |
 
 新しいポリシーを追加する際は、このテーブルを更新し、転記先ファイルへの反映まで完了させること。
 

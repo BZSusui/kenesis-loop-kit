@@ -18,9 +18,6 @@ description: docs/SPEC.md の画面一覧(セクション6)をもとに、各画
 |---|---|
 | `templates/WIREFRAME_RULES.md` | HTML生成前に必ず全体を読む。ファイル規約・冒頭コメント・忠実度・パレット・index構成の正はすべてこのファイル |
 | `docs/SPEC.md` | 毎回必ず読む。特にセクション6(画面一覧・遷移図)、5(機能要件)、4(ユーザー種別)、7(エラーハンドリング方針) |
-| `docs/design-system/foundations/color/index.md` | 初回生成時とパレット変更時に読む。配色の正はDADS(コントラスト下限・リンク色・フォーカス色の2重構造) |
-| `docs/design-system/foundations/spacing/index.md` | 同上。余白は基準単位8 CSS pxの倍率スケール |
-| `docs/design-system/components/{slug}/index.md` | 画面に登場するコンポーネントの分だけ読む。索引は `docs/design-system/MANIFEST.md`。**125ファイルの全件読み込みは禁止** |
 
 ## 前提チェック(受付)
 
