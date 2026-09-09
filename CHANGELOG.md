@@ -8,6 +8,23 @@ Kenesis Loop Kitのすべての変更はこのファイルに記録されます�
 
 ## [Unreleased]
 
+### Added
+- `docs/design-system/`: デジタル庁デザインシステム（DADS）β版 v2.17.1 のドキュメント（Markdown）一式を同梱（125ファイル / UIコンポーネント49種 / 基本デザイン8種 / アクセシビリティガイドライン）。本文は未編集
+- `docs/design-system/_REFERENCE_GUIDE.md`: エージェント向け参照ルール（全件読み込み禁止・MANIFEST起点・目的別参照先・49種のパス一覧・「DADSに含まれないもの」の明示）
+- `docs/design-system/_ATTRIBUTION.md`: 出典・ライセンス条件・バージョン・成果物への出典記載場所・更新手順
+- CLAUDE.md にセクション「デザインシステム参照ルール（デジタル庁デザインシステム / DADS）」を追加。ドキュメント管理表・ポリシー管理の原則テーブルにも転記
+
+### Changed
+- `WIREFRAME_RULES.md` セクション5を「カラーパレットと余白（DADS準拠）」へ全面改訂。DADSのコントラスト下限（テキスト4.5:1 / 非テキスト3:1）を明記し、既定パレットを下限充足を実測した値へ差し替え。8 CSS px基準の余白スケール5段階、フォーカスインジケーターのYellow-300+Black2重構造、出典表記を追加
+- `WIREFRAME_RULES.md` セクション10を「アクセシビリティ（DADS基準）」へ改訂（`outline: none` 禁止・色以外の手がかり・alt・コンポーネント仕様参照）
+- `WIREFRAME_RULES.md` セクション2の冒頭コメントテンプレートに出典行を追加
+- `agents/architect.md` / `implementer.md` / `reviewer.md` にDADS参照・準拠・レビュー観点を追加
+- `.claude/skills/wireframe-gen/SKILL.md` の参照ファイル表にDADSの3系統を追加
+- README.md: ディレクトリ構成に `docs/design-system/`、セットアップ手順に `/wireframe-gen`、ライセンス節に同梱第三者コンテンツの出典を追加
+
+### Fixed
+- ワイヤーフレーム既定パレットのアクセシビリティ不適合を解消。旧値は白背景に対し `--color-main-deep #2E8BC9` が3.72:1（白文字を載せるとテキスト4.5:1を下回る）、`--color-accent #FF4568` が3.33:1（エラー文字用途で4.5:1未満）、`--color-border #D6E9F5` が1.25:1（非テキスト3:1未満）だった
+
 ## [1.2.0] - 2026-07-05
 
 ### Added

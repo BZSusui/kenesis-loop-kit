@@ -48,6 +48,13 @@ kenesis-loop-kit/
 │   ├── designs/                     ← チケット単位の設計書（architectが生成）
 │   │   ├── _TEMPLATE.md             ← 設計書テンプレート
 │   │   └── {ID}.md                  ← 例: APP-001.md
+│   ├── design-system/               ← デジタル庁デザインシステム(DADS)のMarkdown一式
+│   │   ├── MANIFEST.md              ← 収録125ファイルの索引（参照はここから始める）
+│   │   ├── _REFERENCE_GUIDE.md      ← 参照ルール・49種のパス一覧（本kitが追加）
+│   │   ├── _ATTRIBUTION.md          ← 出典・ライセンス・更新手順（本kitが追加）
+│   │   ├── components/              ← UIコンポーネント49種
+│   │   ├── foundations/             ← カラー・余白・タイポグラフィ等8種
+│   │   └── guidance/ webaccessibility/ introduction/ resources/ updates/
 │   └── obsidian-setup.md            ← Obsidian初期設定ガイド
 ├── src/                             ← プロジェクトのソースコード
 ├── tests/                           ← hook検証・メトリクスの自動テスト（unittest）
@@ -279,12 +286,25 @@ tickets/done/ のチケットを個人vaultの Archives/project-a/ へ移動し�
 
 1. このリポジトリをテンプレートとして使用（GitHub: Use this template）
 2. プライベートリポジトリで`tickets/`をコミットしたい場合のみ`cp .gitignore.private .gitignore`を実行する（デフォルトは安全側のpublic設定）
-3. `docs/SPEC.md` を作成して要件定義を記述する
-4. Obsidianで`tickets/`を開き、`docs/obsidian-setup.md`に従って初期設定をする
-5. 最初のチケットを `/new-ticket` で作成して `/start-loop` でループを開始する
+3. `docs/SPEC.md` を `/spec-interview` で作成して要件定義を記述する
+4. `/wireframe-gen` でワイヤーフレームを生成する（配色・余白はDADS基準）
+5. Obsidianで`tickets/`を開き、`docs/obsidian-setup.md`に従って初期設定をする
+6. 最初のチケットを `/new-ticket` で作成して `/start-loop` でループを開始する
 
 ---
 
 ## ライセンス
 
 MIT
+
+### 同梱する第三者コンテンツ
+
+`docs/design-system/` はデジタル庁デザインシステムβ版 v2.17.1 のドキュメント（Markdown）です。
+MITライセンスの対象外であり、デジタル庁の定める条件に従って利用してください。
+
+出典：デジタル庁デザインシステムウェブサイト https://design.digital.go.jp/dads/
+
+- 本文ファイルは未編集のまま同梱しています（`_` 始まりのファイルのみ本kitが追加）
+- コンテンツを利用する際は出典を記載し、編集・加工して利用する場合は加工した旨も併記してください
+- 詳細な条件は `docs/design-system/introduction/notices/index.md` および
+  `docs/design-system/_ATTRIBUTION.md` を参照してください
