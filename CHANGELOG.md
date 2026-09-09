@@ -21,6 +21,18 @@ Kenesis Loop Kitのすべての変更はこのファイルに記録されます�
 - `agents/architect.md` / `implementer.md` / `reviewer.md` にDADSの参照ルール・遵守基準・レビュー観点を追加
 - 検収チェック `tests/site/check_klk111.py`＋`tests/test_palette_klk111.py`: 生成規約側（`DRAFT_RULES` / `WIREFRAME_RULES` / `draft-gen/` / `palette/`）へのDADS参照の混入防止、49種・MANIFEST・出典の整全性、パッケージ実ビルドへの同梱を機械的に検査
 
+### Added（KLK-112・デザインシステムの使い方マニュアル）
+
+- **`デザインシステムの使い方.html`**: DADSの引き方と守り方を初心者向けにまとめた単一HTML
+  （章立てサイドナビ・CSS/SVG図解・外部依存ゼロ）。「色の値はDADSに含まれない」「モック生成とは
+  別軸で混ぜない」「出典表記は利用条件」の3点を軸に、Claude Code への頼み方の例まで掲載
+- フォーカスインジケーター（黄＋黒の2重構造）を実際に <kbd>Tab</kbd> で体験できる見本を同梱。
+  見本の色はマニュアル側で決めた値である旨とコントラスト実測値（8.77:1）を明記
+- 検収チェック `tests/site/check_klk112.py`＋`tests/test_palette_klk112.py`: 本文の数字
+  （49種・ファイル数・コントラスト比）を実データと再計算で照合、外部リソース依存ゼロ、
+  リンク切れなし、モック生成画面へ載せていないこと、パッケージ実ビルドへの同梱を検査
+- README・配布パッケージの同梱リストに追加
+
 ### Changed（KLK-111）
 - README.md: 「開発ループを回す人へ」の表にデザインシステムの行、ライセンス節に同梱第三者コンテンツの出典を追加
 

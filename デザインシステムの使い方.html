@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>デザインシステムの使い方 — Kenesis Loop Kit</title>
+<!--
+  KLK-112 デザインシステム（DADS）の使い方マニュアル。
+  ★不変条件:
+    - 単一HTML・外部リソース依存ゼロ（外部CSS/JS/画像/フォントを読み込まない）
+      ※ 出典表記のためデジタル庁サイトへの<a>リンクは置く（読み込みではない）
+    - 図解は CSS/SVG のみ。ラスタ画像を埋め込まない
+    - DADSに存在しない値を「DADSが定める」と書かない（色のhexは資料に無い）
+    - 実在のカタログ内容（案件名・業種）を載せない
+  記述は実物（docs/design-system/ の原文・_REFERENCE_GUIDE.md・_ATTRIBUTION.md・
+  CLAUDE.md・agents/*.md）から取ること。
+  テスト: tests/site/check_klk112.py が上記を機械検査する。
+-->
+<style>
+  :root{
+    --ink:#1f2328; --muted:#5b6875; --line:#dfe3e8; --bg:#ffffff; --panel:#f6f8fa;
+    --accent:#2f6f4f; --accent-soft:#e8f2ec; --warn:#8a5a00; --warn-soft:#fff6e5;
+    --nav-w:264px; --maxw:820px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+    line-height:1.85; font-size:15px;
+  }
+
+  /* ===== サイドナビ ===== */
+  .layout{display:grid; grid-template-columns:var(--nav-w) 1fr; min-height:100vh}
+  .side{
+    position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+    border-right:1px solid var(--line); background:var(--panel); padding:22px 0 40px;
+  }
+  .side .brand{padding:0 20px 14px; border-bottom:1px solid var(--line); margin-bottom:12px}
+  .side .brand b{display:block; font-size:14px; letter-spacing:.02em}
+  .side .brand span{display:block; font-size:11px; color:var(--muted); margin-top:2px}
+  .side nav{font-size:13px}
+  .side .part{padding:14px 20px 4px; font-size:11px; letter-spacing:.12em; color:var(--muted)}
+  .side a{
+    display:block; padding:5px 20px 5px 22px; color:var(--ink); text-decoration:none;
+    border-left:3px solid transparent;
+  }
+  .side a:hover{background:#eef1f4}
+  .side a.on{border-left-color:var(--accent); background:var(--accent-soft); font-weight:700}
+  .side .other{
+    margin:18px 20px 0; padding-top:14px; border-top:1px solid var(--line);
+    font-size:12px; color:var(--muted);
+  }
+  .side .other a{display:inline; padding:0; border:none; color:var(--accent); text-decoration:underline}
+
+  /* ===== 本文 ===== */
+  main{padding:40px 44px 120px; max-width:calc(var(--maxw) + 88px)}
+  h1{font-size:27px; letter-spacing:.02em; margin:0 0 6px}
+  .sub{color:var(--muted); margin:0 0 34px; font-size:13.5px}
+  section{scroll-margin-top:24px; padding-top:14px}
+  h2{font-size:20px; margin:44px 0 14px; padding-bottom:8px; border-bottom:2px solid var(--accent)}
+  h3{font-size:15.5px; margin:26px 0 8px}
+  p{margin:0 0 13px}
+  ul,ol{margin:0 0 14px; padding-left:1.4em}
+  li{margin-bottom:5px}
+  code{
+    background:var(--panel); border:1px solid var(--line); border-radius:3px;
+    padding:1px 5px; font-family:"SF Mono",Menlo,Consolas,monospace; font-size:12.5px;
+  }
+  pre{
+    background:var(--panel); border:1px solid var(--line); border-radius:6px;
+    padding:12px 14px; overflow-x:auto; font-size:12.5px; line-height:1.7; margin:0 0 15px;
+  }
+  pre code{background:none; border:none; padding:0}
+  .say{border-left:4px solid #b9c2cb; background:#fbfcfd}
+  table{border-collapse:collapse; width:100%; margin:0 0 16px; font-size:13.5px}
+  th,td{border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top}
+  th{background:var(--panel); font-weight:700; white-space:nowrap}
+  .note,.warn{
+    border-left:4px solid var(--accent); background:var(--accent-soft);
+    padding:11px 15px; margin:0 0 16px; border-radius:0 5px 5px 0; font-size:13.5px;
+  }
+  .warn{border-left-color:var(--warn); background:var(--warn-soft)}
+  .note b,.warn b{display:block; margin-bottom:3px}
+  figure{margin:0 0 20px}
+  figure svg{
+    display:block; width:100%; height:auto; border:1px solid var(--line);
+    border-radius:6px; background:#fff;
+  }
+  figcaption{font-size:12px; color:var(--muted); margin-top:6px; text-align:center}
+  .steps{counter-reset:s; list-style:none; padding-left:0}
+  .steps>li{counter-increment:s; position:relative; padding-left:34px; margin-bottom:11px}
+  .steps>li::before{
+    content:counter(s); position:absolute; left:0; top:2px;
+    width:23px; height:23px; border-radius:50%; background:var(--accent); color:#fff;
+    font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;
+  }
+  .kbd{
+    display:inline-block; border:1px solid #c6ccd2; border-bottom-width:2px; border-radius:4px;
+    padding:0 6px; background:#fff; font-size:12px; font-family:inherit;
+  }
+  .totop{display:inline-block; margin-top:8px; font-size:12px; color:var(--muted); text-decoration:none}
+  .totop:hover{color:var(--accent)}
+  .faq{margin:0 0 6px; font-size:15px}
+
+  /* ===== フォーカスの見本（このマニュアル独自の色。DADSの定める値ではない） ===== */
+  .demo{
+    border:1px solid var(--line); border-radius:6px; background:var(--panel);
+    padding:18px 20px 22px; margin:0 0 8px;
+  }
+  .demo p{margin:0 0 12px; font-size:13.5px; color:var(--muted)}
+  .demo-btn{
+    --demo-blue:#0f41af; --demo-focus-y:#fbbf24;
+    font:inherit; font-size:15px; color:#fff; background:var(--demo-blue);
+    border:none; border-radius:8px; padding:10px 26px; min-height:44px; cursor:pointer;
+  }
+  .demo-btn:hover{background:#0c3591}
+  .demo-btn:focus-visible{outline:2px solid #000; box-shadow:0 0 0 4px var(--demo-focus-y)}
+
+  /* ===== 印刷 ===== */
+  @media print{
+    .layout{display:block}
+    .side{display:none}
+    main{padding:0; max-width:none}
+    body{font-size:11pt; line-height:1.7}
+    h2{page-break-after:avoid}
+    figure,table,pre,.note,.warn,.demo{page-break-inside:avoid}
+    a{color:inherit; text-decoration:none}
+  }
+  @media (max-width:860px){
+    .layout{grid-template-columns:1fr}
+    .side{position:static; height:auto; border-right:none; border-bottom:1px solid var(--line)}
+    main{padding:28px 20px 80px}
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside class="side">
+  <div class="brand">
+    <b>デザインシステムの使い方</b>
+    <span>デジタル庁デザインシステム（DADS）</span>
+  </div>
+  <nav id="toc">
+    <div class="part">0 はじめに</div>
+    <a href="#what">デザインシステムって何ですか</a>
+    <a href="#why">なぜキットに入っているのか</a>
+    <div class="part">1 使う前に</div>
+    <a href="#notin">入っているもの・いないもの</a>
+    <a href="#separate">モック生成とは別物です</a>
+    <div class="part">2 使ってみる</div>
+    <a href="#where">どこに何があるか</a>
+    <a href="#ask">Claude Code への頼み方</a>
+    <a href="#flow">開発ループの中では</a>
+    <div class="part">3 守るルール</div>
+    <a href="#rules">数字で決まっていること</a>
+    <a href="#color">色の決め方</a>
+    <a href="#credit">出典を書く</a>
+    <div class="part">4 運用</div>
+    <a href="#update">新しい版が出たら</a>
+    <a href="#check">こわれていないか確かめる</a>
+    <div class="part">5 困ったとき</div>
+    <a href="#trouble">よくあるつまずき</a>
+  </nav>
+  <p class="other">モック生成のほうの使い方は<br><a href="使い方マニュアル.html">使い方マニュアル.html</a> にあります。</p>
+</aside>
+
+<main>
+<h1>デザインシステムの使い方</h1>
+<p class="sub">公共サイトの作法にのっとってUIを作るための資料が、このキットに入っています。ここでは、その引き方と守り方を説明します。デザインのたたき台を3案作るモック生成システムについては、別冊の <a href="使い方マニュアル.html">使い方マニュアル.html</a> をご覧ください。</p>
+
+<section id="what">
+<h2>デザインシステムって何ですか</h2>
+
+<p>言葉は少し大げさですが、中身は<b>「作り方の決めごとを書いた資料集」</b>です。ボタンはどのくらいの大きさなら押しやすいか、文字と背景はどれだけ明暗を離せば読めるか、入力欄でエラーが出たときは何を見せるか——これまで経験と勘で決めていたことが、読める文章になっている、と思ってください。</p>
+
+<p>このキットに入っているのは、デジタル庁が公開している<b>デジタル庁デザインシステム</b>のドキュメントです。頭文字をとって DADS と呼ばれます。国の行政サービスのために作られたものですが、条件を守れば誰でも使えます。UIの部品は49種類ぶん収録されていて、ボタン、入力欄、チェックボックス、モーダル、テーブル、カードといった、だいたいの画面に出てくるものは揃っています。</p>
+
+<p>使うと何がうれしいか。大きく3つあります。</p>
+
+<ul>
+  <li><b>「なぜこうしたか」を説明できます。</b>感覚で決めた話ではなく「この基準に沿っています」と言えるので、社内のレビューでもクライアントへの提案でも通りが違います</li>
+  <li><b>アクセシビリティの配慮が最初から入っています。</b>見えにくい方、キーボードだけで操作する方への対応は、あとから足そうとすると作り直しになりがちです。最初から織り込まれているのは、地味ですがかなり効きます</li>
+  <li><b>公共系の案件で共通言語になります。</b>発注側も同じ資料を見ているので、話が早いです</li>
+</ul>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="why">
+<h2>なぜキットに入っているのか</h2>
+
+<p>正直にお話しすると、この導入は一度失敗しています。別の環境で組み込もうとしたところ、モック生成システムの配色設定とぶつかってしまい、いったん取り消しました。</p>
+
+<p>原因ははっきりしていて、ワイヤーフレームの生成ルールにDADSの決めごとを混ぜてしまったことでした。生成ルールのほうは独自の配色の決まりを持っているので、そこへ別の基準が入り込むと、どちらが正しいのか分からなくなります。</p>
+
+<p>そこで入れ直すときは、<b>置き場所も役割もきっぱり分ける</b>ことにしました。DADSは「実際に作るUIの基準」として設計・実装・レビューの工程だけが参照し、モック生成には一切関わりません。くわしくは<a href="#separate">次の節</a>で説明します。</p>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="notin">
+<h2>入っているもの・入っていないもの</h2>
+
+<p>ここが最初のつまずきポイントなので、先にお伝えします。</p>
+
+<table>
+  <tr><th>探しているもの</th><th>あるか</th><th>どこに</th></tr>
+  <tr><td>部品の用途・構造・状態・アクセシビリティ要件</td><td><b>ある</b></td><td><code>components/{部品名}/index.md</code></td></tr>
+  <tr><td>色の考え方と、明暗差の下限</td><td><b>ある</b></td><td><code>foundations/color/index.md</code></td></tr>
+  <tr><td>余白の組み方</td><td><b>ある</b></td><td><code>foundations/spacing/index.md</code></td></tr>
+  <tr><td>色のコード（<code>#0f41af</code> のような値）</td><td><b>ない</b></td><td>Figmaやコードスニペット側（このキットには未収録）</td></tr>
+  <tr><td>フォントの実ファイル</td><td><b>ない</b></td><td>別途調達</td></tr>
+  <tr><td>そのまま貼れる実装コード</td><td><b>ない</b></td><td>コードスニペット側（同上）</td></tr>
+</table>
+
+<div class="warn">
+<b>「DADSの青って何番ですか」には答えがありません</b>
+資料の中に色のコードは書かれていません。書かれているのは「本文と背景は4.5:1以上の明暗差をつけてください」という<b>条件</b>のほうです。色そのものは案件ごとに決めて、条件を満たしているかを測って確かめる、という使い方になります。やり方は<a href="#color">色の決め方</a>にまとめました。
+</div>
+
+<p>ですので、設計書やコードに「DADSが定める色 <code>#xxxxxx</code>」と書いてしまうのは間違いです。そんな値はどこにも書かれていないので、書いた時点で事実と違うことになります。レビューでも見られる項目です。</p>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="separate">
+<h2>モック生成とは別物です</h2>
+
+<p>このキットには、性格の違う2つの仕組みが同居しています。どちらも「デザイン」にまつわる話なので、念のためはっきり分けておきます。</p>
+
+<figure>
+<svg viewBox="0 0 800 216" role="img" aria-label="モック生成システムとデザインシステムは別物であることを示す図">
+  <g font-family="Hiragino Sans, Yu Gothic, sans-serif">
+    <rect x="24" y="16" width="340" height="176" rx="8" fill="#f6f8fa" stroke="#dfe3e8"/>
+    <text x="194" y="46" text-anchor="middle" font-size="14" font-weight="700">モック生成システム</text>
+    <text x="194" y="72" text-anchor="middle" font-size="11.5" fill="#5b6875">デザインのたたき台を3案つくる</text>
+    <line x1="52" y1="88" x2="336" y2="88" stroke="#dfe3e8"/>
+    <text x="52" y="112" font-size="11.5">配色は独自ルール（生成規約 §5）</text>
+    <text x="52" y="136" font-size="11.5">draft-gen / palette / 生成スキル</text>
+    <text x="52" y="160" font-size="11.5" fill="#5b6875">DADSは参照しません</text>
+    <text x="52" y="180" font-size="11" fill="#5b6875">→ 使い方マニュアル.html</text>
+
+    <rect x="436" y="16" width="340" height="176" rx="8" fill="#e8f2ec" stroke="#2f6f4f"/>
+    <text x="606" y="46" text-anchor="middle" font-size="14" font-weight="700">デザインシステム（DADS）</text>
+    <text x="606" y="72" text-anchor="middle" font-size="11.5" fill="#5b6875">実際に作るUIの基準</text>
+    <line x1="464" y1="88" x2="748" y2="88" stroke="#c3ddcf"/>
+    <text x="464" y="112" font-size="11.5">色は「原則と下限」だけ（値は無し）</text>
+    <text x="464" y="136" font-size="11.5">docs/design-system/（49種）</text>
+    <text x="464" y="160" font-size="11.5" fill="#5b6875">設計・実装・レビューが参照</text>
+    <text x="464" y="180" font-size="11" fill="#5b6875">→ このマニュアル</text>
+
+    <line x1="400" y1="16" x2="400" y2="192" stroke="#8a5a00" stroke-width="1.4" stroke-dasharray="5 4"/>
+    <rect x="366" y="94" width="68" height="22" rx="11" fill="#fff6e5" stroke="#8a5a00"/>
+    <text x="400" y="109" text-anchor="middle" font-size="11.5" font-weight="700" fill="#8a5a00">混ぜない</text>
+  </g>
+</svg>
+<figcaption>ひとつのキットに入っていますが、行き来はしません</figcaption>
+</figure>
+
+<p>混ぜると、前回と同じことが起きます。そこで、うっかり混ざらないように機械的な見張りを付けました。生成システム側のファイル（<code>draft-gen/</code>・<code>palette/</code>・生成スキル・見本）に「デジタル庁」「DADS」「design-system」という文字が入り込むと、テストが落ちます。</p>
+
+<div class="note">
+<b>モック生成画面にこのマニュアルへのリンクを置いていない理由</b>
+いま書いた見張りに引っかかる、というのもありますが、それ以前に、リンクがあると「モック生成もDADSに準拠しているんだ」と受け取られてしまいます。実際には準拠していません。誤解のもとになるので、あえて置いていません。
+</div>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="where">
+<h2>どこに何があるか</h2>
+
+<p>資料はぜんぶ <code>docs/design-system/</code> の中です。</p>
+
+<pre><code>docs/design-system/
+├ MANIFEST.md          ← 目次。まずここを見ます
+├ _REFERENCE_GUIDE.md  ← 引き方の案内。49種の一覧つき
+├ _ATTRIBUTION.md      ← 出典・ライセンス・更新手順
+├ components/          ← UIの部品 49種（ボタン、入力欄、テーブル…）
+├ foundations/         ← 色・余白・文字・レイアウトなどの土台
+├ guidance/            ← 考え方、ロール別の使い方
+├ introduction/        ← はじめに、利用条件
+└ webaccessibility/    ← アクセシビリティ試験の実施例</code></pre>
+
+<p>ファイルは全部で127個あります。うち125個がデジタル庁の配布物そのままで、<code>_</code> で始まる2つだけがこのキット側で足した案内です。中身に手は加えていません。</p>
+
+<p>目次にあたるのが <code>MANIFEST.md</code> です。日本語のタイトルと一行説明つきで全ファイルが並んでいるので、「探している部品がどのファイルか」はここを見ればわかります。部品名がうろ覚えでも、<code>_REFERENCE_GUIDE.md</code> に49種の一覧（日本語名とパス）があるので、そちらでも引けます。</p>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="ask">
+<h2>Claude Code への頼み方</h2>
+
+<p>いちばん簡単なのは、作業を頼むときに一行足すことです。</p>
+
+<pre class="say"><code>UIは docs/design-system/ の仕様に従ってください。</code></pre>
+
+<p>これだけで、Claude Code は目次を見て、必要なところだけを読みにいきます。</p>
+
+<p>もう少し具体的に、ファイルまで指定すると精度が上がります。こんな頼み方です。</p>
+
+<pre class="say"><code>docs/design-system/components/button/index.md の仕様に従って、
+プライマリー・セカンダリー・テキストの3種類のボタンを作ってください。</code></pre>
+
+<pre class="say"><code>この問い合わせフォームを、input-text と radio と select の仕様に
+合わせて直してください。参照したパスも書き残してください。</code></pre>
+
+<pre class="say"><code>いまの画面の配色が、DADSの下限（本文4.5:1・枠線3:1）を
+満たしているか測って教えてください。</code></pre>
+
+<div class="warn">
+<b>「全部読んで」とは頼まないでください</b>
+125ファイルあります。全部読ませると時間がかかるうえに、いま作っている画面と関係のない仕様まで判断材料に混ざって、かえって精度が落ちます。作る画面に出てくる部品のぶんだけ——だいたい1〜5ファイルで足ります。
+</div>
+
+<p>部品の名前が分からないときは、探すところから頼んで構いません。「入力フォームに使えそうな部品を MANIFEST.md から探して」と言えば、目次を見て候補を出してくれます。</p>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="flow">
+<h2>開発ループの中では</h2>
+
+<p>毎回自分で指示を出さなくても、開発ループを回せば、3つの役割が自動でDADSを見にいきます。</p>
+
+<figure>
+<svg viewBox="0 0 800 236" role="img" aria-label="設計・実装・レビューの3工程がデザインシステムを参照する流れの図">
+  <defs>
+    <marker id="a2" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#5b6875"/>
+    </marker>
+    <marker id="a3" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#2f6f4f"/>
+    </marker>
+  </defs>
+  <g font-family="Hiragino Sans, Yu Gothic, sans-serif">
+    <rect x="248" y="14" width="304" height="52" rx="8" fill="#e8f2ec" stroke="#2f6f4f"/>
+    <text x="400" y="38" text-anchor="middle" font-size="13" font-weight="700">docs/design-system/（DADS）</text>
+    <text x="400" y="56" text-anchor="middle" font-size="11" fill="#5b6875">目次から、必要な1〜5ファイルだけ</text>
+
+    <rect x="40" y="140" width="192" height="66" rx="7" fill="#f6f8fa" stroke="#dfe3e8"/>
+    <text x="136" y="166" text-anchor="middle" font-size="12.5" font-weight="700">architect</text>
+    <text x="136" y="186" text-anchor="middle" font-size="11" fill="#5b6875">設計。参照パスを書き残す</text>
+
+    <rect x="304" y="140" width="192" height="66" rx="7" fill="#f6f8fa" stroke="#dfe3e8"/>
+    <text x="400" y="166" text-anchor="middle" font-size="12.5" font-weight="700">implementer</text>
+    <text x="400" y="186" text-anchor="middle" font-size="11" fill="#5b6875">実装。仕様どおりに作る</text>
+
+    <rect x="568" y="140" width="192" height="66" rx="7" fill="#f6f8fa" stroke="#dfe3e8"/>
+    <text x="664" y="166" text-anchor="middle" font-size="12.5" font-weight="700">reviewer</text>
+    <text x="664" y="186" text-anchor="middle" font-size="11" fill="#5b6875">守れているか・出典はあるか</text>
+
+    <path d="M136,138 L136,96 L290,96 L290,70" stroke="#2f6f4f" stroke-width="1.3" fill="none" marker-end="url(#a3)"/>
+    <path d="M400,138 L400,70" stroke="#2f6f4f" stroke-width="1.3" fill="none" marker-end="url(#a3)"/>
+    <path d="M664,138 L664,96 L510,96 L510,70" stroke="#2f6f4f" stroke-width="1.3" fill="none" marker-end="url(#a3)"/>
+
+    <path d="M234,173 L300,173" stroke="#5b6875" stroke-width="1.4" marker-end="url(#a2)"/>
+    <path d="M498,173 L564,173" stroke="#5b6875" stroke-width="1.4" marker-end="url(#a2)"/>
+    <text x="400" y="228" text-anchor="middle" font-size="11" fill="#2f6f4f">3工程とも、必要なところだけを見にいきます</text>
+  </g>
+</svg>
+<figcaption>設計・実装・レビューがDADSを参照する流れ</figcaption>
+</figure>
+
+<ul>
+  <li><b>architect（設計）</b>は、その画面に出てくる部品を決めて、参照したファイルのパスを設計書に書きます。受け入れ条件にも「本文と背景の明暗差が4.5:1以上」のような、あとから測れる形の条件を入れます</li>
+  <li><b>implementer（実装）</b>は、設計書に書かれたパスを開いて、そのとおりに作ります</li>
+  <li><b>reviewer（レビュー）</b>は、仕様どおりか、明暗差は足りているか、出典が書いてあるかを見ます</li>
+</ul>
+
+<p>この3つの役割の定義ファイル（<code>agents/architect.md</code> など）に、それぞれ見るべきところが書き込んであります。ふだんは意識しなくて大丈夫です。</p>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="rules">
+<h2>数字で決まっていること</h2>
+
+<p>資料の中でも、数字ではっきり決まっているものは覚えてしまったほうが早いです。この5つを押さえておけば、たいていの場面は乗り切れます。</p>
+
+<table>
+  <tr><th>対象</th><th>基準</th><th>書いてある場所</th></tr>
+  <tr><td>ボタンなどの押せる範囲</td><td>44 CSS px 以上</td><td><code>components/button/index.md</code></td></tr>
+  <tr><td>本文の文字と背景</td><td>明暗差 4.5:1 以上</td><td><code>foundations/color/index.md</code></td></tr>
+  <tr><td>枠線・区切り線など文字でない部分</td><td>隣の色と 3:1 以上</td><td>同上</td></tr>
+  <tr><td>フォーカスの枠</td><td>黄色と黒の2重。<b>変更しない</b></td><td>同上</td></tr>
+  <tr><td>余白</td><td>基準単位を決めて、その倍数で組む</td><td><code>foundations/spacing/index.md</code></td></tr>
+</table>
+
+<h3>押せる範囲は44px（見た目の大きさとは別の話です）</h3>
+<p>指で押すことを考えた最低ラインです。ボタンの見た目が小さくても構いません。小さいサイズのときは上下に余白を足して、指が当たる範囲として44pxを確保すればよい、という考え方になっています。「小さいボタンは作れない」という意味ではないので、そこは誤解しないでください。</p>
+
+<h3>明暗差 4.5:1</h3>
+<p>文字が読めるかどうかの最低ラインです。薄いグレーの文字が読みにくいのは誰でも経験があると思いますが、それを感覚ではなく数値で判定します。測り方は<a href="#color">色の決め方</a>に書きました。</p>
+
+<h3>フォーカスの枠は変えない</h3>
+<p>キーボードの <span class="kbd">Tab</span> キーで操作している人が、「いま自分がどこにいるか」を見失わないための枠です。黄色と黒の二重になっているのは、背景が明るくても暗くても、どちらかが必ず見えるようにするためです。資料には<b>「いかなる場合も変更してはいけない」</b>とはっきり書かれています。デザインの都合で消したり、色を変えたりしないでください。</p>
+
+<div class="demo">
+  <p>下のボタンを <span class="kbd">Tab</span> キーで選んでみてください。二重の枠が出ます。</p>
+  <button class="demo-btn" type="button">次へ進む</button>
+</div>
+<div class="note">
+<b>この見本の色について</b>
+青（<code>#0f41af</code>）はこのマニュアル用にこちらで決めた色で、DADSが定めた色ではありません（そもそも資料に色の値はありません）。白いラベルとの明暗差を測ると8.77:1で、下限の4.5:1を満たしています——という、まさに<a href="#color">色の決め方</a>のとおりに決めた値です。
+</div>
+
+<h3>余白は「基準を決めて、その倍数で」</h3>
+<p>まず基準となる単位をひとつ決めて、あとはその倍率で余白を組みます。資料では、よく使われる基準として8 CSS pxが挙げられています。段階は3〜5個くらいに絞ると画面全体がそろって見えます。たとえば8px・24px・64pxの3段階、といった具合です。数字を都度その場で決めていくと、似ているけれど微妙に違う余白が散らばって、締まりのない画面になります。</p>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="color">
+<h2>色の決め方</h2>
+
+<p>色のコードは資料にないので、自分たちで決めます。手順はこうです。</p>
+
+<ol class="steps">
+  <li>案件の都合で色を決めます。ブランドカラーがあればそれが出発点です</li>
+  <li>組み合わせの明暗差（コントラスト比）を測ります</li>
+  <li>下限を下回っていたら、明るさを調整してもう一度測ります</li>
+  <li>決まった値と、測った数値を設計書に残します</li>
+</ol>
+
+<p>4番目が地味ですが大事です。「この色にした理由」が残っていると、あとから「なぜ？」と聞かれたときに答えられますし、色を変えたい話が出たときの判断も早くなります。逆にここが空白だと、次に触る人が最初から測り直すことになります。</p>
+
+<p>明暗差の計算は手でやるものではないので、Claude Code に頼んでください。</p>
+
+<pre class="say"><code>背景 #ffffff に文字 #0f41af を置いたときのコントラスト比を計算して、
+DADSの下限（本文4.5:1）を満たしているか教えてください。</code></pre>
+
+<p>だいたいの感覚として、白背景に濃い色ならまず問題ありません。危ないのは、薄いグレーの補助テキスト、色つき背景に白抜き文字、そして枠線だけで区切っているところです。この3つは測る前から怪しいと思っておくとよいです。</p>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="credit">
+<h2>出典を書く</h2>
+
+<p>DADSを参照して作ったものには、出典を書く必要があります。お願いではなく、デジタル庁が定めた利用条件です。忘れやすいところなので、レビューでも見ています。</p>
+
+<p>書く文はこれです。</p>
+
+<pre><code>出典：デジタル庁デザインシステムウェブサイト https://design.digital.go.jp/dads/</code></pre>
+
+<p>書かれていることをそのまま使うのではなく、案件向けに調整した場合は、「デジタル庁デザインシステムウェブサイトのコンテンツを加工して作成」という旨も併せて書きます。そして、<b>デジタル庁が作ったもののように見せることは禁止されています</b>。ここは踏み外すと面倒なことになるので、迷ったら加工した旨まで書いておくほうが安全です。</p>
+
+<p>どこに書くかは決めてあります。</p>
+
+<table>
+  <tr><th>成果物</th><th>書く場所</th></tr>
+  <tr><td><code>docs/SPEC.md</code></td><td>セクション10（参考資料）</td></tr>
+  <tr><td><code>docs/designs/{ID}.md</code></td><td>Proposed Design に、参照パスと一緒に</td></tr>
+  <tr><td>実装コード</td><td>ファイル冒頭のコメント、または <code>README</code>／<code>NOTICE</code> にまとめて</td></tr>
+</table>
+
+<p>正確な条件はデジタル庁の原文（<code>docs/design-system/introduction/notices/index.md</code>）にあります。キット側での運用のまとめは <code>docs/design-system/_ATTRIBUTION.md</code> です。</p>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="update">
+<h2>新しい版が出たら</h2>
+
+<p>DADSはβ版で、いまも更新が続いています。入っているのは v2.17.1（2026年8月19日に取得したもの）です。新しい版に差し替えるときは、こうします。</p>
+
+<ol class="steps">
+  <li><a href="https://design.digital.go.jp/dads/resources/">デジタル庁のリソースページ</a>から最新のMarkdownのZIPを取得します</li>
+  <li><code>docs/design-system/</code> の中身を差し替えます。<code>_</code> で始まる2つのファイルは残してください</li>
+  <li><code>_ATTRIBUTION.md</code> のバージョン・取得したZIP・配置日を書き換えます</li>
+  <li><code>updates/</code> の更新履歴を読んで、すでに書いた設計書に影響が出ていないか確認します</li>
+</ol>
+
+<div class="note">
+<b>部品の名前が変わることがあります</b>
+たとえば v2.17.1 では「パンくずリスト」が「パンくずナビゲーション」に変わりました。設計書に古い名前で書いてあると、あとで探せなくなります。差し替えたあとに <code>updates/</code> をひととおり見ておくのは、そのためです。
+</div>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="check">
+<h2>こわれていないか確かめる</h2>
+
+<p>何かを触ったあとで不安になったら、これを実行してください。</p>
+
+<pre><code>python3 tests/site/check_klk111.py</code></pre>
+
+<p>見ているのは大きく4点です。49種の部品がそろっているか、目次のリンクが全部つながるか、モック生成側にDADSが混ざっていないか、配布用パッケージに出典ごと入るか。最後に <code>0 failed</code> と出れば大丈夫です。</p>
+
+<p>どこかが <code>FAIL</code> になったら、その行に何が起きたかが書かれています。読んでもピンとこないときは、その出力をそのまま Claude Code に貼って「これを直して」と頼んでください。</p>
+<a class="totop" href="#what">▲</a>
+</section>
+
+<section id="trouble">
+<h2>よくあるつまずき</h2>
+
+<h3 class="faq">「DADSの青は何番ですか」と聞かれた</h3>
+<p>決まっていません。資料にあるのは明暗差の下限だけです。案件ごとに色を決めて、測って、記録します。→ <a href="#color">色の決め方</a></p>
+
+<h3 class="faq">読み込みに時間がかかる／回答がぼんやりしている</h3>
+<p>全件読ませている可能性が高いです。「デザインシステムを全部読んで」ではなく、「button と input-text の仕様に従って」のように、部品を名指しで頼んでください。1〜5ファイルで足ります。</p>
+
+<h3 class="faq">モック生成の配色にもDADSを反映させたい</h3>
+<p>いまの仕組みでは反映されません。意図的にそうしています。どうしても必要になったら、既存の見本とテストを壊さない形で、別のチケットとして慎重に進めてください。思いつきで生成ルールに書き足すと、前回と同じことが起きます。</p>
+
+<h3 class="faq">作りたい部品が49種の中にない</h3>
+<p>その場合は <code>foundations/</code>（色・余白・文字・レイアウトなど）の考え方だけを借りて自作します。似ている部品があれば、状態の持たせ方やキーボード操作の作法はそこから拝借できます。出典表記は同じように必要です。</p>
+
+<h3 class="faq">部品の名前が資料と食い違っている</h3>
+<p>改訂で名前が変わったのだと思います。正しいのは <code>MANIFEST.md</code> と、各部品の <code>changelog.md</code> のほうです。</p>
+
+<h3 class="faq">結局どこから見ればいいか分からない</h3>
+<p><code>docs/design-system/_REFERENCE_GUIDE.md</code> を開いてください。目的別にどのファイルを見ればいいかの対応表と、49種の一覧が載っています。迷ったときの入口はここです。</p>
+<a class="totop" href="#what">▲</a>
+</section>
+
+</main>
+</div>
+
+<script>
+/* サイドナビの現在位置ハイライト（外部ライブラリなし） */
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a[href^="#"]'));
+  var map = {};
+  links.forEach(function (a) {
+    var id = a.getAttribute('href').slice(1);
+    var el = document.getElementById(id);
+    if (el) { map[id] = a; }
+  });
+  var ids = Object.keys(map);
+  if (!ids.length || !('IntersectionObserver' in window)) { return; }
+
+  function setOn(id) {
+    links.forEach(function (a) { a.classList.remove('on'); });
+    if (map[id]) { map[id].classList.add('on'); }
+  }
+
+  var visible = {};
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      visible[e.target.id] = e.isIntersecting;
+    });
+    for (var i = 0; i < ids.length; i++) {
+      if (visible[ids[i]]) { setOn(ids[i]); return; }
+    }
+  }, { rootMargin: '-10% 0px -70% 0px', threshold: 0 });
+
+  ids.forEach(function (id) { io.observe(document.getElementById(id)); });
+  setOn(ids[0]);
+})();
+</script>
+</body>
+</html>
