@@ -11,6 +11,22 @@ Kenesis Loop Kitのすべての変更はこのファイルに記録されます�
 <!-- KLK-090: KLK-061〜095 の34件は、受け取った人が読む文書として**主題ごとにまとめて**記録する。
      1件ずつ並べると内部の経緯が主になり、「このツールで何ができるか」が読み取れなくなるため。 -->
 
+### Added（KLK-111・デジタル庁デザインシステムの導入）
+
+**デザインの基準を公的な標準に合わせる**
+- **`docs/design-system/`** にデジタル庁デザインシステム（DADS）β版 v2.17.1 のドキュメント（Markdown）一式を同梱（125ファイル / UIコンポーネント49種 / 基本デザイン8種 / アクセシビリティガイドライン）。本文は未編集
+- `docs/design-system/_REFERENCE_GUIDE.md`: 参照ルール（全件読み込み禁止・`MANIFEST.md` 起点・目的別の参照先・49種のパス一覧・「DADSに含まれないもの」の明示）
+- `docs/design-system/_ATTRIBUTION.md`: 出典・ライセンス条件・バージョン・成果物への出典記載場所・更新手順
+- CLAUDE.md にセクション「デザインシステム参照ルール（DADS）」を追加。ドキュメント管理表・ポリシー管理の原則テーブルにも転記
+- `agents/architect.md` / `implementer.md` / `reviewer.md` にDADSの参照ルール・遵守基準・レビュー観点を追加
+- 検収チェック `tests/site/check_klk111.py`＋`tests/test_palette_klk111.py`: 生成規約側（`DRAFT_RULES` / `WIREFRAME_RULES` / `draft-gen/` / `palette/`）へのDADS参照の混入防止、49種・MANIFEST・出典の整全性、パッケージ実ビルドへの同梱を機械的に検査
+
+### Changed（KLK-111）
+- README.md: 「開発ループを回す人へ」の表にデザインシステムの行、ライセンス節に同梱第三者コンテンツの出典を追加
+
+> 既存の生成規約（`WIREFRAME_RULES.md` / `DRAFT_RULES.md`）と `palette/` はDADS導入の対象外とし、
+> 変更していない。配色の正は従来どおり各規約側にある。
+
 ### Added（KLK-061〜106・2026-09-02〜09-08）
 
 **受け取ってすぐ使える形に（KLK-105/106）**

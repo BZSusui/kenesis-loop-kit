@@ -316,6 +316,7 @@ AIが画像を見るのに**3分ほどかかります**。それでも出ない�
 | チケット | `tickets/`（雛形は `tickets/Templates/`） |
 | エージェント定義 | `agents/`（investigator / architect / implementer / tester / reviewer） |
 | 生成規約 | `.claude/skills/draft-generate/templates/DRAFT_RULES.md` |
+| デザインシステム | `docs/design-system/`（デジタル庁デザインシステム。参照ルールは `_REFERENCE_GUIDE.md`） |
 
 主なコマンド（Claude Code のチャットで実行）:
 
@@ -350,3 +351,15 @@ python -m unittest discover -s tests      # Windows
 ## ライセンス
 
 `LICENSE` を参照してください。
+
+### 同梱する第三者コンテンツ
+
+`docs/design-system/` はデジタル庁デザインシステムβ版 v2.17.1 のドキュメント（Markdown）です。
+本キットのライセンスの対象外であり、デジタル庁の定める条件に従って利用してください。
+
+出典：デジタル庁デザインシステムウェブサイト https://design.digital.go.jp/dads/
+
+- 本文ファイルは未編集のまま同梱しています（`_` 始まりのファイルのみ本キットが追加）
+- コンテンツを利用する際は出典を記載し、編集・加工して利用する場合は加工した旨も併記してください
+- 詳細な条件は `docs/design-system/introduction/notices/index.md` および
+  `docs/design-system/_ATTRIBUTION.md` を参照してください

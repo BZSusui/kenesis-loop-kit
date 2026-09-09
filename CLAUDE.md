@@ -82,11 +82,61 @@ reviewerが承認し、人間が成果物を確認した後に判断する。
 | `.claude/skills/spec-interview/templates/SPEC_TEMPLATE.md` | - | SPEC.mdのテンプレート（`/spec-interview` がコピー元に使う） |
 | `docs/designs/{ID}.md` | architect | チケット単位の設計書。architectが生成し、implementerが参照する |
 | `docs/designs/_TEMPLATE.md` | - | 設計書テンプレート（architectがコピー元に使う） |
+| `docs/design-system/` | - (デジタル庁配布物) | デジタル庁デザインシステム(DADS)のMarkdown一式。UIコンポーネント49種・カラー/余白基準・アクセシビリティガイドラインの正 |
+| `docs/design-system/_REFERENCE_GUIDE.md` | - | DADSの参照ルール(全件読み込み禁止・目的別参照先・49種のパス一覧) |
+| `docs/design-system/_ATTRIBUTION.md` | - | DADSの出典・ライセンス・バージョン・更新手順 |
 | `docs/obsidian-setup.md` | - | Obsidianの初期設定ガイド |
 
 - `docs/SPEC.md` が存在しない・不完全な場合、investigatorは作業を開始せず `/spec-interview` の実行（人間による要件定義）を促すこと
 - 設計書はチケットごとに `docs/designs/{ID}.md` として分割管理する（単一 `DESIGN.md` への追記方式は廃止）。architectは `docs/designs/_TEMPLATE.md` をコピーして作成する
 - 設計を作り直す場合は同じ `docs/designs/{ID}.md` を上書きし、チケットのログに改訂理由を残す。過去の設計はGitヒストリで追える（設計ファイルにライフサイクル状態は持たせない）。詳細は `docs/designs/README.md` を参照
+
+---
+
+## デザインシステム参照ルール（デジタル庁デザインシステム / DADS）
+
+`docs/design-system/` にデジタル庁デザインシステムβ版 v2.17.1 のMarkdown一式（125ファイル / UIコンポーネント49種）を配置している。UIの**見た目とアクセシビリティの正はここ**であり、SPEC（何を作るか）・ワイヤーフレーム（どう見えるか）より上位の基準として扱う。
+
+### 参照の原則
+
+- **全件読み込み禁止。** `docs/design-system/MANIFEST.md`（索引）を起点に、目的に関係するファイルだけを開く（通常1〜5ファイル）
+- 参照前に `docs/design-system/_REFERENCE_GUIDE.md` を読む（目的別の参照先・49種のパス一覧・含まれないものの一覧）
+- **DADSのMarkdownにHEX値やデザイントークン定義は含まれない。** 含まれるのは設計原則とコントラスト比の下限のみ（具体値はFigma／コードスニペット側）。特定の色値を「DADSが定める色」として記載してはならない
+- 具体的な配色は「DADSの原則と下限を満たす値をプロジェクト側で決定する」。決定した値は根拠（コントラスト比の実測値）とともに記録する
+
+### 遵守する基準
+
+| 対象 | 基準 | 出典 |
+|---|---|---|
+| テキストと背景のコントラスト | 4.5:1 以上（常時） | `foundations/color/index.md` |
+| 枠線・ディバイダー等の非テキスト要素 | 隣接背景と 3:1 以上 | 同上 |
+| プライマリーカラーと主要背景色 | 4.5:1 以上 | 同上 |
+| セカンダリー／ターシャリーカラー | 主要背景と 3:1 以上（テキスト用途なら 4.5:1 以上） | 同上 |
+| フォーカスインジケーター | Yellow-300 + Black の2重構造。**いかなる場合も変更禁止** | 同上 |
+| 余白 | 基準単位 8 CSS px の倍率スケール（3〜5段階に絞る） | `foundations/spacing/index.md` |
+
+### 出典表記（義務）
+
+DADSを参照した成果物には出典記載が必要である。
+
+- 記載する出典行: `出典：デジタル庁デザインシステムウェブサイト https://design.digital.go.jp/dads/`
+- DADSの記述を**自プロジェクト向けに調整した場合は、加工した旨も併記**する
+- デジタル庁が作成したかのような態様での公表・利用は禁止
+- 成果物ごとの記載場所は `docs/design-system/_ATTRIBUTION.md` の表に従う
+
+### 実行責任者
+
+| エージェント | 責務 |
+|---|---|
+| architect | 設計時に該当コンポーネント仕様を参照し、`docs/designs/{ID}.md` に参照パスと出典行を記載する |
+| implementer | 実装前に `components/{slug}/index.md` を読み、状態・アクセシビリティ要件を満たす |
+| reviewer | DADS準拠とコントラスト基準の充足、出典表記の有無を確認する |
+
+> **本ルールの適用範囲**: 現時点でDADSを参照するのは上記3エージェント（設計・実装・レビュー）のみ。
+> ワイヤーフレーム生成規約（`.claude/skills/wireframe-gen/templates/WIREFRAME_RULES.md`）と
+> デザインラフ生成規約（`.claude/skills/draft-generate/templates/DRAFT_RULES.md`）は
+> **既存の配色規約を正として維持**しており、DADS基準の反映は行っていない。
+> これらへの適用が必要になった場合は、既存の配色・golden testを壊さない形で別チケットとして扱う。
 
 ---
 
@@ -206,6 +256,7 @@ CLAUDE.mdで定義したポリシーは、それを実行する責任者（エ�
 | cancelledステータス | CLAUDE.md | orchestrator | orchestrator.md 委譲テーブル / tickets/_index.md クエリ |
 | リトライ上限 | CLAUDE.md | orchestrator | orchestrator.md Responsibilities |
 | チケット状態の不変条件 | CLAUDE.md（ステータス定義 / リトライ上限） | PreToolUse + Stop hook（自動強制） | .claude/hooks/validate_ticket_state.py / check_loop_integrity.py |
+| DADS準拠・出典表記 | CLAUDE.md | architect / implementer / reviewer | agents/architect.md / agents/implementer.md / agents/reviewer.md |
 
 新しいポリシーを追加する際は、このテーブルを更新し、転記先ファイルへの反映まで完了させること。
 
