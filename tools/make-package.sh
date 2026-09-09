@@ -71,7 +71,7 @@ mkdir -p "$DEST" || { echo "【エラー】出力先を作成できませんで�
 for d in draft-gen palette .claude agents docs samples; do
   [ -d "$d" ] && cp -R "$d" "$DEST/" && echo "  含めた: $d/"
 done
-for f in 起動.command 起動.bat はじめにお読みください.txt README.md 使い方マニュアル.html CLAUDE.md CHANGELOG.md LICENSE; do
+for f in 起動.command 起動.bat はじめにお読みください.txt README.md 使い方マニュアル.html デザインシステムの使い方.html CLAUDE.md CHANGELOG.md LICENSE; do
   [ -f "$f" ] && cp "$f" "$DEST/" && echo "  含めた: $f"
 done
 
