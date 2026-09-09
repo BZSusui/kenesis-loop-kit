@@ -167,6 +167,13 @@ fabricated = re.findall(r"DADS[^。]{0,20}(?:定める|規定する)[^。]{0,10}
 check("D5 DADSが定めた色として具体値を書いていない",
       not fabricated, "検出=%s" % (fabricated[:2] or "なし"))
 
+# 2026-09-09 方針: デザインシステムとモック生成は別案件として進める。
+# マニュアルは DADS だけを扱い、モック生成へは言及しない（配布パッケージも分ける）
+mock_refs = [w for w in ("モック生成", "使い方マニュアル.html", "デザインラフ", "draft-gen")
+             if w in TEXT]
+check("D7 モック生成システムへ言及していない（別案件として分離）",
+      not mock_refs, "検出=%s" % (mock_refs or "なし"))
+
 check("D6 見本の色が「DADSの値ではない」と断ってある",
       "DADSが定めた色ではありません" in TEXT,
       "断り書き=%s" % ("DADSが定めた色ではありません" in TEXT))
