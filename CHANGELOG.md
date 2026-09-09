@@ -19,6 +19,7 @@ Kenesis Loop Kitのすべての変更はこのファイルに記録されます�
 - `docs/design-system/_ATTRIBUTION.md`: 出典・ライセンス条件・バージョン・成果物への出典記載場所・更新手順
 - CLAUDE.md にセクション「デザインシステム参照ルール（DADS）」を追加。ドキュメント管理表・ポリシー管理の原則テーブルにも転記
 - `agents/architect.md` / `implementer.md` / `reviewer.md` にDADSの参照ルール・遵守基準・レビュー観点を追加
+- 検収チェック `tests/site/check_klk111.py`＋`tests/test_palette_klk111.py`: 生成規約側（`DRAFT_RULES` / `WIREFRAME_RULES` / `draft-gen/` / `palette/`）へのDADS参照の混入防止、49種・MANIFEST・出典の整全性、パッケージ実ビルドへの同梱を機械的に検査
 
 ### Changed（KLK-111）
 - README.md: 「開発ループを回す人へ」の表にデザインシステムの行、ライセンス節に同梱第三者コンテンツの出典を追加
