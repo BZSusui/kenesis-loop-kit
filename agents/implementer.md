@@ -35,6 +35,7 @@ Implement approved changes with minimal risk.
 4. Test Coverage
 5. Remaining Risks
 
+<!-- DADS:BEGIN -->
 ## デザインシステム（DADS）参照
 
 UIコンポーネントを実装する場合は、`docs/design-system/` のDADS仕様に準拠する（CLAUDE.md「デザインシステム参照ルール」）。
@@ -44,6 +45,7 @@ UIコンポーネントを実装する場合は、`docs/design-system/` のDADS�
 - 実装時に必ず満たす基準: テキストと背景のコントラスト 4.5:1 以上／枠線・ディバイダーは隣接背景と 3:1 以上／フォーカスインジケーターは Yellow-300 + Black の2重構造（**変更禁止**）／余白は基準単位 8 CSS px の倍率スケール
 - DADSにHEX値・デザイントークンは含まれない。色をハードコードする前に、採用値のコントラスト比を確認する
 - DADS準拠のUI実装ファイルには出典行をコメントで記載する: `出典：デジタル庁デザインシステムウェブサイト https://design.digital.go.jp/dads/`（調整を加えた場合は加工した旨も併記）
+<!-- DADS:END -->
 - `docs/wireframes/*.html` のHTML/CSSを本番コードへコピーしてはならない（ワイヤーフレームは見た目の確認用）
 
 ## Ticket Integration
@@ -58,7 +60,9 @@ UIコンポーネントを実装する場合は、`docs/design-system/` のDADS�
 
 ## Never
 - Rewrite working systems casually
+<!-- DADS:BEGIN -->
 - Change the DADS focus indicator (Yellow-300 + Black) for any reason
+<!-- DADS:END -->
 - Copy wireframe HTML/CSS into production code
 - Change architecture without approval
 - Mix multiple concerns in one change

@@ -82,15 +82,18 @@ reviewerが承認し、人間が成果物を確認した後に判断する。
 | `.claude/skills/spec-interview/templates/SPEC_TEMPLATE.md` | - | SPEC.mdのテンプレート（`/spec-interview` がコピー元に使う） |
 | `docs/designs/{ID}.md` | architect | チケット単位の設計書。architectが生成し、implementerが参照する |
 | `docs/designs/_TEMPLATE.md` | - | 設計書テンプレート（architectがコピー元に使う） |
+<!-- DADS:BEGIN -->
 | `docs/design-system/` | - (デジタル庁配布物) | デジタル庁デザインシステム(DADS)のMarkdown一式。UIコンポーネント49種・カラー/余白基準・アクセシビリティガイドラインの正 |
 | `docs/design-system/_REFERENCE_GUIDE.md` | - | DADSの参照ルール(全件読み込み禁止・目的別参照先・49種のパス一覧) |
 | `docs/design-system/_ATTRIBUTION.md` | - | DADSの出典・ライセンス・バージョン・更新手順 |
+<!-- DADS:END -->
 | `docs/obsidian-setup.md` | - | Obsidianの初期設定ガイド |
 
 - `docs/SPEC.md` が存在しない・不完全な場合、investigatorは作業を開始せず `/spec-interview` の実行（人間による要件定義）を促すこと
 - 設計書はチケットごとに `docs/designs/{ID}.md` として分割管理する（単一 `DESIGN.md` への追記方式は廃止）。architectは `docs/designs/_TEMPLATE.md` をコピーして作成する
 - 設計を作り直す場合は同じ `docs/designs/{ID}.md` を上書きし、チケットのログに改訂理由を残す。過去の設計はGitヒストリで追える（設計ファイルにライフサイクル状態は持たせない）。詳細は `docs/designs/README.md` を参照
 
+<!-- DADS:BEGIN -->
 ---
 
 ## デザインシステム参照ルール（デジタル庁デザインシステム / DADS）
@@ -137,6 +140,7 @@ DADSを参照した成果物には出典記載が必要である。
 > デザインラフ生成規約（`.claude/skills/draft-generate/templates/DRAFT_RULES.md`）は
 > **既存の配色規約を正として維持**しており、DADS基準の反映は行っていない。
 > これらへの適用が必要になった場合は、既存の配色・golden testを壊さない形で別チケットとして扱う。
+<!-- DADS:END -->
 
 ---
 
@@ -256,7 +260,9 @@ CLAUDE.mdで定義したポリシーは、それを実行する責任者（エ�
 | cancelledステータス | CLAUDE.md | orchestrator | orchestrator.md 委譲テーブル / tickets/_index.md クエリ |
 | リトライ上限 | CLAUDE.md | orchestrator | orchestrator.md Responsibilities |
 | チケット状態の不変条件 | CLAUDE.md（ステータス定義 / リトライ上限） | PreToolUse + Stop hook（自動強制） | .claude/hooks/validate_ticket_state.py / check_loop_integrity.py |
+<!-- DADS:BEGIN -->
 | DADS準拠・出典表記 | CLAUDE.md | architect / implementer / reviewer | agents/architect.md / agents/implementer.md / agents/reviewer.md |
+<!-- DADS:END -->
 
 新しいポリシーを追加する際は、このテーブルを更新し、転記先ファイルへの反映まで完了させること。
 

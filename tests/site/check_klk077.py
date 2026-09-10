@@ -19,6 +19,7 @@ KLK-077 acceptance-condition checker (static / no browser required).
 Run: python3 tests/site/check_klk077.py
 Exit code 0 = all checks pass, 1 = at least one fail.
 """
+import importlib.util
 import os
 import re
 import shutil
@@ -127,14 +128,31 @@ def ds_store_count(root):
     return sum(1 for _d, _s, fs in os.walk(root) for f in fs if f == ".DS_Store")
 
 
+def strip_dads(text):
+    """KLK-115: 配布物の README はデザインシステムの記述を外した形になる。
+
+    比較の基準を「リポジトリの README そのまま」から
+    「リポジトリの README から DADS 区間を外したもの」へ更新する。
+    E1 が見たいのは **カタログ版への差し替えが起きていないこと** であって、
+    DADS 除去はそれとは別の、既定ビルドで必ず起きる加工である。
+    """
+    path = os.path.join(ROOT, "tools", "strip-dads-sections.py")
+    spec = importlib.util.spec_from_file_location("strip_dads_sections", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.strip_dads_sections(text)[0]
+
+
+README_B = strip_dads(README)
+
 dest_b, proc_b = build()
 try:
     rb = os.path.join(dest_b, "README.md")
     body_b = open(rb, encoding="utf-8").read() if os.path.isfile(rb) else ""
     check(
-        "E1 B（既定）が組み立てられ、README がリポジトリのものと一致する",
-        proc_b.returncode == 0 and body_b == README,
-        "exit=%s / README一致=%s" % (proc_b.returncode, body_b == README),
+        "E1 B（既定）が組み立てられ、README がリポジトリのもの（DADS区間を除く）と一致する",
+        proc_b.returncode == 0 and body_b == README_B,
+        "exit=%s / README一致=%s" % (proc_b.returncode, body_b == README_B),
     )
     check(
         "E2 B にカタログが入っていない",

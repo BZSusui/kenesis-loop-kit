@@ -11,8 +11,16 @@
 #
 # ★カタログ（社外秘・第三者著作物）は既定で含めない。含めるには --with-catalog を明示すること。
 #
+# ★デザインシステム（DADS）も既定で含めない (KLK-115)。
+#   モック生成システムとは別案件なので、配布物には入れない（理恵さんの指示・2026-09-09）。
+#   docs/design-system/ と デザインシステムの使い方.html を外すだけでは足りない。
+#   CLAUDE.md・agents/×3・README.md・CHANGELOG.md が DADS を参照しており、
+#   そのままだと **参照先が存在しない記述** が配布物に残るため、
+#   `<!-- DADS:BEGIN/END -->` で囲んだ区間を tools/strip-dads-sections.py で取り除く。
+#   リポジトリ本体からは消さない（リポジトリは分割しない・2026-09-10 の判断）。
+#
 # 使い方:
-#   tools/make-package.sh [出力先] [--with-catalog] [--with-tests]
+#   tools/make-package.sh [出力先] [--with-catalog] [--with-tests] [--with-design-system]
 #
 #   出力先を省略すると ~/Desktop/kenesis-loop-kit-package へ書き出す。
 #
@@ -20,16 +28,18 @@ set -u
 
 usage() {
   cat <<'USAGE'
-使い方: tools/make-package.sh [出力先] [--with-catalog] [--with-tests]
+使い方: tools/make-package.sh [出力先] [--with-catalog] [--with-tests] [--with-design-system]
 
-  出力先            配布フォルダを作る場所（省略時: ~/Desktop/kenesis-loop-kit-package）
-  --with-catalog    実績カタログ（catalog/img と catalog.json）を含める
-                    ★社外秘・第三者著作物を含みます。配布可否の確認を済ませてから使ってください
-  --with-tests      テスト一式（tests/）を含める。開発する人へ渡すとき用
-  -h, --help        この説明を表示
+  出力先                 配布フォルダを作る場所（省略時: ~/Desktop/kenesis-loop-kit-package）
+  --with-catalog         実績カタログ（catalog/img と catalog.json）を含める
+                         ★社外秘・第三者著作物を含みます。配布可否の確認を済ませてから使ってください
+  --with-tests           テスト一式（tests/）を含める。開発する人へ渡すとき用
+  --with-design-system   デジタル庁デザインシステム（DADS）を含める
+                         既定では含めません。モック生成システムとは別案件のため
+  -h, --help             この説明を表示
 
 例:
-  tools/make-package.sh                                   # 本体のみ（約2MB）
+  tools/make-package.sh                                   # 本体のみ（約1MB・DADSなし）
   tools/make-package.sh ~/Desktop/配布用 --with-tests      # 開発者向け
   tools/make-package.sh ~/Desktop/配布用 --with-catalog    # カタログ込み（約347MB）
 USAGE
@@ -38,10 +48,12 @@ USAGE
 DEST=""
 WITH_CATALOG=0
 WITH_TESTS=0
+WITH_DESIGN_SYSTEM=0
 for arg in "$@"; do
   case "$arg" in
-    --with-catalog) WITH_CATALOG=1 ;;
-    --with-tests)   WITH_TESTS=1 ;;
+    --with-catalog)       WITH_CATALOG=1 ;;
+    --with-tests)         WITH_TESTS=1 ;;
+    --with-design-system) WITH_DESIGN_SYSTEM=1 ;;
     -h|--help)      usage; exit 0 ;;
     -*)             echo "【エラー】不明なオプション: $arg" >&2; usage; exit 1 ;;
     *)              DEST="$arg" ;;
@@ -68,12 +80,26 @@ mkdir -p "$DEST" || { echo "【エラー】出力先を作成できませんで�
 
 # ---- 必須（動作に要るもの） -------------------------------------------------
 # KLK-071: samples/ は「まず開いてもらう見本」。ダミー案件名の生成物のみで機密は無い（既定で含める）
+# ★ここは allowlist（列挙したものだけ入る）。リポジトリ直下に新しいフォルダが増えても
+#   ここへ足さない限り配布物には入らない。別案件（デザインシステム）の成果物が
+#   紛れ込まないのはこの性質による（check_klk115 が実ビルドで確認する）。
 for d in draft-gen palette .claude agents docs samples; do
   [ -d "$d" ] && cp -R "$d" "$DEST/" && echo "  含めた: $d/"
 done
-for f in 起動.command 起動.bat はじめにお読みください.txt README.md 使い方マニュアル.html デザインシステムの使い方.html CLAUDE.md CHANGELOG.md LICENSE; do
+for f in 起動.command 起動.bat はじめにお読みください.txt README.md 使い方マニュアル.html CLAUDE.md CHANGELOG.md LICENSE; do
   [ -f "$f" ] && cp "$f" "$DEST/" && echo "  含めた: $f"
 done
+
+# ---- デザインシステム（DADS）: 既定では外す (KLK-115) -----------------------
+if [ "$WITH_DESIGN_SYSTEM" -eq 1 ]; then
+  [ -f デザインシステムの使い方.html ] && cp デザインシステムの使い方.html "$DEST/" \
+    && echo "  含めた: デザインシステムの使い方.html（--with-design-system）"
+  echo "  含めた: docs/design-system/（--with-design-system）"
+else
+  rm -rf "$DEST/docs/design-system"
+  echo "  含めない: docs/design-system/ と デザインシステムの使い方.html"
+  echo "            （別案件のため。含めるには --with-design-system）"
+fi
 
 # ---- チケットの雛形だけ（作業ログは含めない） -------------------------------
 if [ -d tickets/Templates ]; then
@@ -128,6 +154,28 @@ if [ "$WITH_CATALOG" -eq 1 ]; then
   fi
 else
   echo "  含めない: catalog/img/ catalog/catalog.json（社外秘。含めるには --with-catalog）"
+fi
+
+# ---- DADS の記述を配布物から取り除く (KLK-115) ------------------------------
+# ★ファイルを外すだけでは終わらない。CLAUDE.md と agents/×3 が docs/design-system/ を
+#   参照しているので、記述が残ると「書いてあるのに無いファイル」を探させることになる。
+#   カタログ版 README の差し替え（上）より **後** に実行する。差し替え後の実物を処理する。
+if [ "$WITH_DESIGN_SYSTEM" -eq 0 ]; then
+  STRIP_TARGETS=""
+  for rel in CLAUDE.md README.md CHANGELOG.md \
+             agents/architect.md agents/implementer.md agents/reviewer.md; do
+    [ -f "$DEST/$rel" ] && STRIP_TARGETS="$STRIP_TARGETS $DEST/$rel"
+  done
+  # shellcheck disable=SC2086
+  if python3 tools/strip-dads-sections.py $STRIP_TARGETS; then
+    echo "  取り除いた: 各文書のデザインシステム関連の記述"
+  else
+    # マーカーの対応が崩れている等。中途半端な配布物を残さない。
+    echo "【エラー】デザインシステムの記述を取り除けませんでした。" >&2
+    echo "         参照先の無い記述が残った配布物を作らないため、$DEST を削除して中止します。" >&2
+    rm -rf "$DEST"
+    exit 1
+  fi
 fi
 
 # ---- Finder のメタデータを落とす --------------------------------------------

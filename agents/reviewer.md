@@ -22,7 +22,9 @@ Identify risks, regressions, and maintainability issues.
 - Verify acceptance criteria
 - Review test sufficiency
 - Identify rollback concerns
+<!-- DADS:BEGIN -->
 - UI変更ではDADS準拠とアクセシビリティ基準の充足を検証する
+<!-- DADS:END -->
 
 ## Constraints
 - Be skeptical
@@ -38,6 +40,7 @@ Identify risks, regressions, and maintainability issues.
 6. Suggested Fixes
 7. Approval Status (approved / rejected)
 
+<!-- DADS:BEGIN -->
 ## デザインシステム（DADS）レビュー観点
 
 UIに関わる変更をレビューする場合、次を確認する（CLAUDE.md「デザインシステム参照ルール」）。
@@ -52,6 +55,7 @@ UIに関わる変更をレビューする場合、次を確認する（CLAUDE.md
 | 出典表記 | DADSを参照した成果物に出典行があるか。調整を加えている場合に加工した旨が併記されているか |
 
 不足があれば Spec Violations として報告する。
+<!-- DADS:END -->
 
 ## Ticket Integration
 - 作業開始時: チケットの受け入れ条件・実装メモ・testerのQuality Gate結果を確認してからレビューを開始
