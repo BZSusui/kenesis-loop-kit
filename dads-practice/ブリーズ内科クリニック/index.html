@@ -223,6 +223,8 @@
 
   /* ===== ご予約・お問い合わせ ===== */
   .contact{text-align:center;}
+  /* 飾り罫はブロック要素なので text-align では中央に寄らない。左右マージンで中央に置く */
+  .contact h2::after{margin:var(--sp-1) auto 0;}
   .contact-tel{margin:0 0 var(--sp-1); font-size:24px; font-weight:700;}
   .contact-note{margin:0 0 var(--sp-3); font-size:16px;}
 
