@@ -208,8 +208,10 @@ check("E4 フォーカスの2重構造を見本自身が実装している",
 # F. 案内としての整合（README・パッケージ・モック生成側との住み分け）
 # ---------------------------------------------------------------------------
 PKG = io.open(os.path.join(ROOT, "tools", "make-package.sh"), encoding="utf-8").read()
-check("F1 make-package.sh の同梱リストに入っている", MANUAL_NAME in PKG,
-      "記載=%s" % (MANUAL_NAME in PKG))
+# KLK-115: 既定では同梱しない（別案件）。--with-design-system の分岐に載っていること
+check("F1 make-package.sh の --with-design-system 分岐で同梱される",
+      MANUAL_NAME in PKG and "--with-design-system" in PKG,
+      "記載=%s フラグ=%s" % (MANUAL_NAME in PKG, "--with-design-system" in PKG))
 
 README = io.open(os.path.join(ROOT, "README.md"), encoding="utf-8").read()
 check("F2 README から辿れる", MANUAL_NAME in README, "記載=%s" % (MANUAL_NAME in README))
@@ -227,10 +229,13 @@ if "--fast" not in sys.argv:
     tmp = tempfile.mkdtemp(prefix="klk112_pkg_")
     dest = os.path.join(tmp, "pkg")
     try:
-        r = subprocess.run(["bash", os.path.join(ROOT, "tools", "make-package.sh"), dest],
+        # KLK-115: マニュアルは --with-design-system を付けたときだけ入る。
+        # 既定ビルドに入らないことは tests/site/check_klk115.py が見る。
+        r = subprocess.run(["bash", os.path.join(ROOT, "tools", "make-package.sh"),
+                            dest, "--with-design-system"],
                            capture_output=True, text=True, timeout=600)
         built = os.path.join(dest, MANUAL_NAME)
-        check("G1 ★実際に作ったパッケージへ同梱される",
+        check("G1 ★--with-design-system で組んだパッケージへ同梱される",
               r.returncode == 0 and os.path.isfile(built),
               "rc=%d / 同梱=%s" % (r.returncode, os.path.isfile(built)))
         if os.path.isfile(built):

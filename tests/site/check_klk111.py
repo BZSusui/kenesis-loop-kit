@@ -18,6 +18,12 @@ KLK-111 acceptance-condition checker — DADS導入がモック生成システ�
   4. 実効果 — 実際にパッケージを組んで、DADS一式が出典ごと同梱され、
      かつパッケージ内の生成規約も汚染されていないこと（形でなく成果物を見る）。
 
+★KLK-115（2026-09-10）による変更
+  DADS は配布パッケージへ**既定では入らなくなった**（モック生成とは別案件のため）。
+  そのため D2「DADS が同梱される」は `--with-design-system` を付けたビルドで検証する。
+  **検査は消していない。** 成立する場面を明示しただけである。
+  既定ビルド側（DADS が1つも入らないこと）は `tests/site/check_klk115.py` が見る。
+
 Run: python3 tests/site/check_klk111.py [--fast]   (--fast はパッケージ実ビルドを省く)
 """
 import io
@@ -177,14 +183,21 @@ if "--fast" not in sys.argv:
                            capture_output=True, text=True, timeout=600)
         check("D1 パッケージ実ビルドが成功する", r.returncode == 0,
               "rc=%d %s" % (r.returncode, (r.stderr or r.stdout)[-160:].replace("\n", " ")))
-        pkg_ds = os.path.join(dest, "docs", "design-system")
+
+        # D2 は --with-design-system 側を見る (KLK-115)。既定ビルドには DADS が入らない
+        dest_ds = os.path.join(tmp, "pkg-ds")
+        r_ds = subprocess.run(["bash", os.path.join(ROOT, "tools", "make-package.sh"),
+                               dest_ds, "--with-design-system"],
+                              capture_output=True, text=True, timeout=600)
+        pkg_ds = os.path.join(dest_ds, "docs", "design-system")
         pkg_comps = component_dirs(pkg_ds) if os.path.isdir(pkg_ds) else []
-        check("D2 ★実際に作ったパッケージに DADS 49種と出典が同梱される",
-              len(pkg_comps) == 49
+        check("D2 ★--with-design-system で組んだパッケージに DADS 49種と出典が同梱される",
+              r_ds.returncode == 0
+              and len(pkg_comps) == 49
               and os.path.isfile(os.path.join(pkg_ds, "_ATTRIBUTION.md"))
               and os.path.isfile(os.path.join(pkg_ds, "MANIFEST.md")),
-              "同梱コンポーネント=%d 出典=%s" % (
-                  len(pkg_comps),
+              "rc=%d 同梱コンポーネント=%d 出典=%s" % (
+                  r_ds.returncode, len(pkg_comps),
                   os.path.isfile(os.path.join(pkg_ds, "_ATTRIBUTION.md"))))
         pkg_dirty = []
         for prefix in ("draft-gen", "palette", os.path.join(".claude", "skills")):

@@ -39,7 +39,8 @@ class TestKLK112StaticChecker(unittest.TestCase):
                          "check_klk112.py 失敗:\n%s" % p.stdout[-2500:])
         self.assertIn(", 0 failed", p.stdout)
         # 実ビルド部（G）が省略されずに走ったことまで確認する
-        self.assertIn("G1 ★実際に作ったパッケージへ同梱される", p.stdout)
+        # KLK-115: マニュアルは --with-design-system を付けたときだけ同梱される
+        self.assertIn("G1 ★--with-design-system で組んだパッケージへ同梱される", p.stdout)
         self.assertIn("G2 ★配布される実物が原本と同一で、出典行が残り、リンクが切れない",
                       p.stdout)
         # G2 が「原本と同一」「出典行あり」まで見ていることを確認する。

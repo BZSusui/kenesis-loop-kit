@@ -46,7 +46,9 @@ class TestKLK111StaticChecker(unittest.TestCase):
         # 実ビルド部（D）が省略されずに走ったことまで確認する
         # （--fast で走ると D が無くても "0 failed" になり得るため）
         self.assertIn("D1 パッケージ実ビルドが成功する", p.stdout)
-        self.assertIn("D2 ★実際に作ったパッケージに DADS 49種と出典が同梱される", p.stdout)
+        # KLK-115: 既定ビルドから DADS を外したため、D2 は --with-design-system 側で見る
+        self.assertIn("D2 ★--with-design-system で組んだパッケージに DADS 49種と出典が同梱される",
+                      p.stdout)
         self.assertIn("D3 ★パッケージ内の生成システム側にも DADS 参照が無い", p.stdout)
 
 

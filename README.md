@@ -12,15 +12,19 @@
 画面ごとの操作、ページ構成の組み立てかた（`⠿` を掴んで並べ替える等）、レイアウト型の一覧は
 **[使い方マニュアル.html](使い方マニュアル.html)** にまとめてあります。ダブルクリックでブラウザが開きます。
 
+<!-- DADS:BEGIN -->
 UIを実装するときの基準として、デジタル庁デザインシステム（DADS）も同梱しています。その引き方と
 守るルールは **[デザインシステムの使い方.html](デザインシステムの使い方.html)** にまとめました。
 モック生成とは別軸の仕組みで、生成の配色ルールには影響しません。
+<!-- DADS:END -->
 
 | 文書 | 役割 |
 |---|---|
 | このREADME | 置く・起動する・困ったときの対処 |
 | 使い方マニュアル.html | 画面ごとの操作・型の選び方・図解 |
+<!-- DADS:BEGIN -->
 | デザインシステムの使い方.html | デジタル庁デザインシステム（DADS）の引き方・守るルール・出典の書き方 |
+<!-- DADS:END -->
 
 ---
 
@@ -321,7 +325,9 @@ AIが画像を見るのに**3分ほどかかります**。それでも出ない�
 | チケット | `tickets/`（雛形は `tickets/Templates/`） |
 | エージェント定義 | `agents/`（investigator / architect / implementer / tester / reviewer） |
 | 生成規約 | `.claude/skills/draft-generate/templates/DRAFT_RULES.md` |
+<!-- DADS:BEGIN -->
 | デザインシステム | `docs/design-system/`（デジタル庁デザインシステム。参照ルールは `_REFERENCE_GUIDE.md`） |
+<!-- DADS:END -->
 
 主なコマンド（Claude Code のチャットで実行）:
 
@@ -357,6 +363,7 @@ python -m unittest discover -s tests      # Windows
 
 `LICENSE` を参照してください。
 
+<!-- DADS:BEGIN -->
 ### 同梱する第三者コンテンツ
 
 `docs/design-system/` はデジタル庁デザインシステムβ版 v2.17.1 のドキュメント（Markdown）です。
@@ -368,3 +375,4 @@ python -m unittest discover -s tests      # Windows
 - コンテンツを利用する際は出典を記載し、編集・加工して利用する場合は加工した旨も併記してください
 - 詳細な条件は `docs/design-system/introduction/notices/index.md` および
   `docs/design-system/_ATTRIBUTION.md` を参照してください
+<!-- DADS:END -->
