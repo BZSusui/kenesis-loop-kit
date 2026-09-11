@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<!--
+  ブリーズ内科クリニック — DADS準拠で再構成した1ページ（KLK-114 / 第1段）
+  入力: dads-practice/input/2026-09-04_ブリーズ内科クリニック/index-a.html（デザインラフ 案A）
+
+  出典：デジタル庁デザインシステムウェブサイト https://design.digital.go.jp/dads/
+  本ページは、デジタル庁デザインシステムウェブサイト https://design.digital.go.jp/dads/ の
+  コンテンツを加工して作成しています（配色の具体値の決定、規定のない部品の代替、
+  ヒーロー上のボタンスタイルの追加など）。デジタル庁が作成したものではありません。
+
+  対応づけ・判断の根拠・コントラスト比の実測値は MAPPING.md に記載。
+  外部依存ゼロ・JavaScriptなしの単一HTML。
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ブリーズ内科クリニック</title>
+<style>
+  /* ===== 配色（DADSは具体値を規定しない。下限を満たす値をプロジェクト側で決定し、実測値を MAPPING.md に記録）===== */
+  :root{
+    --c-primary:#0f4c81;        /* 白背景に 8.86:1 */
+    --c-primary-dark:#0b3a63;   /* hover / active */
+    --c-secondary:#4d85ad;      /* 非テキスト（枠線・区切り線）白背景に 3.98:1 */
+    --c-accent:#a8630b;         /* 飾り罫。白背景に 4.71:1 */
+    --c-bg:#ffffff;
+    --c-bg-band:#eef4f8;
+    --c-text:#1a1a1a;           /* 白背景に 17.40:1 */
+    --c-border-strong:#1a1a1a;  /* テーブルの罫線（DADS: 黒いボーダーで区切る） */
+    /* フォーカスインジケーター（Yellow-300 + Black の2重構造。いかなる場合も変更しない） */
+    --c-focus-y:#fbbf24;
+    --c-focus-k:#000000;
+    /* 余白スケール（基準単位 8 CSS px の倍率。4段階のみ使う） */
+    --sp-1:8px;   /* ×1 */
+    --sp-2:16px;  /* ×2 */
+    --sp-3:32px;  /* ×4 */
+    --sp-4:64px;  /* ×8 */
+  }
+
+  *{box-sizing:border-box;}
+
+  /* 前景色を指定したら背景色も必ず指定する（DADS foundations/color） */
+  body{
+    margin:0; background:var(--c-bg); color:var(--c-text);
+    font-family:"Hiragino Sans","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+    font-size:16px; line-height:1.8;
+  }
+
+  /* ===== フォーカスインジケーター =====
+     黄単体は白背景に 1.67:1 しかなく 3:1 を満たさない。黒との2重構造で、
+     明るい背景では黒が、暗い背景では黄が効く。だから2重になっている。 */
+  :focus-visible{
+    outline:2px solid var(--c-focus-k);
+    outline-offset:0;
+    box-shadow:0 0 0 4px var(--c-focus-y);
+  }
+
+  /* スクリーンリーダーにだけ渡すテキスト */
+  .vh{position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;}
+
+  .skip{
+    position:absolute; left:var(--sp-1); top:-100px; z-index:10;
+    background:var(--c-bg); color:var(--c-primary); border:2px solid var(--c-primary);
+    padding:var(--sp-1) var(--sp-2); text-decoration:underline; border-radius:8px;
+  }
+  .skip:focus{top:var(--sp-1);}
+
+  /* ===== リンク（色だけで示さない。必ず下線）===== */
+  a{color:var(--c-primary);}
+  main a, footer a{text-decoration:underline;}
+  a:hover{color:var(--c-primary-dark);}
+
+  /* ===== ボタン ===== */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    min-height:44px;                     /* ターゲット領域 44 CSS px 以上 */
+    padding:var(--sp-1) var(--sp-3);
+    border:2px solid transparent; border-radius:8px;
+    font-size:16px; font-weight:700; line-height:1.4;
+    text-decoration:none; cursor:pointer;
+  }
+  /* プライマリー＝塗りボタン。1ページに1つだけ（DADS components/button） */
+  .btn-primary{background:var(--c-primary); color:#fff; border-color:var(--c-primary);}
+  .btn-primary:hover{background:var(--c-primary-dark); border-color:var(--c-primary-dark); color:#fff;}
+  /* セカンダリー＝アウトラインボタン。外周が白背景に 3.98:1 */
+  .btn-outline{background:#fff; color:var(--c-primary); border-color:var(--c-primary);}
+  .btn-outline:hover{background:var(--c-bg-band); color:var(--c-primary-dark);}
+  /* 追加スタイル＝反転塗りボタン（写真の上専用）。
+     枠線は写真の上で 3:1 を保証できないため、白い面そのもので 5.78:1 を確保する */
+  .btn-reverse{background:#fff; color:var(--c-primary); border-color:#fff;}
+  .btn-reverse:hover{background:var(--c-bg-band); color:var(--c-primary-dark); border-color:var(--c-bg-band);}
+
+  /* ===== ヘッダーコンテナ ===== */
+  .site-header{background:var(--c-bg); border-bottom:1px solid var(--c-secondary);}
+  .header-inner{
+    max-width:1040px; margin:0 auto; padding:var(--sp-1) var(--sp-2);
+    display:flex; align-items:center; flex-wrap:wrap; gap:var(--sp-2);
+  }
+  .logo{margin:0; font-size:18px; font-weight:700; color:var(--c-primary); letter-spacing:normal;}
+  .gnav{margin-left:auto;}
+  .gnav ul{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:var(--sp-1);}
+  .gnav a{
+    display:inline-flex; align-items:center; min-height:44px;
+    padding:0 var(--sp-1); color:var(--c-primary); text-decoration:underline;
+  }
+
+  /* ===== ヒーロー ===== */
+  .hero{position:relative; overflow:hidden;}
+  /* 写真が入る場所。実写真は社外秘の可能性があるため、この成果物には同梱しない */
+  .hero-photo{
+    position:absolute; inset:0;
+    background:repeating-linear-gradient(45deg,#ffffff,#ffffff 24px,#f2f2f2 24px,#f2f2f2 48px);
+  }
+  /* 暗幕。写真が純白でも白文字が 4.5:1 を満たす最小濃度を計算して 0.66 に決定（最悪ケース 5.78:1） */
+  .hero-veil{position:absolute; inset:0; background:rgba(6,24,43,.66);}
+  .hero-inner{
+    position:relative; max-width:800px; margin:0 auto;
+    padding:var(--sp-4) var(--sp-2); color:#fff; text-align:center;
+  }
+  .hero-inner h1{margin:0 0 var(--sp-1); font-size:20px; font-weight:700; letter-spacing:normal;}
+  .hero-catch{margin:0 0 var(--sp-2); font-size:32px; font-weight:700; line-height:1.5;}
+  .hero-lead{margin:0 0 var(--sp-3); font-size:16px;}
+  .hero-note{
+    position:relative; z-index:1; margin:0; padding:var(--sp-1) var(--sp-2);
+    background:var(--c-text); color:#fff; font-size:14px; text-align:center;
+  }
+
+  /* ===== セクション共通 ===== */
+  .section{padding:var(--sp-4) var(--sp-2);}
+  .band{background:var(--c-bg-band);}
+  .section-inner{max-width:1040px; margin:0 auto;}
+  .section h2{
+    margin:0 0 var(--sp-1); font-size:24px; color:var(--c-primary); letter-spacing:normal;
+  }
+  /* 飾り罫（DADS components/heading）。白背景に 4.71:1・帯背景に 4.25:1 */
+  .section h2::after{
+    content:""; display:block; width:64px; height:4px;
+    margin:var(--sp-1) 0 0; background:var(--c-accent);
+  }
+  .section hgroup{margin:0 0 var(--sp-3);}
+  .section hgroup p{margin:var(--sp-1) 0 0; font-size:16px; color:var(--c-text);}
+  .section h3{margin:0 0 var(--sp-2); font-size:20px; color:var(--c-primary);}
+
+  /* 未確定の項目。色だけでなく「（未定）」の文言でも示す */
+  .tbd{
+    background:var(--c-bg-band); color:var(--c-text);
+    border:1px solid var(--c-secondary); border-radius:4px;
+    padding:0 var(--sp-1); font-size:14px;
+  }
+
+  /* 画像・地図が入る場所 */
+  .placeholder{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:var(--sp-1); padding:var(--sp-2);
+    aspect-ratio:4/3; background:var(--c-bg-band);
+    border:1px solid var(--c-secondary); border-radius:8px;
+    color:var(--c-text); font-size:14px; text-align:center;
+  }
+
+  /* ===== お知らせ ===== */
+  .news{list-style:none; margin:0; padding:0;}
+  .news li{
+    display:flex; flex-wrap:wrap; align-items:center; gap:var(--sp-2);
+    padding:var(--sp-2) var(--sp-1);
+    border-bottom:1px solid var(--c-secondary);
+  }
+  .news time{color:var(--c-text); font-variant-numeric:tabular-nums; white-space:nowrap;}
+  .news-cat{
+    background:var(--c-bg-band); color:var(--c-primary);
+    border:1px solid var(--c-secondary); border-radius:999px;
+    padding:0 var(--sp-1); font-size:14px; white-space:nowrap;
+  }
+  .news a{display:inline-flex; align-items:center; min-height:44px; padding:0 var(--sp-1);}
+
+  /* ===== 当院について ===== */
+  .about{display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-3); align-items:start;}
+  .about p{margin:0 0 var(--sp-2);}
+  .sym{list-style:none; display:flex; flex-wrap:wrap; gap:var(--sp-1); margin:0 0 var(--sp-2); padding:0;}
+  .sym li{
+    background:var(--c-bg); color:var(--c-primary);
+    border:1px solid var(--c-secondary); border-radius:999px;
+    padding:0 var(--sp-2); font-size:14px;
+  }
+
+  /* ===== 診療案内（カード）===== */
+  .cards{list-style:none; display:grid; grid-template-columns:repeat(4,1fr); gap:var(--sp-2); margin:0; padding:0;}
+  /* コンテナは必ず外周をもつ。外周は外側の背景に 3:1 以上（3.98:1） */
+  .card{
+    display:flex; flex-direction:column;
+    background:var(--c-bg); border:1px solid var(--c-secondary); border-radius:8px; overflow:hidden;
+  }
+  .card-image{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--sp-1);
+    aspect-ratio:4/3; padding:var(--sp-1);
+    background:var(--c-bg-band); border-bottom:1px solid var(--c-secondary);
+    font-size:14px; text-align:center;
+  }
+  .card-main{padding:var(--sp-2);}
+  .card-main h3{margin:0 0 var(--sp-1); font-size:18px;}
+  .card-label{
+    display:inline-block; margin:0 0 var(--sp-1);
+    background:var(--c-bg-band); color:var(--c-primary);
+    border:1px solid var(--c-secondary); border-radius:999px;
+    padding:0 var(--sp-1); font-size:14px;
+  }
+  .card-main p{margin:0; font-size:14px;}
+
+  /* ===== アクセス ===== */
+  .access{display:grid; grid-template-columns:1fr 1fr; gap:var(--sp-3); align-items:start;}
+  .access dl{display:grid; grid-template-columns:auto 1fr; gap:var(--sp-1) var(--sp-2); margin:0 0 var(--sp-3);}
+  .access dt{font-weight:700; color:var(--c-primary);}
+  .access dd{margin:0;}
+  /* テーブルヘッダーとデータセルは黒いボーダーで区切り、ヘッダーセルは太字 */
+  .hours{border-collapse:collapse; width:100%; font-size:14px;}
+  .hours caption{text-align:left; margin:0 0 var(--sp-1); font-weight:700; color:var(--c-primary);}
+  .hours th, .hours td{
+    border:1px solid var(--c-border-strong);
+    padding:var(--sp-1); text-align:left; vertical-align:top;
+  }
+  .hours thead th{background:var(--c-bg-band); font-weight:700;}
+  .hours-legend{margin:var(--sp-1) 0 0; font-size:14px;}
+  .table-scroll{overflow-x:auto;}
+
+  /* ===== ご予約・お問い合わせ ===== */
+  .contact{text-align:center;}
+  .contact-tel{margin:0 0 var(--sp-1); font-size:24px; font-weight:700;}
+  .contact-note{margin:0 0 var(--sp-3); font-size:16px;}
+
+  /* ===== フッター ===== */
+  .site-footer{background:var(--c-primary); color:#fff; padding:var(--sp-3) var(--sp-2);}
+  .footer-inner{max-width:1040px; margin:0 auto; text-align:center;}
+  .util{list-style:none; display:flex; flex-wrap:wrap; justify-content:center; gap:var(--sp-2); margin:0 0 var(--sp-2); padding:0;}
+  .util a{display:inline-flex; align-items:center; min-height:44px; padding:0 var(--sp-1); color:#fff;}
+  .util a:hover{color:#fff;}
+  .copyright{margin:0; font-size:14px;}
+  .credit{
+    background:var(--c-text); color:#fff;
+    padding:var(--sp-2); font-size:14px; line-height:1.8;
+  }
+  .credit-inner{max-width:1040px; margin:0 auto;}
+  .credit a{color:#fff;}
+  .credit p{margin:0;}
+  .credit p + p{margin:var(--sp-1) 0 0;}
+
+  /* ===== 画面が狭いとき ===== */
+  @media (max-width:768px){
+    .cards{grid-template-columns:repeat(2,1fr);}
+    .about, .access{grid-template-columns:1fr;}
+    .gnav{margin-left:0; width:100%;}
+    .hero-catch{font-size:24px;}
+    .section{padding:var(--sp-3) var(--sp-2);}
+  }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">本文へスキップ</a>
+
+<header class="site-header">
+  <div class="header-inner">
+    <p class="logo">ブリーズ内科クリニック</p>
+    <nav class="gnav" aria-label="グローバルナビゲーション">
+      <ul>
+        <li><a href="#news">お知らせ</a></li>
+        <li><a href="#about">当院について</a></li>
+        <li><a href="#service">診療案内</a></li>
+        <li><a href="#access">アクセス</a></li>
+      </ul>
+    </nav>
+    <a class="btn btn-outline" href="#contact">ご予約・お問い合わせ</a>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero" aria-labelledby="hero-heading">
+    <div class="hero-photo"></div>
+    <div class="hero-veil"></div>
+    <div class="hero-inner">
+      <hgroup>
+        <h1 id="hero-heading">ブリーズ内科クリニック</h1>
+        <p class="hero-catch">毎日の安心を、いちばん近くで支える内科へ。</p>
+      </hgroup>
+      <p class="hero-lead">かぜや発熱などの身近な症状から、生活習慣病の継続的なケアまで。地域のかかりつけ医として、一人ひとりに寄り添います。</p>
+      <a class="btn btn-reverse" href="#contact">ご予約・お問い合わせ</a>
+    </div>
+  </section>
+  <p class="hero-note">この帯は成果物の注記です。上の背景は写真が入る場所で、実写真は同梱していません。暗幕の濃度は、どんな写真でも白文字が4.5:1を満たすように決めています。</p>
+
+  <section class="section" id="news" aria-labelledby="news-heading">
+    <div class="section-inner">
+      <hgroup>
+        <h2 id="news-heading">お知らせ</h2>
+        <p>診療時間の変更や予防接種の受付など、来院前に確認していただきたい情報をお知らせします。</p>
+      </hgroup>
+      <ul class="news">
+        <li>
+          <time datetime="2026-09-01">2026年9月1日</time>
+          <span class="news-cat">お知らせ</span>
+          <a href="#news">インフルエンザ予防接種の受付を開始しました</a>
+        </li>
+        <li>
+          <time datetime="2026-08-20">2026年8月20日</time>
+          <span class="news-cat">休診</span>
+          <a href="#news">夏季休診のお知らせ（8月13日〜8月16日）</a>
+        </li>
+        <li>
+          <time datetime="2026-08-05">2026年8月5日</time>
+          <span class="news-cat">診療</span>
+          <a href="#news">土曜午後の診療時間を変更いたしました</a>
+        </li>
+        <li>
+          <time datetime="2026-07-15">2026年7月15日</time>
+          <span class="news-cat">お知らせ</span>
+          <a href="#news">発熱外来のご予約方法についてご案内します</a>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section band" id="about" aria-labelledby="about-heading">
+    <div class="section-inner">
+      <hgroup>
+        <h2 id="about-heading">当院について</h2>
+        <p>内科全般を幅広く診療しています。</p>
+      </hgroup>
+      <div class="about">
+        <div>
+          <h3>気になる不調は、早めのご相談を</h3>
+          <p>発熱・せき・のどの痛み・腹痛・倦怠感といった日常のちょっとした不調から、高血圧・糖尿病・脂質異常症などの生活習慣病まで、内科全般を幅広く診療します。気になる症状があれば、我慢せずお気軽にご相談ください。</p>
+          <ul class="sym">
+            <li>発熱・かぜ</li>
+            <li>せき・のどの痛み</li>
+            <li>腹痛・胃腸の不調</li>
+            <li>高血圧</li>
+            <li>糖尿病</li>
+            <li>健康診断</li>
+          </ul>
+          <p><span class="tbd">（未定）院長の専門分野・対応できる検査など、信頼感を補足する一文</span></p>
+        </div>
+        <div class="placeholder">
+          <span>写真が入る場所</span>
+          <span>診察を受ける患者と医師の様子</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="service" aria-labelledby="service-heading">
+    <div class="section-inner">
+      <hgroup>
+        <h2 id="service-heading">診療案内</h2>
+        <p>保険診療を中心に、次の診療を行っています。</p>
+      </hgroup>
+      <ul class="cards">
+        <li class="card">
+          <div class="card-image"><span>写真が入る場所</span><span>診察の様子</span></div>
+          <div class="card-main">
+            <h3><a href="#service">一般内科</a></h3>
+            <span class="card-label">保険診療</span>
+            <p>かぜ・発熱・生活習慣病など内科全般</p>
+          </div>
+        </li>
+        <li class="card">
+          <div class="card-image"><span>写真が入る場所</span><span>循環器の検査機器</span></div>
+          <div class="card-main">
+            <h3><a href="#service">循環器内科</a></h3>
+            <span class="card-label">保険診療</span>
+            <p>高血圧・動悸・胸の痛みのご相談</p>
+          </div>
+        </li>
+        <li class="card">
+          <div class="card-image"><span>写真が入る場所</span><span>生活習慣病の指導</span></div>
+          <div class="card-main">
+            <h3><a href="#service">生活習慣病</a></h3>
+            <span class="card-label">保険診療</span>
+            <p>糖尿病・高血圧・脂質異常症の管理</p>
+          </div>
+        </li>
+        <li class="card">
+          <div class="card-image"><span>写真が入る場所</span><span>予防接種・健診</span></div>
+          <div class="card-main">
+            <h3><a href="#service">健診・予防接種</a></h3>
+            <span class="card-label">各種対応</span>
+            <p>各種健康診断・ワクチン接種</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section band" id="access" aria-labelledby="access-heading">
+    <div class="section-inner">
+      <hgroup>
+        <h2 id="access-heading">アクセス</h2>
+        <p>所在地・診療時間をご案内します。</p>
+      </hgroup>
+      <div class="access">
+        <div class="placeholder">
+          <span>地図が入る場所</span>
+          <span>クリニック周辺の地図</span>
+        </div>
+        <div>
+          <h3>ブリーズ内科クリニック</h3>
+          <dl>
+            <dt>所在地</dt>
+            <dd>〒000-0000 <span class="tbd">（未定）住所</span></dd>
+            <dt>電話</dt>
+            <dd><span class="tbd">（未定）電話番号</span></dd>
+            <dt>アクセス</dt>
+            <dd><span class="tbd">（未定）最寄駅・駐車場の案内</span></dd>
+          </dl>
+          <div class="table-scroll">
+            <table class="hours">
+              <caption>診療時間</caption>
+              <thead>
+                <tr>
+                  <th scope="col">時間帯</th>
+                  <th scope="col">月</th>
+                  <th scope="col">火</th>
+                  <th scope="col">水</th>
+                  <th scope="col">木</th>
+                  <th scope="col">金</th>
+                  <th scope="col">土</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">9:00〜12:30</th>
+                  <td>●<span class="vh">診療</span></td>
+                  <td>●<span class="vh">診療</span></td>
+                  <td>●<span class="vh">診療</span></td>
+                  <td>—<span class="vh">休診</span></td>
+                  <td>●<span class="vh">診療</span></td>
+                  <td>●<span class="vh">診療</span></td>
+                </tr>
+                <tr>
+                  <th scope="row">15:00〜18:30</th>
+                  <td>●<span class="vh">診療</span></td>
+                  <td>●<span class="vh">診療</span></td>
+                  <td>●<span class="vh">診療</span></td>
+                  <td>—<span class="vh">休診</span></td>
+                  <td>●<span class="vh">診療</span></td>
+                  <td>—<span class="vh">休診</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="hours-legend">● は診療あり、— は休診です。休診日は木曜・日曜・祝日です。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="contact" aria-labelledby="contact-heading">
+    <div class="section-inner contact">
+      <hgroup>
+        <h2 id="contact-heading">ご予約・お問い合わせ</h2>
+        <p>お電話またはご予約フォームからお申し込みいただけます。</p>
+      </hgroup>
+      <p class="contact-tel">電話 <span class="tbd">（未定）電話番号</span></p>
+      <p class="contact-note">受付時間 9:00〜12:30 / 15:00〜18:30（木曜・日曜・祝日を除く）</p>
+      <a class="btn btn-primary" href="#contact">ご予約フォームへ進む</a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <nav aria-label="フッターナビゲーション">
+      <ul class="util">
+        <li><a href="#news">お知らせ</a></li>
+        <li><a href="#about">当院について</a></li>
+        <li><a href="#service">診療案内</a></li>
+        <li><a href="#access">アクセス</a></li>
+        <li><a href="#contact">ご予約・お問い合わせ</a></li>
+      </ul>
+    </nav>
+    <p class="copyright">© ブリーズ内科クリニック</p>
+  </div>
+</footer>
+
+<div class="credit">
+  <div class="credit-inner">
+    <p>制作メモ：本ページのUI設計は、デジタル庁デザインシステム（DADS）の仕様に沿って作成しています。</p>
+    <p>出典：デジタル庁デザインシステムウェブサイト <a href="https://design.digital.go.jp/dads/">https://design.digital.go.jp/dads/</a></p>
+    <p>デジタル庁デザインシステムウェブサイト <a href="https://design.digital.go.jp/dads/">https://design.digital.go.jp/dads/</a> のコンテンツを加工して作成しています。デジタル庁が作成したものではありません。</p>
+  </div>
+</div>
+
+</body>
+</html>
