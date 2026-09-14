@@ -136,6 +136,18 @@
   .item .del { border: 1px solid var(--color-border); background: #fff; border-radius: 6px;
     font-size: 13px; line-height: 1; padding: 4px 7px; cursor: pointer; color: var(--color-text-sub); }
   .item .del:hover { border-color: #c0392b; color: #c0392b; background: #fdf1ef; }
+  /* KLK-120: 登録済みエントリの編集。削除(.del)と同じ見た目で、色だけ危険色にしない */
+  .item .edit { border: 1px solid var(--color-border); background: #fff; border-radius: 6px;
+                cursor: pointer; font-size: 13px; line-height: 1; padding: 5px 7px; margin-left: 6px; }
+  .item .edit:hover { border-color: var(--color-accent, #2c5f8a); color: var(--color-accent, #2c5f8a); background: #f2f7fb; }
+  .edit-modal { max-width: 720px; text-align: left; }
+  .edit-modal .ef { display: grid; grid-template-columns: 92px 1fr; gap: 8px 12px; align-items: center; margin-bottom: 10px; }
+  .edit-modal .ef label { font-size: 12px; color: var(--color-text-sub); }
+  .edit-modal .ef input[type=text], .edit-modal .ef select { width: 100%; padding: 6px 8px; font-size: 13px; }
+  .edit-modal .egroup { margin: 10px 0; }
+  .edit-modal .egroup > .lbl { display: block; font-size: 12px; color: var(--color-text-sub); margin-bottom: 4px; }
+  .edit-modal .egroup label { font-size: 12.5px; margin-right: 10px; white-space: nowrap; }
+  .edit-modal .eid { font-size: 11.5px; color: var(--color-text-sub); }
   .del-modal .dm-target { display: flex; gap: 12px; align-items: center; text-align: left;
     border: 1px solid var(--color-border); border-radius: 8px; padding: 10px; margin: 12px 0; background: var(--color-bg-subtle); }
   .del-modal .dm-target img { width: 96px; height: 68px; object-fit: cover; border-radius: 6px; background: #fff; }
@@ -303,6 +315,31 @@
     </div>
   </div>
 
+  <!-- KLK-120: 登録済みエントリの編集（取り込み時にしか直せなかったのを後からも直せるように） -->
+  <div class="up-modal-back" id="editModalBack" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+    <div class="up-modal edit-modal">
+      <button type="button" class="um-close" id="editModalClose" aria-label="閉じる">×</button>
+      <h3 id="editModalTitle">登録内容を編集</h3>
+      <p class="eid" id="editId"></p>
+      <div class="ef">
+        <label for="editTitle">タイトル</label><input type="text" id="editTitle">
+        <label for="editIndustry">業種</label><select id="editIndustry"></select>
+        <label for="editTaste">テイスト</label><select id="editTaste"></select>
+        <label for="editColumns">カラム構成</label><select id="editColumns"></select>
+        <label for="editNote">メモ</label><input type="text" id="editNote">
+      </div>
+      <div class="egroup"><span class="lbl">主配色（最大3・カラフルは単独）</span><span id="editColors"></span></div>
+      <div class="egroup"><span class="lbl">背景トーン（任意・1つ）</span><span id="editBgTone"></span></div>
+      <div class="egroup"><span class="lbl">種別</span><span id="editSource"></span></div>
+      <p class="import-status" id="editStatus"></p>
+      <div class="um-actions">
+        <button type="button" class="btn primary" id="editSave">保存する</button>
+        <button type="button" class="btn" id="editCancel">やめる</button>
+      </div>
+      <p class="m-note">画像とタグ（検索用）は変更しません。id・ファイル名・登録日時は変えられません。</p>
+    </div>
+  </div>
+
   <!-- KLK-068: 削除の確認モーダル（何を消すのかを目で確かめてから実行する） -->
   <div class="up-modal-back" id="delModalBack" role="dialog" aria-modal="true" aria-labelledby="delModalTitle">
     <div class="up-modal del-modal">
@@ -436,6 +473,7 @@
             '<div class="tags">' + tagHtml + "</div>" +
             '<div class="meta-foot">' +
               '<a class="use" href="/">この雰囲気で生成 →</a>' +
+              '<button type="button" class="edit" data-edit-id="' + esc(e.id || "") + '" title="登録内容を編集">✏</button>' +
               '<button type="button" class="del" data-del-id="' + esc(e.id || "") + '"' +
                 ' data-del-title="' + esc(e.title || "") + '"' +
                 ' data-del-src="' + esc(src || "") + '" title="カタログから削除">🗑</button>' +
@@ -748,6 +786,166 @@
     });
   }
 
+  // ---- 編集(KLK-120・POST /catalog-update) ------------------------------------
+  // 取り込み時にしか直せなかったタグを、登録後も直せるようにする。
+  //   実ユーザーの要望「登録済みのラフに背景トーンを付けたい」への対応。
+  // ★送るのは**変えた項目だけ**（差分）。触っていない項目は送らない＝
+  //   画面が知らない項目（tags・sectionLayouts 等）を巻き添えで消さないため。
+  // ★「未設定に戻す」は null を送る（サーバがキーごと削除する）。
+  var editing = null;   // {id, before:{...}}
+
+  function chkList(host, values, selected, attr) {
+    host.textContent = "";
+    values.forEach(function (v) {
+      var lab = document.createElement("label");
+      var inp = document.createElement("input");
+      inp.type = "checkbox"; inp.setAttribute(attr, v);
+      inp.checked = selected.indexOf(v) >= 0;
+      lab.appendChild(inp); lab.appendChild(document.createTextNode(" " + v));
+      host.appendChild(lab);
+    });
+  }
+  // labels を渡すと表示だけ差し替える（値は送信用のまま。種別 own/ref を日本語で見せる）
+  function radioList(host, values, selected, name, allowNone, labels) {
+    host.textContent = "";
+    var all = allowNone ? [""].concat(values) : values;
+    all.forEach(function (v) {
+      var lab = document.createElement("label");
+      var inp = document.createElement("input");
+      inp.type = "radio"; inp.name = name; inp.value = v;
+      inp.checked = (v === (selected || ""));
+      var text = v ? ((labels && labels[v]) || v) : "（未設定）";
+      lab.appendChild(inp); lab.appendChild(document.createTextNode(" " + text));
+      host.appendChild(lab);
+    });
+  }
+  function fillSelect(el, list, selected, noneLabel) {
+    el.textContent = "";
+    if (noneLabel) {
+      var o0 = document.createElement("option"); o0.value = ""; o0.textContent = noneLabel;
+      el.appendChild(o0);
+    }
+    list.forEach(function (v) {
+      var o = document.createElement("option"); o.value = v; o.textContent = v;   // 注入対策
+      if (v === selected) o.selected = true;
+      el.appendChild(o);
+    });
+  }
+
+  function openEditModal(id) {
+    var e = null;
+    for (var i = 0; i < allEntries.length; i++) { if (allEntries[i].id === id) { e = allEntries[i]; break; } }
+    if (!e) return;
+    editing = { id: id, before: e };
+    document.getElementById("editId").textContent = id + "  /  " + (e.file || "");
+    document.getElementById("editTitle").value = e.title || "";
+    document.getElementById("editNote").value = e.note || "";
+    fillSelect(document.getElementById("editIndustry"), CANON_INDUSTRIES, e.industry, "（未設定）");
+    fillSelect(document.getElementById("editTaste"), CANON_TASTES, e.taste, "（未設定）");
+    fillSelect(document.getElementById("editColumns"), CANON_COLUMNS, e.columns, "（未指定）");
+    chkList(document.getElementById("editColors"), CANONICAL_COLORS,
+            Array.isArray(e.colors) ? e.colors : [], "data-ec");
+    radioList(document.getElementById("editBgTone"), CANONICAL_BG_TONES, e.bgTone, "editBg", true);
+    radioList(document.getElementById("editSource"), ["own", "ref"], e.source || "own", "editSrc", false,
+              { own: "自社実績", ref: "収集見本" });   // 絞り込みチップと同じ言葉にする
+    document.getElementById("editStatus").textContent = "";
+    document.getElementById("editSave").disabled = !bridgeAlive;
+    if (!bridgeAlive) {
+      document.getElementById("editStatus").textContent =
+        "ローカルブリッジが動いていないため保存できません（閲覧のみ）。";
+    }
+    document.getElementById("editModalBack").classList.add("open");
+  }
+  function closeEditModal() {
+    document.getElementById("editModalBack").classList.remove("open");
+    editing = null;
+  }
+
+  // 画面の入力から「変わった項目だけ」を組み立てる（純関数寄り・差分のみ送る）
+  function collectEditDiff(before) {
+    var out = {};
+    var sel = function (id) { return document.getElementById(id).value; };
+    var pairs = [["title", sel("editTitle")], ["note", sel("editNote")],
+                 ["industry", sel("editIndustry")], ["taste", sel("editTaste")],
+                 ["columns", sel("editColumns")]];
+    pairs.forEach(function (kv) {
+      var k = kv[0], v = kv[1];
+      var cur = before[k] == null ? "" : before[k];
+      if (v !== cur) { out[k] = v === "" ? null : v; }
+    });
+    var colors = [];
+    document.getElementById("editColors").querySelectorAll("input[data-ec]").forEach(function (i) {
+      if (i.checked) colors.push(i.getAttribute("data-ec"));
+    });
+    var beforeColors = Array.isArray(before.colors) ? before.colors : [];
+    if (colors.join("\u0000") !== beforeColors.join("\u0000")) { out.colors = colors; }
+    var bgEl = document.querySelector('input[name="editBg"]:checked');
+    var bg = bgEl ? bgEl.value : "";
+    if (bg !== (before.bgTone || "")) { out.bgTone = bg === "" ? null : bg; }
+    var srcEl = document.querySelector('input[name="editSrc"]:checked');
+    if (srcEl && srcEl.value !== (before.source || "own")) { out.source = srcEl.value; }
+    return out;
+  }
+
+  // 保存した差分を手元の allEntries へ当てる（サーバと同じ意味: null はキー削除）
+  function applyDiffLocally(id, diff) {
+    for (var i = 0; i < allEntries.length; i++) {
+      if (allEntries[i].id !== id) continue;
+      Object.keys(diff).forEach(function (k) {
+        if (diff[k] === null) { delete allEntries[i][k]; } else { allEntries[i][k] = diff[k]; }
+      });
+      return;
+    }
+  }
+
+  function wireEdit() {
+    document.getElementById("grid").addEventListener("click", function (e) {
+      var btn = e.target.closest ? e.target.closest(".edit") : null;
+      if (!btn) return;
+      openEditModal(btn.getAttribute("data-edit-id"));
+    });
+    document.getElementById("editModalClose").addEventListener("click", closeEditModal);
+    document.getElementById("editCancel").addEventListener("click", closeEditModal);
+    document.getElementById("editModalBack").addEventListener("click", function (e) {
+      if (e.target === this) closeEditModal();
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeEditModal();
+    });
+    document.getElementById("editSave").addEventListener("click", function () {
+      if (!editing || !bridgeAlive) return;
+      var st = document.getElementById("editStatus"), btn = this;
+      var diff = collectEditDiff(editing.before);
+      if (!Object.keys(diff).length) { st.textContent = "変更はありません。"; return; }
+      // 主配色は第1が必須（validate_catalog が空配列を拒否する）。先に画面で伝える
+      if (diff.colors && diff.colors.length === 0) {
+        st.textContent = "主配色は1つ以上選んでください。"; return;
+      }
+      btn.disabled = true; st.textContent = "保存しています…";
+      fetch("/catalog-update", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ updates: [{ id: editing.id, fields: diff }] })
+      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (!res.ok) {
+            st.textContent = (res.j && res.j.error ? res.j.error : "保存できませんでした")
+              + (res.j && res.j.details ? "（" + res.j.details.join(" / ") + "）" : "");
+            btn.disabled = false;
+            return;
+          }
+          st.textContent = "保存しました。";
+          // ★手元のデータへも即時に反映する。loadCatalog() は非同期なので、
+          //   これが無いと保存直後に開き直したとき**古い値**と比べてしまい、
+          //   「変更はありません」と言われて直せない（実際に踏んだ・KLK-120）。
+          applyDiffLocally(editing.id, diff);
+          loadCatalog();          // 一覧を読み直して結果を反映する
+          setTimeout(closeEditModal, 500);
+        }).catch(function () {
+          st.textContent = "保存の通信に失敗しました。"; btn.disabled = false;
+        });
+    });
+  }
+
   // ---- 削除(KLK-068・POST /catalog-delete) ------------------------------------
   // catalog/ は Git 管理外で復元できないため、画像は消さず catalog/.trash/ へ退避する。
   // 誤操作の被害が大きいので、確認モーダルで「何を消すのか」を必ず目視させる。
@@ -964,6 +1162,7 @@
     wireUpload();
     wireUploadModal();      // KLK-064
     wireDelete();           // KLK-068
+    wireEdit();             // KLK-120
     wireProposalEditing();  // KLK-064
     wireCommit();           // KLK-064
     probeHealth().then(function (alive) {
