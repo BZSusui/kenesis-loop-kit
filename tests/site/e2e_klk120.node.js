@@ -18,6 +18,8 @@
  *   E6 「（未設定）」を選ぶとキーごと消える（元に戻せる）
  *   E7 件数が変わらない
  *   E8 妨害注入: 主配色を全部外すと画面が止める（空配列を送らない）
+ *   E9 ★主配色を変えるとカードのタグも入れ替わる（KLK-121・実ユーザーの指摘）
+ *      手で書いたタグ（業種の略称・自由語）は残ること
  *
  * 実行: KLK_E2E_CHROME=<chrome のパス> node tests/site/e2e_klk120.node.js
  * 終了コード: 0=全PASS / 1=FAILあり / 2=ハーネス異常 / 3=環境理由でSKIP
@@ -180,6 +182,27 @@ const check = (name, ok, detail) => results.push([name, !!ok, detail || '']);
     check('E8 妨害注入: 主配色を全部外すと画面が止め、データは変わらない',
       (await status()).includes('主配色は1つ以上') && JSON.stringify(readCat().entries[0].colors) === before,
       'status=' + await status() + ' / colors=' + JSON.stringify(readCat().entries[0].colors));
+
+    // ---- E9: 主配色を変えるとタグも入れ替わる（KLK-121）
+    await openModal('cat-0001');
+    await ev(`document.getElementById("editColors").querySelectorAll("input[data-ec]").forEach(i=>{i.checked=(i.getAttribute("data-ec")==="ネイビー")});1`);
+    await save();
+    const e9 = readCat().entries[0];
+    // ★カードは並び替わるので id で特定する。再描画は非同期なので少し待って読み直す
+    const readCardTags = () => ev(`(() => {
+      const btn = document.querySelector('.edit[data-edit-id="cat-0001"]');
+      const card = btn && btn.closest('.item');
+      return JSON.stringify(card ? Array.from(card.querySelectorAll('.tags span')).map(s => s.textContent) : null);
+    })()`);
+    let shown = await readCardTags();
+    for (let i = 0; i < 12 && String(shown).indexOf('ネイビー') < 0; i++) {
+      await sleep(300); shown = await readCardTags();
+    }
+    check('E9 ★主配色を変えるとタグも入れ替わり、手書きタグは残る',
+      e9.tags.indexOf('ネイビー') >= 0 && e9.tags.indexOf('ゴールド') < 0
+      && e9.tags.indexOf('ジュエリー') >= 0 && e9.tags.indexOf('高級感') >= 0
+      && String(shown).indexOf('ネイビー') >= 0 && String(shown).indexOf('ゴールド') < 0,
+      'tags=' + JSON.stringify(e9.tags) + ' / カード表示=' + shown);
 
     ws.close();
   } catch (e) {

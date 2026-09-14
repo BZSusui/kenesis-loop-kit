@@ -1948,6 +1948,70 @@ def validate_update_request(obj):
     return (len(errors) == 0), errors
 
 
+def columns_tag_label(columns):
+    """カラム構成 → タグでの表記(KLK-121・純粋関数)。対応が無ければ None。
+
+    実データに合わせている: 1col→「1カラム」/ 2col-*→「2カラム」/ 3col→「3カラム」。
+    """
+    if not isinstance(columns, str) or not columns:
+        return None
+    for prefix, label in (("1col", "1カラム"), ("2col", "2カラム"), ("3col", "3カラム")):
+        if columns.startswith(prefix):
+            return label
+    return None
+
+
+def derived_tag_values(entry):
+    """タグのうち、他の項目から**導かれている**値を返す(KLK-121・純粋関数)。
+
+    ★業種は含めない。実データでは「ジュエリー・時計・貴金属」に対しタグが「ジュエリー」など
+      **略称**で入っており(53件中そのまま一致するのは21件)、機械的に対応が取れない。
+      対応が取れないものを推測で消すと、手で書いたタグを壊す。
+    """
+    out = []
+    taste = entry.get("taste")
+    if isinstance(taste, str) and taste:
+        out.append(taste)
+    for c in (entry.get("colors") or []):
+        if isinstance(c, str) and c:
+            out.append(c)
+    label = columns_tag_label(entry.get("columns"))
+    if label:
+        out.append(label)
+    return out
+
+
+def sync_derived_tags(old_entry, new_entry):
+    """編集で変わった「導かれる値」をタグへ反映した**新しい tags** を返す(KLK-121・純粋関数)。
+
+    実ユーザーの指摘(2026-09-14): 主配色を「ブルー」→「ネイビー」に直しても、
+    カタログ一覧のタグが古いままだった。カードは tags を表示しているため。
+
+    やること:
+      - 消えた導出値だけ取り除く（「ブルー」を外す）
+      - 増えた導出値だけ末尾へ足す（「ネイビー」を足す）
+      - **手で書いたタグ（業種の略称・自由語）はそのまま残す**
+      - tags がもともと空のエントリは空のまま返す。
+        画面は tags が空なら industry/taste/colors から作って出すので、
+        中途半端に入れると逆に業種が消えて見える
+    """
+    tags = list(new_entry.get("tags") or [])
+    if not tags:
+        return tags
+    old_d = derived_tag_values(old_entry)
+    new_d = derived_tag_values(new_entry)
+    removed = set(v for v in old_d if v not in new_d)
+    added = [v for v in new_d if v not in old_d]
+    out = [t for t in tags if t not in removed]
+    # ★足すのは「今回**変わった**値」だけ。
+    #   「今のタグに無い導出値をすべて補う」形にすると、無関係な項目（背景トーン等）を
+    #   直しただけで、もともとタグに載せていなかった色が勝手に現れる（実測で踏んだ）。
+    for v in added:
+        if v not in out:
+            out.append(v)
+    return out
+
+
 def apply_entry_updates(entries, updates):
     """エントリ一覧へ編集を当てた**新しい一覧**を返す(KLK-120・純粋関数)。
 
@@ -3306,7 +3370,20 @@ def _run_server(port):
                 return
             # ⑥ 更新後の全体を検証(不正なら1件も書き換えない)
             merged = dict(catalog)
-            merged["entries"] = apply_entry_updates(catalog["entries"], updates)
+            updated_entries = apply_entry_updates(catalog["entries"], updates)
+            # KLK-121: 導出タグ（テイスト/主配色/カラム構成）を新しい値へ入れ替える。
+            #   カードはタグを表示しているので、これが無いと直したのに見た目が変わらない。
+            old_by_id = {e.get("id"): e for e in catalog["entries"] if isinstance(e, dict)}
+            touched = set(u["id"] for u in updates)
+            synced = []
+            for e in updated_entries:
+                if isinstance(e, dict) and e.get("id") in touched:
+                    e = dict(e)
+                    new_tags = sync_derived_tags(old_by_id.get(e["id"], {}), e)
+                    if new_tags:
+                        e["tags"] = new_tags
+                synced.append(e)
+            merged["entries"] = synced
             ok, errors = validate_catalog(merged)
             if not ok:
                 self._json(400, {"error": "編集後の検証に失敗したため、1件も書き換えていません",

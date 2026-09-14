@@ -172,13 +172,53 @@ check("U7 注入対策: 選択肢は textContent で作る（innerHTML に値を
 check("U8 ブリッジ未起動なら保存できないと伝える（黙って失敗しない）",
       "ローカルブリッジが動いていないため保存できません" in CAT, "")
 
-check("U9 画像・タグ・id は変えないと画面に明記",
-      "画像とタグ（検索用）は変更しません" in CAT, "")
+check("U9 画像・id は変えないこと、タグの扱いが画面に明記されている",
+      "画像は変更しません" in CAT and "タグ" in CAT, "")
+
+# ---------------------------------------------------------------------------
+# G. 導出タグの同期（KLK-121・実ユーザーの指摘）
+# ---------------------------------------------------------------------------
+old_e = {"id": "a", "taste": "高級感", "colors": ["ブルー"], "columns": "1col",
+         "tags": ["ジュエリー", "CADスクール", "高級感", "ブルー", "1カラム"]}
+new_e = dict(old_e, colors=["ネイビー"])
+synced = b.sync_derived_tags(old_e, new_e)
+check("G1 ★主配色を変えると、タグの色も入れ替わる",
+      "ネイビー" in synced and "ブルー" not in synced, "%s" % synced)
+check("G2 ★手で書いたタグ（業種の略称・自由語）は残る",
+      "ジュエリー" in synced and "CADスクール" in synced, "%s" % synced)
+check("G3 変わっていない導出値はそのまま（重複しない）",
+      synced.count("高級感") == 1 and synced.count("1カラム") == 1, "%s" % synced)
+
+untouched = b.sync_derived_tags(old_e, dict(old_e, bgTone="ダーク"))
+check("G4 ★無関係な項目だけ直したときはタグを変えない（勝手に足さない）",
+      untouched == old_e["tags"], "%s" % untouched)
+
+check("G5 タグが空のエントリは空のまま（画面の既定表示を壊さない）",
+      b.sync_derived_tags({"colors": ["ブルー"]}, {"colors": ["ネイビー"], "tags": []}) == [],
+      "")
+
+check("G6 カラム構成のタグ表記が実データと合っている",
+      b.columns_tag_label("1col") == "1カラム" and b.columns_tag_label("2col-body-left") == "2カラム"
+      and b.columns_tag_label("3col") == "3カラム" and b.columns_tag_label("") is None,
+      "1col=%s 2col-body-left=%s" % (b.columns_tag_label("1col"), b.columns_tag_label("2col-body-left")))
+
+check("G7 業種は導出タグに含めない（実データで略称が使われ対応が取れないため）",
+      "ジュエリー・時計・貴金属" not in b.derived_tag_values(
+          {"industry": "ジュエリー・時計・貴金属", "taste": "高級感"}),
+      "%s" % b.derived_tag_values({"industry": "ジュエリー・時計・貴金属", "taste": "高級感"}))
+
+check("G8 保存後に一覧を描き直す（loadCatalog の結果を捨てない）",
+      "loadCatalog().then(function (entries) {" in CAT
+      and CAT.count("allEntries = entries; updateHeadCount(); renderGrid();") >= 2,
+      "描き直し=%d箇所" % CAT.count("allEntries = entries; updateHeadCount(); renderGrid();"))
+
+check("G9 ハンドラが導出タグの同期を通す",
+      "sync_derived_tags(old_by_id.get" in BRIDGE_SRC, "")
 
 # ---------------------------------------------------------------------------
 # E. 実効果テストの安全性
 # ---------------------------------------------------------------------------
-check("E1 実効果テストがサンドボックスで動く（実カタログに触れない）",
+check("Z1 実効果テストがサンドボックスで動く（実カタログに触れない）",
       "mkdtempSync" in E2E and "SANDBOX_CATALOG" in E2E
       and "サンドボックスのカタログが配信されていない" in E2E,
       "サンドボックス=%s 取り違え検知=%s" % ("SANDBOX_CATALOG" in E2E,
