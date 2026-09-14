@@ -1948,6 +1948,45 @@ def validate_update_request(obj):
     return (len(errors) == 0), errors
 
 
+def shrink_registered_image(path, tool_path=None):
+    """登録された画像を配布向けの大きさへ揃える(KLK-123)。副作用は path の中身のみ。
+
+    ★なぜ取り込み時にやるか
+      KLK-110 で「167枚 773MB → 217MB」と**後からまとめて**縮めた。
+      取り込み時に揃えておけば、その作業が二度と要らない（理恵さんの要望）。
+
+    ★失敗しても登録は止めない
+      画像が少し大きいのは**登録できないことより軽い問題**である。
+      道具(sips)が無い環境・想定外の画像でも、登録そのものは成功させる。
+      返却: (元バイト, 後バイト, 何をしたか) / できなければ (n, n, 理由)。
+    """
+    try:
+        size = os.path.getsize(path)
+    except OSError:
+        return (0, 0, "サイズを取得できません")
+    if tool_path is None:
+        tool_path = os.path.join(repo_root(), "tools", "shrink-catalog-images.py")
+    if not os.path.isfile(tool_path):
+        return (size, size, "軽量化ツールがありません")
+    try:
+        import importlib.util   # ★関数内で読む（このファイルは先頭で兄弟モジュールを import しない）
+        spec = importlib.util.spec_from_file_location("klk_shrink", tool_path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        # shrink_one は「src を読んで dst へ置く」。同じ場所で完結させるため一時ファイルを経由する
+        tmp = path + ".shrink.tmp"
+        before, after, what = mod.shrink_one(path, tmp)
+        os.replace(tmp, path)
+        return (before, after, what)
+    except Exception as exc:      # 道具の不在・想定外の画像・権限。登録は止めない
+        try:
+            if os.path.isfile(path + ".shrink.tmp"):
+                os.remove(path + ".shrink.tmp")
+        except OSError:
+            pass
+        return (size, size, "軽量化できませんでした: {0}".format(exc))
+
+
 def columns_tag_label(columns):
     """カラム構成 → タグでの表記(KLK-121・純粋関数)。対応が無ければ None。
 
@@ -3276,6 +3315,16 @@ def _run_server(port):
                         pass
                 self._json(500, {"error": "画像を移動できませんでした: {0}".format(exc)})
                 return
+            # ⑧-2 配布向けに画像を軽くする(KLK-123)。**失敗しても登録は続ける**
+            #     （画像が大きいことは、登録できないことより軽い問題）。
+            shrunk = []
+            for _src, dst, _e in planned:
+                b, a, what = shrink_registered_image(dst)
+                if b and a < b:
+                    shrunk.append((os.path.basename(dst), b, a))
+                    print("[bridge] 画像を軽量化: {0} {1}KB→{2}KB ({3})".format(
+                        os.path.basename(dst), b // 1024, a // 1024, what), file=sys.stderr)
+
             # ⑨ catalog.json を原子的に置換(一時ファイル→os.replace)
             merged["generatedAt"] = iso_now()
             tmp = catalog_json_path + ".tmp"
