@@ -67,6 +67,17 @@ class TestRulesDocument(unittest.TestCase):
         for v in ("0.68", "1.47", "0.40", "3.00", "1.35", "1.65"):
             self.assertIn(v, self.rules, "許容帯の数値 %s が規約に無い" % v)
 
+    def test_cramped_rule_exists(self):
+        # KLK-122: 短いラベルの窮屈な折り返し
+        self.assertIn("### 8.2 短いラベルを折らない", self.rules)
+        self.assertIn("1行に6文字も入らない幅へ詰めてはならない", self.rules)
+        self.assertIn("箱の高さ ÷ 行高では測れない", self.rules)
+
+    def test_inline_label_rule_exists(self):
+        # KLK-122: 見出しと説明が同じ行に流れる（幅とは無関係の不具合）
+        self.assertIn("### 8.3 見出しと説明文を同じ行に流さない", self.rules)
+        self.assertIn("`margin` を指定しても**同じ行につながる**", self.rules)
+
     def test_band_matches_tool(self):
         # 規約の数値とツールの数値がずれていないこと（片方だけ直すのを防ぐ）
         src = TOOL.read_text(encoding="utf-8")
@@ -80,6 +91,57 @@ class TestRulesDocument(unittest.TestCase):
 
     def test_mosaic_guard_exists(self):
         self.assertIn("1つのタイルを1行の高さのまま3列以上にまたがせない", self.rules)
+
+
+class TestE2EHarnessDoesNotHang(unittest.TestCase):
+    """★e2e ハーネスが「開かないまま永久に待つ」作りになっていないこと（KLK-122）。
+
+    単独なら5秒で終わる e2e が、入れ子でスイートを回すと 300 秒のタイムアウトで落ちていた。
+    原因は CDP の WebSocket 接続待ちに上限が無かったこと
+    （`await new Promise(r => ws.addEventListener('open', r))`）。
+    Chrome が何個も立ち上がる状況で接続できないと、そこで固まる。
+    **待ちには必ず上限を置く**＝開かなければ「開かなかった」と分かる形で早く失敗する。
+    """
+
+    E2E_FILES = ("e2e_klk116.node.js", "e2e_klk117.node.js", "e2e_klk120.node.js")
+
+    @staticmethod
+    def _code_only(src):
+        """コメントを取り除いて**実際に動く部分**だけ返す。
+
+        ★注意書きの中で悪い書き方を引用していると、素朴な文字列検索がそれに当たる
+        （実際に踏んだ）。検査は「コードがどう書かれているか」を見るものなので、
+        コメントは除いてから判定する。
+        """
+        import re
+        src = re.sub(r"/\*.*?\*/", "", src, flags=re.S)      # ブロックコメント
+        return "\n".join(l for l in src.split("\n") if not l.lstrip().startswith("//"))
+
+    def test_no_unbounded_websocket_wait(self):
+        for name in self.E2E_FILES:
+            with self.subTest(name=name):
+                src = (ROOT / "tests" / "site" / name).read_text(encoding="utf-8")
+                code = self._code_only(src)
+                self.assertNotIn("await new Promise(r => ws.addEventListener('open', r))", code,
+                                 "%s に上限の無い接続待ちが残っている" % name)
+                self.assertIn("function openWs(", code, "%s に上限つきの待ちが無い" % name)
+
+    def test_code_only_strips_comments(self):
+        # 判定のしかた自体を確かめる（コメントの引用に当たらないこと・コードは残ること）
+        sample = "// `await new Promise(r => ws.addEventListener('open', r))` は駄目\n"
+        sample += "/* これも await new Promise(r => ws.addEventListener('open', r)); */\n"
+        sample += "await openWs(ws);\n"
+        code = self._code_only(sample)
+        self.assertNotIn("await new Promise(r => ws.addEventListener('open', r))", code)
+        self.assertIn("await openWs(ws);", code)
+
+    def test_wait_has_timeout_and_error_paths(self):
+        for name in self.E2E_FILES:
+            with self.subTest(name=name):
+                src = (ROOT / "tests" / "site" / name).read_text(encoding="utf-8")
+                self.assertIn("setTimeout(() => rej(", src, "%s: 期限切れで失敗しない" % name)
+                self.assertIn("addEventListener('error'", src, "%s: エラーで失敗しない" % name)
+                self.assertIn("addEventListener('close'", src, "%s: 切断で失敗しない" % name)
 
 
 class TestSamplesAreClean(unittest.TestCase):
@@ -153,6 +215,23 @@ class TestSabotageIsCaught(unittest.TestCase):
                 r = run_tool([p], 768)
                 self.assertNotIn("アタリの比率逸脱", r.stdout,
                                  "%s を誤って違反と判定している:\n%s" % (ratio, r.stdout[-1200:]))
+
+    def test_detects_cramped_label(self):
+        # 妨害: ナビ項目を極端に狭くする → 短いラベルが折れて捕まるはず
+        # 見本01 に実在する日本語の短いラベル（「席を予約する」）を極端に狭くする
+        p = self._sabotage(".hero-cta{max-width:30px !important;}", "cramped.html")
+        r = run_tool([p], 768)
+        self.assertEqual(r.returncode, 1, "窮屈な折り返しを検出できない:\n%s" % r.stdout[-1500:])
+        self.assertIn("短いラベルの窮屈な折り返し", r.stdout)
+
+    def test_padding_does_not_cause_false_positive(self):
+        # ★上下に大きな余白を足しただけでは「2行」と誤判定しないこと
+        #   （箱の高さ÷行高で測っていたときは、ボタンの余白で誤検出していた）
+        p = self._sabotage(".hero-cta, .contact-btn, a{padding-top:40px !important;padding-bottom:40px !important;}",
+                           "padded.html")
+        r = run_tool([p], 768)
+        self.assertNotIn("短いラベルの窮屈な折り返し", r.stdout,
+                         "余白だけで窮屈と誤判定している:\n%s" % r.stdout[-1200:])
 
     def test_detects_sibling_overlap(self):
         # 横並びのきょうだいを重ねる → 重なりとして捕まるはず
