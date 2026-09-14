@@ -336,7 +336,7 @@
         <button type="button" class="btn primary" id="editSave">保存する</button>
         <button type="button" class="btn" id="editCancel">やめる</button>
       </div>
-      <p class="m-note">画像とタグ（検索用）は変更しません。id・ファイル名・登録日時は変えられません。</p>
+      <p class="m-note">画像は変更しません。id・ファイル名・登録日時は変えられません。<br>タグ（検索用）は、テイスト・主配色・カラム構成を直すと<b>その分だけ入れ替わります</b>（手で足したタグはそのまま残ります）。</p>
     </div>
   </div>
 
@@ -934,11 +934,18 @@
             return;
           }
           st.textContent = "保存しました。";
-          // ★手元のデータへも即時に反映する。loadCatalog() は非同期なので、
+          // ★手元のデータへも即時に反映する。読み直しは非同期なので、
           //   これが無いと保存直後に開き直したとき**古い値**と比べてしまい、
           //   「変更はありません」と言われて直せない（実際に踏んだ・KLK-120）。
           applyDiffLocally(editing.id, diff);
-          loadCatalog();          // 一覧を読み直して結果を反映する
+          // ★loadCatalog() は「取ってきて返す」だけで画面には反映しない。
+          //   結果を allEntries へ入れて描き直すところまでが呼び手の仕事である。
+          //   ここを取り違えていたため、主配色を直してもカードのタグが古いままだった
+          //   （実ユーザーの指摘・KLK-121）。サーバが作り直すタグは手元では計算できないので、
+          //   サーバの答えで上書きするこの経路が要る。
+          loadCatalog().then(function (entries) {
+            allEntries = entries; updateHeadCount(); renderGrid();
+          }).catch(function () { /* 表示は次回の読み込みで直る。保存自体は成功している */ });
           setTimeout(closeEditModal, 500);
         }).catch(function () {
           st.textContent = "保存の通信に失敗しました。"; btn.disabled = false;
