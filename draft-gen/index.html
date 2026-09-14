@@ -562,7 +562,7 @@
   <section class="card">
     <div class="lbl"><span class="step">6</span><h2>配色</h2><span class="req">必須</span>
       <!-- REQ-003 --></div>
-    <p class="hint">3通りの決め方があります —— ①各色を直接入力／②メインだけ決めて残りを自動生成／③配色ジェネレーターの出力を貼り付け。いずれも下の4色に反映されます（メインが決まっていれば生成できます）。カラーコードは <b>#なし6桁（例 444850）でも入力できます</b>（Photoshopのスポイトでコピーした値をそのまま貼り付けOK）。</p>
+    <p class="hint">3通りの決め方があります —— ①各色を直接入力／②メインだけ決めて残りを自動生成／③配色ジェネレーターで作って「送る」（貼り付けでも可）。いずれも下の4色に反映されます（メインが決まっていれば生成できます）。カラーコードは <b>#なし6桁（例 444850）でも入力できます</b>（Photoshopのスポイトでコピーした値をそのまま貼り付けOK）。</p>
 
     <!-- 方法①：4色を直接入力（swatch↔hex 同期） -->
     <div class="palette-grid">
@@ -601,7 +601,11 @@
         <div class="way-t">③ 配色ジェネレーターで作る</div>
         <div class="way-row">
           <a href="../palette/index.html" target="_blank" rel="noopener" class="launch-link">🎨 配色ジェネレーターを起動</a>
-          <span class="sub-inline">別タブで開きます</span>
+          <span class="sub-inline">別タブで開きます。向こうの「モック生成画面へ送る」を押すと、ここに自動で入ります</span>
+        </div>
+        <div class="way-row handoff-row" id="handoffRow" style="display:none">
+          <span class="sub-inline" id="handoffMsg"></span>
+          <button type="button" class="btn-ghost" id="handoffApply" style="display:none">反映する</button>
         </div>
       </div>
     </div>
@@ -764,6 +768,12 @@
 // ============================================================================
 const COLUMN_KEYS = ['1col', '2col-full-left', '2col-full-right', '2col-body-left', '2col-body-right', '3col'];
 const ROLE_KEYS = ['main', 'sub', 'accent', 'bg'];
+// KLK-116: 配色ジェネレーター（palette/index.html）からの受け渡し。名前は palette 側の定数と一致させる
+const HANDOFF_SCHEMA  = 'klk-palette-handoff';
+const HANDOFF_VERSION = 1;
+const HANDOFF_CHANNEL = 'klk-palette';
+const HANDOFF_KEY     = 'klk.paletteHandoff';
+const HANDOFF_CONSUMED_KEY = 'klk.paletteHandoff.consumed';
 const ROLE_NAMES = ['メイン', 'サブ', 'アクセント', '背景'];
 
 // KLK-022: 本文セクション選択（中身の器）。SECTION_KEYS は canonical 生成順（DRAFT_RULES §2 拡張）。
@@ -945,6 +955,24 @@ function parsePalette(text) {
     out.error = '配色を読み取れませんでした。配色ジェネレーターの出力（--color-main:#…; 等）を貼り付けるか、手動で色を指定してください';
   }
   return out;
+}
+
+// KLK-116: 受け渡しデータの検証（純粋関数）。schema/version が合い、normalizeHex を通った色だけ採用。
+// 1色も取れなければ null（＝何も変えない）。他タブ・localStorage 由来なので信用せず必ずここを通す。
+function acceptHandoff(payload) {
+  if (!payload || typeof payload !== 'object') return null;
+  if (payload.schema !== HANDOFF_SCHEMA || payload.version !== HANDOFF_VERSION) return null;
+  const src = payload.colors;
+  if (!src || typeof src !== 'object') return null;
+  const colors = { main: null, sub: null, accent: null, bg: null };
+  ROLE_KEYS.forEach(function (k) {
+    const hex = normalizeHex(src[k]);
+    if (hex) colors[k] = hex;
+  });
+  const matched = ROLE_KEYS.filter(function (k) { return colors[k] !== null; });
+  if (matched.length === 0) return null;
+  const sentAt = typeof payload.sentAt === 'number' && isFinite(payload.sentAt) ? payload.sentAt : 0;
+  return { colors: colors, matched: matched, sentAt: sentAt };
 }
 
 // 必須3項目（業種・カラム構成・配色）の充足検査。配色は「メインが有効HEX」で充足。
@@ -2019,7 +2047,57 @@ function renderComposition() {
 }
 
 // ---- イベント登録 ----------------------------------------------------------
+// KLK-116: 配色ジェネレーターからの受け渡しを受け取る。
+//   開いている間に届いた分 → 即反映（「送る」を押した瞬間に入る）
+//   開く前に送られていた分 → 黙って変えず「届いています［反映する］」を出す（保管分は人が押す）
+let pendingHandoff = null;
+function setHandoffMsg(text, showApply) {
+  const row = document.getElementById('handoffRow');
+  const msg = document.getElementById('handoffMsg');
+  const btn = document.getElementById('handoffApply');
+  msg.textContent = text || '';                     // 動的値は textContent（注入対策）
+  row.style.display = text ? 'flex' : 'none';
+  btn.style.display = showApply ? 'inline-block' : 'none';
+}
+function applyHandoff(accepted, note) {
+  accepted.matched.forEach(function (k) { setColorRole(k, accepted.colors[k]); });
+  colorMode = 'pasted';
+  render();
+  try { localStorage.setItem(HANDOFF_CONSUMED_KEY, String(accepted.sentAt)); } catch (e) {}
+  const names = { main: 'メイン', sub: 'サブ', accent: 'アクセント', bg: '背景' };
+  setHandoffMsg((note || '配色ジェネレーターから受け取りました') + '（' +
+    accepted.matched.map(function (k) { return names[k]; }).join('／') + '）。必要に応じて直してください。', false);
+}
+function readStoredHandoff() {
+  try {
+    const raw = localStorage.getItem(HANDOFF_KEY);
+    if (!raw) return null;
+    const acc = acceptHandoff(JSON.parse(raw));
+    if (!acc) return null;
+    const consumed = Number(localStorage.getItem(HANDOFF_CONSUMED_KEY) || 0);
+    return acc.sentAt > consumed ? acc : null;   // 既に反映した分はもう出さない
+  } catch (e) { return null; }
+}
+function setupHandoffReceiver() {
+  // 開いている間の受信: BroadcastChannel（主）＋ storage イベント（同一オリジンの別タブで setItem されたとき）
+  try {
+    const ch = new BroadcastChannel(HANDOFF_CHANNEL);
+    ch.onmessage = function (ev) { const acc = acceptHandoff(ev.data); if (acc) applyHandoff(acc); };
+  } catch (e) {}
+  window.addEventListener('storage', function (ev) {
+    if (ev.key !== HANDOFF_KEY || !ev.newValue) return;
+    try { const acc = acceptHandoff(JSON.parse(ev.newValue)); if (acc) applyHandoff(acc); } catch (e) {}
+  });
+  // 開く前に送られていた分
+  pendingHandoff = readStoredHandoff();
+  if (pendingHandoff) setHandoffMsg('配色ジェネレーターから配色が届いています。', true);
+  document.getElementById('handoffApply').addEventListener('click', function () {
+    if (pendingHandoff) { applyHandoff(pendingHandoff, '配色ジェネレーターの配色を反映しました'); pendingHandoff = null; }
+  });
+}
+
 function init() {
+  setupHandoffReceiver();   // KLK-116
   // 汎用: 入力のたびに再評価
   // KLK-062: mobileW / mobileOn は撤去（スマホ確認は比較画面の幅切替へ移行）。
   ['projectName', 'industrySelect', 'industryCustom'].forEach(function (id) {

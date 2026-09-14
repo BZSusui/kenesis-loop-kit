@@ -289,6 +289,15 @@
     cursor: pointer;
   }
   .pattern-head .css-copy:hover { color: var(--ink); border-color: var(--muted); }
+  .pattern-head .send-gen {
+    flex: 0 0 auto;
+    padding: 5px 12px;
+    font-size: 11px; font-weight: 600;
+    border: 1px solid var(--line); border-radius: 999px;
+    background: #fff; color: var(--muted);
+    cursor: pointer;
+  }
+  .pattern-head .send-gen:hover { color: var(--ink); border-color: var(--muted); }
   .swatches { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .sw {
     aspect-ratio: 3 / 2;
@@ -1207,6 +1216,28 @@ function hexListOf(p) {
 function copyTextOf(p) {
   return copyFormat === 'hexlist' ? hexListOf(p) : cssVarsOf(p);
 }
+/* ===== モック生成画面への受け渡し (KLK-116) ================================
+   「CSS変数をコピー → 貼り付け」の手間を無くす。SCR-001（draft-gen/index.html）と
+   ローカルブリッジ配信時は同一オリジンなので、BroadcastChannel と localStorage の
+   両方に載せる（開いているタブには即時・後から開くタブには保管分が届く）。
+   ★名前は SCR-001 側の定数と一致させる（乖離は check_klk116 が検出する）。 */
+const HANDOFF_SCHEMA  = 'klk-palette-handoff';
+const HANDOFF_VERSION = 1;
+const HANDOFF_CHANNEL = 'klk-palette';
+const HANDOFF_KEY     = 'klk.paletteHandoff';
+// 1案 → 受け渡しデータ（純粋関数・常に単色 #rrggbb・微調整後の値を反映）
+function handoffPayloadOf(p, now) {
+  const [main, sub, accent, bgc] = ROLE_KEYS.map(k => hslToHex(p[k][0], p[k][1], p[k][2]));
+  return { schema: HANDOFF_SCHEMA, version: HANDOFF_VERSION,
+           colors: { main, sub, accent, bg: bgc }, sentAt: now == null ? Date.now() : now };
+}
+// 送信。file:// 直開きなど storage/Channel が使えない環境では false（呼び手が案内を出す）
+function sendHandoff(payload) {
+  let ok = false;
+  try { localStorage.setItem(HANDOFF_KEY, JSON.stringify(payload)); ok = true; } catch (e) {}
+  try { const ch = new BroadcastChannel(HANDOFF_CHANNEL); ch.postMessage(payload); ch.close(); ok = true; } catch (e) {}
+  return ok;
+}
 /* ===== URL共有 ===========================================================
    入力状態＋seed を URLSearchParams に載せ、render のたびに history.replaceState で
    同期する（アドレスバーのURLが常に現在の状態を指す）。乱数はシード付きのため
@@ -1368,7 +1399,7 @@ function paintOutput() {
       </div>`;
     return `
       <div class="pattern">
-        <div class="pattern-head"><b>${p.name}</b><small>${p.note}</small><button type="button" class="css-copy" data-p="${pi}">${copyLabel}</button></div>
+        <div class="pattern-head"><b>${p.name}</b><small>${p.note}</small><button type="button" class="css-copy" data-p="${pi}">${copyLabel}</button><button type="button" class="send-gen" data-p="${pi}" title="モック生成画面（生成設定）の配色欄へこの案を入れます">モック生成画面へ送る</button></div>
         <div class="swatches">${swatches}</div>
         ${ratioBar}
         ${mock}
@@ -1387,6 +1418,14 @@ function paintOutput() {
       navigator.clipboard?.writeText(copyTextOf(currentPatterns[+btn.dataset.p]));
       btn.textContent = '✓ コピーしました';
       setTimeout(() => { btn.textContent = copyLabel; }, 900);
+    });
+  });
+  // KLK-116: モック生成画面へ送る（貼り付け不要）。届かない環境ではコピーへ誘導する
+  out.querySelectorAll('.send-gen').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ok = sendHandoff(handoffPayloadOf(currentPatterns[+btn.dataset.p]));
+      btn.textContent = ok ? '✓ 送りました（生成設定の画面で受け取れます）' : '送れません。「CSS変数をコピー」で貼り付けてください';
+      setTimeout(() => { btn.textContent = 'モック生成画面へ送る'; }, ok ? 2200 : 4000);
     });
   });
 }
