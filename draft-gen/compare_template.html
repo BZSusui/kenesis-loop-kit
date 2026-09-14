@@ -75,7 +75,9 @@
   .print-a,.print-b,.print-c{ display:none; }
   .regen-ctl{ display:flex; align-items:center; gap:8px; margin-left:auto; }
   [data-warn="1"]{ color:#b4342b !important; font-weight:700; }
-  .regen-type{ font-size:11.5px; color:#8a8578; white-space:nowrap; }
+  /* KLK-117: 型セレクタは日本語ラベルを出すようになり、ここが意味を担う。
+     薄いグレー(#8a8578=白地に 3.68:1)では読みにくいので本文色に揃える(12.00:1)。 */
+  .regen-type{ font-size:11.5px; color:#2c2c2c; white-space:nowrap; }
   .regen-ctl select{ font-size:13px; padding:8px 12px; border:1px solid #ddd9cf; border-radius:8px; background:#fff; }
   .regen-ctl button[disabled]{ opacity:.5; cursor:not-allowed; }
   .regen-msg{ font-size:11px; color:#8a8578; margin:6px 26px 0; }
@@ -209,8 +211,13 @@
         typeSel.disabled = true;
         return;
       }
+      // KLK-117: 英語のマーカーだけでは型が掴めないので、日本語ラベルを先に出す。
+      //   ラベルは /sections の labels（規約 §12.1.x の説明文からの抜き書き）。
+      //   値（送る desiredType）はマーカーのまま。labels が無い旧ブリッジではマーカーだけ出す。
+      var labels = s.labels || {};
       s.pool.forEach(function(t){
-        typeSel.appendChild(opt(t, t === s.current ? t + '（現在）' : t));
+        var name = labels[t] ? labels[t] + '（' + t + '）' : t;
+        typeSel.appendChild(opt(t, t === s.current ? name + '（現在）' : name));
       });
       typeSel.value = s.current || s.pool[0];
       typeSel.disabled = false;

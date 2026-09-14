@@ -104,6 +104,129 @@ SECTION_TYPE_POOLS = {
     "SNS": ("sns-grid", "sns-slider", "sns-cards", "sns-masonry", "sns-reels", "sns-feed"),
     "SEARCH": ("search-bar", "search-keywords", "search-filters", "search-sidebar", "search-header", "search-hero"),
 }
+# 型の日本語ラベル(KLK-117)—「生成後に型を選び直すとき、英語のマーカーだけでは
+# どんな型か分からない」という実ユーザーの声への対応。
+# ★ラベルは考えて付けたものではなく、**規約 §12.1.2/§12.1.3 のその型の説明文からの抜き書き**である。
+#   check_klk117 が、各ラベルの区切り(＋・／)ごとの語が規約の説明文に実際に現れることを照合する
+#   (根拠を自分で作らない)。規約の表現を変えたらラベルも直すこと。
+# ★マーカーはセクション間で共有されることがある(price-table は MENU と PRICE の両方)。
+#   ラベルはセクションごとに持つ。
+SECTION_TYPE_LABELS = {
+    "MV": {
+        "full": "全面中央",
+        "split": "左右分割",
+        "band": "下寄せ帯",
+        "overlap": "せり出し横長画像",
+        "center-scroll": "全面ビジュアル＋スクロール誘導",
+        "panel-band": "フィルム風パネル",
+    },
+    "ABOUT": {
+        "img-left": "左画像・右文言",
+        "img-right": "右画像・左文言",
+        "img-top": "画像を上＋キャプション",
+        "img-overlap": "せり出し横長画像",
+        "img-circle": "円形／型抜き画像",
+        "img-zigzag": "左右交互＋複数段",
+    },
+    "MENU": {
+        "pat-cards": "カード群＋名称＋価格",
+        "pat-list": "横並びリスト",
+        "pat-zigzag": "ジグザグ交互",
+        "price-table": "価格表／料金プラン",
+        "tab-switch": "タブ切替",
+        "feature-large": "大画像＋詳細",
+    },
+    "GALLERY": {
+        "pat-grid": "均等グリッド",
+        "pat-wide": "横帯ワイド",
+        "pat-mosaic": "大小モザイク",
+        "pat-slider": "横スクロール／カルーセル",
+        "pat-masonry": "ベントー型",
+        "pat-tab-grid": "タブ切替＋タイルグリッド",
+    },
+    "VOICE": {
+        "voice-cards": "声カードを横3列",
+        "voice-quote-stack": "縦積みの引用ブロック",
+        "voice-feature": "代表の声を大きく1枚",
+        "voice-two-col": "2カラム千鳥",
+        "voice-slider": "横スクロール風1行",
+        "voice-zigzag": "全幅1カラム縦積み＋左右交互",
+    },
+    "FLOW": {
+        "flow-row": "横並び①→②→③",
+        "flow-timeline": "縦タイムライン",
+        "flow-number-card": "番号大きめカード",
+        "flow-arrow-band": "全幅の矢羽根帯",
+        "flow-vertical-split": "左大番号／右説明",
+        "flow-zigzag": "全幅縦積み＋左右交互",
+    },
+    "STAFF": {
+        "staff-grid": "顔写真グリッド4列",
+        "staff-hscroll": "横スクロール風1列",
+        "staff-feature": "代表1名を大写し",
+        "staff-list": "横1行×人数のリスト",
+        "staff-two-col": "2カラムのプロフィールカード",
+        "staff-zigzag": "全幅縦積み＋画像左右交互",
+    },
+    "NEWS": {
+        "news-list": "日付＋カテゴリバッジ＋見出し",
+        "news-cards": "サムネ＋日付＋見出し＋抜粋",
+        "news-media": "横長メディア行",
+        "news-timeline": "縦の時系列",
+        "news-table": "表形式＋日付＋カテゴリ",
+        "news-accordion": "見出しクリックで本文を開閉",
+    },
+    "PRICE": {
+        "price-table": "価格表／料金プラン",
+        "price-cards": "プラン比較の3列カード",
+        "price-featured": "中央を一段大きく強調",
+        "price-list": "シンプルな縦リスト",
+        "price-toggle": "月額／年額＋タブで切替",
+        "price-matrix": "比較マトリクス",
+    },
+    "FAQ": {
+        "faq-list": "開いた状態で縦積み",
+        "faq-accordion": "質問クリックで開閉",
+        "faq-two-col": "2カラム＋開閉",
+        "faq-cards": "アイコン＋質問＋3列カード",
+        "faq-category-tabs": "カテゴリタブ切替",
+        "faq-search": "検索ボックス＋アコーディオン",
+    },
+    "ACCESS": {
+        "map-side": "地図アタリ＋2カラム",
+        "map-top": "地図アタリを上＋住所",
+        "map-overlay": "情報カードを重ねる",
+        "map-hours": "地図アタリ＋診療時間テーブル",
+        "map-cards": "複数店舗＋カードで並べる",
+        "map-steps": "駅からの道順ステップ",
+    },
+    "CONTACT": {
+        "contact-cta": "見出し＋ひとこと＋大きなボタン",
+        "contact-form": "縦積みフォーム",
+        "contact-split": "左に連絡先情報＋右にフォーム",
+        "contact-methods": "連絡手段を3〜4カード",
+        "contact-banner": "全幅の色帯＋電話番号",
+        "contact-steps": "ご相談の流れステップ",
+    },
+    "SNS": {
+        "sns-grid": "正方サムネ格子",
+        "sns-slider": "横スクロールの投稿フィード",
+        "sns-cards": "画像＋キャプション＋短文",
+        "sns-masonry": "ベントー型",
+        "sns-reels": "リール／ストーリーズ帯",
+        "sns-feed": "投稿カードを横並び",
+    },
+    "SEARCH": {
+        "search-bar": "中央の大きな検索バー",
+        "search-keywords": "キーワードをボタン化",
+        "search-filters": "絞り込みフォーム",
+        "search-sidebar": "左に絞り込みナビ＋右に結果",
+        "search-header": "小型検索窓＋ヘッダー",
+        "search-hero": "メインビジュアル内に検索窓",
+    },
+}
+
+
 PIN_RE = re.compile(r'<span class="pin">\s*([A-Z][A-Z0-9]*-\d{2})\s*</span>')
 
 # 実績カタログ(KLK-013・SCR-004・REQ-105/106)—主配色7カテゴリ/安全名/MIME
@@ -629,6 +752,20 @@ def pool_for_addr(addr):
     if not isinstance(addr, str) or not ADDR_RE.match(addr):
         return ()
     return SECTION_TYPE_POOLS.get(addr.rsplit("-", 1)[0], ())
+
+
+def labels_for_addr(addr):
+    """番地(例 MENU-01) → {型マーカー: 日本語ラベル}(KLK-117・純粋関数)。
+
+    プールを持たない番地(NAV/FOOTER/CTA)や未知の番地は空 dict。
+    ★プールに在ってラベルが無い型は、マーカーをそのまま返す(画面が空欄にならない)。
+      抜けそのものは check_klk117 L1 が落とすので、ここでは黙って穴を空けない。
+    """
+    pool = pool_for_addr(addr)
+    if not pool:
+        return {}
+    table = SECTION_TYPE_LABELS.get(addr.rsplit("-", 1)[0], {})
+    return dict((m, table.get(m) or m) for m in pool)
 
 
 def is_valid_desired_type(addr, desired):
@@ -3252,6 +3389,8 @@ def _run_server(port):
                     "addr": addr,
                     "current": read_section_marker(html, addr),
                     "pool": list(pool_for_addr(addr)),
+                    # KLK-117: 型の日本語ラベル。画面は英語マーカーだけでは型が掴めない
+                    "labels": labels_for_addr(addr),
                 }
                 for addr in list_page_addrs(html)
             ]
