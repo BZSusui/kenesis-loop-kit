@@ -40,7 +40,7 @@
   .m-nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;background:var(--m-nav);color:#fff;padding:14px 28px;}
   .m-nav .brand{font-weight:800;letter-spacing:.06em;font-size:16px;}
   .m-nav ul{list-style:none;display:flex;gap:22px;font-size:13.5px;}
-  .m-nav ul a{opacity:.92;}
+  .m-nav ul a{opacity:.92;white-space:nowrap;}   /* KLK-122 §8.2: 項目を折らない */
   .m-nav ul a:hover{opacity:1;text-decoration:underline;}
   .m-nav .nav-cta{background:var(--m-accent);color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:700;}
   .m-nav .burger{display:none;font-size:22px;}
@@ -76,8 +76,8 @@
   .m-flow[data-flow=flow-arrow-band] .step{background:color-mix(in srgb, var(--m-main) 12%, #fff);padding:26px 22px 26px 34px;clip-path:polygon(0 0, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, 0 100%, 18px 50%);text-align:center;}
   .m-flow[data-flow=flow-arrow-band] .step:first-child{clip-path:polygon(0 0, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, 0 100%);padding-left:22px;}
   .m-flow[data-flow=flow-arrow-band] .step .no{display:block;font-size:22px;font-weight:800;color:var(--m-main);}
-  .m-flow[data-flow=flow-arrow-band] .step .t{font-size:13.5px;font-weight:700;color:var(--m-nav);margin:6px 0 4px;}
-  .m-flow[data-flow=flow-arrow-band] .step .d{font-size:11.5px;color:#666;}
+  .m-flow[data-flow=flow-arrow-band] .step .t{display:block;font-size:13.5px;font-weight:700;color:var(--m-nav);margin:6px 0 4px;}   /* KLK-122 §8.3: 見出しと説明を同じ行に流さない（margin だけ指定されていて block が抜けていた） */
+  .m-flow[data-flow=flow-arrow-band] .step .d{display:block;font-size:11.5px;color:#666;}
 
   /* STAFF staff-list（顔写真は正方 1/1・KLK-072） */
   .m-staff[data-staff=staff-list]{display:flex;flex-direction:column;gap:14px;max-width:760px;margin:0 auto;}
@@ -137,6 +137,14 @@
   @media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none;transition:none;}}
 
   /* レスポンシブ */
+  /* KLK-122 §8.2: 641〜900px は PC レイアウトのまま幅が狭まる帯。
+     ラベルを折らずに済むよう、器の間隔と余白を先に詰める。 */
+  @media (max-width:900px){
+    .m-nav{padding:12px 16px;}
+    .m-nav ul{gap:12px;}
+    .m-flow[data-flow=flow-arrow-band] .step{padding:22px 12px 22px 24px;}
+    .m-flow[data-flow=flow-arrow-band] .step:first-child{padding-left:16px;}
+  }
   @media (max-width:640px){
     .m-sec{padding:44px 20px;}
     .m-nav{padding:12px 16px;}

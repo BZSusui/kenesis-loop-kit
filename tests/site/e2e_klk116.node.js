@@ -41,6 +41,20 @@ async function waitHttp(url, tries = 60) {
 }
 
 // ---- CDP 最小クライアント -----------------------------------------------
+// ★CDP の WebSocket 接続待ちには必ず上限を置く。
+//   `await new Promise(r => ws.addEventListener('open', r))` は開かなければ**永久に待つ**。
+//   入れ子でスイートを回すと Chrome が何個も立ち上がり、接続できないまま固まって
+//   外側の 300 秒タイムアウトで落ちていた（単独なら5秒で終わるのに・KLK-122 で判明）。
+//   上限を置けば「開かなかった」と分かる形で早く失敗する。
+function openWs(ws, ms = 20000) {
+  return new Promise((res, rej) => {
+    const to = setTimeout(() => rej(new Error('CDP の WebSocket が ' + ms + 'ms で開きませんでした')), ms);
+    ws.addEventListener('open', () => { clearTimeout(to); res(); });
+    ws.addEventListener('error', () => { clearTimeout(to); rej(new Error('CDP の WebSocket でエラー')); });
+    ws.addEventListener('close', () => { clearTimeout(to); rej(new Error('CDP の WebSocket が閉じられました')); });
+  });
+}
+
 function cdpClient(ws) {
   let id = 0; const pend = new Map();
   ws.addEventListener('message', ev => {
@@ -52,7 +66,7 @@ function cdpClient(ws) {
 async function openTab(debugPort, url) {
   const t = await (await fetch(`http://127.0.0.1:${debugPort}/json/new?${encodeURIComponent(url)}`, { method: 'PUT' })).json();
   const ws = new WebSocket(t.webSocketDebuggerUrl);
-  await new Promise(r => ws.addEventListener('open', r));
+  await openWs(ws);
   const send = cdpClient(ws);
   await send('Page.enable'); await send('Runtime.enable');
   // 読み込み完了待ち（document.readyState）

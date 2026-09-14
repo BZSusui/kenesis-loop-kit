@@ -41,7 +41,7 @@
   .m-nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;background:var(--m-nav);color:#fff;padding:14px 28px;}
   .m-nav .brand{font-weight:800;letter-spacing:.06em;font-size:16px;}
   .m-nav ul{list-style:none;display:flex;gap:22px;font-size:13.5px;}
-  .m-nav ul a{opacity:.92;}
+  .m-nav ul a{opacity:.92;white-space:nowrap;}   /* KLK-122 §8.2: 項目を折らない */
   .m-nav ul a:hover{opacity:1;text-decoration:underline;}
   .m-nav .nav-cta{background:var(--m-accent);color:#12333a;padding:8px 16px;border-radius:3px;font-size:13px;font-weight:700;}
   .m-nav .burger{display:none;font-size:22px;}
@@ -135,6 +135,14 @@
   @media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none;transition:none;} .scroll-cue .arrow{animation:none;}}
 
   /* レスポンシブ */
+  /* KLK-122 §8.2: 641〜900px は PC レイアウトのまま幅が狭まる帯。
+     ラベルを折らずに済むよう、器の間隔と余白を先に詰める。 */
+  @media (max-width:900px){
+    .m-nav{padding:12px 16px;}
+    .m-nav ul{gap:12px;}
+    .m-flow[data-flow=flow-arrow-band] .step{padding:22px 12px 22px 24px;}
+    .m-flow[data-flow=flow-arrow-band] .step:first-child{padding-left:16px;}
+  }
   @media (max-width:640px){
     .m-sec{padding:44px 20px;}
     .m-nav{padding:12px 16px;}

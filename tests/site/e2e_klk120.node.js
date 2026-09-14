@@ -49,6 +49,19 @@ async function waitHttp(url, tries = 80) {
   for (let i = 0; i < tries; i++) { try { const r = await fetch(url); if (r.ok) return true; } catch {} await sleep(150); }
   return false;
 }
+// ★CDP の WebSocket 接続待ちには必ず上限を置く。
+//   上限が無いと、開かなかったときに**永久に待つ**。入れ子でスイートを回すと
+//   Chrome が何個も立ち上がり、接続できないまま固まって外側のタイムアウトで落ちる
+//   （単独なら数秒で終わるのに・KLK-122 で判明）。
+function openWs(ws, ms = 20000) {
+  return new Promise((res, rej) => {
+    const to = setTimeout(() => rej(new Error('CDP の WebSocket が ' + ms + 'ms で開きませんでした')), ms);
+    ws.addEventListener('open', () => { clearTimeout(to); res(); });
+    ws.addEventListener('error', () => { clearTimeout(to); rej(new Error('CDP の WebSocket でエラー')); });
+    ws.addEventListener('close', () => { clearTimeout(to); rej(new Error('CDP の WebSocket が閉じられました')); });
+  });
+}
+
 function cdpClient(ws) {
   let id = 0; const pend = new Map();
   ws.addEventListener('message', ev => {
@@ -121,7 +134,7 @@ const check = (name, ok, detail) => results.push([name, !!ok, detail || '']);
 
     const t = await (await fetch(`http://127.0.0.1:${dp}/json/new?${encodeURIComponent(`http://127.0.0.1:${bp}/catalog`)}`, { method: 'PUT' })).json();
     const ws = new WebSocket(t.webSocketDebuggerUrl);
-    await new Promise(r => ws.addEventListener('open', r));
+    await openWs(ws);
     const send = cdpClient(ws);
     await send('Runtime.enable');
     const ev = async e => (await send('Runtime.evaluate', { expression: e, returnByValue: true, awaitPromise: true })).result.value;

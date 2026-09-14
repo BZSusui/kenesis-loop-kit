@@ -14,6 +14,12 @@
  *   C 箱からのあふれ     要素の中身が自分の箱から溢れる（scrollWidth > clientWidth）
  *   D アタリの比率逸脱   アタリ枠の実測 w/h が §3.0 の許容帯から外れる
  *   E 横並びの重なり      同じ親の横並びのきょうだいが左右に重なる（隣の中身を隠す）
+ *   F 短いラベルの窮屈な折り返し  「アクセス」が「アクセ／ス」になるような詰まり方
+ *
+ *   ★F を足した経緯（KLK-122）: KLK-118 で「はみ出してはいないが窮屈な箇所は検出できない」と
+ *     申し送った件。見本03 のナビが 768px で 40px まで潰れ、4文字が2行に折れていた。
+ *     **箱の高さ÷行高では測れない**（ボタンの上下余白で2行に見える）。
+ *     Range で**文字が実際に何行に折れたか**を数え、1行に入る文字数で判定する。
  *
  *   ★E を足した経緯（KLK-118）: 見本03 の ACCESS で、地図が自分の列(332px)を超えて 385px になり、
  *     右隣の情報パネルに重なって「住所」が「主所」に見えていた。A〜D はどれも
@@ -96,7 +102,7 @@ function cdpClient(ws) {
 const PROBE = (width, pools) => `(() => {
   const W = ${width};
   const POOLS = ${JSON.stringify(pools || {})};
-  const out = { width: W, scrollWidth: document.documentElement.scrollWidth, sections: [], overflow: [], atari: [], overlap: [] };
+  const out = { width: W, scrollWidth: document.documentElement.scrollWidth, sections: [], overflow: [], atari: [], overlap: [], cramped: [] };
 
   // セクションの型を読む。**ブリッジと同じやり方**（番地→プール→セクションHTMLを語境界で検索）。
   //   マーカーはクラス名・data属性・CSS のどこに現れるか決まっていないため、
@@ -203,6 +209,32 @@ const PROBE = (width, pools) => `(() => {
     }
   }
 
+  // F 短いラベルの窮屈な折り返し
+  //   短いラベル（8文字以内）が、1行6文字も入らない幅に詰められて2行以上に折れている状態。
+  //   ★padding を含む箱の高さで割ると誤検出する。Range で行box の数を数える。
+  for (const el of document.body.querySelectorAll('*')) {
+    if (el.children.length) continue;                 // 末端のテキストだけ
+    const txt = (el.textContent || '').trim();
+    if (!txt || txt.length > 8) continue;             // 長い文は折り返して当然
+    const r = el.getBoundingClientRect();
+    if (r.width < 1 || r.height < 1) continue;
+    const rg = document.createRange();
+    rg.selectNodeContents(el);
+    const tops = new Set(Array.from(rg.getClientRects())
+      .filter(x => x.width > 0 && x.height > 0).map(x => Math.round(x.top)));
+    if (tops.size < 2) continue;                      // 折れていない
+    const fs = parseFloat(getComputedStyle(el).fontSize) || 14;
+    // 1行に入る文字数。日本語は約1文字=1em なのでこの近似でよい。
+    //   ★英字ラベルは1文字が 1em より狭いので容量を多めに見積もる＝**見落とす側**に外れる。
+    //     誤検出でうるさくなるより、取りこぼす側に倒している（生成物の文言は日本語が主）。
+    const cpl = r.width / fs;
+    if (cpl >= 6) continue;                           // 6文字は入る＝窮屈ではない
+    const sec = secOf(el);
+    const tt = sec ? typeOf(sec) : { fam: '', marker: '' };
+    out.cramped.push({ tag: label(el), addr: sec ? addrOf(sec) : '', fam: tt.fam, marker: tt.marker,
+      text: txt, lines: tops.size, w: Math.round(r.width), fs: Math.round(fs), cpl: +cpl.toFixed(1) });
+  }
+
   // D アタリ枠の実測比率
   for (const el of document.querySelectorAll('[class*="atari"], .film .cell')) {
     const r = el.getBoundingClientRect();
@@ -304,6 +336,10 @@ if (!POOLS) console.error('[注意] bridge.py から型プールを読めませ�
       findings.push({ file: o.file, kind: 'overlap', addr: x.addr, fam: x.fam, marker: x.marker, tag: x.tag,
         detail: `${x.px}px 重なる（${x.a} と ${x.b}）` });
     }
+    for (const x of (o.cramped || [])) {
+      findings.push({ file: o.file, kind: 'cramped', addr: x.addr, fam: x.fam, marker: x.marker, tag: x.tag,
+        detail: `「${x.text}」が ${x.lines}行（幅 ${x.w}px / ${x.fs}px ＝ 1行 ${x.cpl} 文字）` });
+    }
     for (const a of o.atari) {
       const b = ratioBand(a);
       if (!b) continue;
@@ -341,7 +377,7 @@ if (!POOLS) console.error('[注意] bridge.py から型プールを読めませ�
   if (!findings.length) { console.log('崩れは見つかりませんでした。'); process.exit(0); }
   const byKind = {};
   for (const x of findings) (byKind[x.kind] = byKind[x.kind] || []).push(x);
-  const NAMES = { 'page-scroll': '画面に横スクロールが出る', 'overflow': 'はみ出し', 'content-overflow': '中身が箱からあふれる', 'atari-ratio': 'アタリの比率逸脱', 'overlap': '横並びの重なり' };
+  const NAMES = { 'page-scroll': '画面に横スクロールが出る', 'overflow': 'はみ出し', 'content-overflow': '中身が箱からあふれる', 'atari-ratio': 'アタリの比率逸脱', 'overlap': '横並びの重なり', 'cramped': '短いラベルの窮屈な折り返し' };
   for (const k of Object.keys(byKind)) {
     console.log(`\n■ ${NAMES[k] || k}（${byKind[k].length}件）`);
     for (const x of byKind[k].slice(0, 40)) {
