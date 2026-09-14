@@ -1891,6 +1891,90 @@ def validate_delete_request(obj):
     return (len(errors) == 0), errors
 
 
+# 登録済みエントリの編集(KLK-120)で書き換えてよい項目。
+# ★id / file / addedAt は**身元と来歴**なので変更させない。
+#   id を変えられると参照が壊れ、file を変えられると別の画像を指せてしまう。
+#   受け取ったら黙って無視せず**拒否**する（何が起きたか分かるようにする）。
+EDITABLE_ENTRY_FIELDS = (
+    "title", "industry", "taste", "colors", "bgTone",
+    "columns", "note", "source", "tags", "sectionLayouts",
+)
+PROTECTED_ENTRY_FIELDS = ("id", "file", "addedAt")
+
+
+def validate_update_request(obj):
+    """POST /catalog-update のボディを検証する(KLK-120)。副作用なし。
+
+    想定: {"updates": [{"id": "cat-0054", "fields": {"taste": "高級感", ...}}, ...]}
+    - id は is_safe_catalog_name(パストラバーサル対策)
+    - fields は非空の object。**EDITABLE_ENTRY_FIELDS 以外のキーは拒否**
+    - 各値の型/語彙は _validate_tag_fields を再利用する(colors・bgTone・source 等)
+    - tags はあれば文字列の配列
+    返却: (ok: bool, errors: list[str])。
+    """
+    errors = []
+    if not isinstance(obj, dict):
+        return False, ["編集指示がオブジェクトではありません"]
+    ups = obj.get("updates")
+    if not isinstance(ups, list) or len(ups) == 0:
+        return False, ["編集する対象が指定されていません"]
+    seen = set()
+    for i, u in enumerate(ups):
+        if not isinstance(u, dict):
+            errors.append("updates[{0}] がオブジェクトではありません".format(i))
+            continue
+        uid = u.get("id")
+        if not is_safe_catalog_name(uid):
+            errors.append("updates[{0}].id が安全な id ではありません".format(i))
+        elif uid in seen:
+            errors.append("updates[{0}].id が重複しています: {1}".format(i, uid))
+        else:
+            seen.add(uid)
+        fields = u.get("fields")
+        if not isinstance(fields, dict) or not fields:
+            errors.append("updates[{0}].fields が空でないオブジェクトではありません".format(i))
+            continue
+        for k in fields:
+            if k in PROTECTED_ENTRY_FIELDS:
+                errors.append("updates[{0}].fields に変更できない項目があります: {1}".format(i, k))
+            elif k not in EDITABLE_ENTRY_FIELDS:
+                errors.append("updates[{0}].fields に未知の項目があります: {1}".format(i, k))
+        tags = fields.get("tags")
+        if tags is not None and (not isinstance(tags, list)
+                                 or any(not isinstance(x, str) for x in tags)):
+            errors.append("updates[{0}].fields.tags が文字列の配列ではありません".format(i))
+        # 値の型/語彙は取り込みと同じ関数で見る(二重に書かない)
+        errors.extend(_validate_tag_fields(fields, i, require_file=False))
+    return (len(errors) == 0), errors
+
+
+def apply_entry_updates(entries, updates):
+    """エントリ一覧へ編集を当てた**新しい一覧**を返す(KLK-120・純粋関数)。
+
+    - 元の list/dict は書き換えない(呼び手が検証に失敗したとき元へ戻せるように)
+    - 値が None のキーは**削除**する(「未設定に戻す」を表現できるようにする)
+    - 見つからない id は無視する(実在確認は呼び手が先に済ませる)
+    返却: 新しい entries(list)
+    """
+    by_id = {}
+    for u in updates:
+        if isinstance(u, dict) and isinstance(u.get("fields"), dict):
+            by_id[u.get("id")] = u["fields"]
+    out = []
+    for e in entries:
+        if not isinstance(e, dict) or e.get("id") not in by_id:
+            out.append(e)
+            continue
+        new = dict(e)
+        for k, v in by_id[e["id"]].items():
+            if v is None:
+                new.pop(k, None)
+            else:
+                new[k] = v
+        out.append(new)
+    return out
+
+
 def split_import_batch(pending_dir, names,
                        max_files=None, max_bytes=None):
     """今回処理する分と、次に回す分に分ける（KLK-107・副作用なし）。
@@ -2501,6 +2585,9 @@ def _run_server(port):
                 return
             if path == "/catalog-import":
                 self._catalog_import()
+                return
+            if path == "/catalog-update":
+                self._catalog_update()
                 return
             if path == "/catalog-delete":
                 self._catalog_delete()
@@ -3156,6 +3243,91 @@ def _run_server(port):
                 "ids": [e["id"] for _, _, e in planned],
                 "pendingCount": self._pending_names_count()[1],
             })
+
+        def _catalog_update(self):
+            """POST /catalog-update — 登録済みエントリのタグを書き換える(KLK-120)。
+
+            取り込み時にしか直せなかったタグを、後から画面で直せるようにする。
+            実ユーザーからの要望「登録済みのラフに背景トーンを付けたい」への対応。
+
+            **画像には触らない。** 触るのは catalog.json のタグ項目だけ。
+            id / file / addedAt は変更を受け付けない(validate_update_request が拒否)。
+
+            処理順は _catalog_delete と同じ骨格:
+            ①Origin(403) ②サイズ上限(413/400) ③JSON(400) ④validate_update_request(400)
+            ⑤catalog.json 内の実在確認(404・部分欠落でも全体を拒否＝どれが直ったか曖昧にしない)
+            ⑥更新後の全体を validate_catalog(400・**1件も書き換えない**)
+            ⑦一時ファイル→os.replace で原子的置換 ⑧200。
+            """
+            # ① Origin
+            if not is_allowed_origin(self.headers.get("Origin"), BRIDGE_HOST, port):
+                self._json(403, {"error": "許可されていないオリジンです"})
+                return
+            # ② サイズ上限
+            try:
+                length = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                self._json(400, {"error": "Content-Length ヘッダが不正です"})
+                return
+            if length < 0 or length > MAX_BODY_BYTES:
+                self._json(413 if length > MAX_BODY_BYTES else 400,
+                           {"error": "リクエストが大きすぎます" if length > MAX_BODY_BYTES
+                                     else "Content-Length ヘッダが不正です"})
+                return
+            raw = self.rfile.read(length) if length else b""
+            # ③ JSON
+            try:
+                obj = json.loads(raw.decode("utf-8"))
+            except (ValueError, UnicodeDecodeError):
+                self._json(400, {"error": "リクエストJSONを解析できません"})
+                return
+            # ④ 入力検証
+            ok, errors = validate_update_request(obj)
+            if not ok:
+                self._json(400, {"error": "編集指示が不正です", "details": errors[:5]})
+                return
+            updates = obj["updates"]
+            # 既存カタログ
+            try:
+                with open(catalog_json_path, encoding="utf-8") as fh:
+                    catalog = json.load(fh)
+            except (OSError, ValueError):
+                self._json(500, {"error": "カタログを読み込めませんでした"})
+                return
+            if not isinstance(catalog, dict) or not isinstance(catalog.get("entries"), list):
+                self._json(500, {"error": "カタログの形式が不正です。手動で確認してください"})
+                return
+            # ⑤ 実在確認(部分欠落でも全体を拒否)
+            have = set(e.get("id") for e in catalog["entries"] if isinstance(e, dict))
+            missing = [u["id"] for u in updates if u["id"] not in have]
+            if missing:
+                self._json(404, {"error": "カタログに見つからない項目があります",
+                                 "details": missing[:5]})
+                return
+            # ⑥ 更新後の全体を検証(不正なら1件も書き換えない)
+            merged = dict(catalog)
+            merged["entries"] = apply_entry_updates(catalog["entries"], updates)
+            ok, errors = validate_catalog(merged)
+            if not ok:
+                self._json(400, {"error": "編集後の検証に失敗したため、1件も書き換えていません",
+                                 "details": errors[:5]})
+                return
+            # ⑦ 原子的置換
+            merged["generatedAt"] = iso_now()
+            tmp = catalog_json_path + ".tmp"
+            try:
+                with open(tmp, "w", encoding="utf-8") as fh:
+                    json.dump(merged, fh, ensure_ascii=False, indent=2)
+                os.replace(tmp, catalog_json_path)
+            except Exception as exc:
+                try:
+                    os.remove(tmp)
+                except OSError:
+                    pass
+                self._json(500, {"error": "カタログを保存できませんでした: {0}".format(exc)})
+                return
+            # ⑧ 完了
+            self._json(200, {"ok": True, "updated": len(updates)})
 
         def _catalog_delete(self):
             """POST /catalog-delete — カタログから登録を取り消す(KLK-068・_catalog_commit の逆操作)。
