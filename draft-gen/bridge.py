@@ -253,6 +253,16 @@ CANONICAL_COLORS_ORDER = [
     "カラフル",
 ]
 CANONICAL_COLORS = set(CANONICAL_COLORS_ORDER)
+
+# 背景トーン(KLK-119)—実ユーザーの声「モノトーンはあるがホワイト/ブラックが無い。
+#   背景で白や黒を使いつつモノトーンでない配色のラフが選びにくい」への対応。
+# ★主配色(CANONICAL_COLORS)へ「ホワイト」「ブラック」を足さない。あれは palette の
+#   **色相ファミリー16種**であり、白黒は色相ではなく**背景の明暗**だから軸が違う。
+#   同じ軸に混ぜると「メインカラー＝白」から配色を作る意味が立たず、
+#   「タグ付けと配色生成が同じ言葉を話す」原則(KLK-067)も崩れる。そこで**2軸目**にする。
+# ★任意項目。既存エントリは未設定のまま妥当であり続ける(additive)。
+CANONICAL_BG_TONES_ORDER = ["ライト", "ダーク"]
+CANONICAL_BG_TONES = set(CANONICAL_BG_TONES_ORDER)
 CATALOG_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")  # id/file の安全文字集合(先頭は英数)
 CATALOG_MIME = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}  # 配信MIME(GET /catalog/img/)。png変換方式ゆえ webp は保存せず=不変
 
@@ -1635,6 +1645,7 @@ def validate_catalog(obj):
 
     schema=='klk-catalog' / version==1 / entries=list / 各 entry の
     id(安全名)・file(安全名)・source∈{own,ref}・colors⊆CANONICAL_COLORS を検証。
+    bgTone(任意・KLK-119) は present のとき CANONICAL_BG_TONES であることを検証する。
     sectionLayouts(任意・KLK-030) は present のとき object かつ各値が非空文字列で
     あることを構造検証する(値の語彙照合は行わない。語彙の正は DRAFT_RULES §12.1.1/§12.1.2)。
     返却: (ok: bool, errors: list[str])。ok=False のとき errors に理由を列挙する。
@@ -1669,8 +1680,16 @@ def validate_catalog(obj):
             errors.append("{0}.colors が配列ではありません".format(where))
         else:
             for c in colors:
-                if c not in CANONICAL_COLORS:
+                # KLK-119: 同上。要素が文字列でないときも「未対応」として弾く（落とさない）
+                if not isinstance(c, str) or c not in CANONICAL_COLORS:
                     errors.append("{0}.colors に未対応の主配色 '{1}' があります".format(where, c))
+            # KLK-119: 背景トーン(任意・1値)。未設定は妥当
+            bg = entry.get("bgTone")
+            # ★isinstance を先に見る。set への in はハッシュ不能な値(list/dict)で TypeError になり、
+            #   手書きの catalog.json ひとつでブリッジが落ちる（KLK-119 のテストで実際に踏んだ）
+            if bg is not None and (not isinstance(bg, str) or bg not in CANONICAL_BG_TONES):
+                errors.append("{0}.bgTone が {1} ではありません".format(
+                    where, "/".join(CANONICAL_BG_TONES_ORDER)))
             # KLK-016: 件数(第1主配色が必須・最大3件)
             if len(colors) < 1:
                 errors.append("{0}.colors は第1主配色が必須です(空配列不可)".format(where))
@@ -1749,10 +1768,15 @@ def _validate_tag_fields(it, i, require_file):
     if cols is not None:
         if not isinstance(cols, list) or not (1 <= len(cols) <= 3):
             errors.append("items[{0}].colors が 1..3 件の配列ではありません".format(i))
-        elif any(c not in CANONICAL_COLORS for c in cols):
+        elif any((not isinstance(c, str)) or (c not in CANONICAL_COLORS) for c in cols):
             errors.append("items[{0}].colors に許可外の主配色があります".format(i))
         elif "カラフル" in cols and len(cols) > 1:
             errors.append("items[{0}].colors のカラフルは単独指定のみです".format(i))
+    # KLK-119: 背景トーン(任意・1値)
+    bg = it.get("bgTone")
+    if bg is not None and (not isinstance(bg, str) or bg not in CANONICAL_BG_TONES):
+        errors.append("items[{0}].bgTone が {1} ではありません".format(
+            i, "/".join(CANONICAL_BG_TONES_ORDER)))
     sl = it.get("sectionLayouts")
     if sl is not None:
         if not isinstance(sl, dict):

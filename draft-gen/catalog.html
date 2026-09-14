@@ -56,6 +56,10 @@
   .fchip.on { background: var(--color-main-deep); color: #fff; border-color: var(--color-main-deep); }
   .fchip.color { display: inline-flex; align-items: center; gap: 6px; }
   .fchip.color .sw { width: 12px; height: 12px; border-radius: 3px; }
+  /* KLK-119: 背景トーンのチップ。見た目は主配色と同じだが **.color とは別クラス**にする。
+     check_klk013 S3 が .fchip.color .sw をちょうど16件と数えているため、混ぜると誤検出になる。 */
+  .fchip.tone { display: inline-flex; align-items: center; gap: 6px; }
+  .fchip.tone .sw { width: 12px; height: 12px; border-radius: 3px; }
 
   .result-meta { display: flex; justify-content: space-between; align-items: center; margin: 16px 0 8px; font-size: 12.5px; color: var(--color-text-sub); flex-wrap: wrap; gap: 8px; }
   .result-meta select { font-size: 12.5px; border: 1px solid var(--color-border); border-radius: 6px; padding: 4px 8px; background: #fff; color: var(--color-text); }
@@ -223,6 +227,13 @@
         <span class="fchip color" data-val="カラフル"><span class="sw" style="background:conic-gradient(from 0deg,#2E7D6B,#2C5F8A,#B3402F,#C6A15B,#E86FA0,#333,#2E7D6B)"></span>カラフル</span>
       </div>
     </div>
+    <div class="frow" data-facet="bgTone">
+      <span class="flabel">背景トーン</span>
+      <div class="fchips">
+        <span class="fchip tone" data-val="ライト"><span class="sw" style="background:#fff;border:1px solid #d8d4cc"></span>ライト</span>
+        <span class="fchip tone" data-val="ダーク"><span class="sw" style="background:#1c1f24"></span>ダーク</span>
+      </div>
+    </div>
     <div class="frow" data-facet="source">
       <span class="flabel">種別</span>
       <div class="fchips">
@@ -320,10 +331,12 @@
 
   // 主配色16カテゴリ(bridge.py CANONICAL_COLORS と一致・正は palette/index.html の const COLORS・KLK-067)
   // KLK-067: 主配色 canonical（正は palette/index.html の const COLORS・16種・順序も一致）
+  // 背景トーン(KLK-119・bridge.py CANONICAL_BG_TONES_ORDER と一致・乖離は check_klk119 が検出)
+  var CANONICAL_BG_TONES = ["ライト", "ダーク"];
   var CANONICAL_COLORS = ["レッド", "ピンク", "オレンジ", "イエロー", "イエローグリーン", "グリーン", "ミント・水色", "ブルー", "ネイビー", "パープル", "ブラウン", "ベージュ", "ゴールド", "シルバー", "モノトーン", "カラフル"];
 
   // 選択状態(状態の単一源はDOM: fchip.on とこの sel を同期)
-  var sel = { industry: [], taste: [], colors: [], source: [], keyword: "", sort: "new" };
+  var sel = { industry: [], taste: [], colors: [], bgTone: [], source: [], keyword: "", sort: "new" };
   var allEntries = [];
   var bridgeAlive = false;
 
@@ -342,6 +355,9 @@
       if (s.industry && s.industry.length && s.industry.indexOf(e.industry) < 0) return false;
       if (s.taste && s.taste.length && s.taste.indexOf(e.taste) < 0) return false;
       if (s.source && s.source.length && s.source.indexOf(e.source) < 0) return false;
+      // KLK-119: 背景トーン。**未設定のエントリは、トーンを選んだときは出ない**
+      //   （「白背景のもの」を探しているのに未タグのものが混ざると絞り込みにならない）
+      if (s.bgTone && s.bgTone.length && s.bgTone.indexOf(e.bgTone) < 0) return false;
       if (s.colors && s.colors.length) {
         var ec = Array.isArray(e.colors) ? e.colors : [];
         var hit = s.colors.some(function (c) { return ec.indexOf(c) >= 0; });
@@ -500,6 +516,7 @@
       entries.forEach(function (e) {
         if (Array.isArray(e.colors)) {
           e.colors = e.colors.filter(function (c) { return CANONICAL_COLORS.indexOf(c) >= 0; });
+          if (e.bgTone && CANONICAL_BG_TONES.indexOf(e.bgTone) < 0) { delete e.bgTone; }
         }
       });
       return entries;
@@ -620,6 +637,13 @@
               return '<label><input type="checkbox" data-color="' + esc(c) + '"' + (on ? " checked" : "") + "> " + esc(c) + "</label>";
             }).join("") +
           "</div>" +
+          '<div class="pcolors"><span class="lbl">背景トーン（任意・1つ）</span>' +
+            '<label><input type="radio" name="bg' + idx + '" data-bgtone=""' + (!it.bgTone ? " checked" : "") + "> （未設定）</label>" +
+            CANONICAL_BG_TONES.map(function (b) {
+              return '<label><input type="radio" name="bg' + idx + '" data-bgtone="' + esc(b) + '"' +
+                (it.bgTone === b ? " checked" : "") + "> " + esc(b) + "</label>";
+            }).join("") +
+          "</div>" +
           '<div class="pactions">' +
             '<label><input type="radio" name="src' + idx + '" data-f="source" value="own"' + (it.source !== "ref" ? " checked" : "") + "> 自社実績</label>" +
             '<label><input type="radio" name="src' + idx + '" data-f="source" value="ref"' + (it.source === "ref" ? " checked" : "") + "> 収集見本</label>" +
@@ -647,6 +671,12 @@
       var it = proposalItems[parseInt(row.getAttribute("data-idx"), 10)];
       if (!it) return;
       var f = e.target.getAttribute("data-f");
+      // KLK-119: 背景トーン（ラジオ・空文字は未設定＝キーごと落とす）
+      if (e.target.hasAttribute && e.target.hasAttribute("data-bgtone")) {
+        var bg = e.target.getAttribute("data-bgtone");
+        if (bg) { it.bgTone = bg; } else { delete it.bgTone; }
+        return;
+      }
       var color = e.target.getAttribute("data-color");
       if (color) {
         var cur = (it.colors || []).slice();
