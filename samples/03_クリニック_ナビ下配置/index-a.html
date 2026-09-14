@@ -94,6 +94,19 @@
   .m-access .info{background:#fff;border:1px solid #eef3f4;border-radius:10px;padding:22px 24px;}
   .m-access .info dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13.5px;margin-bottom:16px;}
   .m-access .info dt{color:var(--m-accent);font-weight:700;}
+  /* KLK-118 §3.0.3: 列の多い表は幅に関係なく横スクロールできる器に入れる。
+     768px では ACCESS が2カラムのままで、8列の表が入りきらず
+     ページ全体に横スクロールが出ていた（scrollWidth 800 > 768）。
+     ★grid の子は min-width:auto が既定なので、中身より小さくならない。
+     器を包むだけでは縮まず、min-width:0 を与えて初めて中で横スクロールする。 */
+  .m-access[data-access=map-hours] > *{min-width:0;}
+  /* KLK-118: align-items:stretch で地図の高さが行に合わせて伸び、aspect-ratio が
+     幅を押し広げて列(332px)を超え、右隣の情報パネルに重なっていた（実測 40..425 / 情報 396..）。
+     高さを伸ばさず、幅は列に従わせる。 */
+  .m-access[data-access=map-hours] .map-atari{align-self:start;width:100%;}
+  .m-access .info{min-width:0;}
+  .m-access .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;min-width:0;}
+  .m-access .table-wrap .hours-table{min-width:420px;}
   .hours-table{width:100%;border-collapse:collapse;font-size:12.5px;}
   .hours-table th,.hours-table td{border:1px solid #e6eef0;padding:7px 6px;text-align:center;}
   .hours-table thead th{background:var(--m-nav);color:#fff;}
@@ -280,13 +293,15 @@
             <dt>TEL</dt><dd><span class="todo">(要検討: 電話番号)</span></dd>
             <dt>最寄</dt><dd><span class="todo">(要検討: 最寄駅・徒歩分数)</span></dd>
           </dl>
-          <table class="hours-table">
-            <thead><tr><th>診療時間</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th><th>日祝</th></tr></thead>
-            <tbody>
-              <tr><th>9:00-13:00</th><td>●</td><td>●</td><td>●</td><td>●</td><td>●</td><td>●</td><td>—</td></tr>
-              <tr><th>14:30-18:30</th><td>●</td><td>●</td><td>●</td><td>—</td><td>●</td><td>—</td><td>—</td></tr>
-            </tbody>
-          </table>
+          <div class="table-wrap">
+            <table class="hours-table">
+              <thead><tr><th>診療時間</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th><th>日祝</th></tr></thead>
+              <tbody>
+                <tr><th>9:00-13:00</th><td>●</td><td>●</td><td>●</td><td>●</td><td>●</td><td>●</td><td>—</td></tr>
+                <tr><th>14:30-18:30</th><td>●</td><td>●</td><td>●</td><td>—</td><td>●</td><td>—</td><td>—</td></tr>
+              </tbody>
+            </table>
+          </div>
           <p style="font-size:11.5px;color:#888;margin-top:8px;">休診日：木曜午後・土曜午後・日曜・祝日</p>
         </div>
       </div>
