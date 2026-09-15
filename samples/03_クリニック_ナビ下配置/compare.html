@@ -123,9 +123,14 @@
   .tm-row .tm-ico{ flex:0 0 72px; width:72px; }
   .tm-row .tm-name{ font-size:13.5px; font-weight:700; flex:1; min-width:0; }
   .tm-row .tm-mk{ font-size:11px; color:#5b564a; font-family:ui-monospace,Menlo,Consolas,monospace; white-space:nowrap; }
-  .tm-row .tm-now{ font-size:11px; font-weight:700; color:#fff; background:var(--c-main);
+  /* 「現在」の地色は案件の配色を使わない。配色によって白文字とのコントラストが
+     4.5:1 を割るため（実測: 既定の緑で 4.40 / 明るい橙で 2.92 / 淡い黄緑で 2.14）。
+     固定の濃いインクなら配色に関わらず 11.28:1 を保てる。 */
+  .tm-row .tm-now{ font-size:11px; font-weight:700; color:#fff; background:#3f3a31;
     border-radius:10px; padding:3px 9px; white-space:nowrap; flex:0 0 auto; }
-  .tm-row[aria-current="true"]{ border-color:var(--c-main); background:#f7f6f1; }
+  /* 現在の型の枠も配色に頼らない（淡い黄緑だと地との差が 1.97:1 しかない）。
+     そもそも色だけで伝えないよう「現在」の札と併記している。 */
+  .tm-row[aria-current="true"]{ border-color:#3f3a31; background:#f7f6f1; }
   @media (max-width:600px){
     /* スマホでも**1行を保つ**。アイコンは少し小さくするだけで畳まない */
     .tm{ padding:0; } .tm-box{ max-width:none; max-height:100vh; height:100vh; border-radius:0; }

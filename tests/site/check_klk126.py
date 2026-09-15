@@ -114,7 +114,13 @@ check("M8 閉じたらフォーカスを戻す",
 check("M9 1行にアイコン・日本語ラベル・マーカーの3つを並べる",
       "tm-ico" in TPL and "tm-name" in TPL and "tm-mk" in TPL, "")
 check("M10 現在の型に印が付く", "'tm-now'" in TPL and "aria-current" in TPL, "")
-check("M11 スマホでも1行を保つ（アイコンを小さくするだけ）",
+check("M11 ★「現在」の印が案件の配色に依存しない（配色次第でコントラストが割れる）",
+      re.search(r"\.tm-row \.tm-now\{[^}]*background:#[0-9a-f]{6}", TPL) is not None
+      and not re.search(r"\.tm-row \.tm-now\{[^}]*var\(--c-", TPL)
+      and not re.search(r'\.tm-row\[aria-current="true"\]\{[^}]*var\(--c-', TPL),
+      "札と枠を固定色にしている")
+
+check("M12 スマホでも1行を保つ（アイコンを小さくするだけ）",
       re.search(r"@media \(max-width:600px\)\{.*?\.tm-row \.tm-ico\{[^}]*56px", TPL, re.S) is not None, "")
 
 # ---------------------------------------------------------------------------
