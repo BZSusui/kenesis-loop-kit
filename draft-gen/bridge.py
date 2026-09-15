@@ -1987,6 +1987,35 @@ def shrink_registered_image(path, tool_path=None):
         return (size, size, "軽量化できませんでした: {0}".format(exc))
 
 
+def make_thumb_for(src_path, thumb_dir, width=400, quality=80):
+    """一覧用のサムネイルを1枚作る(KLK-128)。副作用は thumb_dir 配下のみ。
+
+    ★なぜ取り込み時に作るか
+      後からまとめて作る作業を二度とやらないため（KLK-123 と同じ考え方）。
+
+    ★失敗しても登録は止めない
+      サムネイルが無くても画面は原寸へ戻るので、**表示は壊れない**。
+      道具(sips)の無い環境でも登録そのものは成功させる。
+      返却: (作れたか, 何をしたか)。
+    """
+    tool = os.path.join(repo_root(), "tools", "make-catalog-thumbs.py")
+    if not os.path.isfile(tool):
+        return (False, "サムネイル生成ツールがありません")
+    try:
+        import importlib.util   # ★関数内で読む（このファイルは先頭で兄弟モジュールを import しない）
+        spec = importlib.util.spec_from_file_location("klk_thumbs", tool)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        os.makedirs(thumb_dir, exist_ok=True)
+        dst = os.path.join(thumb_dir, os.path.basename(src_path))
+        before, after, what = mod.make_one(mod.load_shrink(), src_path, dst, width, quality)
+        if not before:
+            return (False, what)
+        return (True, what)
+    except Exception as exc:
+        return (False, "サムネイルを作れませんでした: {0}".format(exc))
+
+
 def columns_tag_label(columns):
     """カラム構成 → タグでの表記(KLK-121・純粋関数)。対応が無ければ None。
 
@@ -2263,6 +2292,10 @@ def _run_server(port):
     catalog_dir = os.path.join(root, "catalog")
     catalog_json_path = os.path.join(catalog_dir, "catalog.json")
     catalog_img_dir = os.path.join(catalog_dir, "img")
+    # KLK-128: 一覧用のサムネイル。原寸(img)はそのまま残し、一覧だけこちらを使う。
+    #   原寸は全ページのスクリーンショットで、18枚並べるとブラウザの展開メモリが
+    #   634MB になる（実測）。表示は 123x91px なので必要量のおよそ6万倍だった。
+    catalog_thumb_dir = os.path.join(catalog_dir, "thumb")
     catalog_pending_dir = os.path.join(catalog_dir, ".pending")
     # KLK-068: 削除した画像の退避先。catalog/ は Git 管理外で復元できないため、
     # 実削除せずここへ移す（自動削除はしない＝人間が判断して消す）。
@@ -2664,6 +2697,10 @@ def _run_server(port):
             if path.startswith("/catalog/img/"):
                 self._serve_catalog_img(path[len("/catalog/img/"):])
                 return
+            # KLK-128: 一覧用のサムネイル。無ければ 404 → 画面が原寸へ戻す
+            if path.startswith("/catalog/thumb/"):
+                self._serve_catalog_thumb(path[len("/catalog/thumb/"):])
+                return
             # 配色ジェネレーター(KLK-019・REQ-003)。ブリッジ配信時 ../palette/index.html は /palette/index.html に解決
             if path in ("/palette", "/palette/", "/palette/index.html"):
                 self._serve_palette()
@@ -2787,18 +2824,31 @@ def _run_server(port):
             self._json(200, obj if ok else dict(_EMPTY_CATALOG))
 
         def _serve_catalog_img(self, raw_name):
-            """GET /catalog/img/{name} — 画像を配信(§4.3・多層防御 R-5)。
+            """GET /catalog/img/{name} — 原寸の画像を配信(§4.3・多層防御 R-5)。"""
+            self._serve_catalog_file(raw_name, catalog_img_dir)
+
+        def _serve_catalog_thumb(self, raw_name):
+            """GET /catalog/thumb/{name} — 一覧用のサムネイルを配信(KLK-128)。
+
+            ★無ければ 404 を返すだけでよい。画面側が原寸へ自動で戻す。
+              サムネイルの生成は sips に頼っており、Windows 等では作られない。
+              「無いと壊れる」作りにしないこと。
+            """
+            self._serve_catalog_file(raw_name, catalog_thumb_dir)
+
+        def _serve_catalog_file(self, raw_name, base_dir):
+            """画像1枚を配信する（原寸・サムネイル共通）。
 
             ①URLデコード ②is_safe_catalog_name(文字集合/'..'/'/'/'\\'拒否)→ 不正 400
-            ③os.path.realpath で catalog/img/ 配下に収まることを再確認(シンボリックリンク保険)
+            ③os.path.realpath で base_dir 配下に収まることを再確認(シンボリックリンク保険)
             ④実在確認(不在 404) ⑤catalog_content_type で Content-Type 設定し 200。
             """
             name = urllib.parse.unquote(raw_name)
             if not is_safe_catalog_name(name):
                 self._json(400, {"error": "画像名が不正です"})
                 return
-            base = os.path.realpath(catalog_img_dir)
-            target = os.path.realpath(os.path.join(catalog_img_dir, name))
+            base = os.path.realpath(base_dir)
+            target = os.path.realpath(os.path.join(base_dir, name))
             if target != base and not target.startswith(base + os.sep):
                 self._json(400, {"error": "画像名が不正です"})
                 return
@@ -3322,6 +3372,12 @@ def _run_server(port):
                 b, a, what = shrink_registered_image(dst)
                 if b and a < b:
                     shrunk.append((os.path.basename(dst), b, a))
+                # ⑧-3 一覧用のサムネイル(KLK-128)。**失敗しても登録は続ける**
+                #     （無ければ画面が原寸へ戻るので、表示は壊れない）。
+                ok, tw = make_thumb_for(dst, catalog_thumb_dir)
+                if not ok:
+                    print("[bridge] サムネイルは作れませんでした: {0} ({1})".format(
+                        os.path.basename(dst), tw), file=sys.stderr)
                     print("[bridge] 画像を軽量化: {0} {1}KB→{2}KB ({3})".format(
                         os.path.basename(dst), b // 1024, a // 1024, what), file=sys.stderr)
 
