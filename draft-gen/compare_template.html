@@ -73,7 +73,10 @@
     border-radius:20px; padding:9px 20px; border:1px solid #ddd9cf; background:#fff; color:#5b564a; cursor:pointer; }
   .toolbar a.print-btn{ background:var(--c-main); color:#fff; border-color:var(--c-main); }
   .print-a,.print-b,.print-c{ display:none; }
-  .regen-ctl{ display:flex; align-items:center; gap:8px; margin-left:auto; }
+  /* KLK-126: 折り返せるようにする。折り返さないと、狭い画面で再生成の一式が
+     ツールバーからはみ出し、**ページ全体が横スクロールになる**（375px で実測 446px）。
+     横スクロールが起きるとモーダルの右端と閉じるボタンが画面外へ出てしまう。 */
+  .regen-ctl{ display:flex; align-items:center; gap:8px; margin-left:auto; flex-wrap:wrap; }
   [data-warn="1"]{ color:#b4342b !important; font-weight:700; }
   /* KLK-117: 型セレクタは日本語ラベルを出すようになり、ここが意味を担う。
      薄いグレー(#8a8578=白地に 3.68:1)では読みにくいので本文色に揃える(12.00:1)。 */
@@ -81,6 +84,97 @@
   .regen-ctl select{ font-size:13px; padding:8px 12px; border:1px solid #ddd9cf; border-radius:8px; background:#fff; }
   .regen-ctl button[disabled]{ opacity:.5; cursor:not-allowed; }
   .regen-msg{ font-size:11px; color:#8a8578; margin:6px 26px 0; }
+
+  /* ── KLK-126: 型は「絵」で選ぶ ─────────────────────────────────────
+     ★<select id="regen-type"> は**残したまま隠す**。送信側（KLK-078/079）は
+       今までどおり typeSel.value を読むので、
+         ・送る値はマーカーのまま
+         ・現在と違う型のときだけ desiredType を送る
+         ・型を持たない番地は無効化
+       という積み上げた振る舞いを**1行も書き直さずに**保てる。
+       モーダルは select に値を書いて change を出すだけの「入力装置」に徹する。 */
+  .regen-type[hidden]{ display:none; }
+
+  /* 型の顔（ボタン）。押すとモーダルが開く */
+  .regen-type-btn{ display:inline-flex; align-items:center; gap:9px; max-width:270px;
+    padding:6px 14px 6px 8px; text-align:left; }
+  .regen-type-btn .rtb-ico{ flex:0 0 34px; width:34px; }
+  .regen-type-btn .rtb-txt{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    font-size:12.5px; font-weight:700; color:#2c2c2c; }
+  /* 一覧が開くことが見て分かるように印を出す（絵と名前だけだと「押せる」と気づきにくい） */
+  .regen-type-btn .rtb-caret{ font-size:10px; color:#5b564a; flex:0 0 auto; }
+
+  /* モーダル */
+  .tm{ position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:18px; }
+  .tm[hidden]{ display:none; }
+  .tm-veil{ position:absolute; inset:0; background:rgba(30,28,24,.45); }
+  .tm-box{ position:relative; background:#fff; border-radius:12px; width:100%; max-width:680px;
+    max-height:86vh; display:flex; flex-direction:column; box-shadow:0 18px 50px rgba(0,0,0,.28); }
+  .tm-hd{ display:flex; align-items:center; gap:10px; padding:15px 16px; border-bottom:1px solid #e6e3dc; }
+  .tm-hd h2{ margin:0; font-size:15px; color:#2c2c2c; }
+  .tm-addr{ font-size:12px; color:#5b564a; background:#f3f1ea; border-radius:10px; padding:3px 10px; }
+  .tm-x{ margin-left:auto; border:1px solid #ddd9cf; background:#fff; border-radius:50%;
+    width:32px; height:32px; font-size:15px; line-height:1; color:#5b564a; cursor:pointer; flex:0 0 32px; }
+  .tm-list{ overflow:auto; padding:10px; display:flex; flex-direction:column; gap:6px; }
+  /* ★1行＝アイコン＋説明を**横一列**（理恵さんの指定。2行にすると説明が改行だらけになる） */
+  .tm-row{ display:flex; align-items:center; gap:14px; width:100%; text-align:left; font:inherit;
+    background:#fff; border:1px solid #e6e3dc; border-radius:10px; padding:9px 13px; cursor:pointer; color:#2c2c2c; }
+  .tm-row:hover{ background:#f7f6f1; border-color:var(--c-main); }
+  .tm-row .tm-ico{ flex:0 0 72px; width:72px; }
+  .tm-row .tm-name{ font-size:13.5px; font-weight:700; flex:1; min-width:0; }
+  .tm-row .tm-mk{ font-size:11px; color:#5b564a; font-family:ui-monospace,Menlo,Consolas,monospace; white-space:nowrap; }
+  .tm-row .tm-now{ font-size:11px; font-weight:700; color:#fff; background:var(--c-main);
+    border-radius:10px; padding:3px 9px; white-space:nowrap; flex:0 0 auto; }
+  .tm-row[aria-current="true"]{ border-color:var(--c-main); background:#f7f6f1; }
+  @media (max-width:600px){
+    /* スマホでも**1行を保つ**。アイコンは少し小さくするだけで畳まない */
+    .tm{ padding:0; } .tm-box{ max-width:none; max-height:100vh; height:100vh; border-radius:0; }
+    .tm-row{ gap:10px; padding:8px 10px; }
+    .tm-row .tm-ico{ flex:0 0 56px; width:56px; }
+    .tm-row .tm-name{ font-size:12.5px; }
+    .tm-row .tm-mk{ display:none; }   /* 幅が足りないときはマーカーを畳む（絵と日本語を優先） */
+  }
+
+  /* 型アイコンの部品（KLK-126）。**外部依存ゼロ**（NFR-005）— div と CSS だけ。
+     色は案件の配色ではなく固定の3色。配色によっては絵が背景に溶けてしまうため。 */
+  .ico{--ic:#3e7f8c;--is:#cfe0e4;--il:#e6e9ea;width:100%;aspect-ratio:4/3;background:#fbfbfa;
+       border:1px solid #e6e3dc;border-radius:5px;padding:5px;display:flex;flex-direction:column;gap:3px;overflow:hidden}
+  .ico .ir{display:flex;gap:3px;flex:1;min-height:0;min-width:0}
+  .ico .ic{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+  .ico .ib{background:var(--is);border-radius:2px;flex:1;min-height:3px}
+  .ico .it{background:var(--il);border-radius:1px;height:3px;flex:0 0 auto}
+  .ico .it.s{width:55%}.ico .it.m{width:85%}.ico .it.on{background:var(--ic)}
+  .ico .ihd{background:var(--ic);border-radius:2px;height:4px;width:45%;flex:0 0 auto}
+  .ico .inum{background:var(--ic);opacity:.55;border-radius:2px;height:8px;width:52%;flex:0 0 auto}
+  .ico .ifield{background:#fff;border:1px solid var(--is);border-radius:2px;height:7px;flex:0 0 auto}
+  .ico .ibtn{background:var(--ic);border-radius:3px;height:7px;width:52%;margin:0 auto;flex:0 0 auto}
+  .ico .iline{background:var(--ic);opacity:.35;border-radius:2px;flex:0 0 3px}
+  .ico .iplus{background:var(--ic);border-radius:1px;width:5px;height:5px;margin-left:auto;align-self:center;flex:0 0 auto}
+  .ico .itab{display:flex;gap:2px;height:5px;flex:0 0 auto}
+  .ico .itab i{flex:1;background:var(--il);border-radius:1px}.ico .itab i.on{background:var(--ic)}
+  .ico .iscroll{overflow:hidden;flex:1;min-height:0}.ico .iscroll .ir{width:124%}
+  .ico .icenter{display:flex;flex-direction:column;gap:4px;justify-content:center;flex:1}
+  .ico .ihero{background:var(--is);border-radius:2px;flex:1;display:flex;flex-direction:column;
+              justify-content:center;gap:4px;padding:5px;min-height:0}
+  .ico .iarrowdown{width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;
+                   border-top:6px solid var(--ic);margin:auto auto 0}
+  .ico .iband{background:var(--ic);opacity:.5;border-radius:2px;height:9px;margin-top:auto}
+  .ico .ifilm{display:flex;gap:2px;margin-top:auto;height:34%}
+  .ico .ifilm .ifcell{flex:1;background:#fff;opacity:.85;border-radius:0}
+  .ico .iover{position:relative;flex:1;min-height:0}
+  .ico .iover .iover-b{position:absolute;inset:0 32% 18% 0}
+  .ico .iover .iover-p{position:absolute;right:0;bottom:6%;width:56%;background:#fff;border:1px solid var(--is);
+                       border-radius:2px;padding:3px;display:flex;flex-direction:column;gap:2px}
+  .ico .ichips{display:flex;flex-wrap:wrap;gap:3px;align-content:center;flex:1}
+  .ico .ichip{background:var(--is);border-radius:6px;height:7px}
+  .ico .inav{display:flex;gap:4px;align-items:center;background:var(--ic);opacity:.9;border-radius:2px;padding:4px;flex:0 0 auto}
+  .ico .inav .ihd{background:#fff}.ico .inav .it{background:rgba(255,255,255,.65)}
+  .ico .inav .ifield{background:#fff;border-color:#fff}
+  .ico .igrid3{display:grid;grid-template-columns:1fr 1fr;gap:2px;flex:1;min-height:0}
+  .ico .iarrow{background:var(--is);border-radius:2px;padding:3px;clip-path:polygon(0 0,86% 0,100% 50%,86% 100%,0 100%)}
+  .ico .isearch{display:flex;gap:3px;width:86%;margin:0 auto;flex:0 0 auto}
+  .ico .isearch-i{flex:1;background:#fff;border:1px solid var(--is);border-radius:2px;height:9px}
+  .ico .isearch-b{flex:0 0 22%;background:var(--ic);border-radius:2px;height:9px}
 
   /* canvas */
   .canvas{ padding:24px; }
@@ -157,7 +251,9 @@
       <select id="regen-addr">
         <option value="">読み込み中…</option>
       </select>
-      <select id="regen-type" class="regen-type" disabled></select>
+      <select id="regen-type" class="regen-type" disabled hidden></select>
+      <button class="tb-btn regen-type-btn" id="regen-type-btn" type="button"
+              aria-haspopup="dialog" disabled>型を選ぶ</button>
       <button class="tb-btn" id="regen-btn" disabled>このセクションを再生成</button>
     </div>
   </div>
@@ -168,6 +264,20 @@
   </div>
 
 </div>
+
+<!-- KLK-126: 型を絵で選ぶモーダル。画面全体に一覧を出す（理恵さんの指定） -->
+<div class="tm" id="type-modal" role="dialog" aria-modal="true" aria-labelledby="type-modal-title" hidden>
+  <div class="tm-veil"></div>
+  <div class="tm-box">
+    <div class="tm-hd">
+      <h2 id="type-modal-title">レイアウト型を選ぶ</h2>
+      <span class="tm-addr" id="type-modal-addr"></span>
+      <button class="tm-x" id="type-modal-x" type="button" aria-label="閉じる">✕</button>
+    </div>
+    <div class="tm-list" id="type-modal-list"></div>
+  </div>
+</div>
+
 <script>
   (function () {
     var root = document.querySelector('.mock-compare');
@@ -202,6 +312,364 @@
       return o;
     }
 
+
+    // ══ KLK-126: 型を「絵」で選ぶ ══════════════════════════════════════
+    // 型アイコンのレシピ（KLK-126）。**1行＝1つの絵**。
+    //   ★規約 §12.1.2/§12.1.3 の説明文を読んで**明示的に**決めた表である。
+    //     自動推定は初稿を作る道具としてのみ使い（KLK-125 の実測）、確定版はここに持つ。
+    //     規約の言い回しが変わるたびに絵が勝手に変わるのを避けるため。
+    //   ★セクションを跨いで同じ内容の型は**同じレシピ**を指す（理恵さんの方針）。
+    //     どれとどれが同じかは規約が「◯◯を流用」「同機構」と書いており、それが根拠。
+    var ICONS = {
+      // --- 格子 ---------------------------------------------------------
+      'pat-cards':      { k:'grid', cols:3, cell:'img+2' },
+      'news-cards':     { k:'grid', cols:3, cell:'img+2' },
+      'price-cards':    { k:'grid', cols:3, cell:'img+2' },
+      'faq-cards':      { k:'grid', cols:3, cell:'img+2' },
+      'contact-methods':{ k:'grid', cols:3, cell:'img+2' },
+      'map-cards':      { k:'grid', cols:3, cell:'img+2' },
+      'search-sidebar': { k:'split', ratio:[1,2], left:'nav', right:'grid3' },
+      'voice-cards':    { k:'grid', cols:3, cell:'img+2' },
+      'sns-cards':      { k:'grid', cols:3, cell:'img+2' },
+      'sns-feed':       { k:'grid', cols:3, cell:'img+2' },
+      'pat-grid':       { k:'grid', cols:3, rows:2, cell:'img' },
+      'sns-grid':       { k:'grid', cols:4, rows:2, cell:'img', square:true },
+      'staff-grid':     { k:'grid', cols:4, cell:'img', circle:true },
+      'flow-number-card':{ k:'grid', cols:4, cell:'num' },
+      'staff-two-col':  { k:'grid', cols:2, cell:'img+2' },
+      'search-filters': { k:'grid', cols:3, cell:'field' },
+      'voice-feature':  { k:'feature', cols:3 },
+      'staff-feature':  { k:'split', ratio:[3,2], left:'img', right:'list' },
+      'price-featured': { k:'featured3' },
+      // --- 縦積み -------------------------------------------------------
+      'news-list':      { k:'rows', rows:4, cell:'line' },
+      'pat-list':       { k:'rows', rows:3, cell:'imgleft' },
+      'price-list':     { k:'rows', rows:4, cell:'lineprice' },
+      'pat-zigzag':     { k:'rows', rows:3, cell:'imgleft', alt:true },
+      'img-zigzag':     { k:'rows', rows:3, cell:'imgleft', alt:true },
+      'voice-zigzag':   { k:'rows', rows:3, cell:'imgleft', alt:true },
+      'staff-zigzag':   { k:'rows', rows:3, cell:'imgleft', alt:true },
+      'flow-zigzag':    { k:'rows', rows:3, cell:'numleft', alt:true },
+      'news-media':     { k:'rows', rows:3, cell:'imgleft' },
+      'news-timeline':  { k:'rows', rows:3, cell:'timeline' },
+      'flow-row':       { k:'row',  cols:4, cell:'num' },
+      'voice-quote-stack':{ k:'rows', rows:3, cell:'quote' },
+      'staff-list':     { k:'rows', rows:3, cell:'imgleft', thumb:'sm' },
+      'faq-list':       { k:'rows', rows:3, cell:'qa' },
+      'contact-cta':    { k:'center', parts:['hd','t','btn'] },
+      'contact-form':   { k:'rows', rows:3, cell:'field', foot:'btn' },
+      'search-bar':     { k:'center', parts:['searchbig','t'] },
+      'search-hero':    { k:'hero', parts:['hd','searchbar'] },
+      'map-top':        { k:'rows', rows:1, cell:'img', textAfter:2 },
+      'pat-wide':       { k:'rows', rows:2, cell:'img' },
+      'img-top':        { k:'rows', rows:1, cell:'img', textAfter:2 },
+      'center-scroll':  { k:'hero', parts:['hd','arrow'] },
+      'flow-vertical-split':{ k:'rows', rows:3, cell:'numleft' },
+      // --- 2カラム -------------------------------------------------------
+      'img-left':       { k:'split', ratio:[1,1], left:'img', right:'text' },
+      'img-right':      { k:'split', ratio:[1,1], left:'text', right:'img' },
+      'img-circle':     { k:'split', ratio:[1,1], left:'img', right:'text', circle:true },
+      'feature-large':  { k:'split', ratio:[3,2], left:'img', right:'text' },
+      'voice-two-col':  { k:'grid', cols:2, rows:2, cell:'img+2', alt:true },
+      'faq-two-col':    { k:'grid', cols:2, rows:2, cell:'qa' },
+      'split':          { k:'hero', parts:['split'] },
+      'band':           { k:'hero', parts:['band'] },
+      'full':           { k:'hero', parts:['centerbig'] },
+      'overlap':        { k:'overlap' },
+      'img-overlap':    { k:'overlap' },
+      'map-overlay':    { k:'overlap', full:true },
+      'panel-band':     { k:'hero', parts:['film'] },
+      // --- 表 -----------------------------------------------------------
+      'price-table':    { k:'table', rows:4, cols:3 },
+      'price-matrix':   { k:'table', rows:4, cols:4, marks:true },
+      // --- タブ・開閉 ------------------------------------------------------
+      'tab-switch':     { k:'tabs', cols:2, rows:2 },
+      'pat-tab-grid':   { k:'tabs', cols:3, rows:2 },
+      'price-toggle':   { k:'tabs', cols:3, rows:1, cell:'img+2' },
+      'faq-category-tabs':{ k:'tabs', cols:1, rows:3, cell:'qa' },
+      'faq-accordion':  { k:'accordion', rows:3 },
+      'news-accordion': { k:'accordion', rows:3 },   // 規約が「FAQ の Q&A 開閉に流用可」と記す
+      'faq-search':     { k:'accordion', rows:3, head:'searchbar' },
+      // --- 横スクロール -----------------------------------------------------
+      'pat-slider':     { k:'scroll', cell:'img' },
+      'sns-slider':     { k:'scroll', cell:'img' },
+      'voice-slider':   { k:'scroll', cell:'img+2' },
+      'staff-hscroll':  { k:'scroll', cell:'img', circle:true },
+      'sns-reels':      { k:'scroll', cell:'img', tall:true },
+      // --- 大小混在 -------------------------------------------------------
+      'pat-mosaic':     { k:'mosaic' },
+      'pat-masonry':    { k:'mosaic' },
+      'sns-masonry':    { k:'mosaic' },
+      // --- その他 ---------------------------------------------------------
+      'map-side':       { k:'split', ratio:[1,1], left:'img', right:'text' },
+      'contact-split':  { k:'split', ratio:[1,1], left:'text', right:'field' },
+      'map-hours':      { k:'split', ratio:[1,1], left:'img', right:'table' },
+      'news-table':     { k:'table', rows:4, cols:3 },
+      'contact-steps':  { k:'row', cols:3, cell:'num', foot:'btn' },
+      'map-steps':      { k:'row', cols:3, cell:'num' },
+      'flow-timeline':  { k:'rows', rows:3, cell:'timeline' },
+      'flow-arrow-band':{ k:'row', cols:4, cell:'arrow' },
+      'contact-banner': { k:'hero', parts:['band','btn'] },
+      'search-keywords':{ k:'chips' },
+      'search-header':  { k:'navbar' },
+    };
+
+    // アイコンを描く（外部依存ゼロ・入れ子 div と CSS のみ。SCR-001 のカラム図と同じ流儀）
+    function icoEl(tag, cls, css){
+      var e = document.createElement(tag || 'div');
+      if (cls) e.className = cls;
+      if (css) { for (var k in css) e.style[k] = css[k]; }
+      return e;
+    }
+    function icoBox(o){
+      var b = icoEl('div', 'ib');
+      if (o && o.circle) { b.style.borderRadius = '50%'; b.style.aspectRatio = '1'; b.style.alignSelf = 'center'; b.style.width = '76%'; b.style.flex = '0 0 auto'; }
+      if (o && o.square) b.style.aspectRatio = '1';
+      return b;
+    }
+    function icoCell(cell, o){
+      o = o || {};
+      var c;
+      if (cell === 'img')     { c = icoEl('div','ic'); c.appendChild(icoBox(o)); return c; }
+      if (cell === 'img+2')   { c = icoEl('div','ic'); c.appendChild(icoBox(o)); c.appendChild(icoEl('div','it m')); c.appendChild(icoEl('div','it s')); return c; }
+      if (cell === 'num')     { c = icoEl('div','ic'); c.appendChild(icoEl('div','inum')); c.appendChild(icoEl('div','it s')); return c; }
+      if (cell === 'arrow')   { c = icoEl('div','ic iarrow'); c.appendChild(icoEl('div','inum')); return c; }
+      if (cell === 'field')   { c = icoEl('div','ic'); c.appendChild(icoEl('div','it s')); c.appendChild(icoEl('div','ifield')); return c; }
+      if (cell === 'line')    { c = icoEl('div','ir'); c.appendChild(icoEl('div','it s', {width:'22%',alignSelf:'center'})); c.appendChild(icoEl('div','it m', {alignSelf:'center'})); c.style.flex='0 0 auto'; return c; }
+      if (cell === 'lineprice'){ c = icoEl('div','ir'); c.appendChild(icoEl('div','it m', {alignSelf:'center'})); c.appendChild(icoEl('div','it s', {width:'18%',alignSelf:'center',marginLeft:'auto'})); c.style.flex='0 0 auto'; return c; }
+      if (cell === 'qa')      { c = icoEl('div','ic'); c.appendChild(icoEl('div','ihd', {width:'30%'})); c.appendChild(icoEl('div','it m')); return c; }
+      if (cell === 'quote')   { c = icoEl('div','ir'); c.appendChild(icoEl('div','iline')); var x=icoEl('div','ic'); x.appendChild(icoEl('div','it m')); x.appendChild(icoEl('div','it s')); c.appendChild(x); return c; }
+      if (cell === 'timeline'){ c = icoEl('div','ir'); c.appendChild(icoEl('div','iline')); var y=icoEl('div','ic'); y.appendChild(icoEl('div','ihd')); y.appendChild(icoEl('div','it m')); c.appendChild(y); return c; }
+      if (cell === 'imgleft') { c = icoEl('div','ir'); var b=icoBox(o); b.style.flex='0 0 ' + (o.thumb==='sm'?'22%':'32%'); c.appendChild(b);
+                                var tx=icoEl('div','ic'); tx.appendChild(icoEl('div','ihd')); tx.appendChild(icoEl('div','it m')); tx.appendChild(icoEl('div','it s')); c.appendChild(tx); return c; }
+      if (cell === 'numleft') { c = icoEl('div','ir'); c.appendChild(icoEl('div','inum', {flex:'0 0 22%'}));
+                                var tz=icoEl('div','ic'); tz.appendChild(icoEl('div','ihd')); tz.appendChild(icoEl('div','it m')); c.appendChild(tz); return c; }
+      if (cell === 'text')    { c = icoEl('div','ic'); c.appendChild(icoEl('div','ihd')); c.appendChild(icoEl('div','it m')); c.appendChild(icoEl('div','it s')); c.appendChild(icoEl('div','it s')); return c; }
+      if (cell === 'nav')     { c = icoEl('div','ic'); for (var i=0;i<4;i++) c.appendChild(icoEl('div','it m')); return c; }
+      if (cell === 'list')    { c = icoEl('div','ic'); for (var j=0;j<3;j++) c.appendChild(icoEl('div','it m')); return c; }
+      if (cell === 'grid3')   { c = icoEl('div','igrid3'); for (var g=0;g<4;g++) c.appendChild(icoBox(o)); return c; }
+      if (cell === 'table')   { return icoTable({rows:3, cols:3}); }
+      c = icoEl('div','ic'); c.appendChild(icoBox(o)); return c;
+    }
+    function icoTable(r){
+      var w = icoEl('div','ic');
+      for (var y=0;y<(r.rows||4);y++){
+        var row = icoEl('div','ir', {flex:'0 0 auto'});
+        for (var x=0;x<(r.cols||3);x++){
+          var t = icoEl('div','it', {flex:'1', height:'4px'});
+          if (y===0) t.classList.add('on');
+          else if (r.marks && x>0) { t.style.width='4px'; t.style.flex='0 0 4px'; t.style.borderRadius='50%'; t.style.margin='0 auto'; }
+          row.appendChild(t);
+        }
+        w.appendChild(row);
+      }
+      return w;
+    }
+    // レシピ1つ → アイコンの DOM
+    function renderIcon(marker){
+      var r = ICONS[marker];
+      var ico = icoEl('div','ico');
+      if (!r) { ico.appendChild(icoEl('div','it m')); return ico; }   // 未知の型でも空にしない
+      var i, y, x, row;
+      if (r.k === 'grid'){
+        for (y=0;y<(r.rows||1);y++){ row = icoEl('div','ir');
+          for (x=0;x<r.cols;x++){ var cE = icoCell(r.cell, r); if (r.alt && (y+x)%2===1) cE.style.flexDirection='column-reverse'; row.appendChild(cE); }
+          ico.appendChild(row); }
+      } else if (r.k === 'rows'){
+        for (i=0;i<r.rows;i++){ var c2 = icoCell(r.cell, r); if (r.alt && i%2===1) c2.style.flexDirection='row-reverse'; ico.appendChild(c2); }
+        for (i=0;i<(r.textAfter||0);i++) ico.appendChild(icoEl('div','it ' + (i?'s':'m')));
+        if (r.foot) ico.appendChild(icoEl('div','ibtn'));
+      } else if (r.k === 'row'){
+        row = icoEl('div','ir');
+        for (x=0;x<r.cols;x++) row.appendChild(icoCell(r.cell, r));
+        ico.appendChild(row);
+        if (r.foot) ico.appendChild(icoEl('div','ibtn'));
+      } else if (r.k === 'split'){
+        row = icoEl('div','ir');
+        var L = r.left==='img' ? icoCell('img', r) : icoCell(r.left, r);
+        var R = r.right==='img' ? icoCell('img', r) : icoCell(r.right, r);
+        L.style.flex = r.ratio[0]; R.style.flex = r.ratio[1];
+        row.appendChild(L); row.appendChild(R); ico.appendChild(row);
+      } else if (r.k === 'table'){ ico.appendChild(icoTable(r));
+      } else if (r.k === 'tabs'){
+        var tb = icoEl('div','itab'); for (i=0;i<3;i++){ var tt=icoEl('i'); if(i===0) tt.className='on'; tb.appendChild(tt);} ico.appendChild(tb);
+        for (y=0;y<(r.rows||1);y++){ row = icoEl('div','ir');
+          for (x=0;x<(r.cols||2);x++) row.appendChild(icoCell(r.cell || 'img', r));
+          ico.appendChild(row); }
+      } else if (r.k === 'accordion'){
+        if (r.head) ico.appendChild(icoEl('div','ifield'));
+        for (i=0;i<r.rows;i++){ row = icoEl('div','ir', {flex:'0 0 auto'});
+          row.appendChild(icoEl('div','it m', {alignSelf:'center'}));
+          row.appendChild(icoEl('div','iplus'));
+          ico.appendChild(row); }
+      } else if (r.k === 'scroll'){
+        var wrap = icoEl('div','iscroll'); row = icoEl('div','ir');
+        for (x=0;x<4;x++){ var sc = icoCell(r.cell, r); if (r.tall) sc.style.flex='0 0 26%'; row.appendChild(sc); }
+        wrap.appendChild(row); ico.appendChild(wrap);
+      } else if (r.k === 'mosaic'){
+        row = icoEl('div','ir'); var big = icoBox(r); big.style.flex='2';
+        var col = icoEl('div','ic'); col.appendChild(icoBox(r)); col.appendChild(icoBox(r));
+        row.appendChild(big); row.appendChild(col); ico.appendChild(row);
+        var row2 = icoEl('div','ir', {flex:'0 0 30%'});
+        for (i=0;i<3;i++) row2.appendChild(icoBox(r)); ico.appendChild(row2);
+      } else if (r.k === 'feature'){
+        ico.appendChild(icoBox(r));
+        row = icoEl('div','ir', {flex:'0 0 32%'});
+        for (x=0;x<r.cols;x++) row.appendChild(icoBox(r)); ico.appendChild(row);
+      } else if (r.k === 'featured3'){
+        row = icoEl('div','ir');
+        for (x=0;x<3;x++){ var f = icoCell('img+2', r); f.style.flex = (x===1?'1.4':'1'); if(x===1) f.style.alignSelf='stretch'; row.appendChild(f); }
+        ico.appendChild(row);
+      } else if (r.k === 'center'){
+        var cw = icoEl('div','icenter');
+        (r.parts||[]).forEach(function(p){
+          if (p==='hd') cw.appendChild(icoEl('div','ihd', {width:'55%',margin:'0 auto'}));
+          else if (p==='t') cw.appendChild(icoEl('div','it m', {width:'70%',margin:'0 auto'}));
+          else if (p==='btn') cw.appendChild(icoEl('div','ibtn'));
+          else if (p==='searchbar') cw.appendChild(icoEl('div','ifield', {width:'80%',margin:'0 auto'}));
+          else if (p==='searchbig') { var sb=icoEl('div','isearch'); sb.appendChild(icoEl('div','isearch-i')); sb.appendChild(icoEl('div','isearch-b')); cw.appendChild(sb); }
+        });
+        ico.appendChild(cw);
+      } else if (r.k === 'hero'){
+        var h = icoEl('div','ihero');
+        (r.parts||[]).forEach(function(p){
+          if (p==='hd') h.appendChild(icoEl('div','ihd', {width:'55%',margin:'0 auto'}));
+          else if (p==='arrow') h.appendChild(icoEl('div','iarrowdown'));
+          else if (p==='searchbar') h.appendChild(icoEl('div','ifield', {width:'76%',margin:'0 auto'}));
+          else if (p==='centerbig') h.appendChild(icoEl('div','ihd', {width:'62%',height:'7px',margin:'auto'}));
+          else if (p==='center') h.appendChild(icoEl('div','ihd', {width:'50%',margin:'auto'}));
+          else if (p==='band') h.appendChild(icoEl('div','iband'));
+          else if (p==='btn') h.appendChild(icoEl('div','ibtn', {width:'44%',margin:'0 auto'}));
+          else if (p==='split') { h.style.alignItems='center'; h.appendChild(icoEl('div','ihd', {width:'42%',marginRight:'auto'})); }
+          else if (p==='film') { var fl=icoEl('div','ifilm'); for(i=0;i<4;i++) fl.appendChild(icoEl('div','ifcell')); h.appendChild(fl); }
+        });
+        ico.appendChild(h);
+      } else if (r.k === 'overlap'){
+        var ov = icoEl('div','iover');
+        var ob = icoBox(r); ob.className = 'ib iover-b'; ov.appendChild(ob);
+        var op = icoEl('div','iover-p'); op.appendChild(icoEl('div','ihd')); op.appendChild(icoEl('div','it m'));
+        ov.appendChild(op); ico.appendChild(ov);
+      } else if (r.k === 'chips'){
+        var cw2 = icoEl('div','ichips');
+        [38,26,30,22,34,28].forEach(function(w){ cw2.appendChild(icoEl('div','ichip', {width:w+'%'})); });
+        ico.appendChild(cw2);
+      } else if (r.k === 'navbar'){
+        var nb = icoEl('div','inav');
+        nb.appendChild(icoEl('div','ihd', {width:'22%',margin:'0'}));
+        nb.appendChild(icoEl('div','it s', {width:'26%'}));
+        nb.appendChild(icoEl('div','ifield', {width:'34%',marginLeft:'auto'}));
+        ico.appendChild(nb);
+        ico.appendChild(icoEl('div','it m'));
+        ico.appendChild(icoEl('div','it s'));
+      }
+      return ico;
+    }
+
+    // --- モーダル・ピッカー ------------------------------------------------
+    var typeBtn   = document.getElementById('regen-type-btn');
+    var modal     = document.getElementById('type-modal');
+    var modalList = document.getElementById('type-modal-list');
+    var modalAddr = document.getElementById('type-modal-addr');
+    var lastFocus = null;
+
+    // ボタンの「顔」＝いま選ばれている型の絵と名前
+    function paintFace(){
+      clear(typeBtn);
+      var s = hit();
+      var mk = (!typeSel.disabled && typeSel.value) ? typeSel.value : '';
+      if (!mk) {
+        typeBtn.disabled = true;
+        var none = icoEl('span', 'rtb-txt');
+        // 型を持たない番地（NAV など）では select と同じことを言う（KLK-081）
+        none.textContent = (typeSel.firstChild && typeSel.firstChild.textContent) || '—';
+        typeBtn.appendChild(none);
+        return;
+      }
+      typeBtn.disabled = false;
+      var ic = renderIcon(mk); ic.className = 'ico rtb-ico';
+      typeBtn.appendChild(ic);
+      var tx = icoEl('span', 'rtb-txt');
+      tx.textContent = ((s && s.labels && s.labels[mk]) || mk);
+      typeBtn.appendChild(tx);
+      var ca = icoEl('span', 'rtb-caret');
+      ca.textContent = '▾';
+      typeBtn.appendChild(ca);
+    }
+
+    // 一覧を組み立てる（1行＝アイコン＋日本語ラベル＋マーカー）
+    function buildTypeList(){
+      var s = hit();
+      clear(modalList);
+      modalAddr.textContent = (s && s.addr) || '';
+      if (!s || !s.pool || !s.pool.length) { return; }
+      var labels = s.labels || {};
+      s.pool.forEach(function (t) {
+        var row = icoEl('button', 'tm-row');
+        row.type = 'button';
+        row.setAttribute('data-type', t);
+        var ic = renderIcon(t); ic.className = 'ico tm-ico';
+        row.appendChild(ic);
+        var nm = icoEl('span', 'tm-name'); nm.textContent = labels[t] || t; row.appendChild(nm);
+        var mk = icoEl('span', 'tm-mk');  mk.textContent = t;              row.appendChild(mk);
+        if (t === s.current) {
+          row.setAttribute('aria-current', 'true');
+          var nw = icoEl('span', 'tm-now'); nw.textContent = '現在'; row.appendChild(nw);
+        }
+        row.addEventListener('click', function () { pickType(t); });
+        modalList.appendChild(row);
+      });
+    }
+
+    // ★選んだ結果は select に書き戻すだけ。送信側は select しか見ていない。
+    function pickType(t){
+      typeSel.value = t;
+      if (typeof Event === 'function' && typeSel.dispatchEvent) {
+        typeSel.dispatchEvent(new Event('change'));
+      }
+      paintFace();
+      closeTypeModal();
+    }
+
+    function openTypeModal(){
+      var s = hit();
+      if (!s || !s.pool || !s.pool.length) { return; }
+      buildTypeList();
+      lastFocus = typeBtn;
+      modal.hidden = false;
+      var rows = modalList.children;
+      var start = null;
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i].getAttribute('aria-current') === 'true') { start = rows[i]; }
+      }
+      start = start || rows[0];
+      if (start && start.focus) { start.focus(); }
+    }
+
+    function closeTypeModal(){
+      modal.hidden = true;
+      if (lastFocus && lastFocus.focus) { lastFocus.focus(); }
+    }
+
+    typeBtn.addEventListener('click', openTypeModal);
+    document.getElementById('type-modal-x').addEventListener('click', closeTypeModal);
+    modal.addEventListener('click', function (e) {
+      // 覆い（またはモーダルの外側）を押したら閉じる
+      if (e.target === modal || (e.target && e.target.className === 'tm-veil')) { closeTypeModal(); }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (modal.hidden) { return; }
+      var k = e.key;
+      if (k === 'Escape' || k === 'Esc') { closeTypeModal(); return; }
+      if (k !== 'Tab') { return; }
+      // 簡易フォーカストラップ（モーダルの外へ Tab で出て行かせない）
+      var f = [document.getElementById('type-modal-x')];
+      var rows = modalList.children;
+      for (var i = 0; i < rows.length; i++) { f.push(rows[i]); }
+      var at = f.indexOf(document.activeElement);
+      var to = e.shiftKey ? (at <= 0 ? f.length - 1 : at - 1) : (at === f.length - 1 ? 0 : at + 1);
+      if (f[to] && f[to].focus) { e.preventDefault(); f[to].focus(); }
+    });
+
     // 型セレクタを、選んだ番地のプールで組み立てる（現在の型に「（現在）」）
     function fillTypes(){
       var s = hit();
@@ -209,6 +677,7 @@
       if (!s || !s.pool || s.pool.length === 0) {
         typeSel.appendChild(opt('', 'この番地に型はありません'));
         typeSel.disabled = true;
+        paintFace();
         return;
       }
       // KLK-117: 英語のマーカーだけでは型が掴めないので、日本語ラベルを先に出す。
@@ -221,6 +690,7 @@
       });
       typeSel.value = s.current || s.pool[0];
       typeSel.disabled = false;
+      paintFace();
     }
 
     // ★セレクタを「読み込み中…」のままにしない（KLK-081）
@@ -232,6 +702,7 @@
       clear(typeSel);
       typeSel.appendChild(opt('', '—'));
       typeSel.disabled = true;
+      paintFace();
       btn.disabled = true;
       setMsg(message);
     }

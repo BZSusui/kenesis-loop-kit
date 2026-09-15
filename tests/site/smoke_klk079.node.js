@@ -28,6 +28,8 @@ function check(name, passed, detail) { results.push([name, !!passed, detail]); }
 // ---------------------------------------------------------------------------
 // 最小 DOM シム
 // ---------------------------------------------------------------------------
+const DOM_STATE = { activeElement: null };
+
 class El {
   constructor(tag) {
     this.tagName = (tag || 'div').toUpperCase();
@@ -38,7 +40,18 @@ class El {
     this.disabled = false;
     this.id = '';
     this.listeners = {};
+    // KLK-126: 型ピッカーのアイコンは div と CSS で描くので、
+    //   className / style / classList / hidden / focus をシムでも持つ。
+    //   ★足すだけ。KLK-079 の検証項目は1つも変えていない。
+    this.className = '';
+    this.style = {};
+    this.hidden = false;
+    this.focused = false;
+    const self = this;
+    this.classList = { add(c) { self.className = (self.className ? self.className + ' ' : '') + c; } };
   }
+  focus() { this.focused = true; DOM_STATE.activeElement = this; }
+  dispatchEvent(ev) { this.fire((ev && ev.type) || 'change'); return true; }
   get firstChild() { return this.children[0] || null; }
   appendChild(c) { this.children.push(c); return c; }
   removeChild(c) { this.children = this.children.filter(x => x !== c); return c; }
@@ -61,10 +74,24 @@ function makeDom(folder) {
   const addr = new El('select'); addr.id = 'regen-addr';
   const type = new El('select'); type.id = 'regen-type'; type.disabled = true;
   const msg = new El('div'); msg.id = 'regen-msg';
+  // KLK-126: 型ピッカー（顔のボタンとモーダル）
+  const typeBtn = new El('button'); typeBtn.id = 'regen-type-btn'; typeBtn.disabled = true;
+  const modal = new El('div'); modal.id = 'type-modal'; modal.hidden = true;
+  const modalList = new El('div'); modalList.id = 'type-modal-list';
+  const modalAddr = new El('span'); modalAddr.id = 'type-modal-addr';
+  const modalX = new El('button'); modalX.id = 'type-modal-x';
   const radios = ['ra', 'rb', 'rc'].map(id => { const r = new El('input'); r.id = id; r.name = 'variant'; r.checked = (id === 'ra'); return r; });
-  const byId = { 'regen-btn': btn, 'regen-addr': addr, 'regen-type': type, 'regen-msg': msg };
+  const byId = {
+    'regen-btn': btn, 'regen-addr': addr, 'regen-type': type, 'regen-msg': msg,
+    'regen-type-btn': typeBtn, 'type-modal': modal,
+    'type-modal-list': modalList, 'type-modal-addr': modalAddr, 'type-modal-x': modalX,
+  };
+  const docListeners = {};
   const doc = {
     body,
+    addEventListener: (ev, fn) => { (docListeners[ev] = docListeners[ev] || []).push(fn); },
+    fire: (ev, detail) => (docListeners[ev] || []).forEach(fn => fn(detail || {})),
+    get activeElement() { return DOM_STATE.activeElement; },
     getElementById: id => byId[id] || null,
     createElement: tag => new El(tag),
     querySelector: sel => {
@@ -74,7 +101,7 @@ function makeDom(folder) {
     },
     querySelectorAll: sel => (sel === 'input[name=variant]' ? radios : []),
   };
-  return { doc, body, btn, addr, type, msg, radios };
+  return { doc, body, btn, addr, type, msg, radios, typeBtn, modal, modalList, modalAddr, modalX };
 }
 
 // ---------------------------------------------------------------------------
@@ -132,6 +159,7 @@ function runUi(opts) {
     setTimeout, clearTimeout, setInterval, clearInterval,
     location: { reload: () => { reloaded = true; } },
     Promise, Array, JSON, Error, encodeURIComponent, console,
+    Event: function (type) { this.type = type; },
   };
   const keys = Object.keys(sandbox);
   // eslint-disable-next-line no-new-func
