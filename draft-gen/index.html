@@ -406,7 +406,7 @@
   <section class="card">
     <div class="lbl"><span class="step">2</span><h2>業種</h2><span class="req">必須</span>
       <!-- REQ-001 --></div>
-    <p class="hint">一覧から選ぶか、当てはまるものがなければ自由に入力できます。</p>
+    <p class="hint">一覧から選び、必要なら「くわしい業種」で具体的に書き足せます。一覧に当てはまるものがなければ、くわしい業種だけでも構いません。</p>
     <div class="field-row">
       <div class="col">
         <label>一覧から選ぶ</label>
@@ -432,11 +432,11 @@
         </select>
       </div>
       <div class="col">
-        <label>または自由入力</label>
-        <input type="text" id="industryCustom" placeholder="例：オーガニックカフェ">
+        <label>くわしい業種（任意）</label>
+        <input type="text" id="industryCustom" placeholder="例：小児科・アレルギー科のクリニック">
       </div>
     </div>
-    <p class="note-oq">※自由入力があれば一覧選択がなくても生成できます（自由入力が優先されます）。一覧は実績カタログの業種区分（17区分）と共通です。</p>
+    <p class="note-oq">※<b>両方お使いいただけます。</b>生成されるサイトには「くわしい業種」のほうが反映され、<b>参考にする素材の絞り込みには「一覧から選ぶ」を使います</b>（実績カタログは17区分で登録されているため）。くわしい業種だけでも生成できます。</p>
   </section>
 
   <!-- ③ カラム構成 -->
@@ -624,7 +624,7 @@
       <span class="reqid">実績2〜3枚</span><!-- REQ-004・102 --></div>
     <p class="hint">選んだ業種に近い実績をまず表示します。「この雰囲気で」という参考を最大3枚選べます。🔍で拡大表示。</p>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-      <span class="industry-chip" id="industryChip">業種「（未選択）」に近い実績を表示中</span>
+      <span class="industry-chip" id="industryChip">実績カタログを読み込んでいます…</span>
       <span class="sub-inline" style="font-size:12px">絞り込み:
         <select id="thumbFilter" style="width:auto;padding:5px 8px;font-size:12px">
           <option>近い業種のみ</option><option>すべての実績</option><option>同じテイストのみ</option>
@@ -1160,8 +1160,10 @@ function render() {
   const colLabel = colLabelOf(input.column);
   const parts = [industry, colLabel, input.taste || 'テイスト未指定', input.variants + '案'];
   document.getElementById('summary').textContent = parts.join(' / ') + ' — この内容で生成します';
-  // 参考素材の業種連動ラベル
-  document.getElementById('industryChip').textContent = '業種「' + industry + '」に近い実績を表示中';
+  // ★参考素材のチップはここで書かない（KLK-127）。
+  //   ここは「生成に渡す業種」＝自由入力優先を出す場所で、絞り込みのキーとは別物。
+  //   両方をここで書いていたため、「クリニックに近い実績を表示中」と言いながら
+  //   全件が並ぶ自己矛盾が起きていた。チップは applyThumbFilter が書く。
   // KLK-020: MVフリー実写真サブUIの表示切替＋検索リンクの href 実行時組立て（REQ-104）
   updateMvFreePhoto(input);
 }
@@ -1530,14 +1532,23 @@ function loadCatalog() {
 }
 
 // 現在の業種（自由入力優先）を返す。render() の industry 決定と同じ規則。
+// ★カタログ絞り込みのキーは**一覧選択を優先**する（KLK-127）。
+//   生成指示書へ渡す業種（buildInstruction の resolved）は従来どおり自由入力優先で、
+//   ここだけ逆にしている。理由: カタログの industry は17区分の canonical 値で、
+//   自由入力の任意文字列は前方一致に掛からず 0 件 → 全件フォールバックへ落ちる。
+//   実際に「クリニック・病院・介護リハビリ」を選んで「小児科・アレルギー科のクリニック」と
+//   書き足すと、3件に絞れるはずが 167 件すべてが並んでいた。
+//   絞り込みに唯一使える情報（選ばれた区分）を捨てないこと。
 function currentIndustry() {
-  var custom = document.getElementById('industryCustom').value.trim();
-  return custom || document.getElementById('industrySelect').value || '';
+  var preset = document.getElementById('industrySelect').value;
+  return preset || document.getElementById('industryCustom').value.trim() || '';
 }
 
-// 一覧選択か自由入力か（自由入力が優先される＝currentIndustry と同じ判定・REQ-001）。
+// 自由入力をキーにしているか（＝一覧が未選択のときだけ真・currentIndustry と同じ規則）。
+// canonical なら完全一致、自由入力なら前方一致で拾う、の切り替えに使う。
 function isCustomIndustry() {
-  return document.getElementById('industryCustom').value.trim().length > 0;
+  return !document.getElementById('industrySelect').value
+    && document.getElementById('industryCustom').value.trim().length > 0;
 }
 
 // entry.industry と業種キーの照合（KLK-059）。
@@ -1562,6 +1573,12 @@ function currentTasteCanonical() {
 function resetThumbsExpansion() { thumbsExpanded = false; }
 
 // #thumbFilter と業種/テイストに基づき対象を絞り、renderThumbs する。
+// いま何で絞っているかの札（KLK-127）。★必ず**実際の結果**に合わせて書く。
+function setIndustryChip(text) {
+  var el = document.getElementById('industryChip');
+  if (el) el.textContent = text;
+}
+
 function applyThumbFilter() {
   var mode = document.getElementById('thumbFilter').value;
   var key = currentIndustry();
@@ -1571,21 +1588,33 @@ function applyThumbFilter() {
   var list;
   if (mode === 'すべての実績') {
     list = catalogEntries.slice();
+    setIndustryChip('すべての実績を表示中');
   } else if (mode === '同じテイストのみ') {
     // KLK-059: canonical（data-taste）で完全一致。表示ラベルの表記ゆれに影響されない。
     list = tasteCanon
       ? catalogEntries.filter(function (e) { return (e.taste || '') === tasteCanon; })
       : catalogEntries.slice();
-    if (list.length === 0 && catalogEntries.length) {
+    if (!tasteCanon) {
+      setIndustryChip('テイストを選ぶと、同じテイストの実績だけを表示します');
+    } else if (list.length === 0 && catalogEntries.length) {
       list = catalogEntries.slice();
       note = '同じテイストの実績が見つからないため、すべての実績を表示しています';
+      setIndustryChip('テイスト「' + tasteCanon + '」の実績が無いため、すべての実績を表示中');
+    } else {
+      setIndustryChip('テイスト「' + tasteCanon + '」の実績を表示中');
     }
   } else {
     // 既定「近い業種のみ」
     list = catalogEntries.filter(function (e) { return matchesIndustry(e, key, isCustom); });
-    if (list.length === 0 && catalogEntries.length) {
+    if (!key) {
+      // 業種未選択は全件（matchesIndustry が全件 true を返す・KLK-094 の前提）
+      setIndustryChip('業種を選ぶと、近い実績から表示します');
+    } else if (list.length === 0 && catalogEntries.length) {
       list = catalogEntries.slice();
       note = '近い業種の実績が見つからないため、すべての実績を表示しています';
+      setIndustryChip('業種「' + key + '」の実績が無いため、すべての実績を表示中');
+    } else {
+      setIndustryChip('業種「' + key + '」に近い実績を表示中');
     }
   }
   renderThumbs(list, note);
@@ -1659,6 +1688,7 @@ function renderThumbs(list, note) {
     document.querySelectorAll('.thumb.selected'), function (el) { return el.dataset.id; });
 
   if (!catalogAlive) {
+    setIndustryChip('実績カタログに未接続');   // KLK-127: 繋がっていないのに「表示中」と言わない
     showThumbNotice('ブリッジを起動すると実績カタログから参考を選べます');
     if (noteEl) { noteEl.style.display = 'none'; noteEl.textContent = ''; }
     updateThumbCount();
