@@ -20,6 +20,7 @@ Run: python3 tests/site/check_klk108.py
 import io
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -29,6 +30,57 @@ results = []
 
 def check(name, passed, detail):
     results.append((name, bool(passed), detail))
+
+
+# ★「区分の言葉だけでできた名前」は誰のことも指さない（KLK-131）。
+#   カタログが増えると、こういう汎用的な名前が必ず出てくる。
+#   実際に「クリニックサイト」という登録が増えたとき、
+#   2026-07 に書かれた docs/designs/KLK-071.md の
+#   「案件名が実在に見えるものがある（『内科クリニックサイト』等）」という一文と一致し、
+#   漏洩として報告された。**設計書は誰の名前も書いていない**ので、これは誤検知である。
+#   誤検知を放置すると「また鳴っている」と流されるようになり、
+#   本物の漏洩を見逃す。だからここで除く。
+#   ★ただし**判断は実データから**行う。除外語を直書きすると、
+#     この検査ファイル自身が漏洩源になる（KLK-108 が正したのがまさにそれ）。
+STRUCTURAL_WORDS = ("サイト", "ページ", "ホームページ", "コーポレート", "リニューアル",
+                    "版", "風", "系", "用", "向け", "デザイン", "レイアウト", "lp", "web")
+
+
+def generic_vocabulary(entries):
+    """カタログ自身が持つ区分の言葉を集める（純粋関数）。
+
+    業種・テイスト・配色の値を区切り文字で割ってトークンにする。
+    これらは**分類のための語**であって、誰かを指す名前ではない。
+    """
+    vocab = set(STRUCTURAL_WORDS)
+    for e in entries:
+        if not isinstance(e, dict):
+            continue
+        vals = [e.get("industry"), e.get("taste"), e.get("columns")]
+        vals += list(e.get("colors") or [])
+        vals += list(e.get("bgTones") or [])
+        for v in vals:
+            if not isinstance(v, str):
+                continue
+            for tok in re.split(r"[・/／,、（）()\s]+", v):
+                tok = tok.strip()
+                if len(tok) >= 2:
+                    vocab.add(tok.lower())
+    return vocab
+
+
+def is_generic_title(title, vocab):
+    """区分の言葉と記号だけでできた名前か（純粋関数）。
+
+    ★消し込みで判断する。区分の言葉を長い順に取り除き、記号と空白を落として、
+      **何も残らなければ**誰のことも指していない。
+      少しでも残れば（例: 「アミュール」）従来どおり照合する＝守りは緩めない。
+    """
+    rest = title.lower()
+    for tok in sorted(vocab, key=len, reverse=True):
+        rest = rest.replace(tok, "")
+    rest = re.sub(r"[\s・/／,、。（）()\[\]\-–—_~〜+&＆|｜:：;；'\"’”「」『』!！?？.．]", "", rest)
+    return rest == ""
 
 
 def catalog_terms():
@@ -41,14 +93,18 @@ def catalog_terms():
             data = json.load(fh)
     except (ValueError, OSError):
         return None
+    entries = [e for e in data.get("entries", []) if isinstance(e, dict)]
+    vocab = generic_vocabulary(entries)
     out = set()
-    for e in data.get("entries", []):
-        if not isinstance(e, dict):
-            continue
+    for e in entries:
         for key in ("title", "client", "name", "note", "memo"):
             v = e.get(key)
-            if isinstance(v, str) and len(v.strip()) >= 4:
-                out.add(v.strip())
+            if not isinstance(v, str) or len(v.strip()) < 4:
+                continue
+            v = v.strip()
+            if key == "title" and is_generic_title(v, vocab):
+                continue          # 区分の言葉だけ＝誰も指していない
+            out.add(v)
     return out
 
 

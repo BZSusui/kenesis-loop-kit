@@ -1706,7 +1706,12 @@ function renderThumbs(list, note) {
     return;
   }
   if (!list || list.length === 0) {
-    showThumbNotice('条件に合う実績がありません。絞り込みを「すべての実績」に変えてみてください。');
+    // ★「まだ1件も無い」と「絞り込みに当たらない」を区別する（KLK-131）。
+    //   カタログが空の配布物（パッケージB）を初めて使う人に
+    //   「絞り込みを変えてみてください」と言っても、変えても何も出ない。
+    showThumbNotice(catalogEntries.length === 0
+      ? '実績カタログはまだ空です。「実績カタログを開く」から画像を取り込むと、ここに並びます。'
+      : '条件に合う実績がありません。絞り込みを「すべての実績」に変えてみてください。');
     if (noteEl) { noteEl.style.display = 'none'; noteEl.textContent = ''; }
     updateThumbCount();
     return;
