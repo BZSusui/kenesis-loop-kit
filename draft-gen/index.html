@@ -809,6 +809,28 @@ const SECTION_TYPE_POOLS = {
   ACCESS: ['map-side', 'map-top', 'map-overlay', 'map-hours', 'map-cards', 'map-steps'],
   CONTACT: ['contact-cta', 'contact-form', 'contact-split', 'contact-methods', 'contact-banner', 'contact-steps'],
 };
+
+// KLK-125: 型の日本語ラベル。**正は bridge.py の SECTION_TYPE_LABELS**（KLK-117）であり、
+//   ここはその写し。食い違いは check_klk125 が検出する（SECTION_TYPE_POOLS と同じ方式）。
+//   ★ラベルの文言は考えて付けたものではなく、DRAFT_RULES §12.1.2/§12.1.3 の
+//     その型の説明文からの抜き書きである（根拠は check_klk117 が語ごとに照合する）。
+const SECTION_TYPE_LABELS = {
+  MV: { "full": '全面中央', "split": '左右分割', "band": '下寄せ帯', "overlap": 'せり出し横長画像', "center-scroll": '全面ビジュアル＋スクロール誘導', "panel-band": 'フィルム風パネル' },
+  ABOUT: { "img-left": '左画像・右文言', "img-right": '右画像・左文言', "img-top": '画像を上＋キャプション', "img-overlap": 'せり出し横長画像', "img-circle": '円形／型抜き画像', "img-zigzag": '左右交互＋複数段' },
+  MENU: { "pat-cards": 'カード群＋名称＋価格', "pat-list": '横並びリスト', "pat-zigzag": 'ジグザグ交互', "price-table": '価格表／料金プラン', "tab-switch": 'タブ切替', "feature-large": '大画像＋詳細' },
+  GALLERY: { "pat-grid": '均等グリッド', "pat-wide": '横帯ワイド', "pat-mosaic": '大小モザイク', "pat-slider": '横スクロール／カルーセル', "pat-masonry": 'ベントー型', "pat-tab-grid": 'タブ切替＋タイルグリッド' },
+  VOICE: { "voice-cards": '声カードを横3列', "voice-quote-stack": '縦積みの引用ブロック', "voice-feature": '代表の声を大きく1枚', "voice-two-col": '2カラム千鳥', "voice-slider": '横スクロール風1行', "voice-zigzag": '全幅1カラム縦積み＋左右交互' },
+  FLOW: { "flow-row": '横並び①→②→③', "flow-timeline": '縦タイムライン', "flow-number-card": '番号大きめカード', "flow-arrow-band": '全幅の矢羽根帯', "flow-vertical-split": '左大番号／右説明', "flow-zigzag": '全幅縦積み＋左右交互' },
+  STAFF: { "staff-grid": '顔写真グリッド4列', "staff-hscroll": '横スクロール風1列', "staff-feature": '代表1名を大写し', "staff-list": '横1行×人数のリスト', "staff-two-col": '2カラムのプロフィールカード', "staff-zigzag": '全幅縦積み＋画像左右交互' },
+  NEWS: { "news-list": '日付＋カテゴリバッジ＋見出し', "news-cards": 'サムネ＋日付＋見出し＋抜粋', "news-media": '横長メディア行', "news-timeline": '縦の時系列', "news-table": '表形式＋日付＋カテゴリ', "news-accordion": '見出しクリックで本文を開閉' },
+  PRICE: { "price-table": '価格表／料金プラン', "price-cards": 'プラン比較の3列カード', "price-featured": '中央を一段大きく強調', "price-list": 'シンプルな縦リスト', "price-toggle": '月額／年額＋タブで切替', "price-matrix": '比較マトリクス' },
+  FAQ: { "faq-list": '開いた状態で縦積み', "faq-accordion": '質問クリックで開閉', "faq-two-col": '2カラム＋開閉', "faq-cards": 'アイコン＋質問＋3列カード', "faq-category-tabs": 'カテゴリタブ切替', "faq-search": '検索ボックス＋アコーディオン' },
+  ACCESS: { "map-side": '地図アタリ＋2カラム', "map-top": '地図アタリを上＋住所', "map-overlay": '情報カードを重ねる', "map-hours": '地図アタリ＋診療時間テーブル', "map-cards": '複数店舗＋カードで並べる', "map-steps": '駅からの道順ステップ' },
+  CONTACT: { "contact-cta": '見出し＋ひとこと＋大きなボタン', "contact-form": '縦積みフォーム', "contact-split": '左に連絡先情報＋右にフォーム', "contact-methods": '連絡手段を3〜4カード', "contact-banner": '全幅の色帯＋電話番号', "contact-steps": 'ご相談の流れステップ' },
+  SNS: { "sns-grid": '正方サムネ格子', "sns-slider": '横スクロールの投稿フィード', "sns-cards": '画像＋キャプション＋短文', "sns-masonry": 'ベントー型', "sns-reels": 'リール／ストーリーズ帯', "sns-feed": '投稿カードを横並び' },
+  SEARCH: { "search-bar": '中央の大きな検索バー', "search-keywords": 'キーワードをボタン化', "search-filters": '絞り込みフォーム', "search-sidebar": '左に絞り込みナビ＋右に結果', "search-header": '小型検索窓＋ヘッダー', "search-hero": 'メインビジュアル内に検索窓' },
+};
+
 // 複製できる数（理恵さん決定・2026-09-04）。既定3、下記だけ1個のみ。
 //  ACCESS/CONTACT = ページに1つが自然。SEARCH = HERO/NAV へ埋め込む方式（§12.1.3(7)）で
 //  独立セクションを出さないため、そもそも並び順・複製の概念が効かない。
@@ -1992,7 +2014,11 @@ function renderComposition() {
         auto.value = ''; auto.textContent = '自動（案ごとに振り分け）';
         sel.appendChild(auto);
         pool.forEach(function (t) {
-          const o = document.createElement('option'); o.value = t; o.textContent = t; sel.appendChild(o);
+          // KLK-125: 英語マーカーだけでは型が掴めない（比較画面は KLK-117 で対応済み。ここは横展開）
+          const lab = (SECTION_TYPE_LABELS[e.key] || {})[t];
+          const o = document.createElement('option'); o.value = t;
+          o.textContent = lab ? lab + '（' + t + '）' : t;   // 動的値は textContent（注入対策）
+          sel.appendChild(o);
         });
         sel.value = e.type || '';
         sel.addEventListener('change', function () { e.type = sel.value; desc.textContent = compSummary(e); render(); });
