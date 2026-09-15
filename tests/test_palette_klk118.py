@@ -103,7 +103,8 @@ class TestE2EHarnessDoesNotHang(unittest.TestCase):
     **待ちには必ず上限を置く**＝開かなければ「開かなかった」と分かる形で早く失敗する。
     """
 
-    E2E_FILES = ("e2e_klk116.node.js", "e2e_klk117.node.js", "e2e_klk120.node.js")
+    E2E_FILES = ("e2e_klk116.node.js", "e2e_klk117.node.js",
+                 "e2e_klk120.node.js", "e2e_klk125.node.js")
 
     @staticmethod
     def _code_only(src):
@@ -134,6 +135,24 @@ class TestE2EHarnessDoesNotHang(unittest.TestCase):
         code = self._code_only(sample)
         self.assertNotIn("await new Promise(r => ws.addEventListener('open', r))", code)
         self.assertIn("await openWs(ws);", code)
+
+    def test_navigation_wait_checks_the_url(self):
+        """★readyState だけで待つと about:blank を掴む（KLK-125 でフルスイートが落ちた）。
+
+        `Page.navigate` の直後は前の文書（about:blank）がまだ現在の文書で、
+        その readyState は 'complete' なので、**まだ真っ白なページを読んでしまう**。
+        負荷で遷移が遅れると起きる。目的の URL へ移り終わったことまで確かめること。
+        """
+        for name in self.E2E_FILES:
+            with self.subTest(name=name):
+                src = (ROOT / "tests" / "site" / name).read_text(encoding="utf-8")
+                code = self._code_only(src)
+                if "Page.navigate" not in code:
+                    continue          # タブ生成時に URL を渡す作りなら対象外
+                self.assertIn("waitLoaded(", code, "%s: 遷移完了を URL まで確かめていない" % name)
+                self.assertIn("location.href", code, "%s: URL を見ていない" % name)
+                self.assertNotIn("if (r.result.value === 'complete') break;", code,
+                                 "%s: readyState だけで待つ書き方が残っている" % name)
 
     def test_wait_has_timeout_and_error_paths(self):
         for name in self.E2E_FILES:

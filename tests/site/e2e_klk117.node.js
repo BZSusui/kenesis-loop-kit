@@ -70,6 +70,28 @@ function openWs(ws, ms = 20000) {
   });
 }
 
+// 目的の URL が読み終わるまで待つ（about:blank を掴まないための確認つき）
+async function waitLoaded(send, url, tries = 80) {
+  // ★クエリやハッシュは見ない。palette は読み込み後に history.replaceState で
+  //   自分の URL を書き換える（KLK-004 の URL 共有）ため、完全一致では待てない。
+  //   「about:blank を抜けて目的のパスに居る」ことが確かめられれば十分である。
+  //   file:// では location.origin の表し方が Node と Chrome で食い違うので、
+  //   URL 文字列からクエリとハッシュを落として比べる（プロトコルに依らない）。
+  const bare = s => String(s).split('#')[0].split('?')[0];
+  const want = bare(url);
+  for (let i = 0; i < tries; i++) {
+    const r = await send('Runtime.evaluate', {
+      expression: 'JSON.stringify({h: location.href, s: document.readyState})',
+      returnByValue: true });
+    try {
+      const v = JSON.parse(r.result.value);
+      if (v.s === 'complete' && v.h !== 'about:blank' && bare(v.h) === want) return true;
+    } catch {}
+    await sleep(100);
+  }
+  throw new Error('ページが読み終わりませんでした: ' + url);
+}
+
 function cdpClient(ws) {
   let id = 0; const pend = new Map();
   ws.addEventListener('message', ev => {
@@ -88,10 +110,10 @@ async function openTab(debugPort, url, initScript) {
   await send('Page.enable'); await send('Runtime.enable');
   if (initScript) await send('Page.addScriptToEvaluateOnNewDocument', { source: initScript });
   await send('Page.navigate', { url });
-  for (let i = 0; i < 60; i++) {
-    const r = await send('Runtime.evaluate', { expression: 'document.readyState', returnByValue: true });
-    if (r.result.value === 'complete') break; await sleep(100);
-  }
+  // ★readyState だけを見ると about:blank の 'complete' で抜けてしまい、
+  //   **まだ真っ白なページを読む**（負荷で遷移が遅れると起きる。実際にフルスイートで踏んだ・KLK-125）。
+  //   目的の URL へ移り終わったことまで確かめる。
+  await waitLoaded(send, url);
   return {
     evalJs: async expr => (await send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true })).result.value,
     close: async () => { ws.close(); await fetch(`http://127.0.0.1:${debugPort}/json/close/${t.id}`); },
