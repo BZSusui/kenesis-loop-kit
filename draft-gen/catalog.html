@@ -429,6 +429,27 @@
     return (bridgeAlive ? "/catalog/img/" : "img/") + encodeURIComponent(name);
   }
 
+  // ★一覧はサムネイルを使う（KLK-128）。原寸は全ページのスクリーンショットで、
+  //   並べるとブラウザの展開メモリが桁違いに膨らむ（167枚で 5.8GB・実測）。
+  //   拡大（🔍）は従来どおり原寸。無ければ原寸へ自動で戻す（bindThumbFallback）。
+  function thumbSrc(e) {
+    var name = e.file || e.id || "";
+    if (!name) return "";
+    if (!bridgeAlive) return "img/" + encodeURIComponent(name);   // file:// の写しには thumb が無い
+    return "/catalog/thumb/" + encodeURIComponent(name);
+  }
+
+  // サムネイルが無い（未生成・sips の無い環境）ときは原寸へ戻す。
+  function bindThumbFallback(root) {
+    Array.prototype.forEach.call(root.querySelectorAll("img[data-full]"), function (img) {
+      img.onerror = function () {
+        if (img.dataset.fellBack) { img.onerror = null; return; }
+        img.dataset.fellBack = "1";
+        img.setAttribute("src", img.dataset.full);
+      };
+    });
+  }
+
   // ---- 描画 -------------------------------------------------------------------
   function renderGrid() {
     var grid = document.getElementById("grid");
@@ -458,8 +479,10 @@
       var tags = Array.isArray(e.tags) && e.tags.length
         ? e.tags : [e.industry, e.taste].concat(Array.isArray(e.colors) ? e.colors : []);
       var tagHtml = tags.filter(Boolean).map(function (t) { return "<span>" + esc(t) + "</span>"; }).join("");
+      var thumb = thumbSrc(e);
       var shotInner = src
-        ? '<img src="' + esc(src) + '" alt="' + esc(e.title || "") + '" loading="lazy">'
+        ? '<img src="' + esc(thumb || src) + '" data-full="' + esc(src) + '"'
+          + ' alt="' + esc(e.title || "") + '" loading="lazy">'
         : esc(e.title || "画像");
 
       cards.push(
@@ -506,6 +529,7 @@
     });
     grid.innerHTML = cards.join("");
     host.innerHTML = modals.join("");
+    bindThumbFallback(grid);   // KLK-128: サムネイルが無ければ原寸へ
   }
 
   // ---- フィルタUIの結線 -------------------------------------------------------

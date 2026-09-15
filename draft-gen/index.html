@@ -1681,8 +1681,19 @@ function visibleThumbs(list, selectedIds, limit, expanded) {
   return { visible: visible, hiddenCount: all.length - visible.length };
 }
 
+// KLK-128: 画像を出せなかった枚数。描き直すたびに数え直す。
+var thumbImgFailures = 0;
+function showThumbFailures() {
+  var el = document.getElementById('thumbNote');
+  if (!el || !thumbImgFailures) return;
+  el.textContent = thumbImgFailures + ' 件の画像を表示できませんでした。'
+    + 'ローカルブリッジを再起動すると直ることがあります。';
+  el.style.display = 'block';
+}
+
 function renderThumbs(list, note) {
   var host = document.getElementById('thumbs');
+  thumbImgFailures = 0;
   var noteEl = document.getElementById('thumbNote');
   var selectedIds = Array.prototype.map.call(
     document.querySelectorAll('.thumb.selected'), function (el) { return el.dataset.id; });
@@ -1711,10 +1722,24 @@ function renderThumbs(list, note) {
     if (!file) return;
     var img = document.createElement('img');
     img.className = 'shot';
-    img.setAttribute('src', '/catalog/img/' + encodeURIComponent(file));
+    // ★一覧はサムネイルを使う（KLK-128）。原寸は全ページのスクリーンショットで、
+    //   18枚並べるとブラウザの展開メモリが 634MB になる（実測・表示は 123x91px）。
+    //   無ければ原寸へ戻す＝サムネイルが未生成でも Windows でも壊れない。
+    img.setAttribute('src', '/catalog/thumb/' + encodeURIComponent(file));
     img.setAttribute('alt', card.dataset.label || '実績');
     img.setAttribute('loading', 'lazy');
-    img.onerror = function () { img.remove(); };   // 失敗時は .ph プレースホルダのまま
+    img.onerror = function () {
+      if (img.dataset.fellBack) {
+        // ★黙って消さない（KLK-128）。消すと「読み込み中」と見分けが付かず、
+        //   実際に理恵さんの環境で原因が追えなくなった。
+        img.remove();
+        thumbImgFailures++;
+        showThumbFailures();
+        return;
+      }
+      img.dataset.fellBack = '1';
+      img.setAttribute('src', '/catalog/img/' + encodeURIComponent(file));
+    };
     card.appendChild(img);
     if (selectedIds.indexOf(card.dataset.id) >= 0) card.classList.add('selected');
   });
