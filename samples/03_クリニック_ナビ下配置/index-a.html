@@ -55,7 +55,7 @@
   .hero-cta{display:inline-block;background:var(--m-main);color:#fff;padding:12px 30px;border-radius:26px;font-weight:700;font-size:14px;}
 
   /* ABOUT img-overlap */
-  .m-about[data-about=img-overlap]{display:grid;grid-template-columns:1fr 1fr;align-items:center;position:relative;gap:0;max-width:900px;margin:0 auto;}
+  .m-about[data-about=img-overlap]{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,480px);align-items:center;position:relative;gap:0;max-width:1060px;margin:0 auto;}
   .m-about[data-about=img-overlap] .ab-media .atari{aspect-ratio:4/3;min-height:300px;border-radius:6px;}
   .m-about[data-about=img-overlap] .ab-body{background:#fff;padding:34px 36px;box-shadow:0 12px 40px rgba(0,0,0,.12);transform:translateX(-34px);z-index:2;border-left:4px solid var(--m-main);}
   .m-about .ab-body h3{font-size:20px;color:var(--m-nav);margin-bottom:12px;}
@@ -144,6 +144,16 @@
     .m-nav ul{gap:12px;}
     .m-flow[data-flow=flow-arrow-band] .step{padding:22px 12px 22px 24px;}
     .m-flow[data-flow=flow-arrow-band] .step:first-child{padding-left:16px;}
+    /* ★KLK-129: 文言側に480pxを与えると、900px未満では画像側が中身(約400px)より
+       狭くなって溢れる（768pxで画像側208px・実測）。横並びはここまでにする。 */
+    .m-about[data-about=img-overlap]{grid-template-columns:1fr;}
+    .m-about[data-about=img-overlap] .ab-media,
+    .m-about[data-about=img-overlap] .ab-body{grid-column:1;grid-row:auto;}
+    .m-about[data-about=img-overlap] .ab-body{transform:none;margin-top:-20px;}
+    /* ★縦積みでは min-height を外す（KLK-129）。aspect-ratio 4/3 と組むと
+       幅が min-height x 4/3 = 400px 以上に固定され、375px の画面ではみ出す（実測）。 */
+    .m-about[data-about=img-overlap] .ab-media{min-width:0;}
+    .m-about[data-about=img-overlap] .ab-media .atari{min-height:0;min-width:0;}
   }
   @media (max-width:640px){
     .m-sec{padding:44px 20px;}
@@ -154,8 +164,6 @@
     .m-hero[data-hero=overlap] .hero-media,.m-hero[data-hero=overlap] .hero-copy{grid-column:1;}
     .m-hero[data-hero=overlap] .hero-copy{transform:none;margin-top:-24px;width:auto;max-width:none;}
     .m-hero .catch{font-size:24px;}
-    .m-about[data-about=img-overlap]{grid-template-columns:1fr;}
-    .m-about[data-about=img-overlap] .ab-body{transform:none;margin-top:-20px;}
     .m-menu[data-menu=price-table] .pt-row{grid-template-columns:1fr;}
     .m-menu[data-menu=price-table] .pt-price{text-align:left;}
     .m-flow[data-flow=flow-arrow-band]{grid-auto-flow:row;}
