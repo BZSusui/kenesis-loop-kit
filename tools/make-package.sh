@@ -139,6 +139,20 @@ if [ "$WITH_CATALOG" -eq 1 ]; then
     fi
   fi
   [ -f catalog/catalog.json ] && cp catalog/catalog.json "$DEST/catalog/"
+  # ★一覧用のサムネイルも入れる（KLK-131）。
+  #   入れ忘れると配布物では一覧が原寸へフォールバックし、KLK-128 で直した重さが戻る
+  #   （167枚で展開メモリ 5.76GB → 0.50GB だったものが元通りになる）。
+  #   ★リポジトリの catalog/thumb/ を写すのではなく、**配布用に縮めた画像から作り直す**。
+  #     配布用画像はさらに小さいので、そこから作るほうが整合する。
+  #   作れなくてもパッケージ作成は止めない（画面が原寸へ戻るだけで壊れない）。
+  if [ -d "$DEST/catalog/img" ]; then
+    echo "  一覧用のサムネイルを作っています…"
+    if python3 tools/make-catalog-thumbs.py --src="$DEST/catalog/img" --out="$DEST/catalog/thumb"; then
+      echo "  含めた: catalog/thumb/（一覧用）"
+    else
+      echo "  【注意】サムネイルを作れませんでした（一覧は原寸で表示されます）"
+    fi
+  fi
   echo "  含めた: catalog/img/ catalog/catalog.json（--with-catalog）"
   # README を「空から始める」前提から「最初から入っている」前提へ差し替える。
   # リポジトリの README.md は B（カタログなし）の内容のまま＝普段見る README が正。

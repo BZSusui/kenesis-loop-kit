@@ -4,6 +4,8 @@
     python3 tools/make-catalog-thumbs.py               # 足りないぶんだけ作る
     python3 tools/make-catalog-thumbs.py --force       # 全部作り直す
     python3 tools/make-catalog-thumbs.py --width 400 --quality 80
+    python3 tools/make-catalog-thumbs.py --src=<画像の場所> --out=<出力先>
+                                                       # 配布物の中で作るとき（KLK-131）
 
 ★なぜ要るか（2026-09-15 の実測）
   カタログ画像は**サイト全体を縦に撮った原寸のスクリーンショット**で、
@@ -83,30 +85,45 @@ def make_one(mod, src, dst, width, quality):
         return 0, 0, "失敗: {0}".format(exc)
 
 
-def main(argv):
-    force = "--force" in argv
-    width = DEFAULT_WIDTH
-    quality = DEFAULT_QUALITY
-    for i, a in enumerate(argv):
-        if a == "--width" and i + 1 < len(argv):
-            width = int(argv[i + 1])
-        if a == "--quality" and i + 1 < len(argv):
-            quality = int(argv[i + 1])
+def parse_args(argv):
+    """引数を読む（純粋関数）。戻り値: (src, dst, width, quality, force)。
 
-    if not os.path.isdir(SRC_DIR):
-        print("[NG] %s がありません" % SRC_DIR, file=sys.stderr)
+    ★--src / --out は配布物の中で作るために要る（KLK-131）。
+      配布用の画像はさらに縮んでいるので、**その画像から**サムネイルを作る。
+    """
+    src, dst = SRC_DIR, DST_DIR
+    width, quality, force = DEFAULT_WIDTH, DEFAULT_QUALITY, False
+    for i, a in enumerate(argv):
+        if a == "--force":
+            force = True
+        elif a.startswith("--src="):
+            src = a.split("=", 1)[1]
+        elif a.startswith("--out="):
+            dst = a.split("=", 1)[1]
+        elif a == "--width" and i + 1 < len(argv):
+            width = int(argv[i + 1])
+        elif a == "--quality" and i + 1 < len(argv):
+            quality = int(argv[i + 1])
+    return src, dst, width, quality, force
+
+
+def main(argv):
+    SRC, DST, width, quality, force = parse_args(argv)
+
+    if not os.path.isdir(SRC):
+        print("[NG] %s がありません" % SRC, file=sys.stderr)
         return 2
     mod = load_shrink()
     if not mod.has_sips():
         print("※ sips が無い環境です。そのままコピーになります（容量は減りません）")
-    os.makedirs(DST_DIR, exist_ok=True)
+    os.makedirs(DST, exist_ok=True)
 
-    names = sorted(n for n in os.listdir(SRC_DIR) if is_image(n))
+    names = sorted(n for n in os.listdir(SRC) if is_image(n))
     made = skipped = failed = 0
     total_before = total_after = 0
     for n in names:
-        src = os.path.join(SRC_DIR, n)
-        dst = os.path.join(DST_DIR, n)
+        src = os.path.join(SRC, n)
+        dst = os.path.join(DST, n)
         if not needs_thumb(src, dst, force):
             skipped += 1
             continue
@@ -124,7 +141,7 @@ def main(argv):
         print("作成ぶんの容量: %.1fMB → %.1fMB（%.0f%% 減）"
               % (total_before / 1048576.0, total_after / 1048576.0,
                  100.0 * (total_before - total_after) / total_before))
-    print("置き場所: %s" % os.path.relpath(DST_DIR, ROOT))
+    print("置き場所: %s" % DST)
     return 1 if failed else 0
 
 
