@@ -1,0 +1,5 @@
+# DADS A4タテ テンプレート ビルド依存
+# 検証済みの組み合わせ（2026-09-16 / macOS 12.6 / Python 3.9.6）
+python-pptx==1.0.2   # pptx の生成。必須
+pillow==11.3.0       # プレビュー画像・PDFの描画。build_template.py / validate.py には不要
+# lxml は python-pptx の依存として入る（検証時 6.1.3）
