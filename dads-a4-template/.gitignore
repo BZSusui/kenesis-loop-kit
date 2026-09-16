@@ -1,0 +1,8 @@
+# ビルド用の仮想環境（OS/CPU依存のバイナリを含むため持ち運ばない）
+.venv/
+__pycache__/
+*.pyc
+
+# チケットの運搬用コピー（正本は ../tickets/active/。ルート .gitignore の
+# tickets/ 除外を迂回して作業ログを公開しないため、こちらでも除外する）
+_tickets/
