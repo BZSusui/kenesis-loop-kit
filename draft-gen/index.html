@@ -1303,7 +1303,14 @@ function flashCopied(el, original) {
 // ホストは localhost 限定（外部依存ではない）。稼働時はワンクリック生成、非稼働／通信不可時は
 // 下の clipboard 経路へフォールバックする（壊れない）。scheme はホスト定数と分けて持つ。
 const BRIDGE_HOST = '127.0.0.1:8765';
-const BRIDGE_ORIGIN = 'http://' + BRIDGE_HOST;
+// ★KLK-136: 接続先はポート決め打ちにしない。
+//   この画面がブリッジから配信されている（http）なら、**配信元こそがブリッジ**なので
+//   location.origin を使う。既定以外のポート（KLK_BRIDGE_PORT）で起動しても動くようにする。
+//   file:// で直接開いたときは配信元が無いので、従来どおり既定の 127.0.0.1:8765 を使う
+//   （KLK-026 の「開き直しリンク」もこの既定値を案内し続ける）。
+const BRIDGE_ORIGIN = (location.protocol === 'http:' || location.protocol === 'https:')
+  ? location.origin
+  : 'http://' + BRIDGE_HOST;
 
 function generate() {
   const input = collectInput();
@@ -2292,7 +2299,7 @@ function init() {
     }
     btn.disabled = true;
     setReadColorsMsg('読み取っています…');
-    fetch('http://' + BRIDGE_HOST + '/read-colors', {
+    fetch(BRIDGE_ORIGIN + '/read-colors', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: url })
     })

@@ -291,7 +291,12 @@
     var sel = document.getElementById('regen-addr');
     var typeSel = document.getElementById('regen-type');
     var msg = document.getElementById('regen-msg');
-    var BASE = 'http://127.0.0.1:8765';
+    // ★KLK-136: 接続先をポート決め打ちにしない。
+    //   compare.html は file:// で開かれるのが普通なので、配信元から決められない。
+    //   そこで **生成時に make_compare.py が実際のポートを埋め込む**（KLK_BRIDGE_PORT 由来）。
+    //   ブリッジ経由(http)で開かれた場合は、配信元そのものを使う。
+    var BASE = (location.protocol === 'http:' || location.protocol === 'https:')
+      ? location.origin : '{{BRIDGE_ORIGIN}}';
     var sections = [];
 
     function setMsg(t){ msg.textContent = t; }

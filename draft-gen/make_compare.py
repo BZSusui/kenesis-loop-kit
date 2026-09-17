@@ -102,6 +102,27 @@ def date_from_folder(folder):
     return datetime.date.today().isoformat()
 
 
+# ブリッジの既定ポート。bridge.py の DEFAULT_PORT と同じ値（兄弟モジュールは import しない流儀）
+DEFAULT_BRIDGE_PORT = 8765
+
+
+def bridge_origin(env=None):
+    """compare.html が叩くブリッジの接続先を決める（KLK-136・副作用なし）。
+
+    ★ポートを決め打ちにしない。compare.html は file:// で開かれるのが普通で、
+      画面の場所からは接続先を決められないため、**書き出すときに実際のポートを埋める**。
+      ブリッジは KLK_BRIDGE_PORT で待受ポートを変えられる(既定 8765)。この値は
+      ブリッジ → claude → このスクリプトへ環境変数のまま引き継がれる。
+      数字として読めない値は既定へ倒す（壊れた値で壊れた HTML を書かない）。
+    """
+    env = os.environ if env is None else env
+    raw = (env.get("KLK_BRIDGE_PORT") or "").strip()
+    port = DEFAULT_BRIDGE_PORT
+    if raw.isdigit() and 1 <= int(raw) <= 65535:
+        port = int(raw)
+    return "http://127.0.0.1:%d" % port
+
+
 def build_context(folder, instruction, files, data_folder=None):
     """テンプレートへ差し込む値を組み立てる（副作用なし）。"""
     meta = instruction.get("meta") if isinstance(instruction.get("meta"), dict) else {}
@@ -123,6 +144,7 @@ def build_context(folder, instruction, files, data_folder=None):
         "TASTE": esc(instruction.get("taste") or "未指定"),
         "ATARI": esc(instruction.get("atari") or "standard"),
         "FOLDER": esc(data_folder or folder.rstrip("/")),
+        "BRIDGE_ORIGIN": bridge_origin(),   # KLK-136
     }
     for key, fallback in DEFAULT_COLORS.items():
         ctx[key.upper()] = safe_color(colors.get(key), fallback)
