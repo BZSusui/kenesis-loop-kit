@@ -596,17 +596,23 @@ def resolve_claude_argv(cmd, platform=None, env=None, which=None, isfile=None):
         return cmd
 
     found = which("claude")
-    if not found:
-        for cand in claude_candidates(platform, env):
-            if isfile(cand):
-                found = cand
-                break
-    if not found:
+    if found:
+        # ★PATH で見つかるなら書き換えない。exec も同じ PATH を辿って同じものを見つけるので、
+        #   絶対パスへ置き換える利点が無く、**コマンドの見た目を変える害のほうが大きい**
+        #   （この形に依存している検査・テストダブルがある）。
+        #   ただし .cmd/.bat だけは別。Windows の CreateProcess はそれらを起動できないので、
+        #   cmd.exe を介す必要がある。
+        if platform == "win32" and found.lower().endswith((".cmd", ".bat")):
+            return ["cmd", "/c", found] + cmd[1:]
         return cmd
 
-    if platform == "win32" and found.lower().endswith((".cmd", ".bat")):
-        return ["cmd", "/c", found] + cmd[1:]
-    return [found] + cmd[1:]
+    # PATH に無い。よくある置き場所に実体があれば、そこを指す（レビューで起きた条件）
+    for cand in claude_candidates(platform, env):
+        if isfile(cand):
+            if platform == "win32" and cand.lower().endswith((".cmd", ".bat")):
+                return ["cmd", "/c", cand] + cmd[1:]
+            return [cand] + cmd[1:]
+    return cmd
 
 
 def build_claude_command(instruction_path, allow_open=False):

@@ -55,9 +55,17 @@ class TestResolveClaudeArgv(unittest.TestCase):
         kw.setdefault("isfile", lambda p: False)
         return self.b.resolve_claude_argv(CMD, **kw)
 
-    def test_uses_path_hit_as_absolute(self):
+    def test_leaves_command_alone_when_path_works(self):
+        """★PATH で見つかるなら書き換えない。
+
+        exec も同じ PATH を辿って同じものを見つけるので、絶対パスへ置き換える利点が無い。
+        逆に、コマンドの見た目を変えると **この形に依存する偽 claude（テストダブル）が
+        反応しなくなる**。実際にフルスイートで6件落ちて気づいた（KLK-079 / KLK-080）。
+        """
         got = self.r(platform="win32", env=WIN_ENV, which=lambda n: "C:\\bin\\claude.exe")
-        self.assertEqual(got, ["C:\\bin\\claude.exe"] + CMD[1:])
+        self.assertEqual(got, CMD)
+        got_mac = self.r(platform="darwin", env=MAC_ENV, which=lambda n: "/usr/local/bin/claude")
+        self.assertEqual(got_mac, CMD)
 
     def test_finds_installer_location_when_not_on_path(self):
         """レビューで実際に起きた条件（PATH に無いが .local\\bin に在る）。"""
@@ -75,6 +83,12 @@ class TestResolveClaudeArgv(unittest.TestCase):
     def test_bat_also_goes_through_cmd_exe(self):
         got = self.r(platform="win32", env=WIN_ENV, which=lambda n: "C:\\x\\claude.BAT")
         self.assertEqual(got[:3], ["cmd", "/c", "C:\\x\\claude.BAT"])
+
+    def test_candidate_cmd_file_also_wrapped(self):
+        """PATH に無く、よくある場所に .cmd しかない場合も cmd /c を挟む。"""
+        got = self.r(platform="win32", env={"APPDATA": "C:\\A"}, which=lambda n: None,
+                     isfile=lambda p: p.endswith("claude.cmd"))
+        self.assertEqual(got[:3], ["cmd", "/c", "C:\\A\\npm\\claude.cmd"])
 
     def test_mac_never_uses_cmd_exe(self):
         got = self.r(platform="darwin", env=MAC_ENV, which=lambda n: "/usr/local/bin/claude.cmd")
@@ -115,6 +129,15 @@ class TestResolveClaudeArgv(unittest.TestCase):
                                          which=lambda n: "C:\\npm\\claude.cmd",
                                          isfile=lambda p: False)
         self.assertEqual(got[3:], full[1:])
+
+    def test_stub_contract_is_preserved_on_this_machine(self):
+        """★この環境（PATH に claude がある）では、コマンドの先頭が変わらないこと。
+
+        既存テストの偽 claude は cmd[0] == "claude" で見分けている。ここが変わると、
+        「呼ばれたのに何もしない」偽物になり、**成功したように見えて中身が空**になる。
+        """
+        got = self.b.resolve_claude_argv(CMD)      # 実環境の PATH・platform で解決する
+        self.assertEqual(got[0], "claude", "実環境でコマンドの先頭が変わっている: %s" % got)
 
 
 class TestLaunchSites(unittest.TestCase):
