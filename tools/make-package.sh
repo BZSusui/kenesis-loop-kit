@@ -101,6 +101,24 @@ else
   echo "            （別案件のため。含めるには --with-design-system）"
 fi
 
+# ---- 設計書はこのシステムのものだけ (KLK-135) -------------------------------
+# ★docs/ はディレクトリごと写すので、docs/designs/ の中身は素通りする。
+#   チケット番号と docs/designs/ は別案件（デザインシステム）と共有しており、
+#   向こうが設計書を足すたびに配布物へ混ざる（実際 DADS-002/003/005 が混入していた）。
+#   リポジトリ直下と同じく、ここも **allowlist**（残すものを列挙）で絞る。
+#   残すもの: KLK-*.md（このシステムの設計書）・README.md・_TEMPLATE.md
+if [ -d "$DEST/docs/designs" ]; then
+  _dropped=0
+  for f in "$DEST"/docs/designs/*; do
+    [ -e "$f" ] || continue
+    case "$(basename "$f")" in
+      KLK-*.md|README.md|_TEMPLATE.md) ;;
+      *) rm -rf "$f"; _dropped=$((_dropped + 1)) ;;
+    esac
+  done
+  echo "  絞った: docs/designs/（KLK-* のみ / 別案件の設計書 ${_dropped} 件を外した）"
+fi
+
 # ---- チケットの雛形だけ（作業ログは含めない） -------------------------------
 if [ -d tickets/Templates ]; then
   mkdir -p "$DEST/tickets/Templates"
