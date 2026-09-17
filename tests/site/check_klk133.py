@@ -68,10 +68,12 @@ check("D1 解決が純関数として在り、環境・PATH探索・実在判定
 # ---------------------------------------------------------------------------
 _cases = []
 
-# ①PATH にある（そのまま実体の絶対パスで起動する）
+# ①PATH にある → **書き換えない**。exec も同じ PATH を辿って同じものを見つけるので、
+#   絶対パスへ置き換える利点が無い。コマンドの見た目を変えると、この形に依存する
+#   テストダブル（偽 claude）が反応しなくなる（実際にフルスイートで6件落ちて気づいた）
 _r = bridge.resolve_claude_argv(BASE_CMD, platform="win32", env=WIN_ENV,
                                 which=lambda n: "C:\\bin\\claude.exe", isfile=lambda p: False)
-_cases.append(("①PATH にある", _r[0] == "C:\\bin\\claude.exe" and _r[1:] == BASE_CMD[1:], _r[:2]))
+_cases.append(("①PATH にあるなら変えない", _r == BASE_CMD, _r[:2]))
 
 # ②PATH に無いが、よくある場所に実体がある（レビューで起きた条件そのもの）
 _want = "C:\\Users\\tester\\.local\\bin\\claude.exe"
@@ -84,6 +86,11 @@ _r = bridge.resolve_claude_argv(BASE_CMD, platform="win32", env=WIN_ENV,
                                 which=lambda n: "C:\\npm\\claude.cmd", isfile=lambda p: False)
 _cases.append(("③.cmd は cmd /c 経由", _r[:3] == ["cmd", "/c", "C:\\npm\\claude.cmd"]
                and _r[3:] == BASE_CMD[1:], _r[:3]))
+
+# ③' PATH に無く、よくある場所に .cmd しかない → 実体を指しつつ cmd /c も挟む
+_r = bridge.resolve_claude_argv(BASE_CMD, platform="win32", env={"APPDATA": "C:\\A"},
+                                which=lambda n: None, isfile=lambda p: p.endswith("claude.cmd"))
+_cases.append(("③'PATH に無い .cmd", _r[:3] == ["cmd", "/c", "C:\\A\\npm\\claude.cmd"], _r[:3]))
 
 # ④どこにも無い → 変えない（呼び出し側が従来どおり失敗し、案内を出す）
 _r = bridge.resolve_claude_argv(BASE_CMD, platform="win32", env=WIN_ENV,
@@ -103,7 +110,7 @@ _mac_cmdfile = bridge.resolve_claude_argv(BASE_CMD, platform="darwin", env=MAC_E
 _win_exe = bridge.resolve_claude_argv(BASE_CMD, platform="win32", env=WIN_ENV,
                                       which=lambda n: "C:\\bin\\claude.exe", isfile=lambda p: False)
 check("D3 cmd /c を挟むのは Windows かつ .cmd/.bat のときだけ",
-      _mac_cmdfile[0] != "cmd" and _win_exe[0] != "cmd",
+      _mac_cmdfile[0] != "cmd" and _win_exe == BASE_CMD,
       "mac(.cmd 名でも挟まない)=%s / win(.exe には挟まない)=%s" % (_mac_cmdfile[0], _win_exe[0]))
 
 # ---------------------------------------------------------------------------
