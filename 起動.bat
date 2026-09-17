@@ -33,14 +33,28 @@ if not defined PYEXE (
 )
 
 rem --- Claude Code を探す（生成時に呼び出すため必須）---
+rem ★KLK-133: PATH だけに頼らない。インストーラは %USERPROFILE%\.local\bin へ置くが、
+rem   そこが PATH に入っていない環境がある（実際に起動できなかった報告あり）。
+rem   見つけた場所は **このウィンドウの PATH にだけ** 足す（setlocal の中なので
+rem   利用者の環境変数は書き換えない）。入れ子の括弧は使わない（cmd の変数展開の落とし穴を避ける）。
 where claude >nul 2>&1
-if errorlevel 1 (
-  echo 【エラー】claude（Claude Code）が見つかりません。
-  echo ブリッジは生成時に claude を呼び出すため、これが無いと生成が失敗します。
-  echo 対処: Claude Code をインストールし、コマンドプロンプトで claude --version が出ることを確認してください。
-  pause
-  exit /b 1
-)
+if not errorlevel 1 goto claude_ok
+if exist "%USERPROFILE%\.local\bin\claude.exe" set "PATH=%PATH%;%USERPROFILE%\.local\bin"
+if exist "%APPDATA%\npm\claude.cmd" set "PATH=%PATH%;%APPDATA%\npm"
+if exist "%LOCALAPPDATA%\Programs\claude\claude.exe" set "PATH=%PATH%;%LOCALAPPDATA%\Programs\claude"
+where claude >nul 2>&1
+if not errorlevel 1 goto claude_ok
+echo 【エラー】claude（Claude Code）が見つかりません。
+echo ブリッジは生成時に claude を呼び出すため、これが無いと生成が失敗します。
+echo 探した場所:
+echo   ・PATH の中
+echo   ・%USERPROFILE%\.local\bin\claude.exe
+echo   ・%APPDATA%\npm\claude.cmd
+echo   ・%LOCALAPPDATA%\Programs\claude\claude.exe
+echo 対処: Claude Code をインストールし、コマンドプロンプトで claude --version が出ることを確認してください。
+pause
+exit /b 1
+:claude_ok
 
 echo ローカルブリッジを起動します。設定画面が自動でブラウザに開きます。
 echo 停止するには、このウィンドウで Ctrl+C を押してください。

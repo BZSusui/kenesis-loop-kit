@@ -25,6 +25,7 @@ import ipaddress
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import urllib.parse
@@ -526,6 +527,86 @@ def select_open_target(folder, variants):
         n = 1
     leaf = "compare.html" if n >= 2 else "index.html"
     return "{0}/{1}".format(folder, leaf)
+
+
+# claude の実体を探す場所(KLK-133)。PATH に無くても、よくある場所なら見つける。
+#   Windows: インストーラは %USERPROFILE%\.local\bin へ置く(レビュー時に PATH へ入っていなかった)。
+#            npm 版は %APPDATA%\npm\claude.cmd。
+#   macOS/Linux: ~/.local/bin ・ Homebrew ・ /usr/local/bin。
+CLAUDE_CANDIDATES = {
+    "win32": (
+        ("USERPROFILE", ".local\\bin\\claude.exe"),
+        ("APPDATA", "npm\\claude.cmd"),
+        ("LOCALAPPDATA", "Programs\\claude\\claude.exe"),
+    ),
+    "posix": (
+        ("HOME", ".local/bin/claude"),
+        (None, "/opt/homebrew/bin/claude"),
+        (None, "/usr/local/bin/claude"),
+    ),
+}
+
+
+def claude_candidates(platform=None, env=None):
+    """claude を探す場所を絶対パスで並べる(KLK-133・純関数・副作用なし)。
+
+    環境変数が無い項目は黙って飛ばす(その環境に無い置き場所を探しても意味がない)。
+    """
+    platform = sys.platform if platform is None else platform
+    env = os.environ if env is None else env
+    win = platform == "win32"
+    rows = CLAUDE_CANDIDATES["win32"] if win else CLAUDE_CANDIDATES["posix"]
+    # ★区切り文字は os.path.join に任せない。他OSから Windows の条件を再現して
+    #   検証できるようにするため(実機が使えない期間があるので、ここは決め打ちが正しい)。
+    sep = "\\" if win else "/"
+    out = []
+    for var, tail in rows:
+        if var is None:
+            out.append(tail)
+            continue
+        base = env.get(var)
+        if base:
+            out.append(base.rstrip("/\\") + sep + tail)
+    return out
+
+
+def resolve_claude_argv(cmd, platform=None, env=None, which=None, isfile=None):
+    """起動の直前に claude の実体を解決する(KLK-133・純関数・副作用なし)。
+
+    ★なぜ要るか(実使用レビュー 2026-09-16 で判明):
+      ①PATH に入っていない環境がある。claude.exe は在るのに「見つからない」で止まっていた。
+      ②**Windows の CreateProcess は PATHEXT を見ない**。PATH 探索で補うのは .exe だけなので、
+        npm 版(claude.cmd)は `where claude` が通るのに **subprocess からは起動できない**。
+        .cmd/.bat は cmd.exe 経由でしか起動できないため、Windows のときだけ `cmd /c` を挟む。
+
+    ★組み立て(build_*_command)の形は変えない。あちらは「論理的なコマンド」で、
+      既存の受入検査が cmd[:2] == ["claude", "-p"] を見ている。解決はここだけで行う。
+
+    見つからないときは cmd をそのまま返す(呼び出し側が従来どおり失敗し、案内を出す)。
+    cmd /c へ渡すのは当方が組み立てた引数だけ(パスは uuid・日付由来)で、利用者の入力は入らない。
+    シェル経由の実行はしない(list 渡しのまま・最小権限・NFR-004)。
+    """
+    platform = sys.platform if platform is None else platform
+    env = os.environ if env is None else env
+    which = shutil.which if which is None else which
+    isfile = os.path.isfile if isfile is None else isfile
+
+    cmd = list(cmd or [])
+    if not cmd or cmd[0] != "claude":
+        return cmd
+
+    found = which("claude")
+    if not found:
+        for cand in claude_candidates(platform, env):
+            if isfile(cand):
+                found = cand
+                break
+    if not found:
+        return cmd
+
+    if platform == "win32" and found.lower().endswith((".cmd", ".bat")):
+        return ["cmd", "/c", found] + cmd[1:]
+    return [found] + cmd[1:]
 
 
 def build_claude_command(instruction_path, allow_open=False):
@@ -2310,7 +2391,7 @@ def _run_server(port):
 
     def _run_job(job_id, pending_path, project, variants, started_at):
         """ワーカースレッド: claude -p を実行し、完了後ブリッジが表示物を開く(§4.3)。"""
-        cmd = build_claude_command(pending_path)
+        cmd = resolve_claude_argv(build_claude_command(pending_path))
         try:
             proc = subprocess.run(
                 cmd,
@@ -2417,7 +2498,7 @@ def _run_server(port):
           4回失敗している(KLK-064 の登録未到達、KLK-072〜076 の規約無視)。
           同じ形なので、**黙って成功と言わない**。結果は typeApplied で返す。
         """
-        cmd = build_regenerate_command(pending_path)
+        cmd = resolve_claude_argv(build_regenerate_command(pending_path))
         try:
             proc = subprocess.run(
                 cmd,
@@ -2562,7 +2643,7 @@ def _run_server(port):
                 return None
 
         before = _count_entries()
-        cmd = build_catalog_import_command(pending_spec_path)
+        cmd = resolve_claude_argv(build_catalog_import_command(pending_spec_path))
         try:
             proc = subprocess.run(
                 cmd,

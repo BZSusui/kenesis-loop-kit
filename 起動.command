@@ -14,9 +14,21 @@ if ! command -v python3 >/dev/null 2>&1; then
   echo "確認: ターミナルで python3 --version が表示されればOKです。" >&2
   exit 1
 fi
+# ★KLK-133: PATH だけに頼らない。ダブルクリック起動では、シェルの設定で足した PATH が
+#   届かないことがある。よくある置き場所を探し、見つけたら **このプロセスの PATH にだけ** 足す。
+CLAUDE_DIRS="$HOME/.local/bin /opt/homebrew/bin /usr/local/bin"
+if ! command -v claude >/dev/null 2>&1; then
+  for d in $CLAUDE_DIRS; do
+    if [ -x "$d/claude" ]; then
+      PATH="$PATH:$d"; export PATH
+      break
+    fi
+  done
+fi
 if ! command -v claude >/dev/null 2>&1; then
   echo "【エラー】claude（Claude Code）が見つかりません。" >&2
   echo "ブリッジは生成時に claude を呼び出すため、これが無いと生成が失敗します。" >&2
+  echo "探した場所: PATH の中 / $CLAUDE_DIRS" >&2
   echo "対処: Claude Code をインストールし、ターミナルで claude --version が出ることを確認してください。" >&2
   exit 1
 fi
