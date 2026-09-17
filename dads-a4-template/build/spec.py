@@ -119,19 +119,31 @@ def _typography(base_px):
 #   BASE_PX  : 本文の文字サイズ(CSS px)
 #   COL_MULT : カラム幅が本文文字サイズの何倍か（DADS: カラム幅は本文の整数倍）
 #   MARGIN_U : 上下マージンが余白基準単位 U の何倍か
+#   FONT_JP / FONT_LATIN : 和文(ea)と欧文(latin)の書体。
+#     Noto Sans JP は DADS が採用する書体だが、官公庁のPCには通常入っておらず、
+#     先方が開くと別の書体へ置換される。納品用には両OSに標準搭載され名前が一致する
+#     書体を使う（BIZ UDPGothic + Arial）。DADSはシステムフォントの使用を制限していない
+#     （foundations/typography/index.md 20行）。詳細は DADS-005 の設計書。
+_JP_STD = "BIZ UDPGothic"     # Windows 10 1809以降に標準搭載。Mac でも同名で解決できる
+_LATIN_STD = "Arial"          # 両OS標準。BIZ UDP の欧文字形は横に広く、行長が伸びるため使わない
+_NOTO = "Noto Sans JP"
+
+_A4 = dict(PAPER="a4", PAGE_W_MM=210.0, PAGE_H_MM=297.0, BASE_PX=16, COL_MULT=5, MARGIN_U=8,
+           PAPER_NAME="A4タテ", LABEL="標準")
+_B5 = dict(PAPER="b5", PAGE_W_MM=182.0, PAGE_H_MM=257.0, BASE_PX=16, COL_MULT=4, MARGIN_U=7,
+           PAPER_NAME="B5タテ", LABEL="標準")
+_B5C = dict(PAPER="b5", PAGE_W_MM=182.0, PAGE_H_MM=257.0, BASE_PX=14, COL_MULT=5, MARGIN_U=7,
+            PAPER_NAME="B5タテ", LABEL="コンパクト")
+
 PROFILES = {
-    "a4": dict(
-        PAGE_W_MM=210.0, PAGE_H_MM=297.0, BASE_PX=16, COL_MULT=5, MARGIN_U=8,
-        PAPER_NAME="A4タテ", LABEL="標準",
-    ),
-    "b5": dict(
-        PAGE_W_MM=182.0, PAGE_H_MM=257.0, BASE_PX=16, COL_MULT=4, MARGIN_U=7,
-        PAPER_NAME="B5タテ", LABEL="標準",
-    ),
-    "b5-compact": dict(
-        PAGE_W_MM=182.0, PAGE_H_MM=257.0, BASE_PX=14, COL_MULT=5, MARGIN_U=7,
-        PAPER_NAME="B5タテ", LABEL="コンパクト",
-    ),
+    # DADS採用書体（Noto Sans JP）版。判型の定義はこの3つが正で、-std 版と共有する
+    "a4":         dict(_A4,  FONT_JP=_NOTO, FONT_LATIN=_NOTO, FONT_SET="noto"),
+    "b5":         dict(_B5,  FONT_JP=_NOTO, FONT_LATIN=_NOTO, FONT_SET="noto"),
+    "b5-compact": dict(_B5C, FONT_JP=_NOTO, FONT_LATIN=_NOTO, FONT_SET="noto"),
+    # 標準搭載フォント版（官公庁納品向け）。判型の定義は上と同一で、書体だけが違う
+    "a4-std":         dict(_A4,  FONT_JP=_JP_STD, FONT_LATIN=_LATIN_STD, FONT_SET="std"),
+    "b5-std":         dict(_B5,  FONT_JP=_JP_STD, FONT_LATIN=_LATIN_STD, FONT_SET="std"),
+    "b5-compact-std": dict(_B5C, FONT_JP=_JP_STD, FONT_LATIN=_LATIN_STD, FONT_SET="std"),
 }
 
 DEFAULT_PROFILE = "a4"
@@ -220,6 +232,8 @@ def load(name=DEFAULT_PROFILE):
 
     ns = dict(
         PROFILE=name, PAPER_NAME=p["PAPER_NAME"], LABEL=p["LABEL"],
+        FONT_JP=p["FONT_JP"], FONT_LATIN=p["FONT_LATIN"], FONT_SET=p["FONT_SET"],
+        PAPER=p["PAPER"],
         BASE_PX=BASE_PX, COL_MULT=COL_MULT,
         PAGE_W_MM=PAGE_W_MM, PAGE_H_MM=PAGE_H_MM,
         PX=PX, MM=MM, PT=PT, px2mm=px2mm, mm2px=mm2px,

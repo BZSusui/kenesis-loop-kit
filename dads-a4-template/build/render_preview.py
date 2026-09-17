@@ -24,49 +24,71 @@ PPMM = float(os.environ.get("PPMM", "6.0"))   # 1mm あたりの描画ピクセ�
 
 # 描画用フォント。Noto Sans JP を優先し、無ければ環境にある日本語書体へ退避する。
 # 明示指定したい場合は環境変数 FONT_BOLD / FONT_REGULAR にファイルパスを渡す。
-_FONT_CANDIDATES = {
-    True: [  # Bold
-        "~/Library/Fonts/NotoSansJP-Bold.otf",
-        "/Library/Fonts/NotoSansJP-Bold.otf",
-        "/System/Library/Fonts/Supplemental/NotoSansJP-Bold.otf",
-        "C:/Windows/Fonts/NotoSansJP-Bold.otf",
-        "C:/Users/*/AppData/Local/Microsoft/Windows/Fonts/NotoSansJP-Bold.otf",
-        "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
-        "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc",
-        "/System/Library/Fonts/ヒラギノ角ゴシック W6.ttc",
-        "C:/Windows/Fonts/YuGothB.ttc",
-        "C:/Windows/Fonts/meiryob.ttc",
-    ],
-    False: [  # Regular
-        "~/Library/Fonts/NotoSansJP-Regular.otf",
-        "/Library/Fonts/NotoSansJP-Regular.otf",
-        "/System/Library/Fonts/Supplemental/NotoSansJP-Regular.otf",
-        "C:/Windows/Fonts/NotoSansJP-Regular.otf",
-        "C:/Users/*/AppData/Local/Microsoft/Windows/Fonts/NotoSansJP-Regular.otf",
-        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-        "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
-        "/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc",
-        "C:/Windows/Fonts/YuGothR.ttc",
-        "C:/Windows/Fonts/meiryo.ttc",
-    ],
+# 書体名（pptx のテーマに書かれた typeface）-> 実フォントファイルの候補。
+# プレビューは pptx が指定する書体で描く。テンプレートの書体が変われば
+# あふれ検査(overflow.py)の結果も変わるため、ここを固定にしてはいけない（DADS-005）。
+_FONT_FILES = {
+    "Noto Sans JP": {
+        True: ["~/Library/Fonts/NotoSansJP-Bold.otf",
+               "/Library/Fonts/NotoSansJP-Bold.otf",
+               "/System/Library/Fonts/Supplemental/NotoSansJP-Bold.otf",
+               "C:/Windows/Fonts/NotoSansJP-Bold.otf",
+               "C:/Users/*/AppData/Local/Microsoft/Windows/Fonts/NotoSansJP-Bold.otf",
+               "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc"],
+        False: ["~/Library/Fonts/NotoSansJP-Regular.otf",
+                "/Library/Fonts/NotoSansJP-Regular.otf",
+                "/System/Library/Fonts/Supplemental/NotoSansJP-Regular.otf",
+                "C:/Windows/Fonts/NotoSansJP-Regular.otf",
+                "C:/Users/*/AppData/Local/Microsoft/Windows/Fonts/NotoSansJP-Regular.otf",
+                "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"],
+    },
+    "BIZ UDPGothic": {
+        True: ["~/Library/Fonts/BIZUDPGothic-Bold.ttf",
+               "/Library/Fonts/BIZUDPGothic-Bold.ttf",
+               "C:/Windows/Fonts/BIZ-UDPGothicB.ttc"],
+        False: ["~/Library/Fonts/BIZUDPGothic-Regular.ttf",
+                "/Library/Fonts/BIZUDPGothic-Regular.ttf",
+                "C:/Windows/Fonts/BIZ-UDPGothicR.ttc"],
+    },
+    "BIZ UDPMincho": {
+        True: ["~/Library/Fonts/BIZUDPMincho-Bold.ttf",
+               "C:/Windows/Fonts/BIZ-UDPMinchoB.ttc"],
+        False: ["~/Library/Fonts/BIZUDPMincho-Regular.ttf",
+                "C:/Windows/Fonts/BIZ-UDPMinchoM.ttc"],
+    },
+    "Arial": {
+        True: ["/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+               "/Library/Fonts/Arial Bold.ttf",
+               "C:/Windows/Fonts/arialbd.ttf"],
+        False: ["/System/Library/Fonts/Supplemental/Arial.ttf",
+                "/Library/Fonts/Arial.ttf",
+                "C:/Windows/Fonts/arial.ttf"],
+    },
 }
 
+# 描画に使う書体。render() が pptx のテーマから読み取って上書きする。
+# 既定は Noto Sans JP（単体実行された場合に備える）。
+THEME_FONTS = {"ea": "Noto Sans JP", "latin": "Noto Sans JP"}
 
-def _resolve_font(bold):
+
+def _resolve_font(name, bold):
+    """書体名と太さから実フォントファイルのパスを返す。"""
     import glob
     env = os.environ.get("FONT_BOLD" if bold else "FONT_REGULAR")
     if env:
         if not os.path.exists(env):
             raise SystemExit(f"指定されたフォントが見つかりません: {env}")
         return env
-    for pat in _FONT_CANDIDATES[bold]:
+    for pat in _FONT_FILES.get(name, {}).get(bold, []):
         for path in sorted(glob.glob(os.path.expanduser(pat))):
             if os.path.exists(path):
                 return path
     raise SystemExit(
-        "プレビュー描画用の日本語フォントが見つかりません。\n"
-        "  Noto Sans JP を導入するか（https://fonts.google.com/noto/specimen/Noto+Sans+JP）、\n"
-        "  環境変数 FONT_REGULAR / FONT_BOLD にフォントファイルのパスを指定してください。\n"
+        f"プレビュー描画に必要なフォントが見つかりません: 「{name}」の"
+        f"{'Bold' if bold else 'Regular'}\n"
+        "  テンプレートがこの書体を指定しているため、プレビューを描けません。\n"
+        "  当該フォントを導入するか、環境変数 FONT_REGULAR / FONT_BOLD で\n"
+        "  フォントファイルのパスを指定してください。\n"
         "  ※ プレビューは目視確認用です。pptx の生成（build_template.py）と\n"
         "     検証（validate.py）はフォント無しでも動作します。")
 
@@ -76,14 +98,31 @@ _cache = {}
 NO_LINE_START = "。、）」』】〉》”’,.)]}%"
 
 
-def font(pt, bold):
-    if bold not in FONTS:
-        FONTS[bold] = _resolve_font(bold)
+def is_latin(ch):
+    """欧文（ラテン文字・数字・記号）とみなすか。CJK と和文約物は False。"""
+    return ord(ch) < 0x2E80
+
+
+def font(pt, bold, latin=False):
+    """描画用フォントを返す。latin=True なら欧文用の書体を使う。
+
+    PowerPoint はテーマの <a:latin> と <a:ea> を文字の種類で使い分ける。
+    プレビューも同じように切り替えないと、和文と欧文で別の書体を指定した
+    テンプレート（標準搭載フォント版）の行長を再現できない（DADS-005）。
+    """
+    name = THEME_FONTS["latin" if latin else "ea"]
+    if (name, bold) not in FONTS:
+        FONTS[(name, bold)] = _resolve_font(name, bold)
     px = max(1, int(round(pt * 25.4 / 72.0 * PPMM)))
-    key = (px, bold)
+    key = (name, px, bold)
     if key not in _cache:
-        _cache[key] = ImageFont.truetype(FONTS[bold], px)
+        _cache[key] = ImageFont.truetype(FONTS[(name, bold)], px)
     return _cache[key]
+
+
+def font_ch(ch, pt, bold):
+    """1文字に対して、和文/欧文の別に応じたフォントを返す。"""
+    return font(pt, bold, latin=is_latin(ch))
 
 
 def X(emu):   return emu / EMU_MM * PPMM
@@ -205,9 +244,9 @@ def layout_text(txBody, box, lst_default, anchor_default="t"):
         avail = bw - indent
         cur, cur_w, first = [], 0.0, True
         for text, rs in segs:
-            f = font(rs["sz"], rs["b"])
             for ch in text:
-                w = f.getlength(ch) + rs["spc"] * PPMM * 25.4 / 72.0 / 25.4 * 25.4 / 72.0 * 0
+                # 和文と欧文で書体が違う場合があるため、1文字ごとに選ぶ
+                f = font_ch(ch, rs["sz"], rs["b"])
                 w = f.getlength(ch) + rs["spc"] * 25.4 / 72.0 * PPMM
                 if ch == "\n" or (cur_w + w > avail and cur):
                     if ch != "\n" and cur and cur[-1][0] and ch in NO_LINE_START:
@@ -246,7 +285,7 @@ def draw_text(dr, txBody, box, lst_default, anchor_default="t"):
         lh_px = (ps["line"] or sz * 1.2) * 25.4 / 72.0 * PPMM
         y += before * 25.4 / 72.0 * PPMM
         if segs:
-            w = sum(font(rs["sz"], rs["b"]).getlength(ch) +
+            w = sum(font_ch(ch, rs["sz"], rs["b"]).getlength(ch) +
                     rs["spc"] * 25.4 / 72.0 * PPMM for ch, rs in segs)
             indent = ps["marL"]
             x = bx + indent
@@ -262,7 +301,7 @@ def draw_text(dr, txBody, box, lst_default, anchor_default="t"):
                 dr.text((bx + indent - 4.5 * PPMM, baseline), "•",
                         font=fb, fill=segs[0][1]["color"], anchor="ls")
             for ch, rs in segs:
-                f = font(rs["sz"], rs["b"])
+                f = font_ch(ch, rs["sz"], rs["b"])
                 dr.text((x, baseline), ch, font=f, fill=rs["color"], anchor="ls")
                 x += f.getlength(ch) + rs["spc"] * 25.4 / 72.0 * PPMM
         y += lh_px
@@ -396,9 +435,37 @@ def bg_color(cSld):
     return solid(bg.find(Q("p:bgPr")))
 
 
+def read_theme_fonts(z):
+    """pptx のテーマから、和文(ea)と欧文(latin)の書体名を読む。
+
+    プレビューは pptx が指定する書体で描く必要がある。
+    テンプレートの書体が変われば行長も変わり、あふれ検査の結果も変わるため。
+    """
+    out = {"ea": "Noto Sans JP", "latin": "Noto Sans JP"}
+    names = [n for n in z.namelist() if n.startswith("ppt/theme/theme")]
+    if not names:
+        return out
+    th = etree.fromstring(z.read(sorted(names)[0]))
+    minor = th.find(".//" + Q("a:fontScheme") + "/" + Q("a:minorFont"))
+    if minor is None:
+        return out
+    for tag, key in (("a:latin", "latin"), ("a:ea", "ea")):
+        el = minor.find(Q(tag))
+        if el is not None and el.get("typeface"):
+            out[key] = el.get("typeface")
+    # ea が空なら Jpan 指定を見る
+    if not out["ea"]:
+        jp = minor.find(Q("a:font") + "[@script='Jpan']")
+        if jp is not None and jp.get("typeface"):
+            out["ea"] = jp.get("typeface")
+    return out
+
+
 def render(pptx_path, out_dir, pdf_path=None):
     os.makedirs(out_dir, exist_ok=True)
     z = zipfile.ZipFile(pptx_path)
+    THEME_FONTS.update(read_theme_fonts(z))
+    FONTS.clear(); _cache.clear()   # 書体が変わるのでキャッシュを捨てる
     pres = etree.fromstring(z.read("ppt/presentation.xml"))
     sz = pres.find(Q("p:sldSz"))
     W, H = X(int(sz.get("cx"))), X(int(sz.get("cy")))
