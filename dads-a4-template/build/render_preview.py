@@ -368,6 +368,27 @@ def draw_table(dr, gf):
         y += rh
 
 
+# PDF に書かれる作成日時。固定しないと中身が同じでも毎回 git の差分になり、
+# 本当の変更を見分けられなくなる（DADS-004）。zip 側の ZIP_EPOCH と同じ日付に揃える。
+PDF_EPOCH = b"D:19800101000000Z"
+
+
+def _freeze_pdf_dates(path):
+    """PDF の /CreationDate と /ModDate を固定値へ置き換える。
+
+    PIL は日時を平文で書くため、同じ長さの文字列へ置換すれば
+    オフセット表（xref）を壊さずに済む。長さが変わる置換はしない。
+    """
+    import re as _re
+    data = open(path, "rb").read()
+    data = _re.sub(
+        rb"(/(?:CreationDate|ModDate)\s*\()([^)]*)",
+        lambda m: m.group(1) + PDF_EPOCH
+        if len(m.group(2)) == len(PDF_EPOCH) else m.group(0),  # 想定外の形式は触らない
+        data)
+    open(path, "wb").write(data)
+
+
 def bg_color(cSld):
     bg = cSld.find(Q("p:bg"))
     if bg is None:
@@ -450,6 +471,7 @@ def render(pptx_path, out_dir, pdf_path=None):
         dpi = PPMM * 25.4
         pages[0].save(pdf_path, "PDF", save_all=True, append_images=pages[1:],
                       resolution=dpi)
+        _freeze_pdf_dates(pdf_path)
         print("rendered", pdf_path, f"({dpi:.0f} dpi)")
     return outs
 

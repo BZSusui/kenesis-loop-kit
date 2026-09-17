@@ -20,6 +20,13 @@ if [ ! -x "$VENV/bin/python" ]; then
 fi
 PY="$VENV/bin/python"
 
+# バイトコードキャッシュを作らない。
+# spec.py を編集してもファイルサイズが変わらない場合（例: MARGIN_U=8 -> 7）、
+# Python が mtime とサイズで「変更なし」と誤判定して古い __pycache__ を使い、
+# 古い定義のままビルドされることがある（DADS-004 で実際に起きた）。
+export PYTHONDONTWRITEBYTECODE=1
+rm -rf "$DIR/build/__pycache__"
+
 # プロファイル名:出力pptx名:プレビュー出力先
 # A4 のプレビューは preview/ 直下（DADS-001 の成果物パスを変えないため）
 PROFILES="a4:DADS_A4_Portrait_Template:.
