@@ -5,7 +5,8 @@
 #
 # A4タテ / B5タテ（標準）/ B5タテ（コンパクト）の3種を作る。
 # 初回は dads-a4-template/.venv を作成して依存を入れる。
-# 検証(validate.py)または回帰テスト(regress.py)が失敗した場合は終了コード 1 で止まる。
+# 検証(validate.py)・あふれ検査(overflow.py)・回帰テスト(regress.py)のいずれかが
+# 失敗した場合は終了コード 1 で止まる。
 # 配布前に必ず通すこと。
 set -e
 DIR=$(cd "$(dirname "$0")/.." && pwd)
@@ -37,6 +38,7 @@ echo "$PROFILES" | while IFS=: read -r prof name prev; do
   PPMM=11.81 "$PY" "$DIR/build/render_preview.py" "$PPTX" "$PREV" >/dev/null  # 300dpi の preview.pdf
   "$PY" "$DIR/build/render_preview.py" "$PPTX" "$PREV" >/dev/null             # 152dpi の PNG 群
   echo "preview/$prev を更新しました"
+  "$PY" "$DIR/build/overflow.py" "$PPTX"
   echo
   n=$((n + 1))
 done

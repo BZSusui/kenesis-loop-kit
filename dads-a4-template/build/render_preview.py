@@ -170,7 +170,12 @@ def text_width(s, f, spc):
     return sum(f.getlength(ch) + spc for ch in s)
 
 
-def draw_text(dr, txBody, box, lst_default, anchor_default="t"):
+def layout_text(txBody, box, lst_default, anchor_default="t"):
+    """テキストを折り返して行のリストと必要高さ(px)を返す。描画はしない。
+
+    draw_text() と overflow.py が共有する。折り返しの判断を1箇所に保つため、
+    この関数を複製しないこと（判定が静かに乖離すると検査が嘘をつく）。
+    """
     bx, by, bw, bh = box
     bodyPr = txBody.find(Q("a:bodyPr"))
     anchor = (bodyPr.get("anchor", anchor_default)
@@ -222,6 +227,13 @@ def draw_text(dr, txBody, box, lst_default, anchor_default="t"):
         sz = max([rs["sz"] for _, rs in segs], default=ps["sz"])
         lh = (ps["line"] or sz * 1.2)
         total += before * 25.4 / 72.0 * PPMM + lh * 25.4 / 72.0 * PPMM
+
+    return lines, total, anchor
+
+
+def draw_text(dr, txBody, box, lst_default, anchor_default="t"):
+    bx, by, bw, bh = box
+    lines, total, anchor = layout_text(txBody, box, lst_default, anchor_default)
 
     y = by
     if anchor == "ctr":
