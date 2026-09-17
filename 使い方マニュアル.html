@@ -273,10 +273,18 @@
 
 <ol class="steps">
   <li>受け取ったフォルダを、デスクトップや書類フォルダなど、自分が使いやすい場所に置きます</li>
-  <li>フォルダの中の <code>draft-gen</code> を開きます</li>
+  <li>フォルダを開きます。起動ファイルは<b>いちばん上</b>にあります</li>
   <li>Mac なら <code>起動.command</code>、Windows なら <code>起動.bat</code> をダブルクリックします</li>
   <li>黒い画面が出たあと、ブラウザが自動で開きます。これが操作画面です</li>
 </ol>
+
+<div class="warn">
+<b>Windows の方へ：置き場所に条件があります</b>
+<code>\\サーバー名\共有名\…</code> や <code>\\wsl.localhost\…</code> のように <b>「\\」で始まる場所</b>に置いたままだと、
+<code>起動.bat</code> をダブルクリックしても動きません。フォルダを <code>C:\</code> の下（デスクトップなど）へコピーするか、
+共有フォルダならドライブ文字（<code>Z:</code> など）を割り当ててから開いてください。
+WSL の中に置いている場合は <code>起動.bat</code> を使わず、WSL のターミナルで <code>python3 draft-gen/bridge.py</code> を実行します。
+</div>
 
 <div class="warn">
 <b>黒い画面は閉じないでください</b>
