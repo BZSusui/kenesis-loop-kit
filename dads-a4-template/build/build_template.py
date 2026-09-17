@@ -614,13 +614,21 @@ def build_slides(prs, L):
         _font_note = (f"書体は {S.FONT_JP} を使用します。サイズはデジタル庁デザインシステムの"
                       "テキストスタイル（CSS px）を 0.75 倍して pt に換算した値です。")
     else:
-        _font_note = (f"書体は和文に {S.FONT_JP}、欧文に {S.FONT_LATIN} を使用します"
-                      "（いずれもPCに標準搭載され、WindowsとMacで書体名が一致します）。"
-                      "サイズはデジタル庁デザインシステムのテキストスタイル（CSS px）を"
-                      " 0.75 倍して pt に換算した値です。")
-    s.shapes._spTree.append(text_sp(sid, "書体説明", S.LEFT, y, S.CONTENT_W, 16.0, [
+        # 「両OSで名前が一致する」といった説明は規約ページに書く。
+        # ここを長くすると版面の狭い判型で行数が増え、下の一覧と重なる
+        # 版面の狭い判型でも2行に収める。長くすると下の一覧と重なる。
+        # 「両OSで名前が一致する」等の詳しい説明は規約ページに書く
+        _font_note = (f"書体は和文 {S.FONT_JP}／欧文 {S.FONT_LATIN}。"
+                      "サイズは CSS px を 0.75 倍して pt に換算した値です。")
+    # 書体の説明は和文/欧文を併記する分だけ長くなる。必要な行数を見積もって枠を確保する。
+    # Noto版は従来どおり 16.0mm / 送り18.0mm（出力を変えないため）。
+    _cpl = max(1, int(S.CONTENT_W / (S.T["body"]["pt"] * 25.4 / 72)))   # 1行の全角換算文字数
+    _lh_mm = S.T["body"]["lnPts"] / 100 * 25.4 / 72
+    _nl = max(1, -(-len(_font_note) // _cpl))
+    _note_h = 16.0 if S.FONT_SET == "noto" else _nl * _lh_mm + 1.6
+    s.shapes._spTree.append(text_sp(sid, "書体説明", S.LEFT, y, S.CONTENT_W, _note_h, [
         para(_font_note, t["body"], B)])); sid += 1
-    y += 18.0 * _k0
+    y += (18.0 * _k0) if S.FONT_SET == "noto" else (_note_h + S.S1)
     # 見出しの行高は判型で変わる。実際の値域から文言を組み立てる（A4では "150%"）
     _hs = sorted({t[k]["lh"] for k in ("section_ttl", "page_title", "h2")})
     _head_lh = f"{_hs[0]}%" if len(_hs) == 1 else f"{_hs[0]}〜{_hs[-1]}%"
@@ -636,6 +644,12 @@ def build_slides(prs, L):
         _lh_text = (f"行間は比率で固定しています（{_ratio}）。"
                     "PowerPoint上は「固定値（pt）」指定のため、書体を替えても行位置がずれません。")
         _spc_text = "字間はデジタル庁デザインシステムの指定（0％・1％・2％）を pt に換算済みです。"
+        if S.FONT_SET == "std":
+            # 標準搭載フォント版は書体名が長く、BIZ UDP の字幅も Noto より広い。
+            # B5では2文のままだと1行はみ出してフッター罫へ届くため、1文にまとめる
+            _lh_text = (f"行間・字間はデジタル庁デザインシステムの指定を pt に換算して固定しています"
+                        f"（{_ratio}／字間 0〜2%）。書体を替えても行位置がずれません。")
+            _spc_text = None
     # 見本の文字列は版面が狭いほど短くする（判型をまたいで折り返さないように）
     long_s = "見本 Sample 0123" if S.PAPER == "a4" else "見本 Sample"
     top_s = "見本 Sample" if S.PAPER == "a4" else "見本 Abc"
@@ -678,7 +692,9 @@ def build_slides(prs, L):
     s.shapes._spTree.append(text_sp(sid, "行間説明", S.LEFT, y, S.CONTENT_W, 70.0, [
         para("行間と字間", t["h2"], B),
         para(_lh_text, t["body"], B, space_before_pt=6),
+    ] + ([] if _spc_text is None else [
         para(_spc_text, t["body"], B, space_before_pt=6),
+    ]) + [
     ] + ([
         para("DADSの14 CSS px 未満のサイズは使用しません。",
              t["body"], B, bullet=True, space_before_pt=8),

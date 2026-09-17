@@ -3,8 +3,14 @@
 
     python build/overflow.py dist/DADS_B5_Portrait_Template.pptx [...]
 
-**判定するのは1つだけ。「本文領域の図形がフッター罫（FRULE_Y）を越えたか」。**
-1件でもあれば終了コード 1 を返す。これは DADS-002 で実際に起きた不具合と同じ形である。
+判定は2つ。1件でもあれば終了コード 1 を返す。
+
+  1. **フッター越え** — 本文領域の図形がフッター罫（FRULE_Y）を越えた
+  2. **重なり** — ある図形のテキストが、その下にある別の図形の上端を越えた
+
+1 は DADS-002 で、2 は DADS-005 で実際に起きた不具合と同じ形である。
+2 は「テキストが枠を超えて下の要素に重なる」ケースで、1 だけでは検出できない
+（ページ途中での重なりはフッター罫に届かない）。
 
 対象は次の2つで絞る。
 
@@ -64,6 +70,81 @@ def _bottom_of(by, bh, total, anchor):
     if anchor == "ctr":
         return by + (bh + total) / 2
     return by + total
+
+
+def _shapes_of(z, target):
+    """スライド上の図形を (名前, 枠, テキストの必要高さ, テキスト有無) で返す。"""
+    root = etree.fromstring(z.read(target))
+    rels = etree.fromstring(z.read(os.path.dirname(target) + "/_rels/"
+                                   + os.path.basename(target) + ".rels"))
+    lt = next((r.get("Target") for r in rels
+               if r.get("Type", "").endswith("/slideLayout")), None)
+    inherit = {}
+    if lt:
+        lay = etree.fromstring(z.read("ppt/" + lt.replace("../", "")))
+        for sp in lay.iter(R.Q("p:sp")):
+            k = R.ph_key(sp)
+            if k is not None:
+                inherit[k] = sp
+        has_rule = any(e.get("name") == "フッター罫" for e in lay.iter(R.Q("p:cNvPr")))
+    else:
+        has_rule = False
+    out = []
+    for sp in root.iter(R.Q("p:sp")):
+        tx = sp.find(R.Q("p:txBody"))
+        box, src = R.xfrm_of(sp), sp
+        if box is None:
+            k = R.ph_key(sp)
+            if k is None or k not in inherit:
+                continue
+            src = inherit[k]
+            box = R.xfrm_of(src)
+            if box is None:
+                continue
+        el = sp.find(".//" + R.Q("p:cNvPr"))
+        name = el.get("name") if el is not None else "?"
+        has_text = tx is not None and any((t.text or "").strip()
+                                          for t in tx.iter(R.Q("a:t")))
+        bottom = box[1]
+        if has_text:
+            _, total, anchor = R.layout_text(tx, box, R.lst_defaults(src))
+            bottom = _bottom_of(box[1], box[3], total, anchor)
+        out.append((name, box, bottom, has_text))
+    return out, has_rule
+
+
+def check_overlap(pptx_path):
+    """下にある図形へ重なっているものを返す。[(slide番号, 上の図形, 下の図形, 重なりmm)]"""
+    z = zipfile.ZipFile(pptx_path)
+    R.THEME_FONTS.update(R.read_theme_fonts(z))
+    R.FONTS.clear(); R._cache.clear()
+    tol = TOLERANCE_MM * R.PPMM
+    found = []
+    for i, target in enumerate(_slide_targets(z), 1):
+        shp, _ = _shapes_of(z, target)
+        for name, box, bottom, has_text in shp:
+            if not has_text:
+                continue
+            bx, by, bw, bh = box
+            for n2, b2, _, _ in shp:
+                if n2 == name:
+                    continue
+                x2, y2, w2, h2 = b2
+                if x2 + w2 <= bx + 1 or bx + bw <= x2 + 1:
+                    continue        # 横方向に重なりがない
+                if y2 < by + 1:
+                    continue        # 相手が上にある
+                if bottom > y2 + tol:
+                    found.append((i, name, n2, (bottom - y2) / R.PPMM))
+    return found
+
+
+def _slide_targets(z):
+    pres = etree.fromstring(z.read("ppt/presentation.xml"))
+    prels = etree.fromstring(z.read("ppt/_rels/presentation.xml.rels"))
+    rid2t = {r.get("Id"): r.get("Target") for r in prels}
+    return ["ppt/" + rid2t[s.get("{%s}id" % R.NS["r"])].replace("../", "")
+            for s in pres.find(R.Q("p:sldIdLst"))]
 
 
 def check(pptx_path):
@@ -154,15 +235,18 @@ def main(paths):
         if not os.path.exists(p):
             print(f"[エラー] ファイルがありません: {p}")
             return 1
-        found = check(p)
         label = os.path.basename(p)
-        if not found:
-            print(f"[OK] {label}: 本文がフッター罫を越えていません。")
+        found = check(p)
+        laps = check_overlap(p)
+        if not found and not laps:
+            print(f"[OK] {label}: フッター越え・重なりともにありません。")
             continue
-        ng += len(found)
-        print(f"[NG] {label}: {len(found)} 件がフッター罫を越えています")
+        ng += len(found) + len(laps)
+        print(f"[NG] {label}: フッター越え {len(found)} 件 / 重なり {len(laps)} 件")
         for n, name, bottom, limit in found:
             print(f"  slide{n:02d} 「{name}」: 下端 {bottom:.1f}mm > フッター罫 {limit:.1f}mm")
+        for n, a, b, d in laps:
+            print(f"  slide{n:02d} 「{a}」が「{b}」に {d:.1f}mm 重なっています")
     if ng:
         print()
         print("サンプル本文の分量か、枠の大きさを見直してください。")
