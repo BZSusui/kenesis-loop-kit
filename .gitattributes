@@ -1,0 +1,5 @@
+# 起動.bat は Windows の cmd.exe が直接読むファイル。CP932(Shift_JIS) + CRLF 固定（KLK-132）。
+# Git にテキストとして扱わせると、環境の設定次第で改行が LF へ潰され、
+# Windows でダブルクリックしても起動しなくなる。差分も出さない（バイト列を正とする）。
+# 検査: python3 tests/site/check_klk132.py
+起動.bat -text

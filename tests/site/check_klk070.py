@@ -30,7 +30,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 # ★KLK-105: 起動スクリプトは**最上位**へ移した（フォルダを開いてすぐ押せるように）
 BAT_PATH = os.path.join(ROOT, "起動.bat")
 CMD_PATH = os.path.join(ROOT, "起動.command")
-BAT = open(BAT_PATH, encoding="utf-8").read() if os.path.exists(BAT_PATH) else ""
+# ★KLK-132: 起動.bat は CP932(Shift_JIS)+CRLF が正。UTF-8 で読むと落ちる
+BAT = open(BAT_PATH, encoding="cp932").read() if os.path.exists(BAT_PATH) else ""
 SETTINGS = json.load(open(os.path.join(ROOT, ".claude", "settings.json"), encoding="utf-8"))
 SKILL = open(os.path.join(ROOT, ".claude", "skills", "catalog-import", "SKILL.md"), encoding="utf-8").read()
 README = open(os.path.join(ROOT, "README.md"), encoding="utf-8").read()

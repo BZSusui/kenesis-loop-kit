@@ -40,7 +40,8 @@ class TestKLK105LauncherStillWorks(unittest.TestCase):
                          "1階層上へ出てしまう（最上位へ移したので `/..` は不要）")
 
     def test_bat_cd_targets_its_own_folder(self):
-        bat = (ROOT / "起動.bat").read_text(encoding="utf-8")
+        # ★KLK-132: 起動.bat は CP932(Shift_JIS)+CRLF が正。UTF-8 で読むと落ちる
+        bat = (ROOT / "起動.bat").read_text(encoding="cp932")
         self.assertIn("%~dp0", bat)
         self.assertNotIn("%~dp0..", bat)
 
