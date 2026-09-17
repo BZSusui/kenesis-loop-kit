@@ -3,7 +3,8 @@
 #
 #   sh build/rebuild.sh
 #
-# A4タテ / B5タテ（標準）/ B5タテ（コンパクト）の3種を作る。
+# DADS採用書体版3種（A4 / B5標準 / B5コンパクト）と、
+# 標準搭載フォント版3種（同じ判型・BIZ UDPGothic + Arial）の計6種を作る。
 # 初回は dads-a4-template/.venv を作成して依存を入れる。
 # 検証(validate.py)・あふれ検査(overflow.py)・回帰テスト(regress.py)のいずれかが
 # 失敗した場合は終了コード 1 で止まる。
@@ -27,17 +28,22 @@ PY="$VENV/bin/python"
 export PYTHONDONTWRITEBYTECODE=1
 rm -rf "$DIR/build/__pycache__"
 
-# プロファイル名:出力pptx名:プレビュー出力先
-# A4 のプレビューは preview/ 直下（DADS-001 の成果物パスを変えないため）
+# プロファイル名:出力pptx（distからの相対）:プレビュー出力先（previewからの相対）
+# DADS採用書体版(Noto Sans JP)の出力先は DADS-001/002 のパスを変えない。
+# 標準搭載フォント版は stdfont/ 配下に分ける（DADS-005・人間の要件）。
 PROFILES="a4:DADS_A4_Portrait_Template:.
 b5:DADS_B5_Portrait_Template:b5
-b5-compact:DADS_B5_Portrait_Compact_Template:b5-compact"
+b5-compact:DADS_B5_Portrait_Compact_Template:b5-compact
+a4-std:stdfont/STD_A4_Portrait_Template:stdfont/a4
+b5-std:stdfont/STD_B5_Portrait_Template:stdfont/b5
+b5-compact-std:stdfont/STD_B5_Portrait_Compact_Template:stdfont/b5-compact"
 
 n=1
 echo "$PROFILES" | while IFS=: read -r prof name prev; do
-  echo "== $n/3 $prof を生成・検証・プレビュー"
+  echo "== $n/6 $prof を生成・検証・プレビュー"
   PPTX="$DIR/dist/$name.pptx"
   PREV="$DIR/preview/$prev"
+  mkdir -p "$(dirname "$PPTX")"
   DADS_PROFILE="$prof" "$PY" "$DIR/build/build_template.py" "$PPTX"
   echo
   "$PY" "$DIR/build/validate.py" "$PPTX"

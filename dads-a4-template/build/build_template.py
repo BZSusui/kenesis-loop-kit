@@ -100,8 +100,7 @@ OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     "dist", "DADS_A4_Portrait_Template.pptx")
 
-FONT = "Noto Sans JP"
-FONT_FALLBACK = "Yu Gothic Medium"   # Noto Sans JP 未導入環境での代替
+# 書体はプロファイルが持つ（DADS-005）。ここに固定値を置かないこと
 
 
 # ============================================================ テーマ
@@ -127,11 +126,13 @@ def rewrite_theme(prs):
         '</a:clrScheme>'
     )
     font = (
-        '<a:fontScheme name="Noto Sans JP">'
-        f'<a:majorFont><a:latin typeface="{FONT}"/><a:ea typeface="{FONT}"/><a:cs typeface=""/>'
-        f'<a:font script="Jpan" typeface="{FONT}"/></a:majorFont>'
-        f'<a:minorFont><a:latin typeface="{FONT}"/><a:ea typeface="{FONT}"/><a:cs typeface=""/>'
-        f'<a:font script="Jpan" typeface="{FONT}"/></a:minorFont>'
+        f'<a:fontScheme name="{S.FONT_JP}">'
+        f'<a:majorFont><a:latin typeface="{S.FONT_LATIN}"/><a:ea typeface="{S.FONT_JP}"/>'
+        f'<a:cs typeface=""/>'
+        f'<a:font script="Jpan" typeface="{S.FONT_JP}"/></a:majorFont>'
+        f'<a:minorFont><a:latin typeface="{S.FONT_LATIN}"/><a:ea typeface="{S.FONT_JP}"/>'
+        f'<a:cs typeface=""/>'
+        f'<a:font script="Jpan" typeface="{S.FONT_JP}"/></a:minorFont>'
         '</a:fontScheme>'
     )
     import re
@@ -370,6 +371,12 @@ def foot_attr(slide):
 
 
 def build_slides(prs, L):
+    # 規約ページに書く書体の説明。標準搭載フォント版かどうかで文面を変える
+    if S.FONT_SET == "std":
+        _std_font_line = (f"書体は和文 {S.FONT_JP}／欧文 {S.FONT_LATIN}"
+                          "（PCに標準搭載され、WindowsとMacで書体名が一致します）")
+    else:
+        _std_font_line = f"書体は {S.FONT_JP}（未導入環境では代替書体に置き換わります）"
     B, G, P_, W = S.TEXT, S.TEXT_SUB, S.PRIMARY, S.WHITE
     t = S.T
 
@@ -437,7 +444,7 @@ def build_slides(prs, L):
     foot_attr(s)
     sid = 500
     # B5は版面が狭く凡例の値が折り返すため、図を1カラム分ゆずる（A4は従来どおり 4:2）
-    _dia_cols = 4 if S.PROFILE == "a4" else 3
+    _dia_cols = 4 if S.PAPER == "a4" else 3
     _leg_cols = S.COLS - _dia_cols
     dia_w = S.span_w(_dia_cols)
     k = dia_w / S.PAGE_W_MM
@@ -602,16 +609,31 @@ def build_slides(prs, L):
     foot_attr(s)
     sid, y = 300, S.BODY_TOP
     _k0 = S.CONTENT_W / A4_CONTENT_W
-    s.shapes._spTree.append(text_sp(sid, "書体説明", S.LEFT, y, S.CONTENT_W, 16.0, [
-        para("書体は Noto Sans JP を使用します。サイズはデジタル庁デザインシステムの"
-             "テキストスタイル（CSS px）を 0.75 倍して pt に換算した値です。",
-             t["body"], B)])); sid += 1
-    y += 18.0 * _k0
+    # 書体はプロファイルごとに違う。和文と欧文で分けている場合は両方を書く
+    if S.FONT_JP == S.FONT_LATIN:
+        _font_note = (f"書体は {S.FONT_JP} を使用します。サイズはデジタル庁デザインシステムの"
+                      "テキストスタイル（CSS px）を 0.75 倍して pt に換算した値です。")
+    else:
+        # 「両OSで名前が一致する」といった説明は規約ページに書く。
+        # ここを長くすると版面の狭い判型で行数が増え、下の一覧と重なる
+        # 版面の狭い判型でも2行に収める。長くすると下の一覧と重なる。
+        # 「両OSで名前が一致する」等の詳しい説明は規約ページに書く
+        _font_note = (f"書体は和文 {S.FONT_JP}／欧文 {S.FONT_LATIN}。"
+                      "サイズは CSS px を 0.75 倍して pt に換算した値です。")
+    # 書体の説明は和文/欧文を併記する分だけ長くなる。必要な行数を見積もって枠を確保する。
+    # Noto版は従来どおり 16.0mm / 送り18.0mm（出力を変えないため）。
+    _cpl = max(1, int(S.CONTENT_W / (S.T["body"]["pt"] * 25.4 / 72)))   # 1行の全角換算文字数
+    _lh_mm = S.T["body"]["lnPts"] / 100 * 25.4 / 72
+    _nl = max(1, -(-len(_font_note) // _cpl))
+    _note_h = 16.0 if S.FONT_SET == "noto" else _nl * _lh_mm + 1.6
+    s.shapes._spTree.append(text_sp(sid, "書体説明", S.LEFT, y, S.CONTENT_W, _note_h, [
+        para(_font_note, t["body"], B)])); sid += 1
+    y += (18.0 * _k0) if S.FONT_SET == "noto" else (_note_h + S.S1)
     # 見出しの行高は判型で変わる。実際の値域から文言を組み立てる（A4では "150%"）
     _hs = sorted({t[k]["lh"] for k in ("section_ttl", "page_title", "h2")})
     _head_lh = f"{_hs[0]}%" if len(_hs) == 1 else f"{_hs[0]}〜{_hs[-1]}%"
     _ratio = (f"本文{t['body']['lh']}%／見出し{_head_lh}／表・注記{t['dense']['lh']}%")
-    if S.PROFILE == "a4":
+    if S.PAPER == "a4":
         _lh_text = (f"行間はフォントサイズに対する比率で固定しています（{_ratio}）。"
                     "PowerPoint上は「固定値（pt）」で指定しているため、"
                     "書体を入れ替えても行の位置がずれません。")
@@ -622,9 +644,15 @@ def build_slides(prs, L):
         _lh_text = (f"行間は比率で固定しています（{_ratio}）。"
                     "PowerPoint上は「固定値（pt）」指定のため、書体を替えても行位置がずれません。")
         _spc_text = "字間はデジタル庁デザインシステムの指定（0％・1％・2％）を pt に換算済みです。"
+        if S.FONT_SET == "std":
+            # 標準搭載フォント版は書体名が長く、BIZ UDP の字幅も Noto より広い。
+            # B5では2文のままだと1行はみ出してフッター罫へ届くため、1文にまとめる
+            _lh_text = (f"行間・字間はデジタル庁デザインシステムの指定を pt に換算して固定しています"
+                        f"（{_ratio}／字間 0〜2%）。書体を替えても行位置がずれません。")
+            _spc_text = None
     # 見本の文字列は版面が狭いほど短くする（判型をまたいで折り返さないように）
-    long_s = "見本 Sample 0123" if S.PROFILE == "a4" else "見本 Sample"
-    top_s = "見本 Sample" if S.PROFILE == "a4" else "見本 Abc"
+    long_s = "見本 Sample 0123" if S.PAPER == "a4" else "見本 Sample"
+    top_s = "見本 Sample" if S.PAPER == "a4" else "見本 Abc"
     scale = [("資料タイトル", "cover_title", top_s),
              ("章タイトル", "section_ttl", long_s),
              ("ページタイトル", "page_title", long_s),
@@ -636,7 +664,7 @@ def build_slides(prs, L):
     _k = S.CONTENT_W / A4_CONTENT_W
     # 用途ラベルは最長 "ページタイトル"(7文字) が1行に収まる幅を確保する
     # 行送りはB5では半分に詰める（本文高がA4より約36mm少ないため）
-    _row_gap = S.S1 if S.PROFILE == "a4" else S.S1 * 0.5
+    _row_gap = S.S1 if S.PAPER == "a4" else S.S1 * 0.5
     _label_min = 7 * t["dense"]["pt"] * 25.4 / 72 + 1.2
     name_w, meta_w = max(30.0 * _k, _label_min), 46.0 * _k
     spec_x = S.LEFT + name_w + 4.0
@@ -664,13 +692,15 @@ def build_slides(prs, L):
     s.shapes._spTree.append(text_sp(sid, "行間説明", S.LEFT, y, S.CONTENT_W, 70.0, [
         para("行間と字間", t["h2"], B),
         para(_lh_text, t["body"], B, space_before_pt=6),
+    ] + ([] if _spc_text is None else [
         para(_spc_text, t["body"], B, space_before_pt=6),
+    ]) + [
     ] + ([
         para("DADSの14 CSS px 未満のサイズは使用しません。",
              t["body"], B, bullet=True, space_before_pt=8),
         para("強調は太さレベル（Bold）で行い、下線や斜体は使用しません。",
              t["body"], B, bullet=True, space_before_pt=3),
-    ] if S.PROFILE == "a4" else [
+    ] if S.PAPER == "a4" else [
         para("DADSの14 CSS px 未満は使用しません。強調は Bold で行い、下線・斜体は使いません。",
              t["body"], B, bullet=True, space_before_pt=8),
     ])))
@@ -722,7 +752,7 @@ def build_slides(prs, L):
         para("背景に淡色（#F7F8FB）を敷いた場合もコントラスト比を再確認してください"
              "（補助グレーは 5.73:1、黒は 19.77:1）。",
              t["body"], B, bullet=True, space_before_pt=3),
-    ] if S.PROFILE == "a4" else [
+    ] if S.PAPER == "a4" else [
         # B5は本文高がA4より約36mm少ないため、同じ内容を短くまとめる
         para("テキストは 4.5:1 以上、非テキスト要素は 3:1 以上を確保します"
              "（淡色背景 #F7F8FB でも同様。上の比率は実測値）。",
@@ -752,7 +782,7 @@ def build_slides(prs, L):
              t["body"], B, bullet=True, space_before_pt=3),
         para("カラムのガターは本文文字サイズの2倍",
              t["body"], B, bullet=True, space_before_pt=3),
-        para("書体は Noto Sans JP（未導入環境では代替書体に置き換わります）",
+        para(_std_font_line,
              t["body"], B, bullet=True, space_before_pt=3),
         para("出典表記", t["h3"], B, space_before_pt=14),
         para(S.ATTRIBUTION, t["body"], B, space_before_pt=5),
