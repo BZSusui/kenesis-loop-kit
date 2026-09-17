@@ -62,9 +62,13 @@ class TestKLK017Regression(unittest.TestCase):
             "res = unittest.TextTestRunner(verbosity=0).run(filtered)\n"
             "sys.exit(0 if res.wasSuccessful() else 1)\n"
         )
+        # timeout の根拠（KLK-137・2026-09-17 実測）: 入れ子の全スイートは無負荷で **303秒**
+        # （2026-09-09 時点は約270秒。テストが増えて伸びた）。300秒では3秒足りずに落ちていた。
+        # ★中身は緑なのに時間切れで落ちる＝品質と無関係な失敗なので、
+        #   「全緑であること」の検証はそのままに、時間の余裕だけを確保する（klk015 と同じ 900秒）。
         proc = subprocess.run(
             [sys.executable, "-c", script],
-            capture_output=True, text=True, cwd=str(ROOT), timeout=300,
+            capture_output=True, text=True, cwd=str(ROOT), timeout=900,
         )
         self.assertEqual(
             proc.returncode, 0,
