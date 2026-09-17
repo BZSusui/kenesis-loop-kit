@@ -19,9 +19,26 @@ from pptx.oxml.ns import qn, nsdecls
 from pptx.oxml import parse_xml
 from pptx.util import Emu, Pt
 
-import spec as S
+from decimal import Decimal, ROUND_HALF_UP
+
+import spec
 from oxml_helpers import (emu, ph_sp, rect_sp, text_sp, sldnum_sp, set_bg,
                           clear_shapes, para, rpr)
+
+# 判型・グリッド・タイポグラフィは spec のプロファイルから解決する（DADS-002）。
+# 環境変数 DADS_PROFILE で切り替える。1プロセス=1プロファイル。
+S = spec.load(os.environ.get("DADS_PROFILE", spec.DEFAULT_PROFILE))
+
+def mm1(v):
+    """mm値をサンプル本文の表記（小数第1位・四捨五入）へ整える。
+
+    座標計算には使わない。表示専用。
+    浮動小数点誤差を先に落とす（U*3 は 6.349999999999999 になり、
+    そのまま丸めると 6.3 になってしまう。正しくは 6.35 -> 6.4）。
+    """
+    return str(Decimal(repr(round(v, 9))).quantize(Decimal("0.1"),
+                                                   rounding=ROUND_HALF_UP))
+
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -323,20 +340,22 @@ def build_slides(prs, L):
     fill_ph(s, 10, [para("02 レイアウトの考え方", t["note"], G)])
     fill_ph(s, 0, [para("版面（グリッド）の定義", t["page_title"], B)])
     body = [
-        para("A4タテ（210×297mm）の版面は、デジタル庁デザインシステムのレイアウト規定"
+        para(f"{S.PAPER_NAME}（{S.PAGE_W_MM:.0f}×{S.PAGE_H_MM:.0f}mm）の版面は、デジタル庁デザインシステムのレイアウト規定"
              "（マージン・カラム・ガター）に従って構成します。",
              t["body"], B),
         para("グリッドの構成要素", t["h3"], B, space_before_pt=14),
-        para("マージン：左右 20.3mm／上下 16.9mm。版面幅は 169.3mm となります。",
+        para(f"マージン：左右 {mm1(S.MARGIN_X)}mm／上下 {mm1(S.MARGIN_T)}mm。版面幅は {mm1(S.CONTENT_W)}mm となります。",
              t["body"], B, bullet=True, space_before_pt=5),
-        para("カラム：6カラム。1カラムの幅は 21.2mm（本文文字サイズ16pxの5倍）です。",
+        para(f"カラム：{S.COLS}カラム。1カラムの幅は {mm1(S.COL_W)}mm"
+             f"（本文文字サイズ{S.BASE_PX}pxの{S.COL_MULT}倍）です。",
              t["body"], B, bullet=True, space_before_pt=3),
-        para("ガター：8.5mm。本文文字サイズの2倍を確保し、隣接カラムの誤読を防ぎます。",
+        para(f"ガター：{mm1(S.GUTTER)}mm。本文文字サイズの2倍を確保し、隣接カラムの誤読を防ぎます。",
              t["body"], B, bullet=True, space_before_pt=3),
         para("余白スケール", t["h3"], B, space_before_pt=14),
-        para("基準単位は 8 CSS px（2.1mm）。1・2・3・4・8倍の5段階に絞って使用します。",
+        para(f"基準単位は 8 CSS px（{mm1(S.U)}mm）。1・2・3・4・8倍の5段階に絞って使用します。",
              t["body"], B, space_before_pt=5),
-        para("2.1mm／4.2mm／6.4mm／8.5mm／16.9mm", t["dense_b"], P_, space_before_pt=5),
+        para(f"{mm1(S.S1)}mm／{mm1(S.S2)}mm／{mm1(S.S3)}mm／{mm1(S.S4)}mm／{mm1(S.S8)}mm",
+             t["dense_b"], P_, space_before_pt=5),
         para("要素の関係が近いほど小さい余白を、階層が変わるところには大きい余白を与えます。",
              t["body"], B, space_before_pt=5),
     ]
@@ -380,13 +399,13 @@ def build_slides(prs, L):
     # 凡例
     lx = S.col_x(4)
     lw = S.span_w(2)
-    legend = [("用紙", "A4タテ 210 × 297 mm"),
-              ("マージン", "左右 20.3 mm／上下 16.9 mm"),
-              ("版面", "169.3 × 221.2 mm"),
-              ("カラム", "6 カラム × 21.2 mm"),
-              ("ガター", "8.5 mm（本文の2倍）"),
-              ("ヘッダー領域", "16.9 〜 45.0 mm"),
-              ("フッター領域", "272.5 〜 280.1 mm")]
+    legend = [("用紙", f"{S.PAPER_NAME} {S.PAGE_W_MM:.0f} × {S.PAGE_H_MM:.0f} mm"),
+              ("マージン", f"左右 {mm1(S.MARGIN_X)} mm／上下 {mm1(S.MARGIN_T)} mm"),
+              ("版面", f"{mm1(S.CONTENT_W)} × {mm1(S.BODY_H)} mm"),
+              ("カラム", f"{S.COLS} カラム × {mm1(S.COL_W)} mm"),
+              ("ガター", f"{mm1(S.GUTTER)} mm（本文の2倍）"),
+              ("ヘッダー領域", f"{mm1(S.MARGIN_T)} 〜 {mm1(S.BODY_TOP)} mm"),
+              ("フッター領域", f"{mm1(S.FRULE_Y)} 〜 {mm1(S.FOOT_BOT)} mm")]
     ly = S.BODY_TOP + 4.0
     s.shapes._spTree.append(text_sp(sid, "凡例見出し", lx, ly, lw, 8.0,
                                     [para("寸法", t["h3"], B)])); sid += 1
@@ -402,8 +421,8 @@ def build_slides(prs, L):
                                     dia_w, 50.0, [
         para("使い方", t["h3"], B),
         para("図・表・カードはカラムの左端と右端にそろえます。カラムをまたぐ場合は"
-             "ガター分を含めた幅（2カラム＝50.8mm、3カラム＝80.4mm、"
-             "6カラム＝169.3mm）を使います。",
+             f"ガター分を含めた幅（2カラム＝{mm1(S.span_w(2))}mm、3カラム＝{mm1(S.span_w(3))}mm、"
+             f"{S.COLS}カラム＝{mm1(S.CONTENT_W)}mm）を使います。",
              t["body"], B, space_before_pt=5),
     ]))
 
@@ -415,7 +434,8 @@ def build_slides(prs, L):
     fill_ph(s, 2, [
         para("対になる情報（現状と課題、施策と効果など）を並べて比較する場合に使用します。",
              t["body"], B),
-        para("片側 80.4mm（3カラム分）。1行あたりの文字数は本文12ptで約19文字となり、"
+        para(f"片側 {mm1(S.HALF_W)}mm（3カラム分）。1行あたりの文字数は本文{S.T['body']['pt']:g}ptで"
+             f"約{int(S.HALF_W / (S.T['body']['pt'] * 25.4 / 72))}文字となり、"
              "視線の折り返しが短く読み進めやすい行長です。", t["body"], B, space_before_pt=8),
         para("左右の高さを揃える", t["h3"], B, space_before_pt=14),
         para("上端を必ず揃え、下端は無理に揃えません。", t["body"], B, bullet=True, space_before_pt=5),
@@ -458,9 +478,10 @@ def build_slides(prs, L):
     y2 = S.BODY_TOP + 2 * (card_h + S.S4)
     s.shapes._spTree.append(text_sp(sid, "解説", S.LEFT, y2, S.CONTENT_W, 60.0, [
         para("カードの設計", t["h3"], B),
-        para("ラベル（10.5pt）→ 数値（24pt）→ 補足（10.5pt）の3階層で、視線が数値に"
-             "止まるようにしています。カードの内側パディングは余白スケールの 6.4mm、"
-             "カード間のガターは 8.5mm です。", t["body"], B, space_before_pt=5),
+        para(f"ラベル（{S.T['label']['pt']:g}pt）→ 数値（{S.T['kpi_num']['pt']:g}pt）→ "
+             f"補足（{S.T['note']['pt']:g}pt）の3階層で、視線が数値に"
+             f"止まるようにしています。カードの内側パディングは余白スケールの {mm1(S.S3)}mm、"
+             f"カード間のガターは {mm1(S.GUTTER)}mm です。", t["body"], B, space_before_pt=5),
         para("色だけで増減を示さない", t["h3"], B, space_before_pt=12),
         para("増減は「+3.2%」「-0.8日」のように符号と単位を文字で明記します。"
              "色の違いだけに意味を持たせると、色覚特性によって情報が伝わりません。",
@@ -472,7 +493,7 @@ def build_slides(prs, L):
     fill_ph(s, 10, [para("04 作図・作表の指針", t["note"], G)])
     fill_ph(s, 0, [para("グラフの配置", t["page_title"], B)])
     fill_ph(s, 1, [para("図1　月次推移（サンプル）", t["h3"], B)])
-    fill_ph(s, 2, [para("ここにグラフ・表・画像を配置します（版面幅 169.3mm）",
+    fill_ph(s, 2, [para(f"ここにグラフ・表・画像を配置します（版面幅 {mm1(S.CONTENT_W)}mm）",
                         t["dense"], G, align="ctr")])
     fill_ph(s, 3, [para("出典：〇〇調査（YYYY年MM月実施）。n=1,000。四捨五入のため合計が"
                         "100%にならない場合があります。", t["note"], G)])
@@ -494,7 +515,7 @@ def build_slides(prs, L):
     s.shapes._spTree.append(text_sp(200, "表解説", S.LEFT, ty, S.CONTENT_W, 70.0, [
         para("表1　主要指標の前年度比較", t["note"], G),
         para("罫線と塗りの使い分け", t["h3"], B, space_before_pt=14),
-        para("縦罫は引かず、行の区切りだけを 0.2mm の横罫で示します。"
+        para(f"縦罫は引かず、行の区切りだけを {mm1(S.FRULE_H)}mm の横罫で示します。"
              "罫線はデジタル庁デザインシステムの非テキスト要素の規定に従い、"
              "背景とのコントラスト比 3:1 以上を確保した色を使用しています。",
              t["body"], B, space_before_pt=5),
