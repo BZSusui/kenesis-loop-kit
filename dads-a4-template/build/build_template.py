@@ -29,6 +29,34 @@ from oxml_helpers import (emu, ph_sp, rect_sp, text_sp, sldnum_sp, set_bg,
 # 環境変数 DADS_PROFILE で切り替える。1プロセス=1プロファイル。
 S = spec.load(os.environ.get("DADS_PROFILE", spec.DEFAULT_PROFILE))
 
+# A4の版面幅。サンプルページ内の固定寸法を判型に合わせて比例させる基準に使う
+A4_CONTENT_W = spec.load("a4").CONTENT_W
+
+def dads_token(st):
+    """テキストスタイルから DADS のトークン名を組み立てる。
+
+    判型によって実サイズが変わるため、固定文字列で書くと誤った仕様を表示してしまう。
+    DADSの系統は Display(48px以上) / Dense(14px以下) / Standard(その間)。
+    """
+    px, lh = st["px"], st["lh"]
+    fam = "Dsp" if px >= 48 else ("Dns" if px <= 14 else "Std")
+    return f'{fam}-{px}{"B" if st["b"] else "N"}-{lh}'
+
+
+def dads_defined(st):
+    """DADS のテキストスタイル表に実在する組み合わせか。
+
+    b5-compact の本文（14px・行高170%）は表に無い組み合わせであり、
+    そのことをテンプレート上でも示す必要がある（設計書 DADS-002 §3）。
+    """
+    px, lh = st["px"], st["lh"]
+    if px >= 48:
+        return lh == 140
+    if px <= 14:
+        return lh in (130, 120, 100)
+    return lh in (140, 150, 160, 170, 175)
+
+
 def mm1(v):
     """mm値をサンプル本文の表記（小数第1位・四捨五入）へ整える。
 
@@ -55,7 +83,7 @@ def rewrite_theme(prs):
     xml = theme.blob.decode("utf-8")
 
     clr = (
-        '<a:clrScheme name="デジタル庁デザインシステム A4">'
+        f'<a:clrScheme name="デジタル庁デザインシステム {S.PAPER_NAME.replace("タテ", "")}">'
         f'<a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1>'
         f'<a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1>'
         f'<a:dk2><a:srgbClr val="{S.PRIMARY}"/></a:dk2>'
@@ -301,6 +329,18 @@ def add_num(slide, n_id=90):
         sldnum_sp(n_id, S.col_x(5), S.FOOT_Y, S.COL_W, S.FOOT_H, S.T["note"], S.TEXT_SUB))
 
 
+def foot_attr(slide):
+    """フッターの注記欄に出典行を入れる。
+
+    B5判では版面幅(143.9mm)より出典行の実寸(約148mm)が長く、1行に収まらない。
+    折り返すとフッター領域をはみ出すため、B5では入れない。
+    出典は規約ページ（利用上の注意）と裏表紙に集約する
+    （docs/design-system/_ATTRIBUTION.md「READMEやNOTICEに集約して記載」の運用）。
+    """
+    if S.CONTENT_W >= 160.0:
+        fill_ph(slide, 11, [para(S.ATTRIBUTION, S.T["note"], S.TEXT_SUB)])
+
+
 def build_slides(prs, L):
     B, G, P_, W = S.TEXT, S.TEXT_SUB, S.PRIMARY, S.WHITE
     t = S.T
@@ -309,7 +349,7 @@ def build_slides(prs, L):
     s = prs.slides.add_slide(L[0])
     fill_ph(s, 10, [para("業務報告書テンプレート", t["cover_meta"], G)])
     fill_ph(s, 0, [para("資料タイトルが入ります", t["cover_title"], B)])
-    fill_ph(s, 1, [para("サブタイトルが入ります（A4タテ・デジタル庁デザインシステム準拠）",
+    fill_ph(s, 1, [para(f"サブタイトルが入ります（{S.PAPER_NAME}・デジタル庁デザインシステム準拠）",
                         t["cover_sub"], G)])
     fill_ph(s, 11, [para("組織名・部署名", t["cover_meta"], B),
                     para("YYYY年MM月", t["cover_meta"], G)])
@@ -332,7 +372,7 @@ def build_slides(prs, L):
     s = prs.slides.add_slide(L[2])
     fill_ph(s, 10, [para("SECTION 02", t["section_no"], P_)])
     fill_ph(s, 0, [para("レイアウトの考え方", t["section_ttl"], B)])
-    fill_ph(s, 11, [para("マージン・カラム・ガターの定義と、A4タテでの版面の取り方を示します。",
+    fill_ph(s, 11, [para(f"マージン・カラム・ガターの定義と、{S.PAPER_NAME}での版面の取り方を示します。",
                          t["body"], G)])
 
     # ---- 4 標準1カラム --------------------------------------------------
@@ -360,15 +400,18 @@ def build_slides(prs, L):
              t["body"], B, space_before_pt=5),
     ]
     fill_ph(s, 1, body)
-    fill_ph(s, 11, [para(S.ATTRIBUTION, t["note"], G)])
+    foot_attr(s)
 
     # ---- 4b グリッド図 ----------------------------------------------------
     s = prs.slides.add_slide(L[6]); add_num(s)
     fill_ph(s, 10, [para("02 レイアウトの考え方", t["note"], G)])
     fill_ph(s, 0, [para("グリッド図", t["page_title"], B)])
-    fill_ph(s, 11, [para(S.ATTRIBUTION, t["note"], G)])
+    foot_attr(s)
     sid = 500
-    dia_w = S.span_w(4)
+    # B5は版面が狭く凡例の値が折り返すため、図を1カラム分ゆずる（A4は従来どおり 4:2）
+    _dia_cols = 4 if S.PROFILE == "a4" else 3
+    _leg_cols = S.COLS - _dia_cols
+    dia_w = S.span_w(_dia_cols)
     k = dia_w / S.PAGE_W_MM
     ox, oy = S.LEFT, S.BODY_TOP + 4.0
     def dx(v): return ox + v * k
@@ -397,8 +440,8 @@ def build_slides(prs, L):
                                     [para("水色＝カラム／淡灰＝ヘッダー・フッター領域",
                                           t["note"], G)])); sid += 1
     # 凡例
-    lx = S.col_x(4)
-    lw = S.span_w(2)
+    lx = S.col_x(_dia_cols)
+    lw = S.span_w(_leg_cols)
     legend = [("用紙", f"{S.PAPER_NAME} {S.PAGE_W_MM:.0f} × {S.PAGE_H_MM:.0f} mm"),
               ("マージン", f"左右 {mm1(S.MARGIN_X)} mm／上下 {mm1(S.MARGIN_T)} mm"),
               ("版面", f"{mm1(S.CONTENT_W)} × {mm1(S.BODY_H)} mm"),
@@ -451,7 +494,7 @@ def build_slides(prs, L):
         para("長い表や横長のグラフも、2カラムではなく「図表（フル幅）」レイアウトを使用します。",
              t["body"], B, space_before_pt=8),
     ])
-    fill_ph(s, 11, [para(S.ATTRIBUTION, t["note"], G)])
+    foot_attr(s)
 
     # ---- 6 サマリー（KPIカード） ------------------------------------------
     s = prs.slides.add_slide(L[6]); add_num(s)
@@ -497,7 +540,7 @@ def build_slides(prs, L):
                         t["dense"], G, align="ctr")])
     fill_ph(s, 3, [para("出典：〇〇調査（YYYY年MM月実施）。n=1,000。四捨五入のため合計が"
                         "100%にならない場合があります。", t["note"], G)])
-    fill_ph(s, 11, [para(S.ATTRIBUTION, t["note"], G)])
+    foot_attr(s)
 
     # ---- 8 表 ------------------------------------------------------------
     s = prs.slides.add_slide(L[6]); add_num(s)
@@ -528,24 +571,49 @@ def build_slides(prs, L):
     s = prs.slides.add_slide(L[6]); add_num(s)
     fill_ph(s, 10, [para("03 タイポグラフィとカラー", t["note"], G)])
     fill_ph(s, 0, [para("書体とサイズ", t["page_title"], B)])
-    fill_ph(s, 11, [para(S.ATTRIBUTION, t["note"], G)])
+    foot_attr(s)
     sid, y = 300, S.BODY_TOP
+    _k0 = S.CONTENT_W / A4_CONTENT_W
     s.shapes._spTree.append(text_sp(sid, "書体説明", S.LEFT, y, S.CONTENT_W, 16.0, [
         para("書体は Noto Sans JP を使用します。サイズはデジタル庁デザインシステムの"
              "テキストスタイル（CSS px）を 0.75 倍して pt に換算した値です。",
              t["body"], B)])); sid += 1
-    y += 18.0
-    scale = [("資料タイトル", "cover_title", "Dsp-48B-140", "見本 Sample"),
-             ("章タイトル", "section_ttl", "Std-32B-150", "見本 Sample 0123"),
-             ("ページタイトル", "page_title", "Std-24B-150", "見本 Sample 0123"),
-             ("見出し2", "h2", "Std-20B-150", "見本 Sample 0123"),
-             ("見出し3", "h3", "Std-16B-170", "見本 Sample 0123"),
-             ("本文", "body", "Std-16N-170", "見本 Sample 0123"),
-             ("注記・表", "dense", "Dns-14N-130", "見本 Sample 0123")]
-    name_w, meta_w = 30.0, 46.0
+    y += 18.0 * _k0
+    # 見出しの行高は判型で変わる。実際の値域から文言を組み立てる（A4では "150%"）
+    _hs = sorted({t[k]["lh"] for k in ("section_ttl", "page_title", "h2")})
+    _head_lh = f"{_hs[0]}%" if len(_hs) == 1 else f"{_hs[0]}〜{_hs[-1]}%"
+    _ratio = (f"本文{t['body']['lh']}%／見出し{_head_lh}／表・注記{t['dense']['lh']}%")
+    if S.PROFILE == "a4":
+        _lh_text = (f"行間はフォントサイズに対する比率で固定しています（{_ratio}）。"
+                    "PowerPoint上は「固定値（pt）」で指定しているため、"
+                    "書体を入れ替えても行の位置がずれません。")
+        _spc_text = ("字間はデジタル庁デザインシステムの指定（0％・1％・2％）を pt に換算して"
+                     "設定済みです。個別に変更しないでください。")
+    else:
+        # B5は本文高がA4より約36mm少ないため、同じ内容を短くまとめる
+        _lh_text = (f"行間は比率で固定しています（{_ratio}）。"
+                    "PowerPoint上は「固定値（pt）」指定のため、書体を替えても行位置がずれません。")
+        _spc_text = "字間はデジタル庁デザインシステムの指定（0％・1％・2％）を pt に換算済みです。"
+    # 見本の文字列は版面が狭いほど短くする（判型をまたいで折り返さないように）
+    long_s = "見本 Sample 0123" if S.PROFILE == "a4" else "見本 Sample"
+    top_s = "見本 Sample" if S.PROFILE == "a4" else "見本 Abc"
+    scale = [("資料タイトル", "cover_title", top_s),
+             ("章タイトル", "section_ttl", long_s),
+             ("ページタイトル", "page_title", long_s),
+             ("見出し2", "h2", long_s),
+             ("見出し3", "h3", "見本 Sample 0123"),
+             ("本文", "body", "見本 Sample 0123"),
+             ("注記・表", "dense", "見本 Sample 0123")]
+    # 欄幅は版面幅に比例させる（A4では 30.0 / 46.0 と同値）
+    _k = S.CONTENT_W / A4_CONTENT_W
+    # 用途ラベルは最長 "ページタイトル"(7文字) が1行に収まる幅を確保する
+    # 行送りはB5では半分に詰める（本文高がA4より約36mm少ないため）
+    _row_gap = S.S1 if S.PROFILE == "a4" else S.S1 * 0.5
+    _label_min = 7 * t["dense"]["pt"] * 25.4 / 72 + 1.2
+    name_w, meta_w = max(30.0 * _k, _label_min), 46.0 * _k
     spec_x = S.LEFT + name_w + 4.0
     spec_w = S.RIGHT - meta_w - 2.0 - spec_x
-    for name, key, token, sample in scale:
+    for name, key, sample in scale:
         st = t[key]
         h = st["lnPts"] / 100 * 25.4 / 72 + 4.0
         s.shapes._spTree.append(text_sp(sid, f"用途{key}", S.LEFT, y, name_w, h,
@@ -553,32 +621,37 @@ def build_slides(prs, L):
         s.shapes._spTree.append(text_sp(sid, f"見本{key}", spec_x, y, spec_w, h,
                                         [para(sample, st, B)], anchor="ctr")); sid += 1
         s.shapes._spTree.append(text_sp(sid, f"仕様{key}", S.RIGHT - meta_w, y, meta_w, h,
-                                        [para(f'{token}／{st["pt"]:g}pt', t["dense"], P_,
+                                        [para(f'{dads_token(st)}{"" if dads_defined(st) else "※"}'
+                                              f'／{st["pt"]:g}pt', t["dense"], P_,
                                               align="r")], anchor="ctr")); sid += 1
-        y += h + S.S1
-        s.shapes._spTree.append(rect_sp(sid, f"区切{key}", S.LEFT, y - S.S1 / 2,
+        y += h + _row_gap
+        s.shapes._spTree.append(rect_sp(sid, f"区切{key}", S.LEFT, y - _row_gap / 2,
                                         S.CONTENT_W, 0.15, fill=S.ACCENT_4)); sid += 1
+    if any(not dads_defined(t[k]) for _, k, _ in scale):
+        s.shapes._spTree.append(text_sp(sid, "トークン注記", S.LEFT, y, S.CONTENT_W, 9.0, [
+            para("※ はデジタル庁デザインシステムのテキストスタイル表に無い組み合わせです"
+                 "（読みやすさのため行間を広げています）。", t["note"], G)])); sid += 1
+        y += 9.0
     y += S.S3
     s.shapes._spTree.append(text_sp(sid, "行間説明", S.LEFT, y, S.CONTENT_W, 70.0, [
         para("行間と字間", t["h2"], B),
-        para("行間はフォントサイズに対する比率で固定しています（本文170%／見出し150%／"
-             "表・注記130%）。PowerPoint上は「固定値（pt）」で指定しているため、"
-             "書体を入れ替えても行の位置がずれません。",
-             t["body"], B, space_before_pt=6),
-        para("字間はデジタル庁デザインシステムの指定（0％・1％・2％）を pt に換算して"
-             "設定済みです。個別に変更しないでください。",
-             t["body"], B, space_before_pt=6),
-        para("14pt（DADSの14 CSS px）未満のサイズは使用しません。",
+        para(_lh_text, t["body"], B, space_before_pt=6),
+        para(_spc_text, t["body"], B, space_before_pt=6),
+    ] + ([
+        para("DADSの14 CSS px 未満のサイズは使用しません。",
              t["body"], B, bullet=True, space_before_pt=8),
         para("強調は太さレベル（Bold）で行い、下線や斜体は使用しません。",
              t["body"], B, bullet=True, space_before_pt=3),
-    ]))
+    ] if S.PROFILE == "a4" else [
+        para("DADSの14 CSS px 未満は使用しません。強調は Bold で行い、下線・斜体は使いません。",
+             t["body"], B, bullet=True, space_before_pt=8),
+    ])))
 
     # ---- 10 カラー ---------------------------------------------------------
     s = prs.slides.add_slide(L[6]); add_num(s)
     fill_ph(s, 10, [para("03 タイポグラフィとカラー", t["note"], G)])
     fill_ph(s, 0, [para("カラーと使用可否", t["page_title"], B)])
-    fill_ph(s, 11, [para(S.ATTRIBUTION, t["note"], G)])
+    foot_attr(s)
     sid, y = 400, S.BODY_TOP
     s.shapes._spTree.append(text_sp(sid, "色説明", S.LEFT, y, S.CONTENT_W, 16.0, [
         para("デジタル庁「ダッシュボードイメージ作成ツールキット」のテーマ配色を採用し、"
@@ -606,6 +679,7 @@ def build_slides(prs, L):
     y += 3 * pitch + S.S2
     s.shapes._spTree.append(text_sp(sid, "色の原則", S.LEFT, y, S.CONTENT_W, 90.0, [
         para("色の使用原則", t["h2"], B),
+    ] + ([
         para("テキストと背景のコントラスト比は常に 4.5:1 以上、罫線などの非テキスト要素は "
              "3:1 以上を確保します。上の比率は実測値です。",
              t["body"], B, bullet=True, space_before_pt=6),
@@ -620,7 +694,18 @@ def build_slides(prs, L):
         para("背景に淡色（#F7F8FB）を敷いた場合もコントラスト比を再確認してください"
              "（補助グレーは 5.73:1、黒は 19.77:1）。",
              t["body"], B, bullet=True, space_before_pt=3),
-    ]))
+    ] if S.PROFILE == "a4" else [
+        # B5は本文高がA4より約36mm少ないため、同じ内容を短くまとめる
+        para("テキストは 4.5:1 以上、非テキスト要素は 3:1 以上を確保します"
+             "（淡色背景 #F7F8FB でも同様。上の比率は実測値）。",
+             t["body"], B, bullet=True, space_before_pt=6),
+        para("4.5:1 未満の色は文字に使えません。ターシャリー以下の3色は面・罫線専用です。",
+             t["body"], B, bullet=True, space_before_pt=3),
+        para("色だけで情報を区別せず、文字・記号・形状を併用します。",
+             t["body"], B, bullet=True, space_before_pt=3),
+        para("フォーカスインジケーターの配色（Yellow-300 と Black の2重構造）は変更禁止です。",
+             t["body"], B, bullet=True, space_before_pt=3),
+    ])))
 
     # ---- 10 利用上の注意 ---------------------------------------------------
     s = prs.slides.add_slide(L[3]); add_num(s)
@@ -630,7 +715,7 @@ def build_slides(prs, L):
         para("本テンプレートについて", t["h3"], B),
         para("デジタル庁「ダッシュボードイメージ作成ツールキット」(16:9) のレイアウト思想"
              "（マージン・グリッド・ヘッダー／フッターの構成）を踏まえ、"
-             "デジタル庁デザインシステムの基本デザインに従ってA4タテ用に再設計したものです。",
+             f"デジタル庁デザインシステムの基本デザインに従って{S.PAPER_NAME}用に再設計したものです。",
              t["body"], B, space_before_pt=5),
         para("遵守している基準", t["h3"], B, space_before_pt=14),
         para("テキストと背景のコントラスト比 4.5:1 以上／非テキスト要素 3:1 以上",
