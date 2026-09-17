@@ -133,11 +133,20 @@ def main(paths):
     if not paths:
         print("使い方: python build/overflow.py <pptx> [<pptx> ...]")
         return 1
+    # 検査対象の書体が揃っているか先に確かめる。
+    # 書体はテンプレートごとに違うため、pptx のテーマを読んでから判定する。
     try:
-        R.font(12.0, False)   # フォントを解決できるか先に確かめる
-    except SystemExit:
-        print("[スキップ] 日本語フォントが無いため、あふれ検査を実行できません。")
-        print("           pptx の生成と validate.py はフォント無しでも動作します。")
+        for p0 in paths:
+            if os.path.exists(p0):
+                with zipfile.ZipFile(p0) as z0:
+                    R.THEME_FONTS.update(R.read_theme_fonts(z0))
+                R.FONTS.clear(); R._cache.clear()
+                R.font(12.0, False)          # 和文
+                R.font(12.0, False, latin=True)   # 欧文
+    except SystemExit as e:
+        print("[スキップ] あふれ検査を実行できません。")
+        for line in str(e).split("\n"):
+            print("  " + line)
         return 0
 
     ng = 0
