@@ -6,3 +6,6 @@ __pycache__/
 # チケットの運搬用コピー（正本は ../tickets/active/。ルート .gitignore の
 # tickets/ 除外を迂回して作業ログを公開しないため、こちらでも除外する）
 _tickets/
+
+# 案件資料（社外秘の可能性。フォルダ直下のPDFのみ除外。preview/ 配下のPDFは対象外）
+/*.pdf

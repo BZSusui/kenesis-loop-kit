@@ -11,6 +11,7 @@ DADS A4タテ PowerPointテンプレート ビルダー
 """
 import os
 import sys
+import zipfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -55,6 +56,33 @@ def dads_defined(st):
     if px <= 14:
         return lh in (130, 120, 100)
     return lh in (140, 150, 160, 170, 175)
+
+
+# zip に書かれる更新日時。1980-01-01 00:00:00 は zip 形式が表現できる最小値で、
+# 再現可能ビルドの慣習として広く使われている（同じ内容なら同じバイト列になる）。
+# 生成時刻を入れると、中身が同じでも毎回 git の差分になり、本当の変更を見分けられなくなる。
+ZIP_EPOCH = (1980, 1, 1, 0, 0, 0)
+
+
+def freeze_zip_dates(path):
+    """pptx(zip) 内の更新日時を固定し、同じ内容なら同じバイト列になるようにする。
+
+    パートの順序・圧縮方式・属性はそのまま保つ。順序が変わると PowerPoint が
+    読めなくなることがあるため、infolist() の順に書き直す。
+    """
+    src = zipfile.ZipFile(path)
+    items = [(i, src.read(i.filename)) for i in src.infolist()]
+    src.close()
+    tmp = path + ".tmp"
+    with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as out:
+        for info, data in items:
+            ni = zipfile.ZipInfo(info.filename, date_time=ZIP_EPOCH)
+            ni.compress_type = info.compress_type
+            ni.external_attr = info.external_attr
+            ni.internal_attr = info.internal_attr
+            ni.create_system = info.create_system
+            out.writestr(ni, data)
+    os.replace(tmp, path)
 
 
 def mm1(v):
@@ -814,6 +842,7 @@ def main():
     build_slides(prs, L)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     prs.save(OUT)
+    freeze_zip_dates(OUT)
     print(f"saved: {OUT}")
     print(f"slide size: {prs.slide_width} x {prs.slide_height} EMU "
           f"({prs.slide_width/S.MM:.1f} x {prs.slide_height/S.MM:.1f} mm)")
