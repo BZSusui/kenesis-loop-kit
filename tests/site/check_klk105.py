@@ -46,7 +46,8 @@ for fn in ("起動.command", "起動.bat"):
           "旧位置の残存=%s" % os.path.isfile(os.path.join(ROOT, "draft-gen", fn)))
 
 CMD = io.open(os.path.join(ROOT, "起動.command"), encoding="utf-8").read()
-BAT = io.open(os.path.join(ROOT, "起動.bat"), encoding="utf-8").read()
+# ★KLK-132: 起動.bat は CP932(Shift_JIS)+CRLF が正。UTF-8 で読むと落ちる
+BAT = io.open(os.path.join(ROOT, "起動.bat"), encoding="cp932").read()
 
 # ★最上位へ移したので `/..` は付かない。付いたままだと1つ上（＝親フォルダ）へ出てしまう。
 check("C 起動.command が自分の場所へ cd する（`/..` が付いていない）",
