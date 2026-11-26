@@ -1,0 +1,1106 @@
+{
+  "schema": "klk138-baseline",
+  "version": 1,
+  "generator": {
+    "file": "palette/index.html",
+    "label": "v1.2",
+    "fingerprint": "a0594cf0e19874c9",
+    "initialSeed": 73294978
+  },
+  "ruler": {
+    "version": 2,
+    "sha256": "611d0404819f114a"
+  },
+  "primary": {
+    "overall": {
+      "rate": 0.7396,
+      "palettes": 48,
+      "wordsPassed": 9,
+      "wordsScored": 16
+    },
+    "words": {
+      "かっこいい": {
+        "dictLabel": null,
+        "status": "辞書なし（新設予定）",
+        "rate": null
+      },
+      "かわいい": {
+        "dictLabel": "かわいい",
+        "rate": 1,
+        "pass": true,
+        "palettes": [
+          {
+            "seed": 73294978,
+            "scheme": "補色ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "light-330",
+              "sub": "pale-330",
+              "accent": "n-ivory",
+              "bg": "L0.98"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "トーン差ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "light-330",
+              "sub": "n-ivory",
+              "accent": "bright-180",
+              "bg": "L0.96"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "類似色ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "light-330",
+              "sub": "pale-300",
+              "accent": "bright-150",
+              "bg": "L0.94"
+            },
+            "penalties": []
+          }
+        ]
+      },
+      "さわやか": {
+        "dictLabel": "さわやか",
+        "rate": 0.5,
+        "pass": false,
+        "palettes": [
+          {
+            "seed": 73294978,
+            "scheme": "補色ベース",
+            "verdict": "maybe",
+            "points": 0.5,
+            "roles": {
+              "main": "light-180",
+              "sub": "pale-150",
+              "accent": "bright-330",
+              "bg": "L0.98"
+            },
+            "penalties": [
+              "warmAccent"
+            ]
+          },
+          {
+            "seed": 73294978,
+            "scheme": "トーン差ベース",
+            "verdict": "maybe",
+            "points": 0.5,
+            "roles": {
+              "main": "light-180",
+              "sub": "pale-180",
+              "accent": "dull-000",
+              "bg": "L0.96"
+            },
+            "penalties": [
+              "warmAccent"
+            ]
+          },
+          {
+            "seed": 73294978,
+            "scheme": "類似色ベース",
+            "verdict": "maybe",
+            "points": 0.5,
+            "roles": {
+              "main": "light-180",
+              "sub": "light-120",
+              "accent": "bright-330",
+              "bg": "L0.95"
+            },
+            "penalties": [
+              "warmAccent"
+            ]
+          }
+        ]
+      },
+      "やさしい": {
+        "dictLabel": "優しい",
+        "rate": 1,
+        "pass": true,
+        "palettes": [
+          {
+            "seed": 73294978,
+            "scheme": "補色ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "n-lgray",
+              "sub": "n-ivory",
+              "accent": "n-lgray",
+              "bg": "L0.98"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "トーン差ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "n-lgray",
+              "sub": "n-ivory",
+              "accent": "soft-210",
+              "bg": "L0.96"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "類似色ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "n-lgray",
+              "sub": "pale-000",
+              "accent": "light-180",
+              "bg": "L0.95"
+            },
+            "penalties": []
+          }
+        ]
+      },
+      "エレガント": {
+        "dictLabel": null,
+        "status": "辞書なし（新設予定）",
+        "rate": null
+      },
+      "シンプル": {
+        "dictLabel": "シンプル",
+        "rate": 1,
+        "pass": true,
+        "palettes": [
+          {
+            "seed": 73294978,
+            "scheme": "補色ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "n-silver",
+              "sub": "pale-210",
+              "accent": "soft-030",
+              "bg": "L0.98"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "トーン差ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "n-silver",
+              "sub": "n-ivory",
+              "accent": "n-gray",
+              "bg": "L0.96"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "類似色ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "n-silver",
+              "sub": "n-lgray",
+              "accent": "soft-000",
+              "bg": "L0.95"
+            },
+            "penalties": []
+          }
+        ]
+      },
+      "スタイリッシュ": {
+        "dictLabel": null,
+        "status": "辞書なし（新設予定）",
+        "rate": null
+      },
+      "ダーク": {
+        "dictLabel": null,
+        "status": "辞書なし（新設予定）",
+        "rate": null
+      },
+      "ナチュラル": {
+        "dictLabel": "ナチュラル",
+        "rate": 0.8333,
+        "pass": true,
+        "palettes": [
+          {
+            "seed": 73294978,
+            "scheme": "補色ベース",
+            "verdict": "maybe",
+            "points": 0.5,
+            "roles": {
+              "main": "dull-090",
+              "sub": "n-lgray",
+              "accent": "bright-270",
+              "bg": "L0.98"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "トーン差ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "dull-090",
+              "sub": "n-lgray",
+              "accent": "dull-270",
+              "bg": "L0.96"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "類似色ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "dull-090",
+              "sub": "soft-060",
+              "accent": "dull-240",
+              "bg": "L0.95"
+            },
+            "penalties": []
+          }
+        ]
+      },
+      "ポップ": {
+        "dictLabel": "ポップ",
+        "rate": 0.8333,
+        "pass": true,
+        "palettes": [
+          {
+            "seed": 73294978,
+            "scheme": "補色ベース",
+            "verdict": "maybe",
+            "points": 0.5,
+            "roles": {
+              "main": "bright-060",
+              "sub": "n-ivory",
+              "accent": "n-silver",
+              "bg": "L0.98"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "トーン差ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "bright-060",
+              "sub": "n-ivory",
+              "accent": "vivid-240",
+              "bg": "L0.97"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "類似色ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "bright-060",
+              "sub": "light-030",
+              "accent": "bright-210",
+              "bg": "L0.95"
+            },
+            "penalties": []
+          }
+        ]
+      },
+      "レトロ": {
+        "dictLabel": "レトロ",
+        "rate": 1,
+        "pass": true,
+        "palettes": [
+          {
+            "seed": 73294978,
+            "scheme": "補色ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "dull-030",
+              "sub": "soft-030",
+              "accent": "bright-210",
+              "bg": "L0.98"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "トーン差ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "dull-030",
+              "sub": "soft-060",
+              "accent": "deep-240",
+              "bg": "L0.96"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "類似色ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "dull-030",
+              "sub": "soft-000",
+              "accent": "deep-180",
+              "bg": "L0.95"
+            },
+            "penalties": []
+          }
+        ]
+      },
+      "上品": {
+        "dictLabel": "上品",
+        "rate": 1,
+        "pass": true,
+        "palettes": [
+          {
+            "seed": 73294978,
+            "scheme": "補色ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "dull-300",
+              "sub": "n-silver",
+              "accent": "soft-120",
+              "bg": "L0.98"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "トーン差ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "dull-300",
+              "sub": "n-lgray",
+              "accent": "grayish-120",
+              "bg": "L0.96"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "類似色ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "dull-300",
+              "sub": "n-silver",
+              "accent": "dull-090",
+              "bg": "L0.95"
+            },
+            "penalties": []
+          }
+        ]
+      },
+      "元気": {
+        "dictLabel": "元気",
+        "rate": 0.6667,
+        "pass": false,
+        "palettes": [
+          {
+            "seed": 73294978,
+            "scheme": "補色ベース",
+            "verdict": "maybe",
+            "points": 0.5,
+            "roles": {
+              "main": "bright-030",
+              "sub": "n-lgray",
+              "accent": "bright-210",
+              "bg": "L0.98"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "トーン差ベース",
+            "verdict": "maybe",
+            "points": 0.5,
+            "roles": {
+              "main": "bright-030",
+              "sub": "pale-060",
+              "accent": "vivid-240",
+              "bg": "L0.97"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "類似色ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "bright-030",
+              "sub": "light-000",
+              "accent": "bright-210",
+              "bg": "L0.95"
+            },
+            "penalties": []
+          }
+        ]
+      },
+      "和風": {
+        "dictLabel": "和風",
+        "rate": 1,
+        "pass": true,
+        "palettes": [
+          {
+            "seed": 73294978,
+            "scheme": "補色ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "grayish-000",
+              "sub": "n-gray",
+              "accent": "deep-180",
+              "bg": "L0.24"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "トーン差ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "grayish-000",
+              "sub": "n-gray",
+              "accent": "dark-210",
+              "bg": "L0.24"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "類似色ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "grayish-000",
+              "sub": "grayish-330",
+              "accent": "dark-180",
+              "bg": "L0.24"
+            },
+            "penalties": []
+          }
+        ]
+      },
+      "情熱的な": {
+        "dictLabel": "情熱",
+        "rate": 0.5,
+        "pass": false,
+        "palettes": [
+          {
+            "seed": 73294978,
+            "scheme": "補色ベース",
+            "verdict": "maybe",
+            "points": 0.5,
+            "roles": {
+              "main": "vivid-000",
+              "sub": "soft-000",
+              "accent": "vivid-180",
+              "bg": "L0.98"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "トーン差ベース",
+            "verdict": "maybe",
+            "points": 0.5,
+            "roles": {
+              "main": "vivid-000",
+              "sub": "light-030",
+              "accent": "deep-210",
+              "bg": "L0.96"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "類似色ベース",
+            "verdict": "maybe",
+            "points": 0.5,
+            "roles": {
+              "main": "vivid-000",
+              "sub": "bright-330",
+              "accent": "vivid-180",
+              "bg": "L0.94"
+            },
+            "penalties": []
+          }
+        ]
+      },
+      "清潔感のある": {
+        "dictLabel": "清潔",
+        "rate": 0,
+        "pass": false,
+        "palettes": [
+          {
+            "seed": 73294978,
+            "scheme": "補色ベース",
+            "verdict": "ng",
+            "points": 0,
+            "roles": {
+              "main": "n-lgray",
+              "sub": "n-ivory",
+              "accent": "n-lgray",
+              "bg": "L0.98"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "トーン差ベース",
+            "verdict": "ng",
+            "points": 0,
+            "roles": {
+              "main": "n-lgray",
+              "sub": "n-ivory",
+              "accent": "soft-030",
+              "bg": "L0.96"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "類似色ベース",
+            "verdict": "ng",
+            "points": 0,
+            "roles": {
+              "main": "n-lgray",
+              "sub": "pale-150",
+              "accent": "soft-000",
+              "bg": "L0.95"
+            },
+            "penalties": []
+          }
+        ]
+      },
+      "温もりのある": {
+        "dictLabel": "温かい",
+        "rate": 0.5,
+        "pass": false,
+        "palettes": [
+          {
+            "seed": 73294978,
+            "scheme": "補色ベース",
+            "verdict": "maybe",
+            "points": 0.5,
+            "roles": {
+              "main": "bright-030",
+              "sub": "n-lgray",
+              "accent": "n-silver",
+              "bg": "L0.98"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "トーン差ベース",
+            "verdict": "maybe",
+            "points": 0.5,
+            "roles": {
+              "main": "bright-030",
+              "sub": "pale-030",
+              "accent": "bright-210",
+              "bg": "L0.96"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "類似色ベース",
+            "verdict": "maybe",
+            "points": 0.5,
+            "roles": {
+              "main": "bright-030",
+              "sub": "light-000",
+              "accent": "bright-180",
+              "bg": "L0.95"
+            },
+            "penalties": [
+              "neon:accent"
+            ]
+          }
+        ]
+      },
+      "知的": {
+        "dictLabel": "知的",
+        "rate": 0.5,
+        "pass": false,
+        "palettes": [
+          {
+            "seed": 73294978,
+            "scheme": "補色ベース",
+            "verdict": "maybe",
+            "points": 0.5,
+            "roles": {
+              "main": "grayish-240",
+              "sub": "n-gray",
+              "accent": "dull-030",
+              "bg": "L0.24"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "トーン差ベース",
+            "verdict": "maybe",
+            "points": 0.5,
+            "roles": {
+              "main": "grayish-240",
+              "sub": "soft-240",
+              "accent": "dark-060",
+              "bg": "L0.24"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "類似色ベース",
+            "verdict": "maybe",
+            "points": 0.5,
+            "roles": {
+              "main": "grayish-240",
+              "sub": "n-gray",
+              "accent": "dark-030",
+              "bg": "L0.24"
+            },
+            "penalties": []
+          }
+        ]
+      },
+      "誠実・信頼感のある": {
+        "dictLabel": "誠実",
+        "rate": 0.5,
+        "pass": false,
+        "palettes": [
+          {
+            "seed": 73294978,
+            "scheme": "補色ベース",
+            "verdict": "maybe",
+            "points": 0.5,
+            "roles": {
+              "main": "dull-210",
+              "sub": "soft-210",
+              "accent": "n-gray",
+              "bg": "L0.98"
+            },
+            "penalties": [
+              "warmAccent"
+            ]
+          },
+          {
+            "seed": 73294978,
+            "scheme": "トーン差ベース",
+            "verdict": "maybe",
+            "points": 0.5,
+            "roles": {
+              "main": "dull-210",
+              "sub": "soft-240",
+              "accent": "dark-060",
+              "bg": "L0.96"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "類似色ベース",
+            "verdict": "maybe",
+            "points": 0.5,
+            "roles": {
+              "main": "dull-210",
+              "sub": "dull-180",
+              "accent": "deep-030",
+              "bg": "L0.95"
+            },
+            "penalties": [
+              "warmAccent"
+            ]
+          }
+        ]
+      },
+      "高級感": {
+        "dictLabel": "高級",
+        "rate": 1,
+        "pass": true,
+        "palettes": [
+          {
+            "seed": 73294978,
+            "scheme": "補色ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "dark-270",
+              "sub": "grayish-270",
+              "accent": "dark-090",
+              "bg": "L0.24"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "トーン差ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "dark-270",
+              "sub": "grayish-300",
+              "accent": "n-charcoal",
+              "bg": "L0.24"
+            },
+            "penalties": []
+          },
+          {
+            "seed": 73294978,
+            "scheme": "類似色ベース",
+            "verdict": "ok",
+            "points": 1,
+            "roles": {
+              "main": "dark-270",
+              "sub": "n-charcoal",
+              "accent": "dark-090",
+              "bg": "L0.24"
+            },
+            "penalties": []
+          }
+        ]
+      }
+    }
+  },
+  "ageVariant": {
+    "かわいい": {
+      "age": 0.4,
+      "rate": 1,
+      "palettes": [
+        {
+          "seed": 73294978,
+          "scheme": "補色ベース",
+          "verdict": "ok",
+          "points": 1,
+          "roles": {
+            "main": "light-330",
+            "sub": "pale-330",
+            "accent": "light-150",
+            "bg": "L0.98"
+          },
+          "penalties": []
+        },
+        {
+          "seed": 73294978,
+          "scheme": "トーン差ベース",
+          "verdict": "ok",
+          "points": 1,
+          "roles": {
+            "main": "light-330",
+            "sub": "pale-000",
+            "accent": "bright-180",
+            "bg": "L0.96"
+          },
+          "penalties": []
+        },
+        {
+          "seed": 73294978,
+          "scheme": "類似色ベース",
+          "verdict": "ok",
+          "points": 1,
+          "roles": {
+            "main": "light-330",
+            "sub": "pale-300",
+            "accent": "bright-150",
+            "bg": "L0.94"
+          },
+          "penalties": []
+        }
+      ]
+    }
+  },
+  "reference": {
+    "seeds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32
+    ],
+    "overall": {
+      "rate": 0.7757,
+      "palettes": 1536
+    },
+    "bySchemes": {
+      "トーン差ベース": {
+        "rate": 0.75,
+        "count": 224
+      },
+      "三色配色（トライアド）": {
+        "rate": 0.7996,
+        "count": 272
+      },
+      "分裂補色": {
+        "rate": 0.807,
+        "count": 272
+      },
+      "同系トーン": {
+        "rate": 0.7592,
+        "count": 272
+      },
+      "補色ベース": {
+        "rate": 0.7354,
+        "count": 240
+      },
+      "類似色ベース": {
+        "rate": 0.7949,
+        "count": 256
+      }
+    }
+  },
+  "rulerValidation": {
+    "V-M": {
+      "n": 96,
+      "exact": 0.5625,
+      "adjacent": 0.9167,
+      "reversal": 0.0833,
+      "mae": 0.2604,
+      "maeAllMaybe": 0.3073,
+      "confusion": {
+        "ok": {
+          "ok": 21,
+          "maybe": 5,
+          "ng": 4
+        },
+        "maybe": {
+          "ok": 14,
+          "maybe": 18,
+          "ng": 5
+        },
+        "ng": {
+          "ok": 4,
+          "maybe": 10,
+          "ng": 15
+        }
+      },
+      "nature": "主の検証（合格範囲は第1回から作成。ただし w と組み合わせ方は第2回を見て選んだ）"
+    },
+    "V-G": {
+      "n": 32,
+      "exact": 0.6875,
+      "adjacent": 1,
+      "reversal": 0,
+      "mae": 0.1563,
+      "maeAllMaybe": 0.2813,
+      "confusion": {
+        "ok": {
+          "ok": 13,
+          "maybe": 1,
+          "ng": 0
+        },
+        "maybe": {
+          "ok": 3,
+          "maybe": 9,
+          "ng": 2
+        },
+        "ng": {
+          "ok": 0,
+          "maybe": 4,
+          "ng": 0
+        }
+      },
+      "humanRate": 0.6563,
+      "rulerRate": 0.7188,
+      "diff": 0.0625,
+      "words": {
+        "かわいい": {
+          "human": 1,
+          "ruler": 1
+        },
+        "さわやか": {
+          "human": 0.5,
+          "ruler": 0.5
+        },
+        "やさしい": {
+          "human": 1,
+          "ruler": 1
+        },
+        "シンプル": {
+          "human": 1,
+          "ruler": 1
+        },
+        "ナチュラル": {
+          "human": 0.5,
+          "ruler": 0.75
+        },
+        "ポップ": {
+          "human": 0.25,
+          "ruler": 0.75
+        },
+        "レトロ": {
+          "human": 1,
+          "ruler": 1
+        },
+        "上品": {
+          "human": 1,
+          "ruler": 1
+        },
+        "元気": {
+          "human": 0.5,
+          "ruler": 0.5
+        },
+        "和風": {
+          "human": 1,
+          "ruler": 1
+        },
+        "情熱的な": {
+          "human": 0.25,
+          "ruler": 0.5
+        },
+        "清潔感のある": {
+          "human": 0.5,
+          "ruler": 0
+        },
+        "温もりのある": {
+          "human": 0,
+          "ruler": 0.5
+        },
+        "知的": {
+          "human": 0.5,
+          "ruler": 0.5
+        },
+        "誠実・信頼感のある": {
+          "human": 0.75,
+          "ruler": 0.5
+        },
+        "高級感": {
+          "human": 0.75,
+          "ruler": 1
+        }
+      },
+      "nature": "現行案 G1・G2 の得点率を人間と物差しで比べる"
+    },
+    "V-C": {
+      "n": 18,
+      "exact": 0.8889,
+      "adjacent": 1,
+      "reversal": 0,
+      "mae": 0.0556,
+      "maeAllMaybe": 0.3889,
+      "confusion": {
+        "ok": {
+          "ok": 6,
+          "maybe": 0,
+          "ng": 0
+        },
+        "maybe": {
+          "ok": 1,
+          "maybe": 2,
+          "ng": 1
+        },
+        "ng": {
+          "ok": 0,
+          "maybe": 0,
+          "ng": 8
+        }
+      },
+      "nature": "当てはめ（規則をこの判定から作った。さらに結果を見てから規則を修正した＝シンプルの金属を金だけに）"
+    },
+    "V-E": {
+      "n": 18,
+      "exact": 1,
+      "adjacent": 1,
+      "reversal": 0,
+      "mae": 0,
+      "maeAllMaybe": 0.3611,
+      "confusion": {
+        "ok": {
+          "ok": 10,
+          "maybe": 0,
+          "ng": 0
+        },
+        "maybe": {
+          "ok": 0,
+          "maybe": 5,
+          "ng": 0
+        },
+        "ng": {
+          "ok": 0,
+          "maybe": 0,
+          "ng": 3
+        }
+      },
+      "nature": "当てはめ（規則をこの判定から作った）"
+    },
+    "reference": {
+      "n": 6,
+      "exact": 0.5,
+      "adjacent": 0.8333,
+      "reversal": 0.1667,
+      "mae": 0.3333,
+      "maeAllMaybe": 0.3333,
+      "confusion": {
+        "ok": {
+          "ok": 1,
+          "maybe": 0,
+          "ng": 1
+        },
+        "maybe": {
+          "ok": 1,
+          "maybe": 0,
+          "ng": 1
+        },
+        "ng": {
+          "ok": 0,
+          "maybe": 0,
+          "ng": 2
+        }
+      },
+      "nature": "第2回の旧エレガント6案を高級感の物差しで採点（食い違いの確認だけ・目安なし）"
+    }
+  }
+}
