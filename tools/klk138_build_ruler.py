@@ -2,6 +2,8 @@
 """KLK-138 言葉と色の物差し（ruler.json）を判定データから生成する。Python 標準のみ。
 
 設計: docs/designs/KLK-138.md §4.2・§4.3
+      docs/designs/KLK-140.md §4.6（4語の dictLabel・combo.accentCMin・version 3）
+      docs/designs/KLK-140.md §4.13.5（改善ループ2: 高級感の明るい背景の例外 thresholds.lightBgException・version 4）
 
   python3 tools/klk138_build_ruler.py            # tests/fixtures/klk138/ruler.json を書き出す
   python3 tools/klk138_build_ruler.py --stdout   # 書かずに標準出力へ（ずれ検査 C6 用）
@@ -36,14 +38,14 @@ INPUTS = {
     "judge": "judge.html",
 }
 
-# 代表語 → 生成側の辞書ラベル（make_round2.js の DICT と同じ16語）。辞書に無い4語は None。
-# 第2段で辞書を作り替えたら、ここを直して再生成する（合格範囲は変えない）。
+# 代表語 → 生成側の辞書ラベル。KLK-140 で4語を辞書に追加（20語すべて対応あり）。
+# 辞書を作り替えたら、ここを直して再生成する（合格範囲は変えない）。
 DICT = {
     "かわいい": "かわいい", "やさしい": "優しい", "ナチュラル": "ナチュラル", "温もりのある": "温かい",
     "元気": "元気", "情熱的な": "情熱", "ポップ": "ポップ", "レトロ": "レトロ", "さわやか": "さわやか",
     "清潔感のある": "清潔", "上品": "上品", "誠実・信頼感のある": "誠実", "知的": "知的",
     "高級感": "高級", "シンプル": "シンプル", "和風": "和風",
-    "エレガント": None, "かっこいい": None, "スタイリッシュ": None, "ダーク": None,
+    "エレガント": "エレガント", "かっこいい": "かっこいい", "スタイリッシュ": "スタイリッシュ", "ダーク": "ダーク",
 }
 
 COMBO = {"かっこいい": "cool", "スタイリッシュ": "stylish", "シンプル": "simple"}
@@ -132,16 +134,31 @@ THRESHOLDS = {
         "pastelMain": thr({"lMin": 0.70, "cMin": 0.04}, "設計値", "メインが L>=0.70 かつ C>=0.04 ならパステルのメイン"),
         "creamBg": thr({"lMin": 0.85, "cMin": 0.02, "cMax": 0.10, "hueMax": 100, "hueMin": 330}, "設計値",
                        "背景が L>=0.85 かつ 0.02<=C<0.10 かつ（h<=100 または h>=330）ならクリームの背景"),
+        "accentCMin": thr(0.06, "設計値",
+                          "かっこいい・スタイリッシュの○に、差し色があること（アクセントの OKLCH C がこの値以上）を求める。"
+                          "第2回で○の案（かっこいい E1・E2・E3、スタイリッシュ E2）のアクセントはすべてこの値を上回る。"
+                          "値はモノトーン基調の境目 monoMain.cMax と同じにそろえる（差し色がモノトーンなら差し色が無いのと同じ）。"
+                          "差し色の無いモノトーンの案は判定されていない（○側だけのギャップ）"),
         "pureBlack": thr({"lMax": 0.20, "cMax": 0.02}, "設計値", "L<0.20 かつ C<0.02 を純黒とする"),
         "simpleMetalCells": thr(["n-gold"], "改訂（規則と根拠の矛盾の修正）",
                                 "シンプルで金属として扱うマス。単色では銀と淡いグレーを区別できないため金のみ。"
                                 "銀を含めると第2回シンプル G1・G2（○）の淡いグレーのメインが×になり、根拠と矛盾していた"),
     },
+    "lightBgException": thr(
+        {"maxPerSet": 1, "mainLMax": 0.52, "mainCMax": 0.10,
+         "shineCells": ["n-gold", "n-silver"], "shineRoles": ["sub", "accent"]},
+        "設計値（仮・画面確認で検証する）",
+        "背景＝暗いの語のうち補正で例外を認めた語に限り、3案のうち maxPerSet 案まで、背景の OKLCH L が bgLightMinL 以上の案を"
+        "背景○として扱う。条件は重厚さ（メインの OKLCH L<=mainLMax かつ C<mainCMax）と輝き（shineRoles のどれかのマスが"
+        " shineCells）。mainLMax はエレガントの濃い一点の線引き darkPointMaxL と同じ値、mainCMax は「鮮やか」の線引き"
+        " combo.vividCMin の手前、金・銀のマスは格子の無彩色・金属8マスの既存の語彙。判定データに該当する案が無いため仮の値。"
+        "1案ずつの採点では使わず、案の集まり（3案）の採点でだけ使う"),
 }
 
 COMBO_EVIDENCE = {
-    "かっこいい": "規則: モノトーン基調で○。鮮やかな暖色アクセントは弱い減点で△。蛍光・パステルのメイン・"
-                  "カラフル（鮮やか2色以上かつ色相3群以上）は×",
+    "かっこいい": "規則: モノトーン基調で、差し色（アクセント C>=%g）があれば○。差し色が無い・鮮やかな暖色アクセントは"
+                  "△（弱い減点）。蛍光・パステルのメイン・カラフル（鮮やか2色以上かつ色相3群以上）は×"
+                  % THRESHOLDS["combo"]["accentCMin"]["value"],
     "スタイリッシュ": "規則: かっこいいの規則に加え、クリームの背景は×",
     "シンプル": "規則: 鮮やか0・色相2群以下・純黒なし・金なしで○。蛍光・鮮やか2色以上・メインが金のマスは×。"
                 "第1回で金・銀だけ×（残り△）だった。単色では銀と淡いグレーを区別できないため、金属の×は金だけに適用",
@@ -270,6 +287,10 @@ def build(data):
                 amd_ev.append("色相 %s の○ %dマスを△へ" % ("・".join(str(h) for h in sorted(hs)), len(moved)))
             if word == "高級感":
                 amd_ev.append("第1回の高級感のマスだけを使う。旧エレガントの判定は食い違いの確認にだけ使う")
+            if "lightBgException" in a:
+                d["lightBgException"] = True
+                amd_ev.append("3案のうち1案に限り明るい背景を認める（重厚なメインと金・銀の輝きが条件。"
+                              "数値は thresholds.lightBgException）")
             d["cells"] = {"ok": sorted(ok), "maybe": sorted(maybe)}
             if ok_when:
                 d["okWhen"] = ok_when
@@ -312,7 +333,7 @@ def build(data):
 
     ruler = {
         "schema": "klk138-ruler",
-        "version": 2,
+        "version": 4,
         "judgedBy": "判定者（人間）",
         "sources": {
             "round1": ver("round1", ["schema", "version", "exportedAt"]),

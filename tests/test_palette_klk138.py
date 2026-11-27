@@ -1,7 +1,9 @@
 # KLK-138 配色ジェネレーターの言葉と色の物差し のテストを unittest スイートへ束ねるラッパー
 # - 静的チェック: tests/site/check_klk138.py（C1-C6・Python標準のみ）
 # - 自己検査＋一致検査: tests/site/smoke_klk138.node.js（T1-T5・判定データがあれば V-M/V-G/V-C/V-E）
-# - ベースラインの再現: tests/site/klk138_score.node.js --check（生成側が変われば SKIP で合格）
+# - ベースラインの再現: tests/site/klk138_score.node.js --check（現行版＝指紋が一致する1件を照合。
+#   生成側が記録済みのどの版とも違えば SKIP で合格）
+# - KLK-140: 過去版の上書き拒否・ラベル必須・Python と Node の指紋の一致
 # node が無い環境では後ろ2つを skip する。
 import shutil
 import subprocess
@@ -37,7 +39,7 @@ class TestKLK138Smoke(unittest.TestCase):
 
 @unittest.skipUnless(shutil.which("node"), "node が見つからないため skip")
 class TestKLK138Baseline(unittest.TestCase):
-    """klk138_score.node.js --check でベースライン v1.2 が再現できること。"""
+    """klk138_score.node.js --check で現行版のベースラインが再現できること。"""
 
     def test_baseline_reproduces(self):
         proc = _run(["node", str(SCORE), "--check"])
@@ -91,7 +93,7 @@ class TestKLK138Environment(unittest.TestCase):
         import json
         data = json.loads(out.stdout)
         self.assertIsNone(data["rulerValidation"])
-        self.assertEqual(data["primary"]["overall"]["wordsScored"], 16)
+        self.assertEqual(data["primary"]["overall"]["wordsScored"], 20)
 
     def test_generator_change_makes_check_skip(self):
         """R-E: 生成側（切り出し範囲）が変わったら --check は SKIP で終了コード 0。"""
@@ -101,7 +103,7 @@ class TestKLK138Environment(unittest.TestCase):
         html.write_text(src.replace("const KEYWORDS = {", "const KEYWORDS = { /* changed */", 1), encoding="utf-8")
         proc = self._run_in("node", "tests/site/klk138_score.node.js", "--check")
         self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
-        self.assertIn("[SKIP] 生成側が v1.2 から変わった", proc.stdout)
+        self.assertIn("[SKIP] 生成側が記録済みのどの版", proc.stdout)
 
     def test_ruler_change_breaks_check(self):
         """物差しが変わったら --check は不一致（終了コード 1）。黙って通らない。"""
@@ -130,6 +132,36 @@ class TestKLK138Environment(unittest.TestCase):
         proc = self._run_in("node", "tests/site/klk138_score.node.js")
         self.assertEqual(proc.returncode, 2, proc.stdout + proc.stderr)
         self.assertIn("スライスマーカー", proc.stderr)
+
+    def test_write_baseline_refuses_past_version(self):
+        """KLK-140 AC6: --write-baseline --label v1.2 は終了コード 1 で、baseline-v1.2.json を書き換えない。"""
+        p = self.root / "tests" / "fixtures" / "klk138" / "baseline-v1.2.json"
+        before = p.read_bytes()
+        proc = self._run_in("node", "tests/site/klk138_score.node.js", "--write-baseline", "--label", "v1.2")
+        self.assertEqual(proc.returncode, 1, proc.stdout + proc.stderr)
+        self.assertEqual(p.read_bytes(), before)
+
+    def test_write_baseline_requires_label(self):
+        """KLK-140 AC6: --write-baseline にラベルが無ければ終了コード 2（何も書かない）。"""
+        fix = self.root / "tests" / "fixtures" / "klk138"
+        before = sorted(f.name for f in fix.iterdir())
+        proc = self._run_in("node", "tests/site/klk138_score.node.js", "--write-baseline")
+        self.assertEqual(proc.returncode, 2, proc.stdout + proc.stderr)
+        self.assertEqual(sorted(f.name for f in fix.iterdir()), before)
+
+
+@unittest.skipUnless(shutil.which("node"), "node が見つからないため skip")
+class TestKLK138Fingerprint(unittest.TestCase):
+    """KLK-140 R-5: check_klk138.py --fingerprint と klk138_generator.js の指紋が一致すること。"""
+
+    def test_fingerprint_python_matches_node(self):
+        py = _run(["python3", str(STATIC_CHECKER), "--fingerprint"])
+        self.assertEqual(py.returncode, 0, py.stdout + py.stderr)
+        gen = ROOT / "tests" / "site" / "klk138_generator.js"
+        js = _run(["node", "-e", "console.log(require(process.argv[1]).load().fingerprint)", str(gen)])
+        self.assertEqual(js.returncode, 0, js.stdout + js.stderr)
+        self.assertRegex(py.stdout.strip(), r"^[0-9a-f]{16}$")
+        self.assertEqual(py.stdout.strip(), js.stdout.strip())
 
 
 if __name__ == "__main__":

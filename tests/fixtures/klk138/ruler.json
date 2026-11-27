@@ -127,7 +127,7 @@
   "sources": {
     "amendments": {
       "schema": "klk138-amendments",
-      "version": 4
+      "version": 5
     },
     "round1": {
       "exportedAt": "2026-11-20T03:23:08.928Z",
@@ -162,6 +162,11 @@
       "value": 0.8
     },
     "combo": {
+      "accentCMin": {
+        "basis": "かっこいい・スタイリッシュの○に、差し色があること（アクセントの OKLCH C がこの値以上）を求める。第2回で○の案（かっこいい E1・E2・E3、スタイリッシュ E2）のアクセントはすべてこの値を上回る。値はモノトーン基調の境目 monoMain.cMax と同じにそろえる（差し色がモノトーンなら差し色が無いのと同じ）。差し色の無いモノトーンの案は判定されていない（○側だけのギャップ）",
+        "status": "設計値",
+        "value": 0.06
+      },
       "chromaticCMin": {
         "basis": "OKLCH C>=0.04 を有彩色として色相のまとまりに数える",
         "status": "設計値",
@@ -364,6 +369,23 @@
         "value": 0.106
       }
     },
+    "lightBgException": {
+      "basis": "背景＝暗いの語のうち補正で例外を認めた語に限り、3案のうち maxPerSet 案まで、背景の OKLCH L が bgLightMinL 以上の案を背景○として扱う。条件は重厚さ（メインの OKLCH L<=mainLMax かつ C<mainCMax）と輝き（shineRoles のどれかのマスが shineCells）。mainLMax はエレガントの濃い一点の線引き darkPointMaxL と同じ値、mainCMax は「鮮やか」の線引き combo.vividCMin の手前、金・銀のマスは格子の無彩色・金属8マスの既存の語彙。判定データに該当する案が無いため仮の値。1案ずつの採点では使わず、案の集まり（3案）の採点でだけ使う",
+      "status": "設計値（仮・画面確認で検証する）",
+      "value": {
+        "mainCMax": 0.1,
+        "mainLMax": 0.52,
+        "maxPerSet": 1,
+        "shineCells": [
+          "n-gold",
+          "n-silver"
+        ],
+        "shineRoles": [
+          "sub",
+          "accent"
+        ]
+      }
+    },
     "neon": {
       "basis": "HSV。補正v3 neon.draftRule をそのまま採用。第2回で判定者が蛍光と名指しした色をすべて検出",
       "status": "補正v3の仮ルール",
@@ -392,12 +414,12 @@
       }
     }
   },
-  "version": 2,
+  "version": 4,
   "words": {
     "かっこいい": {
       "bg": "either",
       "comboType": "cool",
-      "dictLabel": null,
+      "dictLabel": "かっこいい",
       "evidence": [
         {
           "source": "第1回判定",
@@ -405,10 +427,10 @@
         },
         {
           "source": "規則",
-          "summary": "規則: モノトーン基調で○。鮮やかな暖色アクセントは弱い減点で△。蛍光・パステルのメイン・カラフル（鮮やか2色以上かつ色相3群以上）は×"
+          "summary": "規則: モノトーン基調で、差し色（アクセント C>=0.06）があれば○。差し色が無い・鮮やかな暖色アクセントは△（弱い減点）。蛍光・パステルのメイン・カラフル（鮮やか2色以上かつ色相3群以上）は×"
         },
         {
-          "source": "補正v4",
+          "source": "補正v5",
           "summary": "鮮やかな暖色アクセントは弱い減点（○→△）"
         },
         {
@@ -528,7 +550,7 @@
           "summary": "○37マス（pale 全色相、light 全色相、bright 全色相、無彩色・金属 white）、△52マス、背景 either"
         },
         {
-          "source": "補正v4",
+          "source": "補正v5",
           "summary": "dull/grayish/soft の△は age>=0.4 でメイン可（大人かわいい）。vivid は差し色のみ（△のまま）"
         },
         {
@@ -633,7 +655,7 @@
           "summary": "○25マス（pale 6色相、light 6色相、bright 6色相、soft 6色相、無彩色・金属 white）、△6マス、背景 light"
         },
         {
-          "source": "補正v4",
+          "source": "補正v5",
           "summary": "鮮やかな暖色アクセントは弱い減点（○→△）"
         },
         {
@@ -741,10 +763,10 @@
     },
     "エレガント": {
       "bg": "either",
-      "dictLabel": null,
+      "dictLabel": "エレガント",
       "evidence": [
         {
-          "source": "補正v4",
+          "source": "補正v5",
           "summary": "第1回・第2回の判定は高級感寄りだったため高級感の根拠へ移し、エレガントを再定義（紫〜ローズ系の明るい／くすんだ配色、ベージュ系＋濃い一点、女性的）"
         },
         {
@@ -801,7 +823,7 @@
     "スタイリッシュ": {
       "bg": "either",
       "comboType": "stylish",
-      "dictLabel": null,
+      "dictLabel": "スタイリッシュ",
       "evidence": [
         {
           "source": "第1回判定",
@@ -812,7 +834,7 @@
           "summary": "規則: かっこいいの規則に加え、クリームの背景は×"
         },
         {
-          "source": "補正v4",
+          "source": "補正v5",
           "summary": "鮮やかな暖色アクセントは弱い減点（○→△）"
         },
         {
@@ -916,14 +938,14 @@
           "pale-150"
         ]
       },
-      "dictLabel": null,
+      "dictLabel": "ダーク",
       "evidence": [
         {
           "source": "第1回判定",
           "summary": "○52マス（pale 1色相、dull 全色相、deep 全色相、dark 全色相、grayish 全色相、無彩色・金属 black・charcoal・gray）、△28マス、背景 dark"
         },
         {
-          "source": "補正v4",
+          "source": "補正v5",
           "summary": "補正なし。第1回のマスどおり・背景 dark"
         },
         {
@@ -1616,7 +1638,7 @@
           "summary": "○11マス（bright 3色相、vivid 3色相、deep 3色相、無彩色・金属 black・white）、△18マス、背景 either"
         },
         {
-          "source": "補正v4",
+          "source": "補正v5",
           "summary": "色相 90・120 の○ 6マスを△へ"
         },
         {
@@ -1684,7 +1706,7 @@
           "summary": "○23マス（pale 5色相、light 5色相、bright 5色相、soft 5色相、dull 2色相、無彩色・金属 white）、△14マス、背景 light"
         },
         {
-          "source": "補正v4",
+          "source": "補正v5",
           "summary": "鮮やかな暖色アクセントは弱い減点（○→△）"
         },
         {
@@ -1956,7 +1978,7 @@
           "summary": "○31マス（soft 5色相、dull 5色相、deep 5色相、dark 5色相、grayish 5色相、無彩色・金属 black・charcoal・gray・lgray・silver・white）、△30マス、背景 either"
         },
         {
-          "source": "補正v4",
+          "source": "補正v5",
           "summary": "鮮やかな暖色アクセントは弱い減点（○→△）"
         },
         {
@@ -2067,8 +2089,8 @@
           "summary": "○57マス（soft 1色相、dull 全色相、deep 全色相、dark 全色相、grayish 全色相、無彩色・金属 black・charcoal・gold・gray・ivory・lgray・silver・white）、△23マス、背景 dark"
         },
         {
-          "source": "補正v4",
-          "summary": "第1回の高級感のマスだけを使う。旧エレガントの判定は食い違いの確認にだけ使う"
+          "source": "補正v5",
+          "summary": "第1回の高級感のマスだけを使う。旧エレガントの判定は食い違いの確認にだけ使う。3案のうち1案に限り明るい背景を認める（重厚なメインと金・銀の輝きが条件。数値は thresholds.lightBgException）"
         },
         {
           "source": "第2回判定",
@@ -2084,6 +2106,7 @@
         }
       ],
       "kind": "cells",
+      "lightBgException": true,
       "neonPolicy": "standard",
       "warmAccentPolicy": "none"
     }

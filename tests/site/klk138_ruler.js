@@ -209,6 +209,9 @@ function scoreCells(pal, def, ruler, ctx) {
   let bg = 1;
   if (def.bg === 'light') bg = L >= lightMin ? 1 : (L < darkMax ? 0 : 0.5);
   else if (def.bg === 'dark') bg = L <= darkMax ? 1 : (L > lightMin ? 0 : 0.5);
+  // KLK-140 改善ループ2: 明るい背景の例外（scoreSet が条件を確かめた案だけ ctx.lightBgException で渡す）
+  const exc = !!(ctx && ctx.lightBgException) && def.bg === 'dark' && L >= lightMin;
+  if (exc) bg = 1;
 
   const penalties = [];
   const policy = def.neonPolicy || 'standard';
@@ -235,7 +238,7 @@ function scoreCells(pal, def, ruler, ctx) {
       main: { cell: mainCell, status: st(main) },
       sub: { cell: subCell, status: st(sub) },
       accent: { cell: accCell, status: st(accent) },
-      bg: { L: r2(L), status: st(bg) },
+      bg: exc ? { L: r2(L), status: st(bg), exception: true } : { L: r2(L), status: st(bg) },
     },
     penalties,
   };
@@ -307,7 +310,9 @@ function comboMetrics(pal, ruler) {
   for (const r of ROLES) cells[r] = classify(pal[r], ruler).cell;
   const metal = new Set(t.simpleMetalCells.value);
   const warmAccent = isWarmVivid(pal.accent, ruler);
-  return { vivid, clusters, mono, pastel, cream, pureBlack, neon, cells, metal, warmAccent };
+  // KLK-140: 差し色があるか（アクセントがモノトーンでない）
+  const accentPresent = lch.accent[1] >= t.accentCMin.value;
+  return { vivid, clusters, mono, pastel, cream, pureBlack, neon, cells, metal, warmAccent, accentPresent };
 }
 
 function scoreCombo(pal, def, ruler) {
@@ -319,10 +324,11 @@ function scoreCombo(pal, def, ruler) {
     else if (m.pastel) { verdict = 'ng'; penalties.push('pastelMain'); }
     else if (m.vivid >= 2 && m.clusters >= 3) { verdict = 'ng'; penalties.push('colorful'); }
     else if (def.comboType === 'stylish' && m.cream) { verdict = 'ng'; penalties.push('creamBg'); }
-    else if (m.mono && !m.warmAccent) verdict = 'ok';
+    else if (m.mono && !m.warmAccent && m.accentPresent) verdict = 'ok';
     else {
       verdict = 'maybe';
       if (m.warmAccent) penalties.push('warmAccent');
+      if (!m.accentPresent) penalties.push('noAccent');
       if (!m.mono) penalties.push('notMono');
     }
   } else if (def.comboType === 'simple') {
@@ -342,7 +348,7 @@ function scoreCombo(pal, def, ruler) {
     throw new Error('unknown comboType: ' + def.comboType);
   }
   return { verdict, points: pointsOf(ruler, verdict), roles: rolesSummary(pal, ruler), penalties,
-    metrics: { vivid: m.vivid, clusters: m.clusters, mono: m.mono } };
+    metrics: { vivid: m.vivid, clusters: m.clusters, mono: m.mono, accentPresent: m.accentPresent } };
 }
 
 function scorePalette(word, pal, ruler, ctx) {
@@ -352,6 +358,33 @@ function scorePalette(word, pal, ruler, ctx) {
   if (def.kind === 'elegant') return scoreElegant(pal, def, ruler);
   if (def.kind === 'combo') return scoreCombo(pal, def, ruler);
   throw new Error('unknown kind: ' + def.kind);
+}
+
+// KLK-140 改善ループ2: 明るい背景の例外の条件（thresholds.lightBgException）
+// 背景 L>=bgLightMinL・メイン L<=mainLMax かつ C<mainCMax・shineRoles のどれかのマスが shineCells
+function lightBgExceptionMet(pal, ruler) {
+  const t = ruler.thresholds.lightBgException && ruler.thresholds.lightBgException.value;
+  if (!t) return false;
+  if (oklchOf(pal.bg)[0] < ruler.thresholds.bgLightMinL.value) return false;
+  const [mL, mC] = oklchOf(pal.main);
+  if (!(mL <= t.mainLMax && mC < t.mainCMax)) return false;
+  return t.shineRoles.some(r => t.shineCells.includes(classify(pal[r], ruler).cell));
+}
+
+// KLK-140 改善ループ2: 3案をまとめて採点する。lightBgException を持つ語だけ、条件を満たす明るい背景の案を
+// 先頭から maxPerSet 件まで例外として採点する（例外は「3案のうち」の規則なので、案の集まりでだけ使う）。
+function scoreSet(word, pals, ruler, ctx) {
+  const def = ruler.words[word];
+  if (!def) throw new Error('unknown word: ' + word);
+  const t = ruler.thresholds.lightBgException && ruler.thresholds.lightBgException.value;
+  let left = def.lightBgException && t ? t.maxPerSet : 0;
+  return pals.map(pal => {
+    if (left > 0 && lightBgExceptionMet(pal, ruler)) {
+      left--;
+      return scorePalette(word, pal, ruler, Object.assign({}, ctx || {}, { lightBgException: true }));
+    }
+    return scorePalette(word, pal, ruler, ctx);
+  });
 }
 
 // 案の点の平均（§4.7）
@@ -488,7 +521,7 @@ module.exports = {
   ROOT, RULER_PATH, DATA_DIR,
   hexToRgb, rgbToHsl, rgbToHsv, rgbToOklab, rgbToOklch, hslToHex,
   classify, cellRepHex, isNeon, isWarmVivid, hueClusters,
-  scoreCells, scoreElegant, scoreCombo, scorePalette, rateOf, loadRuler,
+  scoreCells, scoreElegant, scoreCombo, scorePalette, scoreSet, lightBgExceptionMet, rateOf, loadRuler,
   loadJudgmentData, PartialDataError, JUDGMENT_FILES, validateAgainstHumans, checkTargets, publicValidation, TARGETS,
   r4, r2,
 };

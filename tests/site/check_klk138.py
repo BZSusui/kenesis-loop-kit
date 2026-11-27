@@ -1,13 +1,21 @@
 #!/usr/bin/env python3
 """KLK-138 言葉と色の物差し 静的チェック（Python 標準のみ）
 
-設計: docs/designs/KLK-138.md §4.8 check_klk138.py
+設計: docs/designs/KLK-138.md §4.8 check_klk138.py、docs/designs/KLK-140.md §4.8.4
 
-  C1 ruler.json が読め、schema・version（=2）・20語・各語の kind・bg・evidence（1件以上）がある
-  C2 辞書なし4語の dictLabel が null、辞書あり16語が非 null
-  C3 持ち出し禁止: ruler.json・baseline-v1.2.json に色コード（grid.neutrals の8値を除く）・
+  C1 ruler.json が読め、schema・version（=3）・20語・各語の kind・bg・evidence（1件以上）がある
+     （KLK-140: version 2→3。改善ループ2: 3→4〔高級感の明るい背景の例外〕）
+  C2 20語すべての dictLabel が空でない文字列（KLK-140: 4語を辞書に追加。旧「辞書なし4語は null」）
+  C3 持ち出し禁止: ruler.json・baseline-*.json すべてに色コード（grid.neutrals の8値を除く）・
      キー decidedBy/note/comment/hex（grid.neutrals 内を除く）・外部の配色の出どころが無い
-  C4 baseline-v1.2.json の形（20語・辞書なし4語は rate null と status・overall.rate 0〜1・ruler.sha256 一致）
+     （KLK-140: 対象を baseline-v1.2.json だけから baseline-*.json すべてに）
+  C4 ベースライン（KLK-140: 版ごとのファイル。M1 の修正）
+     - すべて: 形（schema・label がファイル名と同じ・20語・rate null の語は status・overall.rate 0〜1・
+       wordsScored が rate の数値の語の数・rulerValidation の欄）
+     - baseline-v1.2.json がある（過去版を消していない）
+     - 現行版（生成側の指紋が一致する1件）だけ ruler.sha256 と wordsScored（dictLabel のある語数）を照合。
+       0件は SKIP、2件以上は FAIL。過去版は sha を照合しない
+  --fingerprint  今の palette/index.html の指紋（切り出し範囲の sha256 先頭16桁）を表示して終了
   C5 palette/index.html に klk138 の文字列が無い
   C6 ずれ検査: 判定データがあれば tools/klk138_build_ruler.py --stdout と ruler.json が完全一致（無ければ SKIP）
   C7 持ち出し検査の拡張: 判定データがあれば、設計書・CHANGELOG の KLK-138 項・fixtures に判定のコメント・
@@ -27,14 +35,35 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 FIX = os.path.join(ROOT, "tests", "fixtures", "klk138")
 RULER = os.path.join(FIX, "ruler.json")
-BASELINE = os.path.join(FIX, "baseline-v1.2.json")
+BASELINE_RE = re.compile(r"^baseline-(v\d+(?:\.\d+)+)\.json$")
 PALETTE = os.path.join(ROOT, "palette", "index.html")
 BUILD = os.path.join(ROOT, "tools", "klk138_build_ruler.py")
 DATA = os.path.join(ROOT, "tickets", "work", "KLK-138")
 
-NO_DICT = {"エレガント", "かっこいい", "スタイリッシュ", "ダーク"}
 FORBIDDEN_KEYS = {"decidedBy", "note", "comment", "hex"}
 FORBIDDEN_WORDS = ("adobe", "coolors", "color hunt", "colorhunt")
+
+SLICE_START = "const KEYWORDS = {"
+SLICE_END = "\nfunction render() {"
+
+
+def palette_fingerprint():
+    """klk138_generator.js と同じ指紋。改行を変換しないで読む（R-5）。"""
+    with open(PALETTE, encoding="utf-8", newline="") as f:
+        src = f.read()
+    i, j = src.find(SLICE_START), src.find(SLICE_END)
+    if i < 0 or j < 0 or j <= i:
+        return None
+    return hashlib.sha256(src[i:j].encode("utf-8")).hexdigest()[:16]
+
+
+if "--fingerprint" in sys.argv[1:]:
+    fp = palette_fingerprint()
+    if fp is None:
+        print("palette/index.html のスライスマーカーが見つからない", file=sys.stderr)
+        sys.exit(2)
+    print(fp)
+    sys.exit(0)
 
 results = []
 
@@ -84,21 +113,28 @@ if ruler is not None:
         if d.get("kind") == "cells" and not (d.get("cells") or {}).get("ok"):
             bad.append(w + ":cells")
     check("C1 schema・version・20語・kind/bg/evidence が揃う",
-          ruler.get("schema") == "klk138-ruler" and ruler.get("version") == 2 and len(words) == 20 and not bad,
+          ruler.get("schema") == "klk138-ruler" and ruler.get("version") == 4 and len(words) == 20 and not bad,
           "words=%d %s" % (len(words), " ".join(bad)))
 
     # C2
-    wrong = [w for w, d in words.items() if (d.get("dictLabel") is None) != (w in NO_DICT)]
-    check("C2 辞書なし4語は dictLabel=null、辞書あり16語は非 null", not wrong and len(words) == 20, " ".join(wrong))
+    wrong = [w for w, d in words.items() if not (isinstance(d.get("dictLabel"), str) and d.get("dictLabel").strip())]
+    check("C2 20語すべての dictLabel が空でない文字列", not wrong and len(words) == 20, " ".join(wrong))
+
+# ベースライン（baseline-*.json すべて）
+baselines = []  # [(label, file, text, obj)]
+for f in sorted(os.listdir(FIX)) if os.path.isdir(FIX) else []:
+    m = BASELINE_RE.match(f)
+    if not m:
+        continue
+    text, obj = "", None
+    try:
+        text = read(os.path.join(FIX, f))
+        obj = json.loads(text)
+    except (OSError, ValueError) as e:
+        check("C4 %s が読める" % f, False, str(e))
+    baselines.append((m.group(1), f, text, obj))
 
 # C3
-baseline = None
-baseline_text = ""
-try:
-    baseline_text = read(BASELINE)
-    baseline = json.loads(baseline_text)
-except (OSError, ValueError) as e:
-    check("C4 baseline-v1.2.json が読める", False, str(e))
 
 if ruler is not None:
     allowed = {n["hex"].lower() for n in ruler.get("grid", {}).get("neutrals", [])}
@@ -110,7 +146,7 @@ if ruler is not None:
         except (OSError, ValueError):
             name = ""
     names = {name, re.sub(r"(さん|様|氏)$", "", name)} - {""}
-    for label, text, obj in (("ruler.json", ruler_text, ruler), ("baseline-v1.2.json", baseline_text, baseline)):
+    for label, text, obj in [("ruler.json", ruler_text, ruler)] + [(f, t, o) for _, f, t, o in baselines]:
         if obj is None:
             continue
         hexes = sorted({h for h in re.findall(r"#[0-9a-fA-F]{6}(?![0-9a-fA-F])", text) if h.lower() not in allowed})
@@ -130,20 +166,41 @@ if ruler is not None:
                   " ".join(leaked))
 
 # C4
-if baseline is not None:
-    pw = (baseline.get("primary") or {}).get("words") or {}
-    ov = (baseline.get("primary") or {}).get("overall") or {}
-    nd_ok = all(pw.get(w, {}).get("rate", 0) is None and pw.get(w, {}).get("status") for w in NO_DICT)
-    sc_ok = all(isinstance(d.get("rate"), (int, float)) for w, d in pw.items() if w not in NO_DICT)
+check("C4 baseline-v1.2.json がある（過去版を消していない）", any(f == "baseline-v1.2.json" for _, f, _, _ in baselines))
+for label, f, text, obj in baselines:
+    if obj is None:
+        continue
+    pw = (obj.get("primary") or {}).get("words") or {}
+    ov = (obj.get("primary") or {}).get("overall") or {}
+    null_ok = all(d.get("status") for d in pw.values() if d.get("rate") is None)
+    n_num = sum(1 for d in pw.values() if isinstance(d.get("rate"), (int, float)) and not isinstance(d.get("rate"), bool))
     rate = ov.get("rate")
+    check("C4 %s の形（label・20語・rate null の語は status・overall.rate 0〜1・wordsScored・rulerValidation）" % f,
+          obj.get("schema") == "klk138-baseline" and (obj.get("generator") or {}).get("label") == label
+          and len(pw) == 20 and null_ok and isinstance(rate, (int, float)) and 0 <= rate <= 1
+          and ov.get("wordsScored") == n_num and "rulerValidation" in obj,
+          "label=%s words=%d rate=%s wordsScored=%s/%d" % ((obj.get("generator") or {}).get("label"), len(pw), rate,
+                                                          ov.get("wordsScored"), n_num))
+
+fp_now = None
+try:
+    fp_now = palette_fingerprint()
+except OSError:
+    pass
+current = [(label, f, obj) for label, f, _, obj in baselines
+           if obj is not None and fp_now and (obj.get("generator") or {}).get("fingerprint") == fp_now]
+if not current:
+    check("C4 現行版の照合 [SKIP] 現行の生成側のベースラインが無い（生成側が記録済みのどの版とも違う）", True)
+elif len(current) > 1:
+    check("C4 現行版（生成側の指紋が一致）のベースラインが1件", False, " ".join(f for _, f, _ in current))
+else:
+    label, f, obj = current[0]
     sha = hashlib.sha256(ruler_text.encode("utf-8")).hexdigest()[:16] if ruler_text else ""
-    check("C4 baseline の形（20語・辞書なし4語は rate null と status・overall.rate 0〜1）",
-          baseline.get("schema") == "klk138-baseline" and len(pw) == 20 and nd_ok and sc_ok
-          and isinstance(rate, (int, float)) and 0 <= rate <= 1 and ov.get("wordsScored") == 16,
-          "words=%d rate=%s" % (len(pw), rate))
-    check("C4 baseline の ruler.sha256 が現在の ruler.json と一致",
-          (baseline.get("ruler") or {}).get("sha256") == sha, "%s / %s" % ((baseline.get("ruler") or {}).get("sha256"), sha))
-    check("C4 baseline に rulerValidation の欄がある", "rulerValidation" in baseline)
+    check("C4 現行版 %s の ruler.sha256 が現在の ruler.json と一致" % f,
+          (obj.get("ruler") or {}).get("sha256") == sha, "%s / %s" % ((obj.get("ruler") or {}).get("sha256"), sha))
+    n_dict = sum(1 for d in ((ruler or {}).get("words") or {}).values() if d.get("dictLabel"))
+    ws = ((obj.get("primary") or {}).get("overall") or {}).get("wordsScored")
+    check("C4 現行版 %s の wordsScored が dictLabel のある語数と同じ" % f, ws == n_dict, "%s / %d" % (ws, n_dict))
 
 # C5
 try:

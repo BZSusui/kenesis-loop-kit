@@ -4,11 +4,15 @@
  *
  *   node tests/site/klk138_score.node.js                    # 日本語の表を表示
  *   node tests/site/klk138_score.node.js --json             # JSON を標準出力へ
- *   node tests/site/klk138_score.node.js --write-baseline   # tests/fixtures/klk138/baseline-v1.2.json に書き出す
- *   node tests/site/klk138_score.node.js --check            # 再現確認
+ *   node tests/site/klk138_score.node.js --write-baseline --label v1.3 [--compare-with v1.2]
+ *                                                           # tests/fixtures/klk138/baseline-{label}.json に書き出す
+ *   node tests/site/klk138_score.node.js --check            # 現行版（生成側の指紋が一致する1件）の再現確認
  *
- * 終了コード: 0=正常（得点率がいくつでも 0）／1=再現確認の不一致／2=ハーネス異常
- * 設計: docs/designs/KLK-138.md §4.7・§4.8
+ * ベースラインは生成側の版ごとに1ファイル。指紋が今の生成側と一致するものが「現行版」、ほかは「過去版」。
+ * 過去版は上書きしない（指紋の違う既存ファイルへの書き出しは拒否）。
+ *
+ * 終了コード: 0=正常（得点率がいくつでも 0）／1=再現確認の不一致・書き出しの拒否／2=ハーネス異常・使い方の誤り
+ * 設計: docs/designs/KLK-138.md §4.7・§4.8、docs/designs/KLK-140.md §4.8（M1: ラベル・過去版・比較の小計）
  */
 'use strict';
 const fs = require('fs');
@@ -17,8 +21,10 @@ const crypto = require('crypto');
 const R = require('./klk138_ruler.js');
 const Gen = require('./klk138_generator.js');
 
-const BASELINE = path.join(R.ROOT, 'tests', 'fixtures', 'klk138', 'baseline-v1.2.json');
-const LABEL = 'v1.2';
+const BASE_DIR = path.join(R.ROOT, 'tests', 'fixtures', 'klk138');
+const LABEL_RE = /^v\d+(\.\d+)+$/;
+const FILE_RE = /^baseline-(v\d+(?:\.\d+)+)\.json$/;
+const UNRECORDED = '未記録';
 const REF_SEEDS = Array.from({ length: 32 }, (_, i) => i + 1);
 const AGE_VARIANT = { word: 'かわいい', age: 0.4 };
 const NO_DICT_STATUS = '辞書なし（新設予定）';
@@ -37,13 +43,62 @@ function rolesStr(res) {
 function scoreWord(gen, ruler, word, seed, age) {
   const def = ruler.words[word];
   const pals = gen.generate({ dictLabel: def.dictLabel, age, seed });
-  return pals.map(p => {
-    const res = R.scorePalette(word, p, ruler, { age });
+  const results = R.scoreSet(word, pals, ruler, { age });   // KLK-140 改善ループ2: 3案まとめて（明るい背景の例外）
+  return pals.map((p, i) => {
+    const res = results[i];
     return { seed, scheme: p.scheme, verdict: res.verdict, points: res.points, roles: rolesStr(res), penalties: res.penalties };
   });
 }
 
-function compute({ withValidation }) {
+function baselinePath(label) {
+  return path.join(BASE_DIR, 'baseline-' + label + '.json');
+}
+
+// baseline-*.json をすべて読む。[{ label, file, data }]（ラベル順）
+function listBaselines() {
+  if (!fs.existsSync(BASE_DIR)) return [];
+  return fs.readdirSync(BASE_DIR).filter(f => FILE_RE.test(f)).sort().map(f => {
+    const file = path.join(BASE_DIR, f);
+    let data;
+    try { data = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) {
+      throw new Gen.HarnessError(f + ' が読めない: ' + e.message);
+    }
+    return { label: FILE_RE.exec(f)[1], file, data };
+  });
+}
+
+function currentBaselines(fingerprint) {
+  return listBaselines().filter(b => b.data && b.data.generator && b.data.generator.fingerprint === fingerprint);
+}
+
+// 比較の小計（KLK-140 §4.8.3）。prev は比較対象のベースライン（過去版）
+function comparisonOf(prev, withLabel, primaryWords, refWords) {
+  const words = Object.keys(prev.primary.words).filter(w => prev.primary.words[w].rate !== null).sort();
+  let b0 = [], passed = 0, refSum = 0, refCount = 0;
+  for (const w of words) {
+    const d = primaryWords[w];
+    if (!d || d.rate === null) throw new Gen.HarnessError('比較対象の語が採点されていない: ' + w);
+    b0 = b0.concat(d.palettes);
+    if (d.pass) passed++;
+    refSum += refWords[w].sum; refCount += refWords[w].count;
+  }
+  const primary = { rate: R.r4(R.rateOf(b0)), palettes: b0.length, wordsPassed: passed,
+    prevRate: prev.primary.overall.rate, prevWordsPassed: prev.primary.overall.wordsPassed };
+  const reference = { rate: R.r4(refSum / refCount), palettes: refCount, prevRate: prev.reference.overall.rate };
+  const notLower = primary.rate >= primary.prevRate && primary.wordsPassed >= primary.prevWordsPassed &&
+    reference.rate >= reference.prevRate;
+  return { with: withLabel, words, primary, reference, notLower };
+}
+
+function readBaseline(label) {
+  const file = baselinePath(label);
+  if (!fs.existsSync(file)) return null;
+  try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) {
+    throw new Gen.HarnessError(path.basename(file) + ' が読めない: ' + e.message);
+  }
+}
+
+function compute({ withValidation, label, compareWith }) {
   const ruler = R.loadRuler();
   const gen = Gen.load();
   const passMin = ruler.scoring.wordPassMin;
@@ -51,6 +106,13 @@ function compute({ withValidation }) {
   const scored = words.filter(w => ruler.words[w].dictLabel);
   for (const w of scored) {
     if (!gen.hasLabel(ruler.words[w].dictLabel)) throw new Gen.HarnessError('辞書ラベルが生成側に無い: ' + ruler.words[w].dictLabel);
+  }
+
+  if (label === undefined) {
+    // 表示・--json: 現行版のラベルと、その比較対象（comparison.with）を使う
+    const cur = currentBaselines(gen.fingerprint);
+    label = cur.length === 1 ? cur[0].label : UNRECORDED;
+    if (compareWith === undefined && cur.length === 1 && cur[0].data.comparison) compareWith = cur[0].data.comparison.with;
   }
 
   // 主条件 B0
@@ -82,9 +144,12 @@ function compute({ withValidation }) {
   // 参考条件 B1
   let refAll = [];
   const bySchemeAcc = {};
+  const refWordAcc = {};
+  for (const w of scored) refWordAcc[w] = { sum: 0, count: 0 };
   for (const seed of REF_SEEDS) for (const w of scored) {
     const pals = scoreWord(gen, ruler, w, seed, 0);
     refAll = refAll.concat(pals);
+    for (const p of pals) { refWordAcc[w].sum += p.points; refWordAcc[w].count++; }
     for (const p of pals) {
       const a = bySchemeAcc[p.scheme] || (bySchemeAcc[p.scheme] = { sum: 0, count: 0 });
       a.sum += p.points; a.count++;
@@ -92,15 +157,23 @@ function compute({ withValidation }) {
   }
   const bySchemes = {};
   for (const k of Object.keys(bySchemeAcc).sort()) bySchemes[k] = { rate: R.r4(bySchemeAcc[k].sum / bySchemeAcc[k].count), count: bySchemeAcc[k].count };
-  const reference = { seeds: REF_SEEDS, overall: { rate: R.r4(R.rateOf(refAll)), palettes: refAll.length }, bySchemes };
+  const refByWord = {};
+  for (const w of scored) refByWord[w] = { rate: R.r4(refWordAcc[w].sum / refWordAcc[w].count), palettes: refWordAcc[w].count };
+  const reference = { seeds: REF_SEEDS, overall: { rate: R.r4(R.rateOf(refAll)), palettes: refAll.length }, bySchemes,
+    words: refByWord };
 
   const out = {
     schema: 'klk138-baseline',
-    version: 1,
-    generator: { file: 'palette/index.html', label: LABEL, fingerprint: gen.fingerprint, initialSeed: gen.initialSeed },
+    version: 2,
+    generator: { file: 'palette/index.html', label, fingerprint: gen.fingerprint, initialSeed: gen.initialSeed },
     ruler: { version: ruler.version, sha256: rulerSha() },
     primary, ageVariant, reference,
   };
+  if (compareWith) {
+    const prev = readBaseline(compareWith);
+    if (!prev) throw new Gen.HarnessError('比較対象のベースラインが無い: baseline-' + compareWith + '.json');
+    out.comparison = comparisonOf(prev, compareWith, primaryWords, refWordAcc);
+  }
   if (withValidation) {
     const data = R.loadJudgmentData();
     out.rulerValidation = data ? R.publicValidation(R.validateAgainstHumans(ruler, data)) : null;
@@ -125,18 +198,35 @@ function printTable(b) {
     console.log(`  ${d.pass ? '合格  ' : '不合格'} ${pct(d.rate).padStart(6)}  ${marks}  ${w}（辞書: ${d.dictLabel}）`);
   }
   const o = b.primary.overall;
-  console.log(`\n  全体の合格率（16語・${o.palettes}案の平均）: ${pct(o.rate)}   合格した語: ${o.wordsPassed} / ${o.wordsScored}`);
-  console.log('\n[辞書なし] 採点しない（分母に入れない）');
-  for (const w of Object.keys(words)) if (words[w].rate === null) console.log(`  ${words[w].status}  ${w}`);
+  console.log(`\n  全体の合格率（${o.wordsScored}語・${o.palettes}案の平均）: ${pct(o.rate)}   合格した語: ${o.wordsPassed} / ${o.wordsScored}`);
+  const noDict = Object.keys(words).filter(w => words[w].rate === null);
+  if (noDict.length) {
+    console.log('\n[辞書なし] 採点しない（分母に入れない）');
+    for (const w of noDict) console.log(`  ${words[w].status}  ${w}`);
+  }
   console.log('\n[追加条件 B0-age]（参考行。分母に入れない）');
   for (const w of Object.keys(b.ageVariant)) {
     const a = b.ageVariant[w];
     console.log(`  ${w}（大人かわいい・age=${a.age}）: ${pct(a.rate)}  ${a.palettes.map(p => SYM[p.verdict]).join('')}`);
   }
-  console.log(`\n[参考条件 B1] シード ${b.reference.seeds[0]}〜${b.reference.seeds[b.reference.seeds.length - 1]} × 16語 × 3案 = ${b.reference.overall.palettes}案: ${pct(b.reference.overall.rate)}`);
+  const nRef = Object.keys(b.reference.words || {}).length || o.wordsScored;
+  console.log(`\n[参考条件 B1] シード ${b.reference.seeds[0]}〜${b.reference.seeds[b.reference.seeds.length - 1]} × ${nRef}語 × 3案 = ${b.reference.overall.palettes}案: ${pct(b.reference.overall.rate)}`);
   for (const k of Object.keys(b.reference.bySchemes)) {
     const s = b.reference.bySchemes[k];
     console.log(`  ${pct(s.rate).padStart(6)}  出現 ${String(s.count).padStart(4)}  ${k}`);
+  }
+  if (b.reference.words) {
+    console.log('  語ごと:');
+    for (const w of Object.keys(b.reference.words)) {
+      const s = b.reference.words[w];
+      console.log(`  ${pct(s.rate).padStart(6)}  ${String(s.palettes).padStart(4)}案  ${w}`);
+    }
+  }
+  if (b.comparison) {
+    const c = b.comparison;
+    console.log(`\n[比較] 既存${c.words.length}語（${c.with} と同じ語）: B0 ${pct(c.primary.prevRate)}→${pct(c.primary.rate)}・` +
+      `合格 ${c.primary.prevWordsPassed}→${c.primary.wordsPassed}／B1 ${pct(c.reference.prevRate)}→${pct(c.reference.rate)}` +
+      `（${c.notLower ? '下回らない' : '下回る'}）`);
   }
   if (b.rulerValidation !== undefined) {
     console.log('\n[物差しの検証] 人間の判定との一致（§4.9）');
@@ -159,31 +249,68 @@ function stable(o) {
   return JSON.stringify(o, null, 2) + '\n';
 }
 
+function argValue(argv, name) {
+  const i = argv.indexOf(name);
+  if (i < 0) return undefined;
+  return i + 1 < argv.length && !argv[i + 1].startsWith('--') ? argv[i + 1] : '';
+}
+
+const USAGE = '使い方: node tests/site/klk138_score.node.js --write-baseline --label v1.3 [--compare-with v1.2]';
+
 function main(argv) {
   try {
     if (argv.includes('--check')) {
-      if (!fs.existsSync(BASELINE)) { console.error('[NG] ' + path.relative(R.ROOT, BASELINE) + ' が無い'); return 1; }
-      const base = JSON.parse(fs.readFileSync(BASELINE, 'utf8'));
       const gen = Gen.load();
-      if (base.generator.fingerprint !== gen.fingerprint) {
-        console.log(`[SKIP] 生成側が ${base.generator.label} から変わった。新しいベースラインを別ファイルで記録すること`);
+      const all = listBaselines();
+      const cur = all.filter(b => b.data && b.data.generator && b.data.generator.fingerprint === gen.fingerprint);
+      if (!cur.length) {
+        const labels = all.map(b => b.label).join(', ') || 'なし';
+        console.log(`[SKIP] 生成側が記録済みのどの版（${labels}）とも違う。--write-baseline --label で新しい版を記録すること`);
         return 0;
       }
-      const now = compute({ withValidation: false });
+      if (cur.length > 1) {
+        console.error('[NG] 今の生成側と指紋が一致するベースラインが複数ある: ' + cur.map(b => b.label).join(', '));
+        return 1;
+      }
+      const base = cur[0].data;
+      const withLabel = base.comparison ? base.comparison.with : undefined;
+      const now = compute({ withValidation: false, label: cur[0].label, compareWith: withLabel });
       const keys = ['schema', 'version', 'generator', 'ruler', 'primary', 'ageVariant', 'reference'];
+      if (base.comparison) keys.push('comparison');
       const diff = keys.filter(k => JSON.stringify(base[k]) !== JSON.stringify(now[k]));
       if (diff.length) {
-        console.error('[NG] ベースラインが再現しない: ' + diff.join(', '));
+        console.error(`[NG] ベースライン ${cur[0].label} が再現しない: ` + diff.join(', '));
         return 1;
       }
       console.log(`[OK] ベースライン ${base.generator.label} を再現（全体 ${now.primary.overall.rate}・合格 ${now.primary.overall.wordsPassed}/${now.primary.overall.wordsScored}）`);
       return 0;
     }
     if (argv.includes('--write-baseline')) {
-      const b = compute({ withValidation: true });
-      fs.mkdirSync(path.dirname(BASELINE), { recursive: true });
-      fs.writeFileSync(BASELINE, stable(b), 'utf8');
-      console.log('wrote ' + path.relative(R.ROOT, BASELINE));
+      const label = argValue(argv, '--label');
+      const compareWith = argValue(argv, '--compare-with');
+      if (!label || !LABEL_RE.test(label)) { console.error('[NG] --label が無いか形式が違う（例 v1.3）\n' + USAGE); return 2; }
+      if (compareWith !== undefined && (!compareWith || !LABEL_RE.test(compareWith))) {
+        console.error('[NG] --compare-with の形式が違う（例 v1.2）\n' + USAGE); return 2;
+      }
+      if (compareWith !== undefined && !fs.existsSync(baselinePath(compareWith))) {
+        console.error('[NG] 比較対象のベースラインが無い: baseline-' + compareWith + '.json'); return 2;
+      }
+      const gen = Gen.load();
+      const all = listBaselines();
+      const same = all.find(b => b.label === label);
+      if (same && !(same.data && same.data.generator && same.data.generator.fingerprint === gen.fingerprint)) {
+        console.error(`[NG] 記録済みの過去版 ${label} は上書きしない（生成側の指紋が違う）`);
+        return 1;
+      }
+      const other = all.find(b => b.label !== label && b.data && b.data.generator && b.data.generator.fingerprint === gen.fingerprint);
+      if (other) {
+        console.error(`[NG] 同じ生成側が ${other.label} として記録済み。書き出さない`);
+        return 1;
+      }
+      const b = compute({ withValidation: true, label, compareWith });
+      fs.mkdirSync(BASE_DIR, { recursive: true });
+      fs.writeFileSync(baselinePath(label), stable(b), 'utf8');
+      console.log('wrote ' + path.relative(R.ROOT, baselinePath(label)));
       return 0;
     }
     if (argv.includes('--json')) {

@@ -6,6 +6,9 @@
  * マーカーが無ければ HarnessError（CLI は終了コード 2）。
  *
  * 設計: docs/designs/KLK-138.md §4.8「生成側アダプタ」
+ *       docs/designs/KLK-140.md §4.8.5（generate の任意オプション・keywords()。既定の振る舞いは不変）
+ *       docs/designs/KLK-140.md §4.12.7（任意オプション mv。既定の振る舞いは不変）
+ *       docs/designs/KLK-140.md §4.13.10（任意オプション baseHex。既定の振る舞いは不変）
  */
 'use strict';
 const fs = require('fs');
@@ -84,18 +87,49 @@ function __reset(age) {
 function __hasLabel(label) {
   return Object.keys(KEYWORDS).some(cat => Object.prototype.hasOwnProperty.call(KEYWORDS[cat], label));
 }
-function __generate(label, ageSlider, s) {
-  __reset(ageSlider);
+function __check(label) {
   const cat = Object.keys(KEYWORDS).find(c => Object.prototype.hasOwnProperty.call(KEYWORDS[c], label));
   if (!cat) throw new Error('NO_LABEL:' + label);
   const el = __kwInputs.find(i => i.value === cat + '/' + label);
   if (!el) throw new Error('NO_LABEL:' + label);
   el.checked = true;
+}
+// opt（KLK-140・任意）: { sliders, disp, sameHue, accentHex, bgHex, colorfam, mv, baseHex }
+function __generate(labels, ageSlider, s, opt) {
+  __reset(ageSlider);
+  labels.forEach(__check);
+  if (opt) {
+    Object.keys(opt.sliders || {}).forEach(id => {
+      if (!__ids[id] || id === 'age') throw new Error('BAD_OPTION:sliders.' + id);
+      __ids[id].value = String(opt.sliders[id]);
+    });
+    if (opt.disp !== undefined) {
+      const el = __inputs.find(i => i.name === 'dispmode' && i.value === opt.disp);
+      if (!el) throw new Error('BAD_OPTION:disp=' + opt.disp);
+      el.checked = true;
+    }
+    if (opt.sameHue) __ids.sameHue.checked = true;
+    if (opt.accentHex) { __ids.useAccent.checked = true; __ids.accentPick.value = opt.accentHex; __ids.accentHex.value = opt.accentHex; }
+    if (opt.bgHex) { __ids.useBg.checked = true; __ids.bgPick.value = opt.bgHex; __ids.bgHex.value = opt.bgHex; }
+    if (opt.baseHex) { __ids.useBase.checked = true; __ids.basePick.value = opt.baseHex; __ids.baseHex.value = opt.baseHex; }
+    if (opt.colorfam !== undefined) {
+      const el = __inputs.find(i => i.name === 'colorfam' && i.value === opt.colorfam);
+      if (!el) throw new Error('BAD_OPTION:colorfam=' + opt.colorfam);
+      el.checked = true;
+    }
+    if (opt.mv !== undefined) { // 金属の色味バリエーション（colorfam が gold/silver のときだけ有効）
+      const fam = opt.colorfam !== undefined && METALLICS[opt.colorfam] ? opt.colorfam : null;
+      const el = fam && __inputs.find(i => i.name === 'mv-' + fam && i.value === opt.mv);
+      if (!el) throw new Error('BAD_OPTION:mv=' + opt.mv);
+      el.checked = true;
+    }
+  }
   const pats = makePatterns(computeBase(), s);
   return pats.map(p => ({ scheme: p.name, bg: hslToHex(...p.bg), main: hslToHex(...p.main),
                           sub: hslToHex(...p.sub), accent: hslToHex(...p.accent) }));
 }
-return { generate: __generate, hasLabel: __hasLabel, initialSeed: (__SEED_EXPR__) };
+return { generate: __generate, hasLabel: __hasLabel, initialSeed: (__SEED_EXPR__),
+         keywords: () => JSON.parse(JSON.stringify(KEYWORDS)) };
 `;
 
 let _cache = null;
@@ -121,11 +155,23 @@ function load() {
     fingerprint,
     initialSeed: api.initialSeed,
     hasLabel: label => api.hasLabel(label),
-    generate({ dictLabel, age = 0, seed }) {
+    keywords: () => api.keywords(),
+    // 既存の呼び出し { dictLabel, age, seed } は従来どおり。KLK-140 の任意オプション:
+    //  labels（語の配列・dictLabel と併用不可）/ sliders（age 以外。-100..100）/ disp（'auto'|'light'|'dark'）/
+    //  sameHue / accentHex・bgHex（固定）/ colorfam（COLORS の key）/
+    //  mv（金属の色味バリエーションの key。colorfam が gold/silver のときだけ有効。KLK-140 改善ループ1）/
+    //  baseHex（基準カラー。useBase を ON にして値を入れる。KLK-140 改善ループ2）
+    generate({ dictLabel, labels, age = 0, seed, sliders, disp, sameHue, accentHex, bgHex, colorfam, mv, baseHex }) {
+      if (dictLabel !== undefined && labels !== undefined) throw new HarnessError('dictLabel と labels は併用できない');
+      const list = labels !== undefined ? labels : [dictLabel];
+      const hasOpt = [sliders, disp, sameHue, accentHex, bgHex, colorfam, mv, baseHex].some(v => v !== undefined);
+      const opt = hasOpt ? { sliders, disp, sameHue, accentHex, bgHex, colorfam, mv, baseHex } : null;
       try {
-        return api.generate(dictLabel, Math.round(age * 100), seed === undefined ? api.initialSeed : seed);
+        return api.generate(list, Math.round(age * 100), seed === undefined ? api.initialSeed : seed, opt);
       } catch (e) {
-        if (String(e.message).startsWith('NO_LABEL:')) throw new HarnessError('辞書ラベルが見つからない: ' + dictLabel);
+        const msg = String(e.message);
+        if (msg.startsWith('NO_LABEL:')) throw new HarnessError('辞書ラベルが見つからない: ' + msg.slice(9));
+        if (msg.startsWith('BAD_OPTION:')) throw new HarnessError('オプションが不正: ' + msg.slice(11));
         throw e;
       }
     },

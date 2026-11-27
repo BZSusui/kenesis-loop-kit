@@ -7,11 +7,12 @@
  *   T3 ruler.json の整合（20語・ok/maybe が重ならない・マスIDが格子にある・辞書ラベルが生成側にある）
  *   T4 規則の分岐（格子マスの代表色から組んだ合成の案。判定データの色は使わない）
  *   T5 決定性（同じ入力で2回採点して一致）
+ *   T6 明るい背景の例外（KLK-140 改善ループ2。格子マスの代表色から組んだ合成の案。判定データの色は使わない）
  *   一致検査 V-M / V-G / V-C / V-E（tickets/work/KLK-138/ の判定データがあるときだけ。無ければ SKIP で合格）
  *
  * 実行: node tests/site/smoke_klk138.node.js
  * 終了コード: 0=全PASS / 1=FAILあり / 2=ハーネス異常
- * 設計: docs/designs/KLK-138.md §4.8・§4.9
+ * 設計: docs/designs/KLK-138.md §4.8・§4.9 ／ docs/designs/KLK-140.md §4.13.10（T6）
  */
 'use strict';
 const R = require('./klk138_ruler.js');
@@ -78,7 +79,7 @@ const rep = id => R.cellRepHex(id, ruler);
   check('T3 すべてのマスIDが格子にある', unknown.length === 0, unknown.join(' '));
   const withDict = words.filter(w => ruler.words[w].dictLabel);
   const missing = withDict.filter(w => !gen.hasLabel(ruler.words[w].dictLabel));
-  check(`T3 辞書あり${withDict.length}語の dictLabel が生成側の辞書にある`, withDict.length === 16 && missing.length === 0, missing.join(' '));
+  check(`T3 辞書あり${withDict.length}語の dictLabel が生成側の辞書にある`, withDict.length === words.length && missing.length === 0, missing.join(' '));
 }
 
 // ---- T4 規則の分岐（合成の案） ---------------------------------------------
@@ -156,6 +157,9 @@ expect('かっこいい 蛍光 ×', 'かっこいい', pal('n-white', 'n-black',
 expect('かっこいい クリームの背景でも ○', 'かっこいい', pal('pale-000', 'n-black', 'n-gray', 'bright-210'), 'ok');
 expect('スタイリッシュ クリームの背景 ×', 'スタイリッシュ', pal('pale-000', 'n-black', 'n-gray', 'bright-210'), 'ng', {}, 'creamBg');
 expect('スタイリッシュ モノトーン＋寒色アクセント ○', 'スタイリッシュ', pal('n-white', 'n-black', 'n-gray', 'bright-210'), 'ok');
+// KLK-140: 差し色の確認（アクセントの C が accentCMin 未満なら△）
+expect('かっこいい モノトーン＋差し色なし △', 'かっこいい', pal('n-white', 'n-black', 'n-gray', 'n-lgray'), 'maybe', {}, 'noAccent');
+expect('スタイリッシュ モノトーン＋差し色なし △', 'スタイリッシュ', pal('n-white', 'n-black', 'n-gray', 'n-lgray'), 'maybe', {}, 'noAccent');
 expect('シンプル 低彩度・少ない色相 ○', 'シンプル', pal('n-white', 'n-lgray', 'pale-210', 'n-gray'), 'ok');
 expect('シンプル 純黒を含む △', 'シンプル', pal('n-white', 'n-lgray', 'pale-210', 'n-black'), 'maybe', {}, 'pureBlack');
 expect('シンプル 金を含む △', 'シンプル', pal('n-white', 'n-lgray', 'pale-210', 'n-gold'), 'maybe', {}, 'metal');
@@ -163,6 +167,30 @@ expect('シンプル 鮮やか2色以上 ×', 'シンプル', pal('n-white', 'n-
 expect('シンプル メインが金 ×', 'シンプル', pal('n-white', 'n-gold', 'pale-210', 'n-gray'), 'ng', {}, 'metalMain');
 expect('シンプル メインが銀の代表色でほかの条件を満たす ○（銀は金属として扱わない）', 'シンプル', pal('n-white', 'n-silver', 'pale-210', 'n-gray'), 'ok');
 expect('シンプル 蛍光 ×', 'シンプル', pal('n-white', 'n-lgray', 'pale-210', 'vivid-180'), 'ng', {}, 'neon:accent');
+
+// ---- T6 明るい背景の例外（KLK-140 改善ループ2） ---------------------------------
+{
+  const st = rs => rs.map(r => (r.roles.bg.exception ? r.verdict + '(例外)' : r.verdict)).join(',');
+  const lux = pal('n-white', 'dark-270', 'n-charcoal', 'n-gold');
+  const set3 = R.scoreSet('高級感', [lux, lux, lux], ruler, { age: 0 });
+  check('T6 高級感 重厚なメイン＋金の差し色を3案 scoreSet → 1案目だけ例外 ○・2・3案目 ×（1案まで）',
+    set3[0].verdict === 'ok' && set3[0].roles.bg.exception === true && set3[1].verdict === 'ng' && set3[2].verdict === 'ng',
+    st(set3));
+  const one = R.scorePalette('高級感', lux, ruler, { age: 0 });
+  check('T6 同じ案を scorePalette で1つ → ×（例外は案の集まりでだけ使う）', one.verdict === 'ng', one.verdict);
+  const cases = [
+    ['サブ n-silver・アクセント n-charcoal（銀はサブでもよい） → ○（例外）', pal('n-white', 'dark-270', 'n-silver', 'n-charcoal'), 'ok'],
+    ['アクセント n-gray（輝きなし） → ×', pal('n-white', 'dark-270', 'n-charcoal', 'n-gray'), 'ng'],
+    ['メイン deep-270（鮮やか） → ×', pal('n-white', 'deep-270', 'n-charcoal', 'n-gold'), 'ng'],
+    ['メイン grayish-270（濃さが足りない） → ×', pal('n-white', 'grayish-270', 'n-charcoal', 'n-gold'), 'ng'],
+  ];
+  for (const [name, p, want] of cases) {
+    const r = R.scoreSet('高級感', [p], ruler, { age: 0 })[0];
+    check('T6 高級感 ' + name, r.verdict === want && (want !== 'ok' || r.roles.bg.exception === true), st([r]));
+  }
+  const dk = R.scoreSet('ダーク', [lux], ruler, { age: 0 })[0];
+  check('T6 ダーク（例外を持たない語）で同じ明るい案 → ×', dk.verdict === 'ng' && !dk.roles.bg.exception, st([dk]));
+}
 
 // ---- T5 決定性 -------------------------------------------------------------
 {
@@ -202,7 +230,7 @@ if (partial) {
 
 // ---- 結果 ------------------------------------------------------------------
 console.log('='.repeat(78));
-console.log('KLK-138 言葉と色の物差し 自己検査（T1-T5）＋人間の判定との一致');
+console.log('KLK-138 言葉と色の物差し 自己検査（T1-T6）＋人間の判定との一致');
 console.log('='.repeat(78));
 for (const r of results) {
   console.log(`[${r.ok ? 'PASS' : 'FAIL'}] ${r.name}${!r.ok && r.detail ? '\n       ' + r.detail : ''}`);

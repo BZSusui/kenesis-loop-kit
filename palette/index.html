@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ムードカラー ジェネレーター v1.2</title>
+<title>ムードカラー ジェネレーター v1.3</title>
 <style>
   :root {
     --bg: #f6f7f9;
@@ -396,7 +396,7 @@
 </head>
 <body>
 <header>
-  <h1>ムードカラー ジェネレーター <small>v1.2</small></h1>
+  <h1>ムードカラー ジェネレーター <small>v1.3</small></h1>
   <p>言葉と割合から、メイン / サブ / アクセント / 背景の配色を3案つくります</p>
 </header>
 
@@ -581,56 +581,62 @@
 /* ===== キーワード辞書 =====================================================
    各語に、色相(h)・彩度(s 0-1)・明度(l 0-1)の傾向と、
    3軸(warm: 暖-寒, gender: 男-女, formal: カジュアル-フォーマル)の寄与を持たせる。
-   軸は -1(左) 〜 +1(右)。ここが「言葉→色」の心臓部で、ここを育てていく。 */
+   軸は -1(左) 〜 +1(右)。ここが「言葉→色」の心臓部で、ここを育てていく。
+   hint（任意）: 語ごとの生成の味付け。WORD_HINTS を参照（KLK-140）。
+   lightBgs（任意）: 暗い背景の3案に混ぜる明るい背景の案の数。lightBgsScope で金属だけ／金属以外だけに絞る（KLK-140 改善ループ2）。 */
 const KEYWORDS = {
   '印象': {
     'きれい':   { h: 200, s: .50, l: .66, warm: -.3, gender: +.2, formal: +.3 },
     'かわいい': { h: 340, s: .70, l: .76, warm: +.4, gender: +.9, formal: -.6 },
     '上品':     { h: 300, s: .30, l: .60, warm:  0,  gender: +.4, formal: +.7 },
-    'クール':   { h: 205, s: .58, l: .42, warm: -.7, gender: -.4, formal: +.4 },
+    'クール':   { h: 205, s: .58, l: .42, warm: -.7, gender: -.4, formal: +.4, lightBgs: 1, lightBgsScope: 'metal' },
     'さわやか': { h: 165, s: .58, l: .64, warm: -.3, gender: +.1, formal: -.1 },
     '楽しい':   { h:  48, s: .85, l: .64, warm: +.5, gender: +.2, formal: -.8 },
     '清楚':     { h: 190, s: .28, l: .80, warm: -.2, gender: +.4, formal: +.3 },
     '華やか':   { h: 330, s: .72, l: .62, warm: +.3, gender: +.6, formal: -.1 },
     'シンプル': { h: 210, s: .10, l: .72, warm: -.1, gender:  0,  formal: +.5 },
     'ポップ':   { h:  55, s: .90, l: .66, warm: +.5, gender: +.2, formal: -.9 },
+    'エレガント': { h: 320, s: .30, l: .66, warm:  0,  gender: +.7, formal: +.6, hint: 'elegantBeige' },
+    'かっこいい': { h: 220, s: .08, l: .28, warm: -.4, gender: -.5, formal: +.3, hint: 'coolAccent', lightBgs: 1 },
   },
   '性格・信頼': {
     '誠実':     { h: 220, s: .52, l: .46, warm: -.5, gender: -.3, formal: +.6 },
     '落ち着き': { h: 210, s: .30, l: .46, warm: -.4, gender:  0,  formal: +.5 },
     '優しい':   { h:  22, s: .45, l: .78, warm: +.5, gender: +.6, formal: -.2 },
-    '力強い':   { h:   2, s: .68, l: .36, warm: +.4, gender: -.7, formal: +.3 },
+    '力強い':   { h:   2, s: .68, l: .36, warm: +.4, gender: -.7, formal: +.3, lightBgs: 1, lightBgsScope: 'metal' },
     '情熱':     { h:   5, s: .88, l: .50, warm: +.9, gender: -.1, formal: -.2 },
     '元気':     { h:  35, s: .85, l: .60, warm: +.9, gender:  0,  formal: -.7 },
     '安心':     { h: 145, s: .40, l: .62, warm:  0,  gender: +.2, formal: +.2 },
-    '知的':     { h: 230, s: .35, l: .42, warm: -.5, gender: -.2, formal: +.7 },
+    '知的':     { h: 230, s: .35, l: .42, warm: -.5, gender: -.2, formal: +.7, lightBgs: 2 },
     '親しみ':   { h:  40, s: .65, l: .66, warm: +.7, gender: +.2, formal: -.5 },
   },
   'スタイル': {
-    '高級':     { h: 275, s: .35, l: .26, warm: -.1, gender: -.2, formal: +.9 },
+    '高級':     { h: 275, s: .35, l: .26, warm: -.1, gender: -.2, formal: +.9, hint: 'luxShine', lightBgs: 1, lightBgsScope: 'nonMetal' },
     'ナチュラル':{ h:  90, s: .40, l: .55, warm: +.1, gender: +.1, formal: -.2 },
     'モダン':   { h: 185, s: .24, l: .45, warm: -.2, gender: -.2, formal: +.6 },
     'レトロ':   { h:  30, s: .55, l: .50, warm: +.6, gender:  0,  formal:  0 },
     '清潔':     { h: 195, s: .34, l: .80, warm: -.4, gender:  0,  formal: +.3 },
-    '神秘的':   { h: 270, s: .50, l: .32, warm: -.2, gender: +.2, formal: +.5 },
+    '神秘的':   { h: 270, s: .50, l: .32, warm: -.2, gender: +.2, formal: +.5, lightBgs: 1, lightBgsScope: 'metal' },
     '温かい':   { h:  25, s: .65, l: .62, warm: +.9, gender: +.2, formal: -.3 },
     'やわらか': { h:  45, s: .40, l: .82, warm: +.3, gender: +.5, formal: -.4 },
-    '和風':     { h:   8, s: .32, l: .38, warm: +.4, gender: -.1, formal: +.5 },
+    '和風':     { h:   8, s: .32, l: .38, warm: +.4, gender: -.1, formal: +.5, lightBgs: 2 },
     '北欧':     { h:  40, s: .20, l: .72, warm: +.1, gender: +.2, formal: +.2 },
     'ヴィンテージ':{ h: 28, s: .45, l: .44, warm: +.5, gender: -.1, formal: +.2 },
+    'スタイリッシュ':{ h: 210, s: .06, l: .35, warm: -.3, gender: -.2, formal: +.6, hint: 'coolAccent', lightBgs: 2 },
+    'ダーク':   { h: 230, s: .30, l: .20, warm: -.2, gender: -.3, formal: +.4 },
   },
   // muuuuu.org のカテゴリー検索を参考にした「業種・ジャンル」。
   // 各業種で実際に多い配色の傾向を種として持たせる（今後の拡張ポイント）。
   'ジャンル（業種）': {
-    'コーポレート':     { h: 215, s: .55, l: .42, warm: -.5, gender: -.2, formal: +.8 },
+    'コーポレート':     { h: 215, s: .55, l: .42, warm: -.5, gender: -.2, formal: +.8, lightBgs: 2 },
     'カフェ・飲食':     { h:  25, s: .50, l: .48, warm: +.7, gender: +.1, formal: -.1 },
     '美容・コスメ':     { h: 345, s: .35, l: .74, warm: +.3, gender: +.8, formal: +.2 },
     '医療・クリニック': { h: 190, s: .45, l: .60, warm: -.4, gender:  0,  formal: +.4 },
     'テック・IT':       { h: 250, s: .55, l: .46, warm: -.3, gender: -.2, formal: +.5 },
-    'ファッション':     { h: 280, s: .08, l: .24, warm: -.1, gender: +.1, formal: +.7 },
+    'ファッション':     { h: 280, s: .08, l: .24, warm: -.1, gender: +.1, formal: +.7, lightBgs: 2 },
     'キッズ・教育':     { h:  45, s: .82, l: .66, warm: +.6, gender: +.3, formal: -.8 },
     'ネイチャー・環境': { h: 130, s: .45, l: .48, warm:  0,  gender: +.1, formal:  0 },
-    'ラグジュアリー':   { h:  45, s: .55, l: .30, warm: +.3, gender:  0,  formal: +.9 },
+    'ラグジュアリー':   { h:  45, s: .55, l: .30, warm: +.3, gender:  0,  formal: +.9, lightBgs: 1 },
   },
 };
 
@@ -1019,22 +1025,27 @@ function computeBase() {
   S = clamp(S + gender * 0.05, 0, 0.98);
 
   // --- 明度：女性→明るく / フォーマル→暗く / 明度スライダー / 中間色は中庸へ ---
-  let L = seedL + gender * 0.10 - formal * 0.10;
-  L = lightS >= 0 ? L + (0.92 - L) * lightS // 明るい方向
-                  : L + (L - 0.12) * lightS; // 暗い方向(lightS<0)
-  L = L * (1 - mutedS * 0.6) + 0.55 * (mutedS * 0.6); // くすみ: 中庸の明度へ寄せる
-  L = clamp(L, 0.12, 0.92);
+  // KLK-140 改善ループ1: 明度の式を lightOf にまとめる（式と適用の順序は従来どおり。年齢・季節の明度も含む）
+  const lightOf = (l0) => {
+    let l = l0 + gender * 0.10 - formal * 0.10;
+    l = lightS >= 0 ? l + (0.92 - l) * lightS // 明るい方向
+                    : l + (l - 0.12) * lightS; // 暗い方向(lightS<0)
+    l = l * (1 - mutedS * 0.6) + 0.55 * (mutedS * 0.6); // くすみ: 中庸の明度へ寄せる
+    l = clamp(l, 0.12, 0.92);
+    if (ageS < 0) l = clamp(l + (0.78 - l) * (-ageS) * 0.25, 0.12, 0.92); // キッズ→明るく
+    if (seasonS) l = clamp(l - seasonS * 0.10, 0.12, 0.92);               // 春夏→明るく / 秋冬→暗く
+    return l;
+  };
+  const L = lightOf(seedL);
 
   // --- 年齢層: キッズ→鮮やか・明るく / シニア→彩度を抑える（可読性は下のコントラストで補強）---
   if (ageS < 0) {
     S = clamp(S + (0.95 - S) * (-ageS) * 0.35, 0, 0.98);
-    L = clamp(L + (0.78 - L) * (-ageS) * 0.25, 0.12, 0.92);
   } else if (ageS > 0) {
     S = clamp(S * (1 - ageS * 0.35), 0, 0.98);
   }
   // --- 季節: 春夏→明るく澄んだ色 / 秋冬→暗く深みのある色 ---
   if (seasonS) {
-    L = clamp(L - seasonS * 0.10, 0.12, 0.92);
     S = seasonS > 0 ? clamp(S * (1 - seasonS * 0.18), 0, 0.98)
                     : clamp(S + (0.92 - S) * (-seasonS) * 0.18, 0, 0.98);
   }
@@ -1046,7 +1057,22 @@ function computeBase() {
     document.getElementById('cvdCheck').checked || disp !== 'auto' ||
     warmS || genderS || formalS || lightS || vividS || mutedS ||
     contrastS || ageS || seasonS;
-  return { H, S, L, hasInput, bgOverride, accentOverride, contrast, disp, metallic };
+  // KLK-140: 選んだ語のヒント（KEYWORDS の hint）を集める
+  const hints = {};
+  checked.forEach(k => { if (k.hint) hints[k.hint] = true; });
+  // KLK-140 改善ループ1: 金属は seedL を帯の値にするため、自動の明暗判定が言葉に効かない。
+  // 言葉から求めた明度（金属以外のカラー系統と同じ式）が暗ければ、自動でも暗い背景にする。
+  const metalAutoDark = !!(metallic && checked.length && disp === 'auto' && !bgOverride &&
+    L >= 0.40 && lightOf(checked.reduce((a, k) => a + k.l, 0) / checked.length) < 0.40);
+  // KLK-140 改善ループ2: 暗い言葉の3案に明るい背景を混ぜる数（KEYWORDS の lightBgs。0 = 混ぜない）
+  let lightBgs = 0;
+  if (checked.length && disp === 'auto' && !bgOverride && !baseHsl &&
+      (metalAutoDark || (!metallic && L < 0.40)) &&
+      checked.every(k => k.lightBgs && (!k.lightBgsScope || k.lightBgsScope === (metallic ? 'metal' : 'nonMetal')))) {
+    const n2 = checked.filter(k => k.lightBgs === 2).length;
+    lightBgs = n2 * 2 > checked.length ? 2 : 1;          // 区分の多数決。同数は黒2・明1
+  }
+  return { H, S, L, hasInput, bgOverride, accentOverride, contrast, disp, metallic, hints, metalAutoDark, lightBgs };
 }
 
 /* ===== 同系色モード ======================================================
@@ -1083,20 +1109,61 @@ function applyContrast(col, bgL, c, weight) {
   return [col[0], col[1], clamp(L2, 0.05, 0.95)];
 }
 
+/* ===== 言葉ごとの味付け（KLK-140） =======================================
+   KEYWORDS の hint で選ぶ。乱数は makePatterns の rng とは別の列（rng2）を使い、
+   ヒントを持たない語の出力は変えない。
+   coolAccent: モノトーン基調に、寒色寄りのはっきりした差し色を1つ効かせる（かっこいい・スタイリッシュ）
+   elegantBeige: 3案目をベージュ系＋濃い一点（黒・濃茶）＋輝き（金・銀）にする（エレガントの型B）
+   luxShine: 高級の明るい背景の案だけ、差し色を金・銀の輝きにする（KLK-140 改善ループ2）
+   差し色・金の彩度 s は 0.72 以下（どの明度でも蛍光〔HSV S>=0.60 かつ V>=0.90〕にならない）。 */
+const WORD_HINTS = {
+  coolAccent: { h: 215, hJit: 15, s: .68, lLight: .48, lDark: .58 },
+  elegantBeige: {
+    bg:   [40, .40, .97],                             // アイボリー
+    main: [38, .32, .80], mainHJit: 6,                // ベージュ
+    darkPoints: [ [25, .35, .20], [30, .08, .13] ],   // 濃茶 / 黒（濃い一点）
+    shines:     [ [46, .55, .55], [210, .06, .74] ],  // 金 / 銀（輝きの差し色）
+  },
+  luxShine: { shines: [ [43, .62, .42], [213, .07, .72] ] },   // 金 / 銀（高級の明るい案の輝き。金は明るい背景で沈まない濃さ）
+};
+function coolAccentOf(rng2, darkBg) {
+  const t = WORD_HINTS.coolAccent;
+  return [wrap(t.h + jit(rng2, t.hJit)), t.s, darkBg ? t.lDark : t.lLight];
+}
+function elegantBeigeOf(rng2) {
+  const t = WORD_HINTS.elegantBeige;
+  const dp = t.darkPoints[Math.floor(rng2() * t.darkPoints.length)];
+  const sh = t.shines[Math.floor(rng2() * t.shines.length)];
+  return { bg: t.bg.slice(), main: [wrap(t.main[0] + jit(rng2, t.mainHJit)), t.main[1], t.main[2]],
+           sub: dp.slice(), accent: sh.slice() };
+}
+function luxShineOf(rng2) {
+  const t = WORD_HINTS.luxShine;
+  return t.shines[Math.floor(rng2() * t.shines.length)].slice();
+}
+
 /* ===== 3パターン生成 ====================================================
    基準HSLから、配色理論の異なる3案を作る。乱数は使わず入力から一意に決まる。 */
 function makePatterns(b, seed) {
   const { H, S, L } = b;
   const sameHue = document.getElementById('sameHue').checked;
   const rng = mulberry32(seed);
+  const rng2 = mulberry32((seed ^ 0x5bd1e995) >>> 0);   // KLK-140: ヒント専用の乱数列
+  const hints = b.hints || {};
+  // KLK-140 改善ループ2: 明るい背景の式（従来の bg() の明るい3行をそのまま切り出したもの）
+  const lightBg = (mode) => {
+    if (mode === 'neutral') return [H, clamp(S * 0.10, 0, 0.12), 0.97];
+    if (mode === 'tint')    return [H, clamp(S * 0.28, 0, 0.32), 0.95];
+    return [H, clamp(S * 0.20, 0, 0.25), 0.93];                      // soft
+  };
+  const lightFrom = 3 - (b.lightBgs || 0);          // この番号以降の案を明るい背景にする（後ろから）
   // 背景色: 指定があればそれを全案に使う。無ければメインから自動生成。
   const bg = (mode) => {
     if (b.bgOverride) return [b.bgOverride.h, b.bgOverride.s, b.bgOverride.l]; // ユーザー指定を優先
     if (b.disp === 'dark') return [H, clamp(S * 0.45, 0, 0.5), 0.13];          // 表示モード: ダーク指定
     if (b.disp !== 'light' && L < 0.40) return [H, clamp(S * 0.45, 0, 0.5), 0.13]; // 自動: ダーク配色 → 暗い背景
-    if (mode === 'neutral') return [H, clamp(S * 0.10, 0, 0.12), 0.97];
-    if (mode === 'tint')    return [H, clamp(S * 0.28, 0, 0.32), 0.95];
-    return [H, clamp(S * 0.20, 0, 0.25), 0.93];                      // soft
+    if (b.metalAutoDark) return [H, clamp(S * 0.45, 0, 0.10), 0.13]; // 金属×暗い言葉: チャコール寄りの暗い背景
+    return lightBg(mode);
   };
   // 3案の元となるスキームを選ぶ。
   // metallic: 相性パートナー表（§定番ペア）をシャッフルして3案（既存SCHEMESは使わない）
@@ -1131,6 +1198,7 @@ function makePatterns(b, seed) {
   return picks.map((sc, i) => {
     let c = sc.make(H, S, L, rng);
     let note = sc.note;
+    let name = sc.name;
     if (sameHue) {
       c = toSameHue(c, H, S, L);
       note = '同系色モード: 色相を揃えて彩度・明度で差別化';
@@ -1138,9 +1206,24 @@ function makePatterns(b, seed) {
     // アクセント固定: 指定色をそのまま使い、以降の自動調整はかけない
     const fixedAccent = !!b.accentOverride;
     if (fixedAccent) c.accent = [b.accentOverride.h, b.accentOverride.s, b.accentOverride.l];
-    const bgc = bg(modes[i]);
+    const lightSlot = i >= lightFrom;               // KLK-140 改善ループ2: 暗い言葉の3案に混ぜる明るい案
+    let bgc = lightSlot ? lightBg(modes[i]) : bg(modes[i]);
+    // KLK-140: 言葉ごとの味付け。利用者の明示指定（アクセント固定・同系色・金属）があれば適用しない
+    if (!b.metallic && !fixedAccent && !sameHue) {
+      if (hints.elegantBeige && i === 2 && !b.bgOverride && b.disp !== 'dark' && bgc[2] >= 0.40) {
+        const t = elegantBeigeOf(rng2);
+        c = { main: t.main, sub: t.sub, accent: t.accent };
+        bgc = t.bg;
+        name = 'ベージュ＋濃い一点';
+        note = 'エレガント: ベージュに濃い一点（黒・濃茶）と輝き（金・銀）を添えた型';
+      } else if (hints.luxShine && lightSlot) {
+        c.accent = luxShineOf(rng2);
+      } else if (hints.coolAccent) {
+        c.accent = coolAccentOf(rng2, bgc[2] < 0.40);
+      }
+    }
     // ダークモード: 暗い背景に沈まないよう各色の明度を持ち上げる
-    if (b.disp === 'dark' && !b.bgOverride) {
+    if ((b.disp === 'dark' || b.metalAutoDark) && !b.bgOverride && !lightSlot) {   // KLK-140: 金属×暗い言葉も同じ持ち上げ（明るい案は除く）
       const lift = col => [col[0], col[1], clamp(col[2] + (0.68 - col[2]) * 0.55, 0.40, 0.88)];
       c = { main: lift(c.main), sub: lift(c.sub), accent: fixedAccent ? c.accent : lift(c.accent) };
     }
@@ -1157,7 +1240,7 @@ function makePatterns(b, seed) {
       c.main = clampMetalBand(c.main, b.metallic.variant, bgc[2] < 0.45);
       return { name: sc.name, note, main: c.main, sub: c.sub, accent: c.accent, bg: bgc, metal: true };
     }
-    return { name: sc.name, note, main: c.main, sub: c.sub, accent: c.accent, bg: bgc };
+    return { name, note, main: c.main, sub: c.sub, accent: c.accent, bg: bgc };
   });
 }
 

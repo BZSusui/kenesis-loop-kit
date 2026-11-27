@@ -200,13 +200,13 @@ check(
 # ===========================================================================
 # S9 版数
 # ===========================================================================
-title_ok = bool(re.search(r"<title>[^<]*v1\.2[^<]*</title>", HTML))
-h1_ok = bool(re.search(r"<h1>[^<]*<small>v1\.2</small>", HTML))
-no_old = "v1.1" not in HTML and "v1.0" not in HTML
+title_ok = bool(re.search(r"<title>[^<]*v1\.3[^<]*</title>", HTML))
+h1_ok = bool(re.search(r"<h1>[^<]*<small>v1\.3</small>", HTML))
+no_old = "v1.2" not in HTML and "v1.1" not in HTML and "v1.0" not in HTML
 check(
-    "S9 版数 (<title>にv1.2, <h1> small が v1.2, ファイル内に v1.1/v1.0 が残存しない)",
+    "S9 版数 (<title>にv1.3, <h1> small が v1.3, ファイル内に v1.2/v1.1/v1.0 が残存しない)",
     title_ok and h1_ok and no_old,
-    f"title v1.2={title_ok}, h1 small v1.2={h1_ok}, v1.1/v1.0残存なし={no_old}",
+    f"title v1.3={title_ok}, h1 small v1.3={h1_ok}, v1.2/v1.1/v1.0残存なし={no_old}",
 )
 
 # ===========================================================================
