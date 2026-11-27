@@ -2,7 +2,7 @@
 """
 KLK-081 acceptance-condition checker (static / no browser required).
 
-理恵さんの目視（見本03 案C）で見つかった2件。どちらも**自分が入れた変更の副作用**。
+人の目視（見本03 案C）で見つかった2件。どちらも**自分が入れた変更の副作用**。
 
 ★このチェッカーが守っているもの:
   ① panel-band の段落ち — KLK-075 で `repeat(auto-fit,minmax(220px,1fr))` にしたとき、

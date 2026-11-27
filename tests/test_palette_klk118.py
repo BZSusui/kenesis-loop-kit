@@ -227,7 +227,7 @@ class TestSabotageIsCaught(unittest.TestCase):
         self.assertEqual(r.returncode, 1, "16/9 が通ってしまう:\n%s" % r.stdout[-1500:])
 
     def test_4_3_and_3_4_are_allowed(self):
-        # 4:3 と 3:4 はどちらも許容（理恵さんの指示）。誤検知しないこと
+        # 4:3 と 3:4 はどちらも許容（依頼者の指示）。誤検知しないこと
         for ratio, name in (("4/3", "ok43.html"), ("3/4", "ok34.html")):
             with self.subTest(ratio=ratio):
                 p = self._sabotage(".atari{aspect-ratio:%s !important;min-height:0 !important;}" % ratio, name)

@@ -2,7 +2,7 @@
 # - 静的: tests/site/check_klk092.py（R群=規約 / K群=スキル / T群=検証の道具）
 # - 追加: **機能同等性チェックが実際に欠落を捕まえるか**を合成HTMLで確かめる。
 #
-#   ★理恵さんの実使用で「1案だと幅切替も 🔄 も無い」が発覚した。
+#   ★利用者の実使用で「1案だと幅切替も 🔄 も無い」が発覚した。
 #     規約自身が「1案には幅切替が無い」と書いており、**仕様の文章が機能の欠落を
 #     正当化していた**。同じことを繰り返さないよう、道具側で見張る。
 import importlib.util
@@ -75,7 +75,7 @@ class TestKLK092ParityCheck(unittest.TestCase):
         self.assertEqual(self._check(GOOD_SINGLE_COMPARE), [])
 
     def test_missing_compare_is_caught(self):
-        """★これが理恵さんの踏んだ状態そのもの。"""
+        """★これが利用者の踏んだ状態そのもの。"""
         out = self._check()
         self.assertTrue(any("compare.html がありません" in w for w in out), out)
         self.assertTrue(any("幅切替と 🔄" in w for w in out), out)

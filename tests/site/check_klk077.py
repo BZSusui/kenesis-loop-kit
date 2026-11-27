@@ -100,10 +100,23 @@ check(
     ),
 )
 
+# R7: 照合語は Git 管理外の .private/personal-terms.txt から実行時に読む（KLK-141）。
+#     この検査ファイルに個人名を直書きすると、検査自身が漏洩源になる（KLK-108 の教訓）。
+#     照合語ファイルが無い環境（clone 直後・配布先）では照合不能として素通りする。
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _private_terms  # noqa: E402
+
+_terms = _private_terms.load_terms()
+if _terms is None:
+    _r7_ok, _r7_detail = True, "照合不能・素通り（.private/personal-terms.txt が無い）"
+else:
+    _r7_hits = _private_terms.find_hits(REWRITER, *_terms)
+    _r7_ok = not _r7_hits
+    _r7_detail = "個人名=なし" if _r7_ok else "個人名あり（%d件）" % len(_r7_hits)
 check(
     "R7 A の案内が個人名を含まない（CLAUDE.md セキュリティ規約）",
-    "臼井" not in REWRITER and "理恵" not in REWRITER,
-    "個人名=なし" if ("臼井" not in REWRITER and "理恵" not in REWRITER) else "個人名あり",
+    _r7_ok,
+    _r7_detail,
 )
 
 check(

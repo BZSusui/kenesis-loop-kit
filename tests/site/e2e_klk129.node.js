@@ -136,7 +136,7 @@ const MEASURE = `(() => {
     check('E6 モバイル（375px）では1列に畳まれる',
       sp.cols === 1, `列の本数=${sp.cols} 文言側=${sp.txt}px 器=${sp.parent}px`);
 
-    // ★375px で画像が画面からはみ出さないこと（理恵さんの指摘・2026-09-15）
+    // ★375px で画像が画面からはみ出さないこと（依頼者の指摘・2026-09-15）
     //   原因は min-height と aspect-ratio の組み合わせ。min-height:300px × 4/3 で
     //   幅が 400px 以上に固定され、375px の画面に収まらなかった。
     //   ★比べる相手は **端末の幅(375)** であって window.innerWidth ではない。
@@ -148,7 +148,7 @@ const MEASURE = `(() => {
       sp.imgRight <= PHONE && sp.docW <= PHONE + 1,
       `画像の右端=${sp.imgRight}px 端末=${PHONE}px 文書=${sp.docW}px（innerWidth=${sp.vw}）`);
 
-    // 表は器の中で横スクロールしたままにする（理恵さんの意向: 表は縮めない）
+    // 表は器の中で横スクロールしたままにする（依頼者の意向: 表は縮めない）
     const tbl = JSON.parse(await ev(`(() => {
       const t = document.querySelector('.hours-table');
       if (!t) return JSON.stringify({ found: false });

@@ -95,7 +95,7 @@ class TestKLK098ManualIsActuallyServed(unittest.TestCase):
 
     最初の実装はファイルシステム上のパスだけを見ており、
     実運用（ブリッジが `/` で画面を配信する）を検証していなかったため、
-    理恵さんの環境でリンクが `{"error": "not found"}` になった。
+    実運用の環境でリンクが `{"error": "not found"}` になった。
     ルーティング表の静的検査だけでは（書き方を変えれば）すり抜けるので、
     ここでは**実際に HTTP で取りに行く**。
     """
@@ -226,7 +226,7 @@ class TestKLK098ManualIsActuallyServed(unittest.TestCase):
 
 
 class TestKLK101ScreenLinksOpenInNewTab(unittest.TestCase):
-    """生成画面から別画面へ渡るリンクは、すべて別タブで開くこと（理恵さんのご指示）。
+    """生成画面から別画面へ渡るリンクは、すべて別タブで開くこと（依頼者の指示）。
 
     設定を途中まで入力した状態で同じタブに遷移すると、**入力が失われる**。
     マニュアル・配色ジェネレーターは別タブだったのに、実績カタログだけ

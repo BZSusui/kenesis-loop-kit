@@ -413,7 +413,7 @@ function dndEnv(keys) {
 }
 
 // ===========================================================================
-// H群 — セクション別の入力例（KLK-093・理恵さんの指摘）
+// H群 — セクション別の入力例（KLK-093・依頼者の指摘）
 // ===========================================================================
 {
   const { api: a, byId: b } = makeEnv();
@@ -441,11 +441,11 @@ function dndEnv(keys) {
     new Set(heads).size === heads.length,
     '重複=' + heads.filter((h, i) => heads.indexOf(h) !== i).join(',') || 'なし');
 
-  // ★理恵さんが挙げた具体例
-  check('H3 PRICE の見出し例が「私たちについて」ではない（理恵さんの指摘）',
+  // ★依頼者が挙げた具体例
+  check('H3 PRICE の見出し例が「私たちについて」ではない（依頼者の指摘）',
     inputsOf('PRICE')[0].placeholder === '例：料金プラン',
     'PRICE の見出し例=' + inputsOf('PRICE')[0].placeholder);
-  check('H4 VOICE の誘導ボタン例が「メニュー一覧へ」ではない（理恵さんの指摘）',
+  check('H4 VOICE の誘導ボタン例が「メニュー一覧へ」ではない（依頼者の指摘）',
     inputsOf('VOICE')[2].placeholder.indexOf('メニュー一覧へ') < 0,
     'VOICE のボタン例=' + inputsOf('VOICE')[2].placeholder);
   check('H5 ABOUT / MENU は従来どおりの例文が出る（もともと合っていたものは変えない）',

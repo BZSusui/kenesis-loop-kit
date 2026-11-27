@@ -3,7 +3,7 @@
 tools/strip-dads-sections.py — 配布物からデザインシステム（DADS）の記述を外す (KLK-115)
 
 ★なぜ必要か
-  モック生成システムのパッケージに DADS 関連は含めない（理恵さんの指示・2026-09-09）。
+  モック生成システムのパッケージに DADS 関連は含めない（依頼者の指示・2026-09-09）。
   ところが `docs/design-system/` を外すだけでは終わらない。CLAUDE.md と
   agents/{architect,implementer,reviewer}.md が `docs/design-system/...` を参照して
   いるため、DADS だけ抜くと**参照先が存在しない記述**が配布物に残る。

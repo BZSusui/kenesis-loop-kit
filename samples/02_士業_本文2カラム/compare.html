@@ -116,7 +116,7 @@
   .tm-x{ margin-left:auto; border:1px solid #ddd9cf; background:#fff; border-radius:50%;
     width:32px; height:32px; font-size:15px; line-height:1; color:#5b564a; cursor:pointer; flex:0 0 32px; }
   .tm-list{ overflow:auto; padding:10px; display:flex; flex-direction:column; gap:6px; }
-  /* ★1行＝アイコン＋説明を**横一列**（理恵さんの指定。2行にすると説明が改行だらけになる） */
+  /* ★1行＝アイコン＋説明を**横一列**（依頼者の指定。2行にすると説明が改行だらけになる） */
   .tm-row{ display:flex; align-items:center; gap:14px; width:100%; text-align:left; font:inherit;
     background:#fff; border:1px solid #e6e3dc; border-radius:10px; padding:9px 13px; cursor:pointer; color:#2c2c2c; }
   .tm-row:hover{ background:#f7f6f1; border-color:var(--c-main); }
@@ -287,7 +287,7 @@
 
 </div>
 
-<!-- KLK-126: 型を絵で選ぶモーダル。画面全体に一覧を出す（理恵さんの指定） -->
+<!-- KLK-126: 型を絵で選ぶモーダル。画面全体に一覧を出す（依頼者の指定） -->
 <div class="tm" id="type-modal" role="dialog" aria-modal="true" aria-labelledby="type-modal-title" hidden>
   <div class="tm-veil"></div>
   <div class="tm-box">
@@ -340,7 +340,7 @@
     //   ★規約 §12.1.2/§12.1.3 の説明文を読んで**明示的に**決めた表である。
     //     自動推定は初稿を作る道具としてのみ使い（KLK-125 の実測）、確定版はここに持つ。
     //     規約の言い回しが変わるたびに絵が勝手に変わるのを避けるため。
-    //   ★セクションを跨いで同じ内容の型は**同じレシピ**を指す（理恵さんの方針）。
+    //   ★セクションを跨いで同じ内容の型は**同じレシピ**を指す（依頼者の方針）。
     //     どれとどれが同じかは規約が「◯◯を流用」「同機構」と書いており、それが根拠。
     var ICONS = {
       // --- 格子 ---------------------------------------------------------

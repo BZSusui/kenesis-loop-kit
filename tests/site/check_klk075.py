@@ -120,7 +120,7 @@ check(
 _p = re.search(r"\|\s*5\s*\|\s*`panel-band`.*?\n", RULES)
 PANEL = _p.group(0) if _p else ""
 # ★契約更新（KLK-081）: KLK-075 は auto-fit を答えとしたが、**列数がパネル数と一致する保証がない**
-#   ため 1200〜1280px で 6枚が 5+1 に段落ちした（見本03 案Cで発生・理恵さんの目視で発覚）。
+#   ため 1200〜1280px で 6枚が 5+1 に段落ちした（見本03 案Cで発生・人の目視で発覚）。
 #   KLK-075 が本当に守りたかったのは「**左右に余りを作らない**」であり、
 #   KLK-081 の `grid-auto-flow:column`（列をアイテム数だけ作る）はそれを満たしたうえで段落ちもしない。
 #   よってここは「auto-fit であること」ではなく「**1行が保証されること**」を検査する。
@@ -153,7 +153,7 @@ check(
     % ("repeat(6,1fr)" in PANEL_INSTR, "max-height:150px" in PANEL_INSTR),
 )
 check(
-    "C14 panel-band が 3/2 を維持している（理恵さんの判断・KLK-043）",
+    "C14 panel-band が 3/2 を維持している（依頼者の判断・KLK-043）",
     bool(PANEL) and re.search(r"aspect-ratio:\s*3\s*/\s*2", PANEL) is not None,
     "3/2 の維持=%s" % (re.search(r"aspect-ratio:\s*3\s*/\s*2", PANEL) is not None),
 )

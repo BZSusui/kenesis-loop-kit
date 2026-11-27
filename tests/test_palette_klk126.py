@@ -87,7 +87,7 @@ class TestRecipeParser(unittest.TestCase):
         self.assertIsNone(self.c["recipe_keys"]("<html>なにもない</html>"))
 
     def test_shares_icons_across_sections(self):
-        """★セクションを跨いで同じ内容の型は同じ絵を指す（理恵さんの方針）。
+        """★セクションを跨いで同じ内容の型は同じ絵を指す（依頼者の方針）。
 
         規約が「流用」「同機構」と書いている群が根拠。ここでは代表例を1つ固定しておく。
         絵の数を数えるのではなく、**同じであるべき組が同じか**を見る。

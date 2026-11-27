@@ -2,7 +2,7 @@
 """
 KLK-129 acceptance-condition checker — せり出し横長画像の文言側が狭い。
 
-★経緯（2026-09-15・理恵さんが実際に ABOUT を差し替えて発見）
+★経緯（2026-09-15・利用者が実際に ABOUT を差し替えて発見）
   規約は `grid-template-columns: 1fr 1fr`＝半分ずつと書いていた。
   ところが `1fr` は `minmax(auto, 1fr)` で、**中身の最小幅より小さくならない**。
   画像側のアタリには「検索: children clinic interior」という折り返さない一行があり、

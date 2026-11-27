@@ -54,12 +54,12 @@ check(
 )
 _R3 = ("全案共通", "本文合計", "レイアウト型", "インスタンス補正")
 check(
-    "R3 設計書が理恵さんの決定4件（並び全案共通・複製上限・個別設定・型の自動振り）を記録している",
+    "R3 設計書が依頼者の決定4件（並び全案共通・複製上限・個別設定・型の自動振り）を記録している",
     all(t in DESIGN for t in _R3),
     "欠け=%s" % ([t for t in _R3 if t not in DESIGN] or "なし"),
 )
 check(
-    "R4 設計書が CTA を複製可としている（理恵さんの修正指示）",
+    "R4 設計書が CTA を複製可としている（依頼者の修正指示）",
     "CTA" in DESIGN and "同一内容" in DESIGN,
     "CTA複製可=%s" % ("同一内容" in DESIGN),
 )
@@ -85,7 +85,7 @@ check(
        bool(re.search(r"SECTION_MAX_INSTANCES\s*=\s*\{[^}]*ACCESS:\s*1", LOGIC))),
 )
 check(
-    "L3 CTA が「1個のみ」に入っていない（理恵さんの指示で複製可）",
+    "L3 CTA が「1個のみ」に入っていない（依頼者の指示で複製可）",
     not re.search(r"SECTION_MAX_INSTANCES\s*=\s*\{[^}]*CTA", LOGIC),
     "CTAが1個制限に含まれる=%s" % bool(re.search(r"SECTION_MAX_INSTANCES\s*=\s*\{[^}]*CTA", LOGIC)),
 )
@@ -240,7 +240,7 @@ check(
        "3案ともその型" in INDEX, "同じセクションを複数置けます" in INDEX),
 )
 check(
-    "D2b 画面がドラッグでも並べ替えられることを書いている（理恵さんがマニュアルにも要望）",
+    "D2b 画面がドラッグでも並べ替えられることを書いている（依頼者がマニュアルにも要望）",
     "⠿ を掴んで上下にドラッグ" in INDEX,
     "ドラッグの案内=%s" % ("⠿ を掴んで上下にドラッグ" in INDEX),
 )

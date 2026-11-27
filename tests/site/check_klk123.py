@@ -3,7 +3,7 @@
 KLK-123 acceptance-condition checker — カタログ登録時に画像を自動で軽くする。
 
 ★経緯
-  理恵さんの明示的な要望（引き継ぎ書の保留中の宿題）:
+  依頼者の明示的な要望（引き継ぎ書の保留中の宿題）:
     「カタログ登録時の自動リサイズ。`tools/shrink-catalog-images.py` の `shrink_one` を
       `/catalog-import` 時に適用する形」
   KLK-110 で「167枚 773MB → 217MB」と**後からまとめて**縮めた。

@@ -831,10 +831,10 @@ const SECTION_TYPE_LABELS = {
   SEARCH: { "search-bar": '中央の大きな検索バー', "search-keywords": 'キーワードをボタン化', "search-filters": '絞り込みフォーム', "search-sidebar": '左に絞り込みナビ＋右に結果', "search-header": '小型検索窓＋ヘッダー', "search-hero": 'メインビジュアル内に検索窓' },
 };
 
-// 複製できる数（理恵さん決定・2026-09-04）。既定3、下記だけ1個のみ。
+// 複製できる数（依頼者決定・2026-09-04）。既定3、下記だけ1個のみ。
 //  ACCESS/CONTACT = ページに1つが自然。SEARCH = HERO/NAV へ埋め込む方式（§12.1.3(7)）で
 //  独立セクションを出さないため、そもそも並び順・複製の概念が効かない。
-//  CTA は「同一内容をページ上部と下部に置く」用途があるため複製可（理恵さんの指定）。
+//  CTA は「同一内容をページ上部と下部に置く」用途があるため複製可（依頼者の指定）。
 const SECTION_MAX_INSTANCES = { ACCESS: 1, CONTACT: 1, SEARCH: 1 };
 const COMPOSITION_MAX_PER_KEY = 3;
 const COMPOSITION_MAX_TOTAL = 12;
@@ -1743,7 +1743,7 @@ function renderThumbs(list, note) {
     img.onerror = function () {
       if (img.dataset.fellBack) {
         // ★黙って消さない（KLK-128）。消すと「読み込み中」と見分けが付かず、
-        //   実際に理恵さんの環境で原因が追えなくなった。
+        //   実際に利用者の環境で原因が追えなくなった。
         img.remove();
         thumbImgFailures++;
         showThumbFailures();
@@ -1899,7 +1899,7 @@ const SECTION_LABELS = {
 // KLK-093: セクションごとの入力例。
 //  ★共通の例文（見出し「私たちについて」・ボタン「メニュー一覧へ」）を全セクションに出していたため、
 //    PRICE の見出し例が「私たちについて」、VOICE のボタン例が「メニュー一覧へ」になっていた。
-//    初見の人が「ここに何を書けばいいのか」を取り違える原因になる（理恵さんの指摘）。
+//    初見の人が「ここに何を書けばいいのか」を取り違える原因になる（依頼者の指摘）。
 //  ★moreLink が無い（＝下層ページを持たないのが自然な）セクションは more を空にし、
 //    入力欄そのものは出すが例文で誘導しない。
 const SECTION_PLACEHOLDERS = {

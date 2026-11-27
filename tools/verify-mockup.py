@@ -210,7 +210,7 @@ def check_compare(folder, notices=None):
     """compare.html が案数に応じた機能を備えているか（KLK-092）。
 
     ★1案でも幅切替と 🔄 は要る。compare.html を作らないと**その2機能が丸ごと失われる**
-      （理恵さんの指摘で判明）。ここは「機能を落としていないか」の番人。
+      （依頼者の指摘で判明）。ここは「機能を落としていないか」の番人。
     """
     out = []
     single = os.path.isfile(os.path.join(folder, "index.html"))
@@ -226,7 +226,7 @@ def check_compare(folder, notices=None):
     #   ブリッジは mockups/ 配下しか受け付けないので、samples/ に置かれた compare.html で
     #   🔄 を押すと「読み込み中…」のまま固まる（KLK-081 で実際に起きた）。
     #   **警告の重みは置き場所で変える**。mockups/ の中ではガードは発火しないので、
-    #   そこで違反にすると理恵さんの作業物すべてが赤くなり、警告が信用されなくなる。
+    #   そこで違反にすると利用者の作業物すべてが赤くなり、警告が信用されなくなる。
     #     - mockups/ の外（＝見本）→ 違反
     #     - mockups/ の中          → 注意（--strict で違反。見本を作る前に気づける）
     _cmp_src = open(cmp_path, encoding="utf-8").read()

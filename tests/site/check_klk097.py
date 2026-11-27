@@ -7,7 +7,7 @@ KLK-097 acceptance-condition checker — MV の SCROLL 誘導とボタンの重�
   旧実装は `.scroll-cue{position:absolute;bottom:18px;left:50%;transform:translateX(-50%)}`
   ＝ 中央列の最下部。MV は `justify-content:center` の縦積みなので、中身
   （キャッチ＋リード＋ボタン）が増えると縦積みが底へ届き、**構造的に必ず重なる**。
-  見本「サンプル和菓子店」案A（`full`）で発生（理恵さんの目視で発覚）。
+  見本「サンプル和菓子店」案A（`full`）で発生（人の目視で発覚）。
 
   ここで検査するのは規約の文章だけではない。**生成物の CSS を実測し、
   誘導の帯と本文の帯が数値として重ならないこと**まで見る。

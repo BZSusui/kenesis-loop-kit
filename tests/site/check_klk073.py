@@ -93,7 +93,7 @@ check(
     % ("不自然に間延び" in FLOWZ, "本文側を広く取る" in FLOWZ),
 )
 check(
-    "B9 番号枠に画像を置く設計なら 4/3 とする分岐が書かれている（理恵さんの条件）",
+    "B9 番号枠に画像を置く設計なら 4/3 とする分岐が書かれている（依頼者の条件）",
     bool(FLOWZ) and "背景に画像" in FLOWZ and re.search(r"aspect-ratio:\s*4\s*/\s*3", FLOWZ) is not None,
     "分岐=%s" % (bool(FLOWZ) and "背景に画像" in FLOWZ),
 )
