@@ -13,6 +13,7 @@
  *   D4 cssVarsOf: :root + 4変数・HEX単色のみ（グラデ混入なし）
  *   D5 URL往復: syncURL → restoreFromURL で入力状態・seed・生成3案が一致する
  *   D6 URL不正値: 不正/欠損パラメータで例外を投げず fail-safe に復元する
+ *   （KLK-142）D5 の往復にアクセントカラーの傾向（accentfam）を足し、D5c で ac キーの単独・不正値を見る
  *
  * 実行: node tests/site/smoke_klk004.node.js
  * 終了コード: 0=全PASS / 1=FAILあり / 2=ハーネス異常
@@ -98,6 +99,8 @@ function resetState() {
   Object.keys(METALLICS).forEach(famKey => {
     METALLICS[famKey].variants.forEach((v, i) => __mkInput('mv-' + famKey, v.key, 'radio', i === 0));
   });
+  __mkInput('accentfam', '', 'radio', true);   // KLK-142: アクセントカラーの傾向
+  COLORS.filter(c => ACCENT_FAMS[c.key]).forEach(c => __mkInput('accentfam', c.key, 'radio', false));
   __mkInput('tone', '', 'radio', true);
   TONES.forEach(t => __mkInput('tone', t.key, 'radio', false));
   ['auto','light','dark'].forEach((v, i) => __mkInput('dispmode', v, 'radio', i === 0));
@@ -124,7 +127,7 @@ function setKw(value, on) {
 function captureState() {
   const val = (name) => (__inputs.find(i => i.name === name && i.checked) || {}).value ?? null;
   return JSON.stringify({
-    colorfam: val('colorfam'), mvGold: val('mv-gold'), mvSilver: val('mv-silver'),
+    colorfam: val('colorfam'), mvGold: val('mv-gold'), mvSilver: val('mv-silver'), accentfam: val('accentfam'),
     tone: val('tone'), dispmode: val('dispmode'),
     kw: __kwInputs.filter(i => i.checked && i.value).map(i => i.value).sort(),
     sliders: Object.fromEntries(URL_SLIDERS.map(id => [id, +__ids[id].value])),
@@ -267,6 +270,7 @@ check('D5 syncURL→restoreFromURL の往復で入力状態・seed・生成3案�
   resetState();
   setRadio('colorfam', 'gold');
   setRadio('mv-gold', 'pink');
+  setRadio('accentfam', 'teal');  // KLK-142
   setRadio('tone', TONES[6].key); // deep
   setRadio('dispmode', 'dark');
   const genreKey = GENRE + '/' + Object.keys(KEYWORDS[GENRE])[0];
@@ -296,6 +300,27 @@ check('D5b 初期状態（hasInput=false）では syncURL がパラメータを�
   resetState();
   syncURL(false);
   assert(__lastURL === location.pathname, 'クエリが残っている: ' + __lastURL);
+});
+
+check('D5c アクセントカラーの傾向（ac）: 単独で URL に載り、不正値・mono は無視、ac だけでも復元する', () => {
+  resetState();
+  setRadio('accentfam', 'silver');
+  syncURL(true);
+  assert(__lastURL && /[?&]ac=silver(&|$)/.test(__lastURL), 'URL に ac=silver が無い: ' + __lastURL);
+  resetState();
+  location.search = '?ac=zzz&seed=5';
+  assert(restoreFromURL() === true, '?ac=zzz&seed=5 で false');
+  assert(JSON.parse(captureState()).accentfam === '', '不正値 ac=zzz が取り込まれた');
+  resetState();
+  location.search = '?ac=mono';
+  assert(restoreFromURL() === true, '?ac=mono 単独で false');
+  assert(JSON.parse(captureState()).accentfam === '', 'ac=mono が取り込まれた');
+  resetState();
+  location.search = '?ac=red';
+  assert(restoreFromURL() === true, '?ac=red 単独で false');
+  const b = computeBase();
+  assert(b.accentFam && b.accentFam.key === 'red' && b.hasInput, 'ac=red が computeBase に反映されない');
+  makePatterns(b, seed);
 });
 
 // ===== D6: URL不正値・欠損値の fail-safe =====

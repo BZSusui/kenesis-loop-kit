@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ムードカラー ジェネレーター v1.3</title>
+<title>ムードカラー ジェネレーター v1.4</title>
 <style>
   :root {
     --bg: #f6f7f9;
@@ -396,7 +396,7 @@
 </head>
 <body>
 <header>
-  <h1>ムードカラー ジェネレーター <small>v1.3</small></h1>
+  <h1>ムードカラー ジェネレーター <small>v1.4</small></h1>
   <p>言葉と割合から、メイン / サブ / アクセント / 背景の配色を3案つくります</p>
 </header>
 
@@ -407,6 +407,12 @@
       <summary><span class="sec-title">メインカラーの傾向（カラー）</span><span class="sum-state" id="sumColor"></span></summary>
       <div class="sec-body">
         <div id="colorfam" class="chips"></div>
+      </div>
+    </details>
+    <details class="sec">
+      <summary><span class="sec-title">アクセントカラーの傾向（カラー）</span><span class="sum-state" id="sumAccentFam"></span></summary>
+      <div class="sec-body">
+        <div id="accentfam" class="chips"></div>
       </div>
     </details>
 
@@ -1052,7 +1058,12 @@ function computeBase() {
   // シニアは高コントラストが定石なので、実効コントラストを底上げする
   const contrast = clamp(contrastS + Math.max(0, ageS) * 0.35, -1, 1);
 
-  const hasInput = checked.length > 0 || baseHsl || fam || bgOverride || accentOverride ||
+  // KLK-142: アクセントカラーの傾向（未指定は null。固定 useAccent があれば makePatterns で固定が勝つ）
+  const accKey = document.querySelector('input[name=accentfam]:checked')?.value || '';
+  const accentFam = Object.prototype.hasOwnProperty.call(ACCENT_FAMS, accKey)
+    ? { key: accKey, name: COLORS.find(c => c.key === accKey).name, ...ACCENT_FAMS[accKey] } : null;
+
+  const hasInput = checked.length > 0 || baseHsl || fam || bgOverride || accentOverride || accentFam ||
     document.getElementById('sameHue').checked ||
     document.getElementById('cvdCheck').checked || disp !== 'auto' ||
     warmS || genderS || formalS || lightS || vividS || mutedS ||
@@ -1072,7 +1083,7 @@ function computeBase() {
     const n2 = checked.filter(k => k.lightBgs === 2).length;
     lightBgs = n2 * 2 > checked.length ? 2 : 1;          // 区分の多数決。同数は黒2・明1
   }
-  return { H, S, L, hasInput, bgOverride, accentOverride, contrast, disp, metallic, hints, metalAutoDark, lightBgs };
+  return { H, S, L, hasInput, bgOverride, accentOverride, contrast, disp, metallic, hints, metalAutoDark, lightBgs, accentFam };
 }
 
 /* ===== 同系色モード ======================================================
@@ -1142,6 +1153,33 @@ function luxShineOf(rng2) {
   return t.shines[Math.floor(rng2() * t.shines.length)].slice();
 }
 
+/* ===== アクセントカラーの傾向（KLK-142） ==================================
+   選ぶと3案すべてのアクセントをこの色系統にする。key と名前・並び順は COLORS と共通
+   （モノトーン・カラフルは持たない）。light = 明るい背景用 / dark = 暗い背景用の [H, S, L]。
+   背景とのコントラスト比が大きい方を使う。S は 0.72 以下（どの明度でも蛍光にならない）。
+   金・銀は変種を持たず定番の1色（明るい背景は高級の輝きと同じ値）。 */
+const ACCENT_FAMS = {
+  red:    { hJit: 6, light: [  5, .65, .48], dark: [  5, .65, .58] },
+  pink:   { hJit: 6, light: [340, .62, .52], dark: [340, .62, .66] },
+  orange: { hJit: 5, light: [ 26, .72, .44], dark: [ 28, .72, .56] },
+  yellow: { hJit: 4, light: [ 46, .70, .45], dark: [ 48, .62, .56] },
+  ygreen: { hJit: 5, light: [ 80, .55, .36], dark: [ 80, .50, .52] },
+  green:  { hJit: 6, light: [135, .50, .38], dark: [135, .45, .50] },
+  teal:   { hJit: 6, light: [185, .55, .37], dark: [185, .50, .52] },
+  blue:   { hJit: 6, light: [210, .65, .46], dark: [210, .65, .62] },
+  navy:   { hJit: 5, light: [225, .55, .30], dark: [225, .55, .58] },
+  purple: { hJit: 6, light: [275, .50, .46], dark: [275, .50, .64] },
+  brown:  { hJit: 5, light: [ 25, .45, .36], dark: [ 25, .45, .50] },
+  beige:  { hJit: 4, light: [ 38, .35, .62], dark: [ 38, .35, .74] },
+  gold:   { hJit: 3, light: [ 43, .62, .42], dark: [ 46, .55, .55] },
+  silver: { hJit: 0, light: [213, .07, .72], dark: [210, .06, .74] },
+};
+function accentFamOf(t, rng3, bgHex) {
+  const pick = (col) => [wrap(col[0] + jit(rng3, t.hJit)), col[1], col[2]];
+  const lc = pick(t.light), dc = pick(t.dark);
+  return contrastRatio(hslToHex(...lc), bgHex) >= contrastRatio(hslToHex(...dc), bgHex) ? lc : dc;
+}
+
 /* ===== 3パターン生成 ====================================================
    基準HSLから、配色理論の異なる3案を作る。乱数は使わず入力から一意に決まる。 */
 function makePatterns(b, seed) {
@@ -1150,6 +1188,7 @@ function makePatterns(b, seed) {
   const rng = mulberry32(seed);
   const rng2 = mulberry32((seed ^ 0x5bd1e995) >>> 0);   // KLK-140: ヒント専用の乱数列
   const hints = b.hints || {};
+  const rng3 = b.accentFam ? mulberry32((seed ^ 0x2c1b3c6d) >>> 0) : null; // KLK-142: 傾向専用の乱数列（未指定は作らない）
   // KLK-140 改善ループ2: 明るい背景の式（従来の bg() の明るい3行をそのまま切り出したもの）
   const lightBg = (mode) => {
     if (mode === 'neutral') return [H, clamp(S * 0.10, 0, 0.12), 0.97];
@@ -1201,7 +1240,8 @@ function makePatterns(b, seed) {
     let name = sc.name;
     if (sameHue) {
       c = toSameHue(c, H, S, L);
-      note = '同系色モード: 色相を揃えて彩度・明度で差別化';
+      note = b.accentFam && !b.accentOverride ? '同系色モード: メイン・サブの色相を揃え、アクセントは選んだ傾向の色'
+                                             : '同系色モード: 色相を揃えて彩度・明度で差別化';
     }
     // アクセント固定: 指定色をそのまま使い、以降の自動調整はかけない
     const fixedAccent = !!b.accentOverride;
@@ -1222,6 +1262,15 @@ function makePatterns(b, seed) {
         c.accent = coolAccentOf(rng2, bgc[2] < 0.40);
       }
     }
+    // KLK-142: アクセントカラーの傾向。固定が無ければ、上のどの経路のアクセントもこの色に置き換える
+    if (b.accentFam && !fixedAccent) {
+      c.accent = accentFamOf(b.accentFam, rng3, hslToHex(...bgc));
+      if (name === 'ベージュ＋濃い一点') note = 'エレガント: ベージュに濃い一点（黒・濃茶）と、選んだアクセントの色を添えた型';
+      if (b.metallic) {
+        name = `${COLORS.find(x => x.key === b.metallic.famKey).name}×${b.accentFam.name}`;
+        note = '金属色の定番ペアのサブに、選んだアクセントの傾向を合わせた配色';
+      }
+    }
     // ダークモード: 暗い背景に沈まないよう各色の明度を持ち上げる
     if ((b.disp === 'dark' || b.metalAutoDark) && !b.bgOverride && !lightSlot) {   // KLK-140: 金属×暗い言葉も同じ持ち上げ（明るい案は除く）
       const lift = col => [col[0], col[1], clamp(col[2] + (0.68 - col[2]) * 0.55, 0.40, 0.88)];
@@ -1238,7 +1287,7 @@ function makePatterns(b, seed) {
     // metallic: 後段のどの変換が S/L を動かしても main は必ず金属帯内で確定する（最終段クランプ）
     if (b.metallic) {
       c.main = clampMetalBand(c.main, b.metallic.variant, bgc[2] < 0.45);
-      return { name: sc.name, note, main: c.main, sub: c.sub, accent: c.accent, bg: bgc, metal: true };
+      return { name, note, main: c.main, sub: c.sub, accent: c.accent, bg: bgc, metal: true };
     }
     return { name, note, main: c.main, sub: c.sub, accent: c.accent, bg: bgc };
   });
@@ -1257,6 +1306,9 @@ function updateSummaries() {
     sumColor = `${fam.name}（${mv.name}）`;
   }
   set('sumColor', sumColor);
+  const accKey = document.querySelector('input[name=accentfam]:checked')?.value || '';
+  const accName = ACCENT_FAMS[accKey] ? COLORS.find(c => c.key === accKey).name : '';
+  set('sumAccentFam', accName && document.getElementById('useAccent').checked ? `${accName}（固定が優先）` : accName);
   const toneKey = document.querySelector('input[name=tone]:checked')?.value || '';
   const tone = TONES.find(t => t.key === toneKey);
   set('sumTone', tone ? tone.name : '');
@@ -1338,6 +1390,8 @@ function syncURL(hasInput) {
       if (mv) p.set('mv', mv);
     }
   }
+  const accKey = document.querySelector('input[name=accentfam]:checked')?.value || '';  // KLK-142
+  if (accKey) p.set('ac', accKey);
   const toneKey = document.querySelector('input[name=tone]:checked')?.value || '';
   if (toneKey) p.set('t', toneKey);
   const kws = [...document.querySelectorAll('#keywords input:checked')].map(el => el.value).filter(Boolean);
@@ -1360,13 +1414,15 @@ function syncURL(hasInput) {
 // ページ読み込み時の復元。不正値・未知キーはすべて黙って無視する（fail-safe）
 function restoreFromURL() {
   const params = new URLSearchParams(location.search);
-  const KNOWN = ['v', 'c', 'mv', 't', 'k', 'base', 'accent', 'bg', 'sh', 'dm', 'cvd', 'seed', ...URL_SLIDERS];
+  const KNOWN = ['v', 'c', 'mv', 'ac', 't', 'k', 'base', 'accent', 'bg', 'sh', 'dm', 'cvd', 'seed', ...URL_SLIDERS];
   if (![...params.keys()].some(k => KNOWN.includes(k))) return false; // 既知キー無し → 従来どおり空の初期表示
   const checkRadio = (sel) => { const el = document.querySelector(sel); if (el) el.checked = true; };
   const famKey = params.get('c') || '';
   if (famKey) checkRadio(`input[name=colorfam][value="${CSS.escape(famKey)}"]`);
   const mv = params.get('mv');
   if (mv && METALLICS[famKey]) checkRadio(`input[name=mv-${famKey}][value="${CSS.escape(mv)}"]`);
+  const ac = params.get('ac');  // KLK-142: アクセントカラーの傾向（mono・colorful・未知の値は無視）
+  if (ac && Object.prototype.hasOwnProperty.call(ACCENT_FAMS, ac)) checkRadio(`input[name=accentfam][value="${CSS.escape(ac)}"]`);
   const t = params.get('t');
   if (t) checkRadio(`input[name=tone][value="${CSS.escape(t)}"]`);
   const k = params.get('k');
@@ -1541,6 +1597,21 @@ function buildColors() {
         </div>
       </div>`).join('')}
     </div>`;
+}
+
+// KLK-142: アクセントカラーの傾向のチップ（COLORS の並び順で、ACCENT_FAMS にあるものだけ）
+function buildAccentFams() {
+  const box = document.getElementById('accentfam');
+  const none = `<label class="chip color">
+      <input type="radio" name="accentfam" value="" checked><span><i class="none"></i>指定なし</span>
+    </label>`;
+  box.innerHTML = none + COLORS.filter(c => ACCENT_FAMS[c.key]).map(c => {
+    const [h, s, l] = ACCENT_FAMS[c.key].light;
+    const dot = 'background:' + (c.metallic ? metalGrad(h, s, l) : hslToHex(h, s, l));
+    return `<label class="chip color">
+        <input type="radio" name="accentfam" value="${c.key}"><span><i style="${dot}"></i>${c.name}</span>
+      </label>`;
+  }).join('');
 }
 
 // gold/silver 選択時のみ、対応する色味サブ選択（#metallicVariant）を表示する
@@ -1732,6 +1803,7 @@ edOverlay.addEventListener('pointerdown', (e) => { if (e.target === edOverlay) c
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeEditor(); });
 
 buildColors();
+buildAccentFams();
 buildTones();
 buildKeywords();
 syncBaseUI();
@@ -1787,6 +1859,7 @@ document.getElementById('reset').addEventListener('click', () => {
   document.querySelectorAll('#keywords input').forEach(el => el.checked = false);
   document.querySelector('input[name=kwgenre][value=""]').checked = true; // ジャンルは「指定なし」へ
   document.querySelector('input[name=colorfam][value=""]').checked = true;
+  document.querySelector('input[name=accentfam][value=""]').checked = true;  // KLK-142
   document.querySelector('input[name=mv-gold][value="yellow"]').checked = true;  // 色味は先頭値へ
   document.querySelector('input[name=mv-silver][value="cool"]').checked = true;
   syncMetallicUI();
@@ -1805,7 +1878,7 @@ document.getElementById('sameHue').addEventListener('change', render);
 // 入力が変わったら自動で更新（生成ボタンを押さなくても反映）
 // ※ .panel 内に限定する。モーダル(#editor)内のH/S/Lスライダーも .slider 構造を
 //    使っているため、限定しないと微調整のたびに再生成が走りモーダルが閉じてしまう
-document.querySelectorAll('#colorfam input, #keywords input, .panel .slider input').forEach(el =>
+document.querySelectorAll('#colorfam input, #accentfam input, #keywords input, .panel .slider input').forEach(el =>
   el.addEventListener('input', render));
 document.querySelectorAll('#dispmode input').forEach(el => el.addEventListener('change', render));
 document.getElementById('cvdCheck').addEventListener('change', render);
