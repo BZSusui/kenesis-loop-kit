@@ -16,6 +16,8 @@ KLK-141 acceptance-condition checker — 記録や雛形・配布物に個人名
 
 Run: python3 tests/site/check_klk141.py
 Exit code 0 = all checks pass, 1 = at least one fail.
+照合語ファイルが無いときは 0 のまま、最終行に印の行
+`UNVERIFIED personal-terms-missing: <素通りした ID>` を出す（KLK-143。unittest では skipped になる）。
 """
 import os
 import shutil
@@ -30,6 +32,7 @@ import _private_terms as pt  # noqa: E402
 ROOT = pt.ROOT
 results = []
 SKIP = "照合不能・素通り（.private/personal-terms.txt が無い）"
+skipped_ids = []  # 照合語ファイルが無いために素通りした検査 ID（KLK-143）
 
 
 def check(name, passed, detail):
@@ -58,6 +61,7 @@ own = [os.path.join(HERE, "check_klk141.py"), os.path.join(HERE, "_private_terms
        os.path.join(ROOT, "tests", "test_palette_klk141.py")]
 if terms is None:
     check("K0 検査自身・共有モジュールが照合語を含まない", True, SKIP)
+    skipped_ids.append("K0")
 else:
     hits = [(os.path.relpath(p, ROOT), ln) for p in own for ln in pt.scan_file(p, terms, allows)]
     check("K0 検査自身・共有モジュールが照合語を含まない", not hits, pt.summarize(hits))
@@ -69,6 +73,7 @@ files = tracked_files()
 check("K1 Git 追跡ファイルを列挙できる（検査が空振りしていない）", len(files) > 50, "%d ファイル" % len(files))
 if terms is None:
     check("K2 ★Git 追跡下の全テキストファイルに個人名が無い", True, SKIP)
+    skipped_ids.append("K2")
 else:
     hits = []
     for f in files:
@@ -90,6 +95,7 @@ try:
               "組み立て失敗: %s" % (proc_b.stderr or proc_b.stdout)[-160:])
     elif terms is None:
         check("K3 ★既定ビルド（パッケージB）の配布物に個人名が無い", True, SKIP)
+        skipped_ids.append("K3")
     else:
         hits = pt.scan_tree(dest_b, terms, allows)
         check("K3 ★既定ビルド（パッケージB）の配布物に個人名が無い", not hits, pt.summarize(hits))
@@ -99,6 +105,7 @@ try:
 
     if terms is None:
         check("K5 ★--with-tests --with-design-system ビルドの配布物に個人名が無い", True, SKIP)
+        skipped_ids.append("K5")
     else:
         dest_t, proc_t = build(wd, "--with-tests", "--with-design-system")
         if proc_t.returncode != 0:
@@ -118,6 +125,7 @@ try:
     # -----------------------------------------------------------------------
     if terms is None:
         check("K6 ★パッケージAで加わる catalog.json・書き換え後 README に個人名が無い", True, SKIP)
+        skipped_ids.append("K6")
     else:
         cat = os.path.join(ROOT, "catalog", "catalog.json")
         hits, notes = [], []
@@ -144,6 +152,7 @@ finally:
 mock = os.path.join(ROOT, "mockups")
 if terms is None:
     check("K7 mockups/ の compare.html に個人名が無い", True, SKIP)
+    skipped_ids.append("K7")
 elif not os.path.isdir(mock):
     check("K7 mockups/ の compare.html に個人名が無い", True, "mockups/ が無い（素通り）")
 else:
@@ -167,4 +176,6 @@ for name, passed, detail in results:
     print("        %s" % detail)
 print("-" * 78)
 print("%d checks, %d failed" % (len(results), failed))
+if skipped_ids:
+    print(pt.unverified_line(skipped_ids))
 sys.exit(1 if failed else 0)

@@ -404,6 +404,7 @@ testerは機械的な検証なので3回まで許容する。reviewerは設計�
 - 設計書（docs/designs/{ID}.md）に接続先を記載する場合は環境変数名のみを記載する（例: `process.env.DATABASE_URL`）
 - コードに機密情報をハードコードしない。`.env`ファイルを使用し`.gitignore`に追加する
 - コミット前に`git diff`で機密情報が含まれていないことを確認する
+- 個人名の混入を見張る検査（check_klk141・check_klk077 R7）は、照合語を Git 管理外の `.private/personal-terms.txt`（`.gitignore` 済み・配布物にも入らない）から読む。このファイルは検査を働かせたい環境ごとに個別に置き、その内容（照合語）はチケット・設計書・コミットメッセージ・報告に書き写さない。ファイルが無い環境では検査が素通りし、全体テストでは skipped として表示される
 
 **.gitignoreに必ず含めるべき項目:**
 ```gitignore

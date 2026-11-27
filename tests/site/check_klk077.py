@@ -18,6 +18,8 @@ KLK-077 acceptance-condition checker (static / no browser required).
 
 Run: python3 tests/site/check_klk077.py
 Exit code 0 = all checks pass, 1 = at least one fail.
+照合語ファイルが無いときは 0 のまま、最終行に印の行
+`UNVERIFIED personal-terms-missing: R7` を出す（KLK-143。unittest では skipped になる）。
 """
 import importlib.util
 import os
@@ -107,8 +109,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import _private_terms  # noqa: E402
 
 _terms = _private_terms.load_terms()
+_r7_unverified = False  # 照合語ファイルが無いために素通りしたか（KLK-143）
 if _terms is None:
     _r7_ok, _r7_detail = True, "照合不能・素通り（.private/personal-terms.txt が無い）"
+    _r7_unverified = True
 else:
     _r7_hits = _private_terms.find_hits(REWRITER, *_terms)
     _r7_ok = not _r7_hits
@@ -268,4 +272,6 @@ for name, passed, detail in results:
     print("        %s" % detail)
 print("-" * 78)
 print("%d checks, %d failed" % (len(results), failed))
+if _r7_unverified:
+    print(_private_terms.unverified_line(["R7"]))
 sys.exit(1 if failed else 0)

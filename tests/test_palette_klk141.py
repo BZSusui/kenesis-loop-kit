@@ -8,6 +8,7 @@
 #   - checker 本体が全件PASSし、実ビルド部（K3・K5）と Git 追跡下の走査（K2）が走ること
 #   - 照合関数 find_hits / load_terms が正しく振る舞うこと
 #     （実在の照合語は書かない。**架空の語**を引数で渡して確かめる）
+#   - 照合語ファイルが無くて照合を素通りしたときは、OK ではなく skipped として数えること（KLK-143）
 import os
 import subprocess
 import sys
@@ -22,14 +23,41 @@ import _private_terms as pt  # noqa: E402
 
 
 class TestKLK141Checker(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        # checker（パッケージ実ビルド込み）はクラスで1回だけ実行する
+        cls.proc = subprocess.run(["python3", str(CHECKER)], capture_output=True, text=True, timeout=900)
+        cls.unverified = [l for l in cls.proc.stdout.splitlines() if l.startswith(pt.UNVERIFIED_MARKER)]
+
     def test_checker_passes(self):
         """checker 本体（Git 追跡下の走査・パッケージ実ビルド込み）が全件PASSする。"""
-        p = subprocess.run(["python3", str(CHECKER)], capture_output=True, text=True, timeout=900)
+        p = self.proc
         self.assertEqual(p.returncode, 0, "check_klk141.py 失敗:\n%s" % p.stdout[-2000:])
         self.assertIn(", 0 failed", p.stdout)
         self.assertIn("K2 ★Git 追跡下の全テキストファイルに個人名が無い", p.stdout)
         self.assertIn("K3 ★既定ビルド（パッケージB）の配布物に個人名が無い", p.stdout)
         self.assertIn("K5 ★--with-tests --with-design-system ビルドの配布物に個人名が無い", p.stdout)
+
+    def test_personal_terms_scanned(self):
+        """★照合語での走査が実際に行われたこと。照合語ファイルが無ければ skipped として見せる（KLK-143）。"""
+        has_terms = pt.load_terms() is not None
+        if self.unverified:
+            self.assertFalse(has_terms, "照合語ファイルがあるのに素通りした: %s" % self.unverified)
+            self.skipTest("照合語ファイル .private/personal-terms.txt が無いため個人名の照合をskip（%s）"
+                          % self.unverified[0][len(pt.UNVERIFIED_MARKER):].strip())
+        self.assertTrue(has_terms, "照合語ファイルが無いのに素通りの印が出ていない（素通りが見えない）")
+        self.assertNotIn("照合不能・素通り", self.proc.stdout)
+        self.assertIn("照合 ", self.proc.stdout)  # K2 の詳細「照合 N 語 / 検出=…」
+
+
+class TestUnverifiedLine(unittest.TestCase):
+    """素通りの印の行（KLK-143）。"""
+
+    def test_line_format(self):
+        line = pt.unverified_line(["K0", "K2"])
+        self.assertTrue(line.startswith(pt.UNVERIFIED_MARKER))
+        self.assertTrue(line.endswith("K0,K2"))
+        self.assertTrue(all(ord(c) < 128 for c in pt.UNVERIFIED_MARKER), "印は ASCII 固定")
 
 
 class TestFindHits(unittest.TestCase):

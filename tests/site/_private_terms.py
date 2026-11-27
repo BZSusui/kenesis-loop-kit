@@ -15,6 +15,7 @@
 ★出力の約束
   一致した語そのものは返さない・表示しない（端末や CI のログへの再漏洩を防ぐ）。
   呼び出し側へ返すのは「ファイルと行番号」だけにする。
+  照合語ファイルが無く素通りした場合、checker は集計行の後に印の行（UNVERIFIED_MARKER）を出す（KLK-143）。
 
 check_klk141（再発防止）と check_klk077 R7 がこのモジュールを使う。
 照合規則を2か所に書かない（KLK-131 で起きかけた食い違いを避ける）。
@@ -26,6 +27,16 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 TERMS_PATH = os.path.join(ROOT, ".private", "personal-terms.txt")
 
 _ASCII_WORD = re.compile(r"[A-Za-z]+")
+
+# 照合語ファイルが無く、照合を行わずに PASS 扱いにした（素通り）ことを示す印（KLK-143）。
+# checker が集計行の後に1行で出し、unittest ラッパーがこれを見て skipTest にする。
+# ASCII 固定。文言を変えるときは checker・ラッパーの両方がこの定数を参照しているので1か所で済む。
+UNVERIFIED_MARKER = "UNVERIFIED personal-terms-missing:"
+
+
+def unverified_line(ids):
+    """素通りした検査 ID の一覧から印の行を作る。例: 'UNVERIFIED personal-terms-missing: K0,K2'"""
+    return "%s %s" % (UNVERIFIED_MARKER, ",".join(ids))
 
 
 def load_terms(path=TERMS_PATH):
